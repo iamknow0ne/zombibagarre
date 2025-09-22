@@ -809,11 +809,15 @@ body {
 
     #virtualJoystick {
         position: absolute;
-        bottom: calc(20px + env(safe-area-inset-bottom));
-        left: 20px;
         width: 120px;
         height: 120px;
-        pointer-events: all;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    #virtualJoystick.active {
+        opacity: 1;
     }
 
     #joystickBase {
@@ -845,9 +849,10 @@ body {
         position: absolute;
         bottom: calc(20px + env(safe-area-inset-bottom));
         right: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 12px;
         pointer-events: all;
     }
 
@@ -909,8 +914,6 @@ body {
 /* Portrait Orientation Optimizations */
 @media (max-width: 768px) and (orientation: portrait) {
     #virtualJoystick {
-        bottom: calc(100px + env(safe-area-inset-bottom));
-        left: 15px;
         width: 100px;
         height: 100px;
     }
@@ -930,6 +933,7 @@ body {
     #mobileButtons {
         bottom: calc(100px + env(safe-area-inset-bottom));
         right: 15px;
+        gap: 10px;
     }
 
     .mobile-btn {
@@ -958,8 +962,6 @@ body {
     }
 
     #virtualJoystick {
-        bottom: calc(15px + env(safe-area-inset-bottom));
-        left: 15px;
         width: 90px;
         height: 90px;
     }
@@ -979,11 +981,42 @@ body {
     #mobileButtons {
         bottom: calc(15px + env(safe-area-inset-bottom));
         right: 15px;
+        gap: 8px;
     }
 
     .mobile-btn {
         width: 45px;
         height: 45px;
         font-size: 16px;
+    }
+}
+
+/* ===================
+   POPUP EFFECTS
+   =================== */
+
+.multiplier-popup {
+    position: fixed;
+    pointer-events: none;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    animation: popup-float 2s ease-out forwards;
+    white-space: nowrap;
+}
+
+@keyframes popup-float {
+    0% {
+        opacity: 1;
+        transform: translateY(0px) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-30px) scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-60px) scale(0.8);
     }
 }

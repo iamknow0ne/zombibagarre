@@ -62,6 +62,11 @@ class Game {
         // Controls
         this.keys = {};
 
+        // Event cleanup tracking
+        this.eventListeners = [];
+        this.activeTimeouts = [];
+        this.activeIntervals = [];
+
         // Timing
         this.lastTime = 0;
         this.powerupSpawnTimer = 0;
@@ -184,40 +189,71 @@ class Game {
     }
 
     loadMetaProgression() {
-        const saved = localStorage.getItem('zombieSurvivalMeta');
-        if (saved) {
-            const meta = JSON.parse(saved);
-            this.metaProgression = meta;
-        } else {
-            this.metaProgression = {
-                totalCoins: 0,
-                unlockedCharacters: ['soldier'],
-                unlockedWeapons: ['rifle', 'shotgun', 'machinegun'],
-                permanentUpgrades: {
-                    maxHealth: 0,
-                    damage: 0,
-                    speed: 0,
-                    luck: 0,
-                    experience: 0
-                },
-                achievements: [],
-                statistics: {
-                    totalKills: 0,
-                    totalDeaths: 0,
-                    highestWave: 1,
-                    longestSurvival: 0,
-                    totalPowerupsCollected: 0
+        try {
+            const saved = localStorage.getItem('zombieSurvivalMeta');
+            if (saved) {
+                const meta = JSON.parse(saved);
+                // Validate the loaded data structure
+                if (meta && typeof meta === 'object' && meta.totalCoins !== undefined) {
+                    this.metaProgression = meta;
+                } else {
+                    console.warn('Invalid meta progression data, using defaults');
+                    this.createDefaultMetaProgression();
                 }
-            };
+            } else {
+                this.createDefaultMetaProgression();
+            }
+        } catch (error) {
+            console.error('Failed to load meta progression:', error);
+            this.createDefaultMetaProgression();
+            // Clear corrupted data
+            try {
+                localStorage.removeItem('zombieSurvivalMeta');
+            } catch (clearError) {
+                console.error('Failed to clear corrupted save data:', clearError);
+            }
         }
     }
 
+    createDefaultMetaProgression() {
+        this.metaProgression = {
+            totalCoins: 0,
+            unlockedCharacters: ['soldier'],
+            unlockedWeapons: ['rifle', 'shotgun', 'machinegun'],
+            permanentUpgrades: {
+                maxHealth: 0,
+                damage: 0,
+                speed: 0,
+                luck: 0,
+                experience: 0
+            },
+            achievements: [],
+            statistics: {
+                totalKills: 0,
+                totalDeaths: 0,
+                highestWave: 1,
+                longestSurvival: 0,
+                totalPowerupsCollected: 0
+            }
+        };
+    }
+
     saveMetaProgression() {
-        localStorage.setItem('zombieSurvivalMeta', JSON.stringify(this.metaProgression));
+        try {
+            localStorage.setItem('zombieSurvivalMeta', JSON.stringify(this.metaProgression));
+        } catch (error) {
+            console.error('Failed to save meta progression:', error);
+            // Could be quota exceeded or other localStorage issues
+        }
     }
 
     getSelectedCharacter() {
-        return localStorage.getItem('selectedCharacter') || 'soldier';
+        try {
+            return localStorage.getItem('selectedCharacter') || 'soldier';
+        } catch (error) {
+            console.error('Failed to get selected character:', error);
+            return 'soldier';
+        }
     }
     
     init() {
@@ -271,26 +307,90 @@ class Game {
     }
     
     setupEventListeners() {
-        document.getElementById('buySoldier').addEventListener('click', () => this.buySoldier());
-        document.getElementById('upgradeDamage').addEventListener('click', () => this.upgradeDamage());
-        document.getElementById('upgradeSpeed').addEventListener('click', () => this.upgradeSpeed());
-        document.getElementById('pauseBtn').addEventListener('click', () => this.togglePause());
-        document.getElementById('restartBtn').addEventListener('click', () => this.restart());
-        
-        // Keyboard controls
-        window.addEventListener('keydown', (e) => {
+        // Store listeners for cleanup
+        const buySoldierHandler = () => this.buySoldier();
+        const upgradeDamageHandler = () => this.upgradeDamage();
+        const upgradeSpeedHandler = () => this.upgradeSpeed();
+        const pauseHandler = () => this.togglePause();
+        const restartHandler = () => this.restart();
+
+        const keydownHandler = (e) => {
             this.keys[e.key.toLowerCase()] = true;
             this.keys[e.code] = true;
-        });
-        
-        window.addEventListener('keyup', (e) => {
+        };
+
+        const keyupHandler = (e) => {
             this.keys[e.key.toLowerCase()] = false;
             this.keys[e.code] = false;
-        });
-        
-        this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+        };
+
+        const canvasClickHandler = (e) => this.handleCanvasClick(e);
+
+        // Add event listeners and track them with error handling
+        try {
+            const buySoldierEl = document.getElementById('buySoldier');
+            const upgradeDamageEl = document.getElementById('upgradeDamage');
+            const upgradeSpeedEl = document.getElementById('upgradeSpeed');
+            const pauseEl = document.getElementById('pauseBtn');
+            const restartEl = document.getElementById('restartBtn');
+
+            buySoldierEl?.addEventListener('click', buySoldierHandler);
+            upgradeDamageEl?.addEventListener('click', upgradeDamageHandler);
+            upgradeSpeedEl?.addEventListener('click', upgradeSpeedHandler);
+            pauseEl?.addEventListener('click', pauseHandler);
+            restartEl?.addEventListener('click', restartHandler);
+            window.addEventListener('keydown', keydownHandler);
+            window.addEventListener('keyup', keyupHandler);
+            this.canvas?.addEventListener('click', canvasClickHandler);
+
+            // Store for cleanup (only valid elements)
+            this.eventListeners.push(
+                ...(buySoldierEl ? [{ element: buySoldierEl, event: 'click', handler: buySoldierHandler }] : []),
+                ...(upgradeDamageEl ? [{ element: upgradeDamageEl, event: 'click', handler: upgradeDamageHandler }] : []),
+                ...(upgradeSpeedEl ? [{ element: upgradeSpeedEl, event: 'click', handler: upgradeSpeedHandler }] : []),
+                ...(pauseEl ? [{ element: pauseEl, event: 'click', handler: pauseHandler }] : []),
+                ...(restartEl ? [{ element: restartEl, event: 'click', handler: restartHandler }] : []),
+                { element: window, event: 'keydown', handler: keydownHandler },
+                { element: window, event: 'keyup', handler: keyupHandler },
+                ...(this.canvas ? [{ element: this.canvas, event: 'click', handler: canvasClickHandler }] : [])
+            );
+        } catch (error) {
+            console.error('Failed to setup some event listeners:', error);
+        }
     }
-    
+
+    // Wrapper methods to track timeouts and intervals for cleanup
+    createTimeout(callback, delay) {
+        const timeoutId = setTimeout(callback, delay);
+        this.activeTimeouts.push(timeoutId);
+        return timeoutId;
+    }
+
+    createInterval(callback, delay) {
+        const intervalId = setInterval(callback, delay);
+        this.activeIntervals.push(intervalId);
+        return intervalId;
+    }
+
+    // Cleanup method to remove all event listeners and clear timeouts/intervals
+    cleanup() {
+        // Remove event listeners
+        this.eventListeners.forEach(({ element, event, handler }) => {
+            if (element) {
+                element.removeEventListener(event, handler);
+            }
+        });
+        this.eventListeners = [];
+
+        // Clear timeouts
+        this.activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+        this.activeTimeouts = [];
+
+        // Clear intervals
+        this.activeIntervals.forEach(intervalId => clearInterval(intervalId));
+        this.activeIntervals = [];
+    }
+
     handleCanvasClick(e) {
         // Power-ups are now collected by player collision, not clicking
         // This method is kept for potential future use
@@ -555,7 +655,7 @@ class Game {
             bossWarning.classList.remove('hidden');
 
             // Remove warning after 3 seconds
-            setTimeout(() => {
+            this.createTimeout(() => {
                 bossWarning.classList.add('hidden');
             }, 3000);
         }
@@ -1185,7 +1285,7 @@ class Game {
                         // Temporarily disable a random weapon for 30 seconds
                         const weapon = this.weapons[Math.floor(Math.random() * this.weapons.length)];
                         weapon.disabled = true;
-                        setTimeout(() => { weapon.disabled = false; }, 30000);
+                        this.createTimeout(() => { weapon.disabled = false; }, 30000);
                         this.showMultiplierPopup(this.getCanvasWidth() / 2, this.getCanvasHeight() / 2, "WEAPON JAMMED!", false);
                     }
                 }
@@ -1195,7 +1295,7 @@ class Game {
                 effect: () => {
                     // Temporarily increase zombie resistance
                     this.zombieResistanceBonus = 0.2; // 20% damage reduction
-                    setTimeout(() => { this.zombieResistanceBonus = 0; }, 45000);
+                    this.createTimeout(() => { this.zombieResistanceBonus = 0; }, 45000);
                     this.showMultiplierPopup(this.getCanvasWidth() / 2, this.getCanvasHeight() / 2, "ZOMBIES ADAPTED: +20% RESISTANCE", false);
                 }
             }
@@ -1973,14 +2073,22 @@ class Game {
         const popup = document.createElement('div');
         popup.className = 'multiplier-popup';
         popup.textContent = text;
-        popup.style.left = x + 'px';
-        popup.style.top = y + 'px';
+
+        // Get canvas position relative to viewport
+        const canvasRect = this.canvas.getBoundingClientRect();
+        const popupX = canvasRect.left + x;
+        const popupY = canvasRect.top + y;
+
+        popup.style.left = popupX + 'px';
+        popup.style.top = popupY + 'px';
         popup.style.color = isGood ? '#FFD700' : '#ff4444';
-        
-        document.getElementById('gameContainer').appendChild(popup);
-        
-        setTimeout(() => {
-            popup.remove();
+
+        document.body.appendChild(popup); // Append to body for proper positioning
+
+        this.createTimeout(() => {
+            if (popup.parentNode) {
+                popup.remove();
+            }
         }, 2000);
     }
     
@@ -2219,73 +2327,107 @@ class Game {
     }
     
     updateUI() {
-        // Update level and experience
-        document.getElementById('levelNumber').textContent = this.level;
-        document.getElementById('expValue').textContent = this.experience;
-        document.getElementById('expMax').textContent = this.experienceToNextLevel;
+        try {
+            // Update level and experience
+            const levelEl = document.getElementById('levelNumber');
+            const expValueEl = document.getElementById('expValue');
+            const expMaxEl = document.getElementById('expMax');
 
-        // Update experience bar
-        const expBar = document.getElementById('expBar');
-        const expPercentage = (this.experience / this.experienceToNextLevel) * 100;
-        expBar.style.width = expPercentage + '%';
+            if (levelEl) levelEl.textContent = this.level;
+            if (expValueEl) expValueEl.textContent = this.experience;
+            if (expMaxEl) expMaxEl.textContent = this.experienceToNextLevel;
 
-        // Update player health
-        if (this.player) {
-            const healthBar = document.getElementById('healthBar');
-            const healthText = document.getElementById('healthText');
-            const healthPercentage = (this.player.health / this.player.maxHealth) * 100;
-            healthBar.style.width = healthPercentage + '%';
-            healthText.textContent = `${Math.ceil(this.player.health)}/${this.player.maxHealth}`;
+            // Update experience bar
+            const expBar = document.getElementById('expBar');
+            if (expBar) {
+                const expPercentage = (this.experience / this.experienceToNextLevel) * 100;
+                expBar.style.width = expPercentage + '%';
+            }
+
+            // Update player health
+            if (this.player) {
+                const healthBar = document.getElementById('healthBar');
+                const healthText = document.getElementById('healthText');
+                if (healthBar && healthText) {
+                    const healthPercentage = (this.player.health / this.player.maxHealth) * 100;
+                    healthBar.style.width = healthPercentage + '%';
+                    healthText.textContent = `${Math.ceil(this.player.health)}/${this.player.maxHealth}`;
+                }
+            }
+
+            // Update wave info
+            const waveNumberEl = document.getElementById('waveNumber');
+            if (waveNumberEl) waveNumberEl.textContent = this.wave;
+
+            // Update wave progress
+            const waveProgressBar = document.getElementById('waveProgressBar');
+            const waveProgressText = document.getElementById('waveProgressText');
+            if (waveProgressBar && waveProgressText) {
+                const waveProgress = this.zombiesKilled / this.zombiesInWave;
+                const waveProgressPercentage = Math.min(100, waveProgress * 100);
+                waveProgressBar.style.width = waveProgressPercentage + '%';
+                waveProgressText.textContent = `${this.zombiesKilled}/${this.zombiesInWave} enemies`;
+            }
+
+            // Update combat stats
+            const scoreEl = document.getElementById('scoreValue');
+            const killCountEl = document.getElementById('killCountValue');
+            if (scoreEl) scoreEl.textContent = this.score.toLocaleString();
+            if (killCountEl) killCountEl.textContent = this.killCount.toLocaleString();
+
+            // Update survival time
+            const currentTime = Date.now();
+            const survivalSeconds = Math.floor((currentTime - this.gameStartTime) / 1000);
+            const minutes = Math.floor(survivalSeconds / 60);
+            const seconds = survivalSeconds % 60;
+            const survivalTimeEl = document.getElementById('survivalTimeValue');
+            if (survivalTimeEl) {
+                survivalTimeEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            // Update resources
+            const moneyEl = document.getElementById('moneyValue');
+            const soldierCountEl = document.getElementById('soldierCount');
+            const powerupCountEl = document.getElementById('powerupCount');
+            if (moneyEl) moneyEl.textContent = this.money;
+            if (soldierCountEl) soldierCountEl.textContent = this.soldiers.length;
+            if (powerupCountEl) powerupCountEl.textContent = this.powerups.length;
+
+            // Update multipliers
+            const damageMultEl = document.getElementById('damageMultValue');
+            const speedMultEl = document.getElementById('speedMultValue');
+            if (damageMultEl) damageMultEl.textContent = `${this.damageMultiplier.toFixed(1)}x`;
+            if (speedMultEl) speedMultEl.textContent = `${this.speedMultiplier.toFixed(1)}x`;
+
+            // Update weapon and passive information
+            this.updateWeaponsPanel();
+            this.updatePassivesPanel();
+            this.updateStatusEffects();
+
+            // Update buttons
+            const adjustedSoldierCost = this.getAdjustedUpgradeCost(this.soldierCost);
+            const adjustedUpgradeCost = this.getAdjustedUpgradeCost(this.upgradeCost);
+            const adjustedSpeedCost = this.getAdjustedUpgradeCost(this.speedCost);
+
+            const buySoldierBtn = document.getElementById('buySoldier');
+            const upgradeDamageBtn = document.getElementById('upgradeDamage');
+            const upgradeSpeedBtn = document.getElementById('upgradeSpeed');
+
+            if (buySoldierBtn) {
+                buySoldierBtn.textContent = `Buy Soldier ($${adjustedSoldierCost})`;
+                buySoldierBtn.disabled = this.money < adjustedSoldierCost;
+            }
+            if (upgradeDamageBtn) {
+                upgradeDamageBtn.textContent = `Upgrade Damage ($${adjustedUpgradeCost})`;
+                upgradeDamageBtn.disabled = this.money < adjustedUpgradeCost;
+            }
+            if (upgradeSpeedBtn) {
+                upgradeSpeedBtn.textContent = `Upgrade Speed ($${adjustedSpeedCost})`;
+                upgradeSpeedBtn.disabled = this.money < adjustedSpeedCost;
+            }
+        } catch (error) {
+            console.error('Failed to update UI:', error);
         }
-
-        // Update wave info
-        document.getElementById('waveNumber').textContent = this.wave;
-
-        // Update wave progress
-        const waveProgressBar = document.getElementById('waveProgressBar');
-        const waveProgressText = document.getElementById('waveProgressText');
-        const waveProgress = this.zombiesKilled / this.zombiesInWave;
-        const waveProgressPercentage = Math.min(100, waveProgress * 100);
-        waveProgressBar.style.width = waveProgressPercentage + '%';
-        waveProgressText.textContent = `${this.zombiesKilled}/${this.zombiesInWave} enemies`;
-
-        // Update combat stats
-        document.getElementById('scoreValue').textContent = this.score.toLocaleString();
-        document.getElementById('killCountValue').textContent = this.killCount.toLocaleString();
-
-        // Update survival time
-        const currentTime = Date.now();
-        const survivalSeconds = Math.floor((currentTime - this.gameStartTime) / 1000);
-        const minutes = Math.floor(survivalSeconds / 60);
-        const seconds = survivalSeconds % 60;
-        document.getElementById('survivalTimeValue').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-        // Update resources
-        document.getElementById('moneyValue').textContent = this.money;
-        document.getElementById('soldierCount').textContent = this.soldiers.length;
-        document.getElementById('powerupCount').textContent = this.powerups.length;
-
-        // Update multipliers
-        document.getElementById('damageMultValue').textContent = `${this.damageMultiplier.toFixed(1)}x`;
-        document.getElementById('speedMultValue').textContent = `${this.speedMultiplier.toFixed(1)}x`;
-
-        // Update weapon and passive information
-        this.updateWeaponsPanel();
-        this.updatePassivesPanel();
-        this.updateStatusEffects();
-
-        // Update buttons
-        const adjustedSoldierCost = this.getAdjustedUpgradeCost(this.soldierCost);
-        const adjustedUpgradeCost = this.getAdjustedUpgradeCost(this.upgradeCost);
-        const adjustedSpeedCost = this.getAdjustedUpgradeCost(this.speedCost);
-
-        document.getElementById('buySoldier').textContent = `Buy Soldier ($${adjustedSoldierCost})`;
-        document.getElementById('upgradeDamage').textContent = `Upgrade Damage ($${adjustedUpgradeCost})`;
-        document.getElementById('upgradeSpeed').textContent = `Upgrade Speed ($${adjustedSpeedCost})`;
-
-        document.getElementById('buySoldier').disabled = this.money < adjustedSoldierCost;
-        document.getElementById('upgradeDamage').disabled = this.money < adjustedUpgradeCost;
-        document.getElementById('upgradeSpeed').disabled = this.money < adjustedSpeedCost;
     }
 
     updateWeaponsPanel() {
@@ -2472,8 +2614,11 @@ class Game {
     }
     
     restart() {
+        // Clean up existing event listeners and timers
+        this.cleanup();
+
         document.getElementById('gameOver').classList.add('hidden');
-        
+
         // Reset game state
         this.wave = 1;
         this.score = 0;
@@ -2516,6 +2661,7 @@ class Game {
         this.survivalTime = 0;
         
         this.createPlayer();
+        this.setupEventListeners(); // Re-setup event listeners after cleanup
         this.updateUI();
         this.startGame();
     }
@@ -5177,60 +5323,108 @@ class MobileControls {
         const joystick = document.getElementById('virtualJoystick');
         const joystickBase = document.getElementById('joystickBase');
         const joystickKnob = document.getElementById('joystickKnob');
+        const mobileControls = document.getElementById('mobileControls');
 
-        if (!joystick || !joystickBase || !joystickKnob) return;
+        if (!joystick || !joystickBase || !joystickKnob || !mobileControls) return;
 
-        // Touch events for joystick
-        joystick.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = joystickBase.getBoundingClientRect();
+        // Only add touch events on touch-capable devices
+        if ('ontouchstart' in window) {
+            // Listen for touches on the left half of the screen for joystick
+            mobileControls.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                const screenWidth = window.innerWidth;
 
-            this.joystick.active = true;
-            this.joystick.startX = rect.left + rect.width / 2;
-            this.joystick.startY = rect.top + rect.height / 2;
+                // Only activate joystick if touching left half of screen
+                if (touch.clientX < screenWidth / 2) {
+                    e.preventDefault();
 
-            this.updateJoystickPosition(touch.clientX, touch.clientY);
-        }, { passive: false });
+                    this.joystick.active = true;
+                    this.joystick.startX = touch.clientX;
+                    this.joystick.startY = touch.clientY;
 
-        document.addEventListener('touchmove', (e) => {
-            if (!this.joystick.active) return;
-            e.preventDefault();
+                    // Position joystick at touch location
+                    this.showJoystickAt(touch.clientX, touch.clientY);
+                    this.updateJoystickPosition(touch.clientX, touch.clientY);
+                }
+            }, { passive: false });
 
-            const touch = e.touches[0];
-            this.updateJoystickPosition(touch.clientX, touch.clientY);
-        }, { passive: false });
+            document.addEventListener('touchmove', (e) => {
+                if (!this.joystick.active) return;
+                e.preventDefault();
 
-        document.addEventListener('touchend', () => {
-            if (this.joystick.active) {
-                this.joystick.active = false;
-                this.resetJoystick();
+                const touch = e.touches[0];
+                this.updateJoystickPosition(touch.clientX, touch.clientY);
+            }, { passive: false });
+
+            document.addEventListener('touchend', () => {
+                if (this.joystick.active) {
+                    this.joystick.active = false;
+                    this.hideJoystick();
+                    this.resetJoystick();
+                }
+            });
+        } else {
+            // Mouse events for desktop testing - listen on left half
+            mobileControls.addEventListener('mousedown', (e) => {
+                const screenWidth = window.innerWidth;
+
+                if (e.clientX < screenWidth / 2) {
+                    e.preventDefault();
+
+                    this.joystick.active = true;
+                    this.joystick.startX = e.clientX;
+                    this.joystick.startY = e.clientY;
+
+                    this.showJoystickAt(e.clientX, e.clientY);
+                    this.updateJoystickPosition(e.clientX, e.clientY);
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!this.joystick.active) return;
+                this.updateJoystickPosition(e.clientX, e.clientY);
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (this.joystick.active) {
+                    this.joystick.active = false;
+                    this.hideJoystick();
+                    this.resetJoystick();
+                }
+            });
+        }
+    }
+
+    showJoystickAt(x, y) {
+        const joystick = document.getElementById('virtualJoystick');
+        if (joystick) {
+            // Get current joystick size based on screen orientation
+            const isPortrait = window.innerHeight > window.innerWidth;
+            const isLandscape = window.innerWidth <= 768 && !isPortrait;
+
+            let joystickSize;
+            if (isLandscape) {
+                joystickSize = 90; // Landscape size
+            } else if (isPortrait) {
+                joystickSize = 100; // Portrait size
+            } else {
+                joystickSize = 120; // Default desktop size
             }
-        });
 
-        // Mouse events for testing on desktop
-        joystick.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            const rect = joystickBase.getBoundingClientRect();
+            const halfSize = joystickSize / 2;
 
-            this.joystick.active = true;
-            this.joystick.startX = rect.left + rect.width / 2;
-            this.joystick.startY = rect.top + rect.height / 2;
+            // Center the joystick at the touch point
+            joystick.style.left = (x - halfSize) + 'px';
+            joystick.style.top = (y - halfSize) + 'px';
+            joystick.classList.add('active');
+        }
+    }
 
-            this.updateJoystickPosition(e.clientX, e.clientY);
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!this.joystick.active) return;
-            this.updateJoystickPosition(e.clientX, e.clientY);
-        });
-
-        document.addEventListener('mouseup', () => {
-            if (this.joystick.active) {
-                this.joystick.active = false;
-                this.resetJoystick();
-            }
-        });
+    hideJoystick() {
+        const joystick = document.getElementById('virtualJoystick');
+        if (joystick) {
+            joystick.classList.remove('active');
+        }
     }
 
     updateJoystickPosition(clientX, clientY) {
@@ -5245,7 +5439,19 @@ class MobileControls {
         this.joystick.deltaY = clientY - this.joystick.startY;
 
         // Calculate magnitude and clamp to joystick radius
-        const maxRadius = 35; // Half of joystick base minus knob radius
+        // Get current joystick size based on screen orientation
+        const isPortrait = window.innerHeight > window.innerWidth;
+        const isLandscape = window.innerWidth <= 768 && !isPortrait;
+
+        let maxRadius;
+        if (isLandscape) {
+            maxRadius = 27.5; // 90/2 - 17.5 (knob radius)
+        } else if (isPortrait) {
+            maxRadius = 30; // 100/2 - 20 (knob radius)
+        } else {
+            maxRadius = 35; // 120/2 - 25 (knob radius)
+        }
+
         this.joystick.magnitude = Math.min(maxRadius, Math.sqrt(this.joystick.deltaX ** 2 + this.joystick.deltaY ** 2));
 
         if (this.joystick.magnitude > maxRadius) {
@@ -5293,8 +5499,21 @@ class MobileControls {
         }
 
         // Convert joystick input to movement keys
-        const normalizedX = this.joystick.deltaX / 35;
-        const normalizedY = this.joystick.deltaY / 35;
+        // Get current joystick size based on screen orientation
+        const isPortrait = window.innerHeight > window.innerWidth;
+        const isLandscape = window.innerWidth <= 768 && !isPortrait;
+
+        let maxRadius;
+        if (isLandscape) {
+            maxRadius = 27.5;
+        } else if (isPortrait) {
+            maxRadius = 30;
+        } else {
+            maxRadius = 35;
+        }
+
+        const normalizedX = this.joystick.deltaX / maxRadius;
+        const normalizedY = this.joystick.deltaY / maxRadius;
 
         this.game.keys['w'] = normalizedY < -0.3;
         this.game.keys['s'] = normalizedY > 0.3;
@@ -5305,46 +5524,46 @@ class MobileControls {
     setupMobileButtons() {
         const pauseBtn = document.getElementById('pauseMobileBtn');
         const buyBtn = document.getElementById('buyMobileBtn');
+        const upgradeDamageBtn = document.getElementById('upgradeDamageMobileBtn');
+        const upgradeSpeedBtn = document.getElementById('upgradeSpeedMobileBtn');
+
+        // Use touch events on touch devices, click events on others
+        const eventType = 'ontouchstart' in window ? 'touchstart' : 'click';
+        const eventOptions = eventType === 'touchstart' ? { passive: false } : {};
 
         if (pauseBtn) {
-            pauseBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
+            pauseBtn.addEventListener(eventType, (e) => {
+                if (eventType === 'touchstart') e.preventDefault();
                 this.game.togglePause();
-            }, { passive: false });
-
-            pauseBtn.addEventListener('click', () => {
-                this.game.togglePause();
-            });
+            }, eventOptions);
         }
 
         if (buyBtn) {
-            buyBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                this.buyUpgrade();
-            }, { passive: false });
-
-            buyBtn.addEventListener('click', () => {
-                this.buyUpgrade();
-            });
-        }
-    }
-
-    buyUpgrade() {
-        if (this.game.money >= 75) {
-            // Try to buy soldier first, then damage upgrade, then speed upgrade
-            if (this.game.soldiers.length < 10) {
+            buyBtn.addEventListener(eventType, (e) => {
+                if (eventType === 'touchstart') e.preventDefault();
                 this.game.buySoldier();
-            } else if (this.game.money >= 150) {
+            }, eventOptions);
+        }
+
+        if (upgradeDamageBtn) {
+            upgradeDamageBtn.addEventListener(eventType, (e) => {
+                if (eventType === 'touchstart') e.preventDefault();
                 this.game.upgradeDamage();
-            } else if (this.game.money >= 100) {
+            }, eventOptions);
+        }
+
+        if (upgradeSpeedBtn) {
+            upgradeSpeedBtn.addEventListener(eventType, (e) => {
+                if (eventType === 'touchstart') e.preventDefault();
                 this.game.upgradeSpeed();
-            }
+            }, eventOptions);
         }
     }
+
 
     startMobileHUDUpdates() {
         // Update mobile HUD every frame
-        setInterval(() => {
+        this.game.createInterval(() => {
             this.updateMobileHUD();
         }, 100); // 10fps for HUD updates (sufficient and efficient)
     }
@@ -5386,6 +5605,48 @@ class MobileControls {
         const killsEl = document.getElementById('mobileKills');
         if (killsEl && this.game.player) {
             killsEl.textContent = this.game.player.killCount || 0;
+        }
+
+        // Update button states based on affordability
+        this.updateMobileButtonStates();
+    }
+
+    updateMobileButtonStates() {
+        const buyBtn = document.getElementById('buyMobileBtn');
+        const upgradeDamageBtn = document.getElementById('upgradeDamageMobileBtn');
+        const upgradeSpeedBtn = document.getElementById('upgradeSpeedMobileBtn');
+
+        // Update soldier buy button (cost: 75)
+        if (buyBtn) {
+            if (this.game.money >= 75 && this.game.soldiers.length < 10) {
+                buyBtn.style.opacity = '1';
+                buyBtn.style.filter = 'none';
+            } else {
+                buyBtn.style.opacity = '0.5';
+                buyBtn.style.filter = 'grayscale(1)';
+            }
+        }
+
+        // Update damage upgrade button (cost: 150)
+        if (upgradeDamageBtn) {
+            if (this.game.money >= 150) {
+                upgradeDamageBtn.style.opacity = '1';
+                upgradeDamageBtn.style.filter = 'none';
+            } else {
+                upgradeDamageBtn.style.opacity = '0.5';
+                upgradeDamageBtn.style.filter = 'grayscale(1)';
+            }
+        }
+
+        // Update speed upgrade button (cost: 100)
+        if (upgradeSpeedBtn) {
+            if (this.game.money >= 100) {
+                upgradeSpeedBtn.style.opacity = '1';
+                upgradeSpeedBtn.style.filter = 'none';
+            } else {
+                upgradeSpeedBtn.style.opacity = '0.5';
+                upgradeSpeedBtn.style.filter = 'grayscale(1)';
+            }
         }
     }
 }
