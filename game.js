@@ -308,8 +308,9 @@ class Game {
     }
     
     buySoldier() {
-        if (this.money >= this.soldierCost) {
-            this.money -= this.soldierCost;
+        const adjustedCost = this.getAdjustedUpgradeCost(this.soldierCost);
+        if (this.money >= adjustedCost) {
+            this.money -= adjustedCost;
             // Spawn soldiers around the player in a circle formation
             const angle = Math.random() * Math.PI * 2;
             const distance = 40 + Math.random() * 20;
@@ -319,27 +320,35 @@ class Game {
             const boundedX = Math.max(30, Math.min(this.getCanvasWidth() - 30, x));
             const boundedY = Math.max(30, Math.min(this.getCanvasHeight() - 30, y));
             this.soldiers.push(new Soldier(boundedX, boundedY, this));
-            this.soldierCost = Math.floor(this.soldierCost * 1.4);
+            this.soldierCost = Math.floor(this.soldierCost * 1.5); // Increased scaling
             this.updateUI();
         }
     }
     
     upgradeDamage() {
-        if (this.money >= this.upgradeCost) {
-            this.money -= this.upgradeCost;
-            this.damageMultiplier += 0.5;
-            this.upgradeCost = Math.floor(this.upgradeCost * 1.6);
+        const adjustedCost = this.getAdjustedUpgradeCost(this.upgradeCost);
+        if (this.money >= adjustedCost) {
+            this.money -= adjustedCost;
+            this.damageMultiplier += 0.4; // Slightly reduced bonus
+            this.upgradeCost = Math.floor(this.upgradeCost * 1.7); // Increased scaling
             this.updateUI();
         }
     }
-    
+
     upgradeSpeed() {
-        if (this.money >= this.speedCost) {
-            this.money -= this.speedCost;
-            this.speedMultiplier += 0.3;
-            this.speedCost = Math.floor(this.speedCost * 1.5);
+        const adjustedCost = this.getAdjustedUpgradeCost(this.speedCost);
+        if (this.money >= adjustedCost) {
+            this.money -= adjustedCost;
+            this.speedMultiplier += 0.25; // Slightly reduced bonus
+            this.speedCost = Math.floor(this.speedCost * 1.6); // Increased scaling
             this.updateUI();
         }
+    }
+
+    getAdjustedUpgradeCost(baseCost) {
+        // Wave-based cost inflation - becomes expensive in late game
+        const inflationRate = 1 + Math.min(1.5, this.wave * 0.03); // Cap at 2.5x cost
+        return Math.floor(baseCost * inflationRate);
     }
     
     togglePause() {
@@ -685,25 +694,62 @@ class Game {
         let type = 'basic';
         const rand = Math.random();
 
-        // Aggressive monster spawning for maximum challenge
-        if (this.wave >= 1 && rand < 0.25) type = 'crawler';  // Early swarm - very common
-        if (this.wave >= 2 && rand < 0.35) type = 'fast';
-        if (this.wave >= 3 && rand < 0.18) type = 'spitter';  // Ranged threat - common
-        if (this.wave >= 4 && rand < 0.28) type = 'tank';
-        if (this.wave >= 5 && rand < 0.15) type = 'jumper';   // Teleporters - frequent threat
-        if (this.wave >= 6 && rand < 0.2) type = 'brute';     // Heavy damage - common
-        if (this.wave >= 7 && rand < 0.1) type = 'exploder'; // Bombers - dangerous, moderate
-        if (this.wave >= 8 && rand < 0.18) type = 'shielder'; // Shielded tanks - common
-        if (this.wave >= 10 && rand < 0.1) type = 'healer';  // Support - earlier and common
-        if (this.wave >= 12 && rand < 0.08) type = 'summoner'; // Spawners - moderately common
-        if (this.wave >= 15 && rand < 0.06) type = 'phase_walker'; // Phasing - challenging
-        if (this.wave >= 17 && rand < 0.05) type = 'stalker'; // Stealth - late game threat
+        // Enhanced progressive monster spawning with increasing difficulty
+        const waveMultiplier = Math.min(2.0, 1 + (this.wave * 0.05)); // Cap at 2x probability
+
+        if (this.wave >= 1 && rand < (0.2 * waveMultiplier)) type = 'crawler';  // Swarm increases over time
+        if (this.wave >= 2 && rand < (0.25 * waveMultiplier)) type = 'fast';
+        if (this.wave >= 3 && rand < (0.15 * waveMultiplier)) type = 'spitter';  // Ranged threats scale
+        if (this.wave >= 4 && rand < (0.2 * waveMultiplier)) type = 'tank';
+        if (this.wave >= 5 && rand < (0.12 * waveMultiplier)) type = 'jumper';   // Teleporters become common
+        if (this.wave >= 6 && rand < (0.18 * waveMultiplier)) type = 'brute';
+        if (this.wave >= 7 && rand < (0.08 * waveMultiplier)) type = 'exploder'; // Dangerous bombers
+        if (this.wave >= 8 && rand < (0.15 * waveMultiplier)) type = 'shielder'; // Tanky enemies
+        if (this.wave >= 10 && rand < (0.08 * waveMultiplier)) type = 'healer';  // Support units
+        if (this.wave >= 12 && rand < (0.06 * waveMultiplier)) type = 'summoner'; // Spawners
+        if (this.wave >= 15 && rand < (0.04 * waveMultiplier)) type = 'phase_walker'; // Elite enemies
+        if (this.wave >= 17 && rand < (0.03 * waveMultiplier)) type = 'stalker'; // Ultra rare threats
+
+        // Late game elite waves - increasingly challenging
+        if (this.wave >= 20 && rand < 0.02) type = 'mini_boss'; // Mini bosses appear regularly
+        if (this.wave >= 25 && rand < 0.15) type = 'elite_swarm'; // Elite swarms become common
 
         // Legacy boss types (reduced frequency in regular spawns)
         if (this.wave >= 8 && rand < 0.02) type = 'boss';
         if (this.wave >= 10 && rand < 0.01) type = 'mega_boss';
         
-        this.zombies.push(new Zombie(pos.x, pos.y, type, this));
+        // Add zombie with enhanced scaling
+        const zombie = new Zombie(pos.x, pos.y, type, this);
+
+        // Progressive difficulty scaling
+        this.applyWaveScaling(zombie);
+
+        this.zombies.push(zombie);
+    }
+
+    applyWaveScaling(zombie) {
+        // Health scaling: gradual increase that becomes more dramatic later
+        const healthMultiplier = 1 + Math.pow(this.wave * 0.08, 1.2);
+        zombie.maxHealth *= healthMultiplier;
+        zombie.health = zombie.maxHealth;
+
+        // Damage scaling: more conservative to avoid frustration
+        const damageMultiplier = 1 + (this.wave * 0.04);
+        zombie.damage = Math.floor(zombie.damage * damageMultiplier);
+
+        // Speed scaling: slight increase to maintain challenge
+        const speedMultiplier = 1 + Math.min(0.5, this.wave * 0.02);
+        zombie.speed *= speedMultiplier;
+
+        // Late game elite enhancements
+        if (this.wave >= 15) {
+            zombie.maxHealth *= 1.2; // Extra health boost for late game
+            zombie.health = zombie.maxHealth;
+        }
+
+        if (this.wave >= 25) {
+            zombie.damage = Math.floor(zombie.damage * 1.3); // Extra damage for ultra late game
+        }
     }
     
     spawnPowerup() {
@@ -1060,17 +1106,47 @@ class Game {
     }
     
     zombieKilled(zombie) {
-        this.score += zombie.scoreValue;
-        this.money += zombie.moneyValue;
+        // Base rewards with wave scaling for balance
+        let scoreGain = zombie.scoreValue;
+        let moneyGain = zombie.moneyValue;
+        let expGain = zombie.experienceValue || 10;
+
+        // Resource depletion mechanic - rewards decrease over time but spike at milestones
+        const depletionFactor = Math.max(0.6, 1 - (this.wave * 0.015)); // Gradual reduction
+
+        // Apply depletion to money and score but not experience (to avoid blocking progression)
+        moneyGain = Math.floor(moneyGain * depletionFactor);
+        scoreGain = Math.floor(scoreGain * depletionFactor);
+
+        // Milestone bonuses to maintain engagement
+        if (this.wave % 5 === 0) {
+            moneyGain *= 2; // Double money on milestone waves
+            scoreGain *= 1.5;
+            expGain *= 1.3;
+        }
+
+        // Elite enemy bonuses
+        if (zombie.type.includes('boss') || zombie.type.includes('elite')) {
+            moneyGain *= 3;
+            scoreGain *= 2;
+            expGain *= 1.5;
+        }
+
+        // Apply rewards
+        this.score += scoreGain;
+        this.money += moneyGain;
         this.zombiesKilled++;
         this.killCount++; // Total kill counter for statistics
 
-        // Add experience based on zombie type
-        let expGain = zombie.experienceValue || 10;
         this.gainExperience(expGain);
 
         // Update meta progression
         this.metaProgression.statistics.totalKills++;
+
+        // Resource scarcity events (random challenges)
+        if (Math.random() < 0.05 && this.wave >= 10) {
+            this.triggerScarcityEvent();
+        }
 
         // Create enhanced death effect particles based on zombie type
         const particleCount = zombie.type.includes('boss') ? 15 : 8;
@@ -1091,6 +1167,42 @@ class Game {
         }
 
         this.updateUI();
+    }
+
+    triggerScarcityEvent() {
+        const events = [
+            {
+                name: "Supply Drop Delayed",
+                effect: () => {
+                    this.money = Math.max(0, this.money - 50);
+                    this.showMultiplierPopup(this.getCanvasWidth() / 2, this.getCanvasHeight() / 2, "SUPPLY SHORTAGE: -$50", false);
+                }
+            },
+            {
+                name: "Equipment Malfunction",
+                effect: () => {
+                    if (this.weapons.length > 1) {
+                        // Temporarily disable a random weapon for 30 seconds
+                        const weapon = this.weapons[Math.floor(Math.random() * this.weapons.length)];
+                        weapon.disabled = true;
+                        setTimeout(() => { weapon.disabled = false; }, 30000);
+                        this.showMultiplierPopup(this.getCanvasWidth() / 2, this.getCanvasHeight() / 2, "WEAPON JAMMED!", false);
+                    }
+                }
+            },
+            {
+                name: "Zombie Adaptation",
+                effect: () => {
+                    // Temporarily increase zombie resistance
+                    this.zombieResistanceBonus = 0.2; // 20% damage reduction
+                    setTimeout(() => { this.zombieResistanceBonus = 0; }, 45000);
+                    this.showMultiplierPopup(this.getCanvasWidth() / 2, this.getCanvasHeight() / 2, "ZOMBIES ADAPTED: +20% RESISTANCE", false);
+                }
+            }
+        ];
+
+        const event = events[Math.floor(Math.random() * events.length)];
+        event.effect();
     }
 
     gainExperience(amount) {
@@ -1154,34 +1266,47 @@ class Game {
 
     generateLevelUpChoices() {
         const allChoices = [
-            // Weapons
-            { type: 'weapon', id: 'rifle', name: 'Rifle', description: 'Auto-targeting rifle' },
-            { type: 'weapon', id: 'shotgun', name: 'Shotgun', description: 'Spread shot weapon' },
-            { type: 'weapon', id: 'machinegun', name: 'Machine Gun', description: 'Rapid fire weapon' },
-            { type: 'weapon', id: 'laser', name: 'Laser', description: 'Piercing energy beam' },
-            { type: 'weapon', id: 'rocket', name: 'Rocket Launcher', description: 'Explosive projectiles' },
-            { type: 'weapon', id: 'knife', name: 'Knife', description: 'Melee spinning blade' },
-            { type: 'weapon', id: 'grenade', name: 'Grenade', description: 'Area explosion' },
+            // Early Weapons (Available from start)
+            { type: 'weapon', id: 'rifle', name: 'Rifle', description: 'Auto-targeting rifle', minWave: 1 },
+            { type: 'weapon', id: 'shotgun', name: 'Shotgun', description: 'Spread shot weapon', minWave: 1 },
 
-            // Passive Items
-            { type: 'passive', id: 'ammo_box', name: 'Ammo Box', description: '+25% damage' },
-            { type: 'passive', id: 'spread_shot', name: 'Spread Shot', description: '+2 projectiles' },
-            { type: 'passive', id: 'rapid_fire', name: 'Rapid Fire', description: '+30% fire rate' },
-            { type: 'passive', id: 'energy_core', name: 'Energy Core', description: '+50% projectile speed' },
-            { type: 'passive', id: 'explosive_rounds', name: 'Explosive Rounds', description: 'Bullets explode on impact' },
-            { type: 'passive', id: 'piercing', name: 'Piercing', description: 'Bullets pierce through enemies' },
-            { type: 'passive', id: 'blast_radius', name: 'Blast Radius', description: '+100% explosion size' },
-            { type: 'passive', id: 'health_boost', name: 'Health Boost', description: '+50 max health' },
-            { type: 'passive', id: 'speed_boost', name: 'Speed Boost', description: '+25% movement speed' },
-            { type: 'passive', id: 'luck', name: 'Luck', description: '+20% rare item chance' },
+            // Mid-Game Weapons (Progressive unlock)
+            { type: 'weapon', id: 'machinegun', name: 'Machine Gun', description: 'Rapid fire weapon', minWave: 3 },
+            { type: 'weapon', id: 'laser', name: 'Laser', description: 'Piercing energy beam', minWave: 5 },
+            { type: 'weapon', id: 'knife', name: 'Knife', description: 'Melee spinning blade', minWave: 7 },
+
+            // Late Game Weapons (High wave requirement)
+            { type: 'weapon', id: 'rocket', name: 'Rocket Launcher', description: 'Explosive projectiles', minWave: 10 },
+            { type: 'weapon', id: 'grenade', name: 'Grenade', description: 'Area explosion', minWave: 12 },
+
+            // Basic Passive Items (Available early)
+            { type: 'passive', id: 'ammo_box', name: 'Ammo Box', description: '+25% damage', minWave: 1 },
+            { type: 'passive', id: 'health_boost', name: 'Health Boost', description: '+50 max health', minWave: 1 },
+            { type: 'passive', id: 'speed_boost', name: 'Speed Boost', description: '+25% movement speed', minWave: 2 },
+
+            // Intermediate Passive Items
+            { type: 'passive', id: 'rapid_fire', name: 'Rapid Fire', description: '+30% fire rate', minWave: 3 },
+            { type: 'passive', id: 'spread_shot', name: 'Spread Shot', description: '+2 projectiles', minWave: 4 },
+            { type: 'passive', id: 'energy_core', name: 'Energy Core', description: '+50% projectile speed', minWave: 6 },
+
+            // Advanced Passive Items (Late game)
+            { type: 'passive', id: 'piercing', name: 'Piercing', description: 'Bullets pierce through enemies', minWave: 8 },
+            { type: 'passive', id: 'explosive_rounds', name: 'Explosive Rounds', description: 'Bullets explode on impact', minWave: 10 },
+            { type: 'passive', id: 'blast_radius', name: 'Blast Radius', description: '+100% explosion size', minWave: 12 },
+            { type: 'passive', id: 'luck', name: 'Luck', description: '+20% rare item chance', minWave: 15 },
 
             // Upgrades for existing items
             { type: 'upgrade', target: 'weapon', description: 'Level up a weapon' },
             { type: 'upgrade', target: 'passive', description: 'Level up a passive item' }
         ];
 
-        // Filter based on what player already has
+        // Filter based on wave requirements and what player already has
         const availableChoices = allChoices.filter(choice => {
+            // Check wave requirement first
+            if (choice.minWave && this.wave < choice.minWave) {
+                return false;
+            }
+
             if (choice.type === 'weapon') {
                 const weapon = this.weapons.find(w => w.id === choice.id);
                 return !weapon || weapon.level < 8; // Max level 8
@@ -2150,13 +2275,17 @@ class Game {
         this.updateStatusEffects();
 
         // Update buttons
-        document.getElementById('buySoldier').textContent = `Buy Soldier ($${this.soldierCost})`;
-        document.getElementById('upgradeDamage').textContent = `Upgrade Damage ($${this.upgradeCost})`;
-        document.getElementById('upgradeSpeed').textContent = `Upgrade Speed ($${this.speedCost})`;
+        const adjustedSoldierCost = this.getAdjustedUpgradeCost(this.soldierCost);
+        const adjustedUpgradeCost = this.getAdjustedUpgradeCost(this.upgradeCost);
+        const adjustedSpeedCost = this.getAdjustedUpgradeCost(this.speedCost);
 
-        document.getElementById('buySoldier').disabled = this.money < this.soldierCost;
-        document.getElementById('upgradeDamage').disabled = this.money < this.upgradeCost;
-        document.getElementById('upgradeSpeed').disabled = this.money < this.speedCost;
+        document.getElementById('buySoldier').textContent = `Buy Soldier ($${adjustedSoldierCost})`;
+        document.getElementById('upgradeDamage').textContent = `Upgrade Damage ($${adjustedUpgradeCost})`;
+        document.getElementById('upgradeSpeed').textContent = `Upgrade Speed ($${adjustedSpeedCost})`;
+
+        document.getElementById('buySoldier').disabled = this.money < adjustedSoldierCost;
+        document.getElementById('upgradeDamage').disabled = this.money < adjustedUpgradeCost;
+        document.getElementById('upgradeSpeed').disabled = this.money < adjustedSpeedCost;
     }
 
     updateWeaponsPanel() {
