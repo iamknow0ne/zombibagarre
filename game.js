@@ -1,0 +1,4960 @@
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.isRunning = false;
+        this.isPaused = false;
+        
+        // Game state - Challenging resource management
+        this.wave = 1;
+        this.score = 0;
+        this.gameStartTime = Date.now(); // Track game start time for survival timer
+        this.money = 50;  // Reduced starting money for challenge
+        this.soldierCost = 75;  // Increased costs
+        this.upgradeCost = 150;
+        this.speedCost = 100;
+        this.damageMultiplier = 1;
+        this.speedMultiplier = 1;
+
+        // Experience and Level System
+        this.experience = 0;
+        this.level = 1;
+        this.experienceToNextLevel = 100;
+        this.levelUpPending = false;
+
+        // Weapon and Item System
+        this.weapons = [];
+        this.passiveItems = [];
+        this.maxWeapons = 6;
+        this.maxPassiveItems = 6;
+
+        // Meta Progression (persists between runs)
+        this.loadMetaProgression();
+
+        // Character System
+        this.selectedCharacter = this.getSelectedCharacter() || 'soldier';
+        this.characters = this.initCharacters();
+
+        // Evolution System
+        this.evolutions = this.initEvolutions();
+        this.evolvedWeapons = [];
+        
+        // Player
+        this.player = null;
+        
+        // Game objects
+        this.soldiers = [];
+        this.zombies = [];
+        this.bullets = [];
+        this.powerups = [];
+        this.particles = [];
+        this.enemyProjectiles = []; // Initialize enemy projectiles array
+        this.hazards = []; // Initialize hazards array
+
+        // Wave management
+        this.zombiesInWave = 8;
+        this.zombiesSpawned = 0;
+        this.zombiesKilled = 0;
+        this.killCount = 0; // Total kill counter
+        this.waveDelay = 2000; // Shorter delay for faster paced challenge
+        this.nextWaveTime = 0;
+
+        // Controls
+        this.keys = {};
+
+        // Timing
+        this.lastTime = 0;
+        this.powerupSpawnTimer = 0;
+        this.survivalTime = 0;
+
+        // Treasure Chest System
+        this.treasureChests = [];
+
+        // Visual Effects System
+        this.screenShake = { intensity: 0, duration: 0 };
+        this.chromaticAberration = { strength: 0 };
+        this.timeDistortion = { factor: 1, targetFactor: 1 };
+        this.backgroundEffects = [];
+
+        this.init();
+    }
+
+    initCharacters() {
+        return {
+            soldier: {
+                name: 'Soldier',
+                description: 'Balanced fighter with rifle',
+                startWeapon: 'rifle',
+                maxHealth: 200,
+                speed: 120,
+                damage: 1.0,
+                cooldown: 1.0,
+                unlock: 'default'
+            },
+            commando: {
+                name: 'Commando',
+                description: 'High damage, slower movement',
+                startWeapon: 'shotgun',
+                maxHealth: 250,
+                speed: 90,
+                damage: 1.5,
+                cooldown: 0.8,
+                unlock: 'reach_wave_10'
+            },
+            scout: {
+                name: 'Scout',
+                description: 'Fast and agile',
+                startWeapon: 'machinegun',
+                maxHealth: 150,
+                speed: 180,
+                damage: 0.8,
+                cooldown: 1.2,
+                unlock: 'kill_500_zombies'
+            },
+            engineer: {
+                name: 'Engineer',
+                description: 'Starts with drone companion',
+                startWeapon: 'laser',
+                maxHealth: 180,
+                speed: 110,
+                damage: 1.0,
+                cooldown: 1.0,
+                unlock: 'collect_50_powerups',
+                specialAbility: 'drone'
+            },
+            tank: {
+                name: 'Tank',
+                description: 'Heavy armor, slow but durable',
+                startWeapon: 'rocket',
+                maxHealth: 400,
+                speed: 60,
+                damage: 1.2,
+                cooldown: 0.7,
+                unlock: 'survive_30_minutes'
+            }
+        };
+    }
+
+    initEvolutions() {
+        return {
+            // Weapon Evolutions (weapon + passive item = evolved weapon)
+            'rifle': {
+                requires: 'ammo_box',
+                evolvedForm: 'plasma_rifle',
+                level: 8
+            },
+            'shotgun': {
+                requires: 'spread_shot',
+                evolvedForm: 'dragon_breath',
+                level: 8
+            },
+            'machinegun': {
+                requires: 'rapid_fire',
+                evolvedForm: 'gatling_laser',
+                level: 8
+            },
+            'laser': {
+                requires: 'energy_core',
+                evolvedForm: 'death_ray',
+                level: 8
+            },
+            'rocket': {
+                requires: 'explosive_rounds',
+                evolvedForm: 'missile_barrage',
+                level: 8
+            },
+            'knife': {
+                requires: 'piercing',
+                evolvedForm: 'soul_reaper',
+                level: 8
+            },
+            'grenade': {
+                requires: 'blast_radius',
+                evolvedForm: 'holy_bomb',
+                level: 8
+            },
+            // Union Evolutions (weapon + weapon = united weapon)
+            'dual_pistols': {
+                requires: 'pistol',
+                evolvedForm: 'phieraggi',
+                level: 8,
+                isUnion: true
+            }
+        };
+    }
+
+    loadMetaProgression() {
+        const saved = localStorage.getItem('zombieSurvivalMeta');
+        if (saved) {
+            const meta = JSON.parse(saved);
+            this.metaProgression = meta;
+        } else {
+            this.metaProgression = {
+                totalCoins: 0,
+                unlockedCharacters: ['soldier'],
+                unlockedWeapons: ['rifle', 'shotgun', 'machinegun'],
+                permanentUpgrades: {
+                    maxHealth: 0,
+                    damage: 0,
+                    speed: 0,
+                    luck: 0,
+                    experience: 0
+                },
+                achievements: [],
+                statistics: {
+                    totalKills: 0,
+                    totalDeaths: 0,
+                    highestWave: 1,
+                    longestSurvival: 0,
+                    totalPowerupsCollected: 0
+                }
+            };
+        }
+    }
+
+    saveMetaProgression() {
+        localStorage.setItem('zombieSurvivalMeta', JSON.stringify(this.metaProgression));
+    }
+
+    getSelectedCharacter() {
+        return localStorage.getItem('selectedCharacter') || 'soldier';
+    }
+    
+    init() {
+        this.setupCanvas();
+        this.setupEventListeners();
+        this.createPlayer();
+        this.startGame();
+        this.updateUI();
+    }
+
+    setupCanvas() {
+        // Make canvas responsive to screen size
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
+    }
+
+    resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = this.canvas.getBoundingClientRect();
+
+        // Set the actual canvas size in memory (scaled by device pixel ratio)
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
+
+        // Scale the canvas back down using CSS
+        this.canvas.style.width = rect.width + 'px';
+        this.canvas.style.height = rect.height + 'px';
+
+        // Scale the drawing context so everything draws at the correct size
+        this.ctx.scale(dpr, dpr);
+
+        // Store logical dimensions for game calculations
+        this.logicalWidth = rect.width;
+        this.logicalHeight = rect.height;
+    }
+
+    getCanvasWidth() {
+        return this.logicalWidth || this.canvas.width || 800;
+    }
+
+    getCanvasHeight() {
+        return this.logicalHeight || this.canvas.height || 600;
+    }
+    
+    setupEventListeners() {
+        document.getElementById('buySoldier').addEventListener('click', () => this.buySoldier());
+        document.getElementById('upgradeDamage').addEventListener('click', () => this.upgradeDamage());
+        document.getElementById('upgradeSpeed').addEventListener('click', () => this.upgradeSpeed());
+        document.getElementById('pauseBtn').addEventListener('click', () => this.togglePause());
+        document.getElementById('restartBtn').addEventListener('click', () => this.restart());
+        
+        // Keyboard controls
+        window.addEventListener('keydown', (e) => {
+            this.keys[e.key.toLowerCase()] = true;
+            this.keys[e.code] = true;
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            this.keys[e.key.toLowerCase()] = false;
+            this.keys[e.code] = false;
+        });
+        
+        this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+    }
+    
+    handleCanvasClick(e) {
+        // Power-ups are now collected by player collision, not clicking
+        // This method is kept for potential future use
+    }
+    
+    createPlayer() {
+        // Start player in the center of the screen with 4-directional movement
+        this.player = new Player(this.getCanvasWidth() / 2, this.getCanvasHeight() / 2, this);
+
+        // Add starting weapon based on character
+        const character = this.characters[this.selectedCharacter];
+        if (character && character.startWeapon) {
+            this.addOrUpgradeWeapon(character.startWeapon, character.startWeapon.charAt(0).toUpperCase() + character.startWeapon.slice(1));
+        }
+    }
+    
+    buySoldier() {
+        if (this.money >= this.soldierCost) {
+            this.money -= this.soldierCost;
+            // Spawn soldiers around the player in a circle formation
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 40 + Math.random() * 20;
+            const x = this.player.x + Math.cos(angle) * distance;
+            const y = this.player.y + Math.sin(angle) * distance;
+            // Ensure soldier spawn position is within bounds
+            const boundedX = Math.max(30, Math.min(this.getCanvasWidth() - 30, x));
+            const boundedY = Math.max(30, Math.min(this.getCanvasHeight() - 30, y));
+            this.soldiers.push(new Soldier(boundedX, boundedY, this));
+            this.soldierCost = Math.floor(this.soldierCost * 1.4);
+            this.updateUI();
+        }
+    }
+    
+    upgradeDamage() {
+        if (this.money >= this.upgradeCost) {
+            this.money -= this.upgradeCost;
+            this.damageMultiplier += 0.5;
+            this.upgradeCost = Math.floor(this.upgradeCost * 1.6);
+            this.updateUI();
+        }
+    }
+    
+    upgradeSpeed() {
+        if (this.money >= this.speedCost) {
+            this.money -= this.speedCost;
+            this.speedMultiplier += 0.3;
+            this.speedCost = Math.floor(this.speedCost * 1.5);
+            this.updateUI();
+        }
+    }
+    
+    togglePause() {
+        this.isPaused = !this.isPaused;
+        document.getElementById('pauseBtn').textContent = this.isPaused ? 'Resume' : 'Pause';
+    }
+    
+    startGame() {
+        this.isRunning = true;
+        this.gameLoop();
+    }
+    
+    gameLoop(currentTime = 0) {
+        if (!this.isRunning) return;
+        
+        const deltaTime = currentTime - this.lastTime;
+        this.lastTime = currentTime;
+        
+        if (!this.isPaused) {
+            this.update(deltaTime * this.timeDistortion.factor);
+        }
+
+        // Update visual effects (always update even when paused)
+        VisualEffects.updateEffects(this, deltaTime);
+        VisualEffects.updateBackgroundEffects(this, deltaTime);
+        
+        this.render();
+        requestAnimationFrame((time) => this.gameLoop(time));
+    }
+    
+    update(deltaTime) {
+        // Update survival time
+        this.survivalTime = Date.now() - this.gameStartTime;
+
+        // Update player
+        if (this.player) {
+            this.player.update(deltaTime);
+        }
+        
+        // Update wave spawning
+        this.updateWaveSpawning(deltaTime);
+        
+        // Update game objects
+        this.soldiers.forEach(soldier => soldier.update(deltaTime));
+        this.zombies.forEach(zombie => zombie.update(deltaTime));
+        this.bullets.forEach(bullet => bullet.update(deltaTime));
+        this.powerups.forEach(powerup => powerup.update(deltaTime));
+        this.particles.forEach(particle => particle.update(deltaTime));
+        this.treasureChests.forEach(chest => {
+            chest.glowTime += deltaTime;
+        });
+
+        // Update enemy projectiles
+        this.enemyProjectiles.forEach(projectile => {
+            projectile.x += projectile.vx * deltaTime / 1000;
+            projectile.y += projectile.vy * deltaTime / 1000;
+
+            // Remove if off screen
+            if (projectile.x < -50 || projectile.x > this.getCanvasWidth() + 50 ||
+                projectile.y < -50 || projectile.y > this.getCanvasHeight() + 50) {
+                projectile.active = false;
+            }
+        });
+
+        // Update hazards (poison clouds, fire areas, etc.)
+        this.hazards.forEach(hazard => {
+            hazard.duration -= deltaTime;
+            if (hazard.duration <= 0) {
+                hazard.active = false;
+            }
+        });
+
+        // Remove dead objects
+        this.bullets = this.bullets.filter(bullet => bullet.active);
+        this.zombies = this.zombies.filter(zombie => zombie.health > 0);
+        this.powerups = this.powerups.filter(powerup => powerup.active);
+        this.particles = this.particles.filter(particle => particle.active);
+        this.enemyProjectiles = this.enemyProjectiles.filter(projectile => projectile.active);
+        this.hazards = this.hazards.filter(hazard => hazard.active !== false);
+        
+        // Check collisions
+        this.checkCollisions();
+        
+        // Spawn powerups occasionally
+        this.powerupSpawnTimer += deltaTime;
+        if (this.powerupSpawnTimer > 3000 + Math.random() * 4000) {
+            this.spawnPowerup();
+            this.powerupSpawnTimer = 0;
+        }
+        
+        // Check game over
+        if (!this.player || this.player.health <= 0) {
+            this.gameOver();
+        }
+    }
+    
+    updateWaveSpawning(deltaTime) {
+        if (this.zombiesSpawned < this.zombiesInWave) {
+            // Spawn zombies in massive bursts - high frequency for challenging hordes
+            const spawnRate = Math.min(0.15, 0.04 + (this.wave * 0.002)); // Increase spawn rate with waves
+            if (Math.random() < spawnRate) {
+                this.spawnZombieBurst();
+            }
+            // Also spawn individual zombies continuously for massive hordes
+            if (Math.random() < Math.min(0.08, 0.02 + (this.wave * 0.001))) {
+                this.spawnZombie();
+            }
+        } else if (this.zombies.length === 0) {
+            this.nextWaveTime += deltaTime;
+            if (this.nextWaveTime >= this.waveDelay) {
+                this.startNextWave();
+            }
+        }
+    }
+    
+    startNextWave() {
+        this.wave++;
+        // Massive horde scaling for challenging gameplay
+        const baseSize = 12;
+        const growthFactor = this.wave < 10 ? 2.5 : this.wave < 20 ? 4 : this.wave < 30 ? 6 : 8;
+        this.zombiesInWave = Math.floor(baseSize + this.wave * growthFactor); // Exponential growth
+        this.zombiesSpawned = 0;
+        this.zombiesKilled = 0;
+        this.nextWaveTime = 0;
+
+        // Check if this is a boss wave (every 5 waves)
+        if (this.wave % 5 === 0) {
+            this.spawnBoss();
+            // Boss waves have fewer regular enemies
+            this.zombiesInWave = Math.floor(this.zombiesInWave * 0.5);
+        }
+
+        this.updateUI();
+    }
+
+    spawnBoss() {
+        let bossType = 'boss'; // Default boss type
+
+        // Determine boss type based on wave number
+        if (this.wave >= 50) bossType = 'final_nightmare';
+        else if (this.wave >= 45) bossType = 'ice_queen';
+        else if (this.wave >= 40) bossType = 'thunder_titan';
+        else if (this.wave >= 35) bossType = 'void_spawner';
+        else if (this.wave >= 30) bossType = 'crystal_guardian';
+        else if (this.wave >= 25) bossType = 'flame_berserker';
+        else if (this.wave >= 20) bossType = 'shadow_reaper';
+        else if (this.wave >= 15) bossType = 'plague_mother';
+        else if (this.wave >= 10) bossType = 'iron_colossus';
+        else if (this.wave >= 5) bossType = 'horde_king';
+
+        // Spawn boss at center top of screen
+        const bossX = this.getCanvasWidth() / 2;
+        const bossY = -100; // Start off screen
+
+        const boss = new Zombie(bossX, bossY, bossType, this);
+        this.zombies.push(boss);
+
+        // Create dramatic boss entrance effect
+        for (let i = 0; i < 30; i++) {
+            this.particles.push(new Particle(bossX, bossY, boss.color, 'large', 'explosion'));
+        }
+        for (let i = 0; i < 20; i++) {
+            this.particles.push(new Particle(bossX, bossY, '#FFD700', 'medium', 'energy'));
+        }
+        // Add magic sparkles for dramatic effect
+        for (let i = 0; i < 15; i++) {
+            this.particles.push(new Particle(
+                bossX + (Math.random() - 0.5) * 100,
+                bossY + (Math.random() - 0.5) * 100,
+                '#ffffff',
+                'small',
+                'magic'
+            ));
+        }
+
+        // Show boss warning message
+        this.showBossWarning(bossType);
+
+        // Add dramatic visual effects for boss entrance
+        VisualEffects.addScreenShake(this, 15, 1000);
+        VisualEffects.createBackgroundEffect(this, 'energy_ripple', bossX, bossY);
+        VisualEffects.addTimeDistortion(this, 0.3, 2000);
+    }
+
+    showBossWarning(bossType) {
+        const bossNames = {
+            'horde_king': 'THE HORDE KING APPROACHES!',
+            'iron_colossus': 'IRON COLOSSUS AWAKENS!',
+            'plague_mother': 'PLAGUE MOTHER EMERGES!',
+            'shadow_reaper': 'SHADOW REAPER MANIFESTS!',
+            'flame_berserker': 'FLAME BERSERKER RAGES!',
+            'crystal_guardian': 'CRYSTAL GUARDIAN RISES!',
+            'void_spawner': 'VOID SPAWNER OPENS THE ABYSS!',
+            'thunder_titan': 'THUNDER TITAN STORMS!',
+            'ice_queen': 'ICE QUEEN FREEZES ALL!',
+            'final_nightmare': 'THE FINAL NIGHTMARE AWAKENS!'
+        };
+
+        const bossWarning = document.getElementById('bossWarning');
+        const bossName = document.getElementById('bossName');
+
+        if (bossWarning && bossName) {
+            bossName.textContent = bossNames[bossType] || 'BOSS APPROACHES!';
+            bossWarning.classList.remove('hidden');
+
+            // Remove warning after 3 seconds
+            setTimeout(() => {
+                bossWarning.classList.add('hidden');
+            }, 3000);
+        }
+    }
+
+    spawnZombieBurst() {
+        // Scale burst size with wave progression for massive hordes
+        const maxBurstSize = Math.min(20, 6 + Math.floor(this.wave / 2));
+        const burstSize = Math.min(maxBurstSize, this.zombiesInWave - this.zombiesSpawned);
+        const formations = [
+            'line', 'v_formation', 'cluster', 'diamond', 'arrow', 'circle'
+        ];
+        const formation = formations[Math.floor(Math.random() * formations.length)];
+        
+        for (let i = 0; i < burstSize; i++) {
+            const pos = this.getFormationPosition(formation, i, burstSize);
+            let type = 'basic';
+            
+            // Dynamic zombie type selection based on wave - includes new monster types
+            const rand = Math.random();
+
+            // Aggressive monster introduction for challenging gameplay
+            if (this.wave >= 1 && rand < 0.2) type = 'crawler';   // Swarm units - early and common
+            if (this.wave >= 2 && rand < 0.3) type = 'fast';
+            if (this.wave >= 3 && rand < 0.15) type = 'spitter';  // Ranged enemies - common threat
+            if (this.wave >= 4 && rand < 0.25) type = 'tank';
+            if (this.wave >= 5 && rand < 0.12) type = 'jumper';   // Teleporters - frequent threat
+            if (this.wave >= 6 && rand < 0.18) type = 'brute';    // Heavy hitters - common
+            if (this.wave >= 7 && rand < 0.08) type = 'exploder'; // Suicide bombers - dangerous
+            if (this.wave >= 8 && rand < 0.15) type = 'shielder'; // Tanks with shields - common
+            if (this.wave >= 10 && rand < 0.08) type = 'healer';  // Support units - earlier and more common
+            if (this.wave >= 12 && rand < 0.06) type = 'summoner'; // Spawn creators - moderately common
+            if (this.wave >= 15 && rand < 0.05) type = 'phase_walker'; // Phasing enemies - challenging
+            if (this.wave >= 17 && rand < 0.04) type = 'stalker'; // Stealth units - late game threat
+
+            // Legacy boss spawns (rare in regular waves)
+            if (this.wave >= 8 && rand < 0.02) type = 'boss';
+            if (this.wave >= 10 && rand < 0.01) type = 'mega_boss';
+            
+            this.zombies.push(new Zombie(pos.x, pos.y, type, this));
+            this.zombiesSpawned++;
+        }
+    }
+    
+    getFormationPosition(formation, index, total) {
+        const centerX = this.getCanvasWidth() / 2;
+        const baseY = -100 - Math.random() * 100;
+        
+        switch (formation) {
+            case 'line':
+                return {
+                    x: (this.getCanvasWidth() / total) * index + 50,
+                    y: baseY
+                };
+            case 'v_formation':
+                const vOffset = Math.abs(index - total/2) * 30;
+                return {
+                    x: centerX + (index - total/2) * 40,
+                    y: baseY - vOffset
+                };
+            case 'cluster':
+                const angle = (index / total) * Math.PI * 2;
+                return {
+                    x: centerX + Math.cos(angle) * 80,
+                    y: baseY + Math.sin(angle) * 40
+                };
+            case 'diamond':
+                const side = Math.floor(index / (total/4));
+                const pos = index % (total/4);
+                return {
+                    x: centerX + (side < 2 ? -1 : 1) * pos * 30,
+                    y: baseY + (side % 2 === 0 ? -1 : 1) * pos * 20
+                };
+            case 'arrow':
+                const row = Math.floor(index / 3);
+                const col = index % 3;
+                return {
+                    x: centerX + (col - 1) * (40 + row * 20),
+                    y: baseY - row * 30
+                };
+            case 'circle':
+                const circleAngle = (index / total) * Math.PI * 2;
+                return {
+                    x: centerX + Math.cos(circleAngle) * 100,
+                    y: baseY + Math.sin(circleAngle) * 60
+                };
+            default:
+                return {
+                    x: Math.random() * this.getCanvasWidth(),
+                    y: baseY
+                };
+        }
+    }
+    
+    spawnZombie() {
+        // Spawn from all sides for massive horde attacks
+        const formations = [
+            // Top spawn (traditional)
+            () => ({ x: Math.random() * (this.getCanvasWidth() - 100) + 50, y: -50 }),
+            // Left side spawn for flanking
+            () => ({ x: -50, y: Math.random() * (this.getCanvasHeight() - 200) + 100 }),
+            // Right side spawn for flanking
+            () => ({ x: this.getCanvasWidth() + 50, y: Math.random() * (this.getCanvasHeight() - 200) + 100 }),
+            // Double line from top
+            () => ({
+                x: Math.random() * (this.getCanvasWidth() - 100) + 50,
+                y: -50 - (Math.random() * 2) * 40
+            }),
+            // Corner clusters for aggressive spawning
+            () => {
+                const corner = Math.floor(Math.random() * 4);
+                const margin = 80;
+                switch(corner) {
+                    case 0: return { x: -margin, y: -margin }; // Top-left
+                    case 1: return { x: this.getCanvasWidth() + margin, y: -margin }; // Top-right
+                    case 2: return { x: -margin, y: this.getCanvasHeight() + margin }; // Bottom-left
+                    case 3: return { x: this.getCanvasWidth() + margin, y: this.getCanvasHeight() + margin }; // Bottom-right
+                }
+            },
+            // Random edge spawn for chaos
+            () => {
+                const edge = Math.floor(Math.random() * 4);
+                switch(edge) {
+                    case 0: return { x: Math.random() * this.getCanvasWidth(), y: -50 }; // Top
+                    case 1: return { x: this.getCanvasWidth() + 50, y: Math.random() * this.getCanvasHeight() }; // Right
+                    case 2: return { x: Math.random() * this.getCanvasWidth(), y: this.getCanvasHeight() + 50 }; // Bottom
+                    case 3: return { x: -50, y: Math.random() * this.getCanvasHeight() }; // Left
+                }
+            }
+        ];
+        
+        const formation = formations[Math.floor(Math.random() * formations.length)];
+        const pos = formation();
+        
+        // Different zombie types based on wave - includes new monster types
+        let type = 'basic';
+        const rand = Math.random();
+
+        // Aggressive monster spawning for maximum challenge
+        if (this.wave >= 1 && rand < 0.25) type = 'crawler';  // Early swarm - very common
+        if (this.wave >= 2 && rand < 0.35) type = 'fast';
+        if (this.wave >= 3 && rand < 0.18) type = 'spitter';  // Ranged threat - common
+        if (this.wave >= 4 && rand < 0.28) type = 'tank';
+        if (this.wave >= 5 && rand < 0.15) type = 'jumper';   // Teleporters - frequent threat
+        if (this.wave >= 6 && rand < 0.2) type = 'brute';     // Heavy damage - common
+        if (this.wave >= 7 && rand < 0.1) type = 'exploder'; // Bombers - dangerous, moderate
+        if (this.wave >= 8 && rand < 0.18) type = 'shielder'; // Shielded tanks - common
+        if (this.wave >= 10 && rand < 0.1) type = 'healer';  // Support - earlier and common
+        if (this.wave >= 12 && rand < 0.08) type = 'summoner'; // Spawners - moderately common
+        if (this.wave >= 15 && rand < 0.06) type = 'phase_walker'; // Phasing - challenging
+        if (this.wave >= 17 && rand < 0.05) type = 'stalker'; // Stealth - late game threat
+
+        // Legacy boss types (reduced frequency in regular spawns)
+        if (this.wave >= 8 && rand < 0.02) type = 'boss';
+        if (this.wave >= 10 && rand < 0.01) type = 'mega_boss';
+        
+        this.zombies.push(new Zombie(pos.x, pos.y, type, this));
+    }
+    
+    spawnPowerup() {
+        const x = 50 + Math.random() * (this.getCanvasWidth() - 100);
+        const y = -30; // Spawn from top of screen
+        
+        // Massive variety of power-ups for addictive gameplay
+        const types = [
+            // Basic power-ups
+            'damage', 'soldiers', 'money', 'health', 'multishot',
+            // Multipliers
+            'x2', 'x3', 'x5', 'x10',
+            // Weapons
+            'shotgun', 'machinegun', 'laser', 'rocket', 'plasma', 'railgun', 'flamethrower',
+            // Vehicles/Drones
+            'tank_vehicle', 'helicopter', 'drone', 'mech_suit', 'artillery',
+            // Special Abilities
+            'freeze', 'shield', 'speed_boost', 'time_slow', 'invincibility', 'lightning_storm',
+            // Area Effects
+            'bomb', 'nuke', 'poison_cloud', 'emp_blast',
+            // Risk/Reward
+            'lose_soldier', 'lose_health', 'mystery_box', 'cursed_treasure',
+            // Progression
+            'double_xp', 'coin_magnet', 'bullet_rain', 'zombie_weakness'
+        ];
+        
+        const type = types[Math.floor(Math.random() * types.length)];
+        this.powerups.push(new Powerup(x, y, type));
+    }
+    
+    checkCollisions() {
+        // Bullet vs Zombie
+        for (let i = this.bullets.length - 1; i >= 0; i--) {
+            const bullet = this.bullets[i];
+            let bulletHit = false;
+
+            for (let j = this.zombies.length - 1; j >= 0; j--) {
+                const zombie = this.zombies[j];
+                const dist = Math.sqrt((bullet.x - zombie.x) ** 2 + (bullet.y - zombie.y) ** 2);
+                if (dist < 25) {
+                    // Handle weapon-specific effects
+                    this.handleWeaponEffect(bullet, zombie);
+
+                    if (zombie.health <= 0) {
+                        this.zombieKilled(zombie);
+                        this.zombies.splice(j, 1);
+                    }
+
+                    // Handle piercing for laser and evolved weapons
+                    if (bullet.type === 'laser' || bullet.type === 'gatling_laser' || bullet.type === 'plasma_rifle' ||
+                        bullet.type === 'death_ray' || bullet.piercing > 0) {
+                        bullet.pierceCount = (bullet.pierceCount || 0) + 1;
+                        const maxPierce = bullet.piercing || (bullet.type === 'death_ray' ? 5 : 3);
+                        if (bullet.pierceCount >= maxPierce) {
+                            bulletHit = true;
+                        }
+                    } else if (bullet.type === 'knife' || bullet.type === 'soul_reaper') {
+                        // Knives don't get removed on hit (spinning blades)
+                        bulletHit = false;
+                    } else {
+                        bulletHit = true;
+                    }
+
+                    if (bulletHit) break;
+                }
+            }
+
+            if (bulletHit) {
+                this.bullets.splice(i, 1);
+            }
+        }
+
+        // Zombie vs Player
+        if (this.player) {
+            for (let i = this.zombies.length - 1; i >= 0; i--) {
+                const zombie = this.zombies[i];
+                const dist = Math.sqrt((zombie.x - this.player.x) ** 2 + (zombie.y - this.player.y) ** 2);
+                if (dist < 35) {
+                    this.player.takeDamage(zombie.damage);
+                    // Create enhanced damage effect
+                    for (let k = 0; k < 5; k++) {
+                        this.particles.push(new Particle(this.player.x, this.player.y, '#ff4444', 'medium', 'blood'));
+                    }
+                    // Add impact effects
+                    VisualEffects.addScreenShake(this, zombie.damage * 0.3, 200);
+                    VisualEffects.addChromaticAberration(this, 1);
+                    this.zombies.splice(i, 1);
+                }
+            }
+        }
+
+        // Zombie vs Soldiers
+        for (let i = this.zombies.length - 1; i >= 0; i--) {
+            const zombie = this.zombies[i];
+            for (let j = this.soldiers.length - 1; j >= 0; j--) {
+                const soldier = this.soldiers[j];
+                const dist = Math.sqrt((zombie.x - soldier.x) ** 2 + (zombie.y - soldier.y) ** 2);
+                if (dist < 30) {
+                    soldier.takeDamage(zombie.damage);
+                    if (soldier.health <= 0) {
+                        this.soldiers.splice(j, 1);
+                    }
+                    this.zombies.splice(i, 1);
+                    break;
+                }
+            }
+        }
+
+        // Player vs Power-ups
+        if (this.player) {
+            for (let i = this.powerups.length - 1; i >= 0; i--) {
+                const powerup = this.powerups[i];
+                const dist = Math.sqrt((this.player.x - powerup.x) ** 2 + (this.player.y - powerup.y) ** 2);
+                if (dist < 30) {
+                    this.collectPowerup(powerup, i);
+                    break;
+                }
+            }
+        }
+
+        // Player vs Treasure Chests
+        if (this.player) {
+            for (let i = this.treasureChests.length - 1; i >= 0; i--) {
+                const chest = this.treasureChests[i];
+                const dist = Math.sqrt((this.player.x - chest.x) ** 2 + (this.player.y - chest.y) ** 2);
+                if (dist < 40) {
+                    this.collectTreasureChest(chest, i);
+                    break;
+                }
+            }
+        }
+
+        // Enemy Projectile vs Player collision
+        if (this.player) {
+            for (let i = this.enemyProjectiles.length - 1; i >= 0; i--) {
+                const projectile = this.enemyProjectiles[i];
+                const dist = Math.sqrt((this.player.x - projectile.x) ** 2 + (this.player.y - projectile.y) ** 2);
+                if (dist < 20) {
+                    this.player.takeDamage(projectile.damage);
+                    // Create enhanced hit effect
+                    for (let k = 0; k < 3; k++) {
+                        this.particles.push(new Particle(this.player.x, this.player.y, '#ff4444', 'medium', 'blood'));
+                    }
+                    // Add projectile-specific effects
+                    if (projectile.type === 'spit') {
+                        for (let k = 0; k < 2; k++) {
+                            this.particles.push(new Particle(this.player.x, this.player.y, '#00ff00', 'small', 'magic'));
+                        }
+                    }
+                    VisualEffects.addScreenShake(this, projectile.damage * 0.2, 150);
+                    this.enemyProjectiles.splice(i, 1);
+                }
+            }
+        }
+
+        // Hazard vs Player collision
+        if (this.player) {
+            this.hazards.forEach(hazard => {
+                const dist = Math.sqrt((this.player.x - hazard.x) ** 2 + (this.player.y - hazard.y) ** 2);
+                if (dist <= hazard.radius) {
+                    // Apply hazard effects based on type
+                    switch (hazard.type) {
+                        case 'poison':
+                            this.player.takeDamage(hazard.damage * deltaTime / 1000);
+                            this.player.poisoned = true;
+                            this.player.poisonTime = 1000;
+                            this.player.poisonDamage = hazard.damage * 0.5;
+                            break;
+                        case 'fire':
+                            this.player.takeDamage(hazard.damage * deltaTime / 1000);
+                            this.player.burnDamage = hazard.damage * 0.3;
+                            this.player.burnTime = 2000;
+                            break;
+                        case 'ice':
+                            this.player.speedBoostTime = -3000; // Slow effect
+                            break;
+                    }
+                }
+            });
+        }
+    }
+
+    handleWeaponEffect(bullet, zombie) {
+        let damage = bullet.damage;
+
+        // Check for explosive rounds passive item
+        const explosiveRounds = this.passiveItems.find(p => p.id === 'explosive_rounds');
+        const shouldExplode = explosiveRounds ||
+                            bullet.type === 'rocket' ||
+                            bullet.type === 'grenade' ||
+                            bullet.type === 'holy_bomb' ||
+                            bullet.type === 'missile_barrage';
+
+        if (shouldExplode) {
+            // Create explosion effect
+            const explosionDamage = explosiveRounds ? damage * (1 + explosiveRounds.level * 0.5) : damage;
+            this.createExplosion(bullet.x, bullet.y, explosionDamage, bullet.type);
+        } else {
+            switch (bullet.type) {
+                case 'flamethrower':
+                case 'dragon_breath':
+                    // Fire damage over time
+                    zombie.takeDamage(damage);
+                    this.createFireEffect(zombie);
+                    // Apply burn effect
+                    zombie.burnDamage = damage * 0.1;
+                    zombie.burnTime = 3000; // 3 seconds
+                    break;
+
+                case 'laser':
+                case 'gatling_laser':
+                case 'plasma_rifle':
+                case 'death_ray':
+                    // Energy weapons - piercing damage
+                    zombie.takeDamage(damage);
+                    this.createEnergyEffect(zombie);
+                    break;
+
+                case 'knife':
+                case 'soul_reaper':
+                    // Melee weapon - continuous damage
+                    zombie.takeDamage(damage * 0.5); // Reduced damage for continuous hit
+                    this.createSlashEffect(zombie);
+                    break;
+
+                default:
+                    // Standard weapons
+                    zombie.takeDamage(damage);
+                    this.createHitEffect(zombie);
+                    break;
+            }
+        }
+    }
+
+    createExplosion(x, y, damage, weaponType) {
+        let explosionRadius = 80;
+
+        // Increase radius for evolved weapons
+        if (weaponType === 'holy_bomb' || weaponType === 'missile_barrage') {
+            explosionRadius = 120;
+        }
+
+        // Check for blast radius passive item
+        const blastRadius = this.passiveItems.find(p => p.id === 'blast_radius');
+        if (blastRadius) {
+            explosionRadius *= (1 + (blastRadius.level * 0.5)); // +50% radius per level
+        }
+
+        // Damage all zombies in explosion radius
+        this.zombies.forEach(zombie => {
+            const dist = Math.sqrt((zombie.x - x) ** 2 + (zombie.y - y) ** 2);
+            if (dist <= explosionRadius) {
+                const falloffDamage = damage * (1 - (dist / explosionRadius) * 0.5); // 50% falloff at edge
+                zombie.takeDamage(falloffDamage);
+            }
+        });
+
+        // Create enhanced explosion particles
+        const particleCount = weaponType === 'holy_bomb' ? 25 : 15;
+        const particleType = weaponType === 'holy_bomb' ? 'magic' : 'explosion';
+        const mainColor = weaponType === 'holy_bomb' ? '#FFD700' : '#ff4444';
+
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (Math.PI * 2 * i) / particleCount;
+            const distance = Math.random() * explosionRadius;
+            this.particles.push(new Particle(
+                x + Math.cos(angle) * distance,
+                y + Math.sin(angle) * distance,
+                mainColor,
+                'large',
+                particleType
+            ));
+        }
+
+        // Add extra central burst for dramatic effect
+        for (let i = 0; i < 10; i++) {
+            this.particles.push(new Particle(x, y, mainColor, 'medium', 'energy'));
+        }
+
+        // Add visual effects
+        VisualEffects.addScreenShake(this, explosionRadius * 0.3, 400);
+        VisualEffects.createBackgroundEffect(this, 'shockwave', x, y);
+        if (weaponType === 'holy_bomb') {
+            VisualEffects.addChromaticAberration(this, 3);
+            VisualEffects.addTimeDistortion(this, 0.5, 500);
+        }
+    }
+
+    createFireEffect(zombie) {
+        for (let i = 0; i < 8; i++) {
+            this.particles.push(new Particle(
+                zombie.x + (Math.random() - 0.5) * 20,
+                zombie.y + (Math.random() - 0.5) * 20,
+                '#ff6600',
+                'medium',
+                'fire'
+            ));
+        }
+    }
+
+    createEnergyEffect(zombie) {
+        for (let i = 0; i < 6; i++) {
+            this.particles.push(new Particle(
+                zombie.x + (Math.random() - 0.5) * 15,
+                zombie.y + (Math.random() - 0.5) * 15,
+                '#00ffff',
+                'small',
+                'energy'
+            ));
+        }
+        // Add electric discharge
+        for (let i = 0; i < 3; i++) {
+            this.particles.push(new Particle(
+                zombie.x + (Math.random() - 0.5) * 25,
+                zombie.y + (Math.random() - 0.5) * 25,
+                '#ffffff',
+                'small',
+                'electric'
+            ));
+        }
+    }
+
+    createSlashEffect(zombie) {
+        for (let i = 0; i < 6; i++) {
+            this.particles.push(new Particle(
+                zombie.x + (Math.random() - 0.5) * 10,
+                zombie.y + (Math.random() - 0.5) * 10,
+                '#cccccc',
+                'small',
+                'normal'
+            ));
+        }
+        // Add metallic sparkles
+        for (let i = 0; i < 2; i++) {
+            this.particles.push(new Particle(
+                zombie.x + (Math.random() - 0.5) * 20,
+                zombie.y + (Math.random() - 0.5) * 20,
+                '#ffffff',
+                'small',
+                'magic'
+            ));
+        }
+    }
+
+    createHitEffect(zombie) {
+        for (let i = 0; i < 3; i++) {
+            this.particles.push(new Particle(
+                zombie.x + (Math.random() - 0.5) * 10,
+                zombie.y + (Math.random() - 0.5) * 10,
+                '#ffff00',
+                'small'
+            ));
+        }
+    }
+    
+    zombieKilled(zombie) {
+        this.score += zombie.scoreValue;
+        this.money += zombie.moneyValue;
+        this.zombiesKilled++;
+        this.killCount++; // Total kill counter for statistics
+
+        // Add experience based on zombie type
+        let expGain = zombie.experienceValue || 10;
+        this.gainExperience(expGain);
+
+        // Update meta progression
+        this.metaProgression.statistics.totalKills++;
+
+        // Create enhanced death effect particles based on zombie type
+        const particleCount = zombie.type.includes('boss') ? 15 : 8;
+        const particleType = zombie.type.includes('boss') ? 'explosion' :
+                           zombie.type === 'healer' ? 'magic' :
+                           zombie.type === 'spitter' ? 'blood' :
+                           zombie.type === 'phase_walker' ? 'energy' : 'blood';
+
+        for (let i = 0; i < particleCount; i++) {
+            this.particles.push(new Particle(zombie.x, zombie.y, '#ff4444', 'large', particleType));
+        }
+
+        // Add extra effects for special zombie types
+        if (zombie.type === 'exploder') {
+            for (let i = 0; i < 20; i++) {
+                this.particles.push(new Particle(zombie.x, zombie.y, '#ff6600', 'medium', 'explosion'));
+            }
+        }
+
+        this.updateUI();
+    }
+
+    gainExperience(amount) {
+        this.experience += amount;
+
+        // Check for level up
+        while (this.experience >= this.experienceToNextLevel) {
+            this.experience -= this.experienceToNextLevel;
+            this.levelUp();
+        }
+    }
+
+    levelUp() {
+        this.level++;
+
+        // Stunning level up visual effects
+        VisualEffects.addScreenShake(this, 4, 800);
+        VisualEffects.addTimeDistortion(this, 0.3, 1000);
+
+        // Create radial burst of golden particles around player
+        const playerX = this.player.x;
+        const playerY = this.player.y;
+
+        // Golden energy burst
+        for (let i = 0; i < 50; i++) {
+            const angle = (i / 50) * Math.PI * 2;
+            const distance = Math.random() * 80 + 20;
+            this.particles.push(new Particle(
+                playerX + Math.cos(angle) * distance,
+                playerY + Math.sin(angle) * distance,
+                `hsl(${45 + Math.random() * 15}, 100%, ${60 + Math.random() * 30}%)`,
+                'large',
+                'magic'
+            ));
+        }
+
+        // Ascending light particles
+        for (let i = 0; i < 20; i++) {
+            setTimeout(() => {
+                this.particles.push(new Particle(
+                    playerX + (Math.random() - 0.5) * 60,
+                    playerY + (Math.random() - 0.5) * 60,
+                    `hsl(${200 + Math.random() * 60}, 80%, ${70 + Math.random() * 20}%)`,
+                    'medium',
+                    'energy'
+                ));
+            }, i * 50);
+        }
+
+        // More balanced scaling - starts slower, gets progressively harder but stays fun
+        this.experienceToNextLevel = Math.floor(100 * Math.pow(1.25, this.level - 1)); // Better exponential scaling
+        this.levelUpPending = true;
+        this.isPaused = true; // Pause game for level up choice
+        this.showLevelUpChoices();
+    }
+
+    showLevelUpChoices() {
+        const choices = this.generateLevelUpChoices();
+        this.showLevelUpUI(choices);
+    }
+
+    generateLevelUpChoices() {
+        const allChoices = [
+            // Weapons
+            { type: 'weapon', id: 'rifle', name: 'Rifle', description: 'Auto-targeting rifle' },
+            { type: 'weapon', id: 'shotgun', name: 'Shotgun', description: 'Spread shot weapon' },
+            { type: 'weapon', id: 'machinegun', name: 'Machine Gun', description: 'Rapid fire weapon' },
+            { type: 'weapon', id: 'laser', name: 'Laser', description: 'Piercing energy beam' },
+            { type: 'weapon', id: 'rocket', name: 'Rocket Launcher', description: 'Explosive projectiles' },
+            { type: 'weapon', id: 'knife', name: 'Knife', description: 'Melee spinning blade' },
+            { type: 'weapon', id: 'grenade', name: 'Grenade', description: 'Area explosion' },
+
+            // Passive Items
+            { type: 'passive', id: 'ammo_box', name: 'Ammo Box', description: '+25% damage' },
+            { type: 'passive', id: 'spread_shot', name: 'Spread Shot', description: '+2 projectiles' },
+            { type: 'passive', id: 'rapid_fire', name: 'Rapid Fire', description: '+30% fire rate' },
+            { type: 'passive', id: 'energy_core', name: 'Energy Core', description: '+50% projectile speed' },
+            { type: 'passive', id: 'explosive_rounds', name: 'Explosive Rounds', description: 'Bullets explode on impact' },
+            { type: 'passive', id: 'piercing', name: 'Piercing', description: 'Bullets pierce through enemies' },
+            { type: 'passive', id: 'blast_radius', name: 'Blast Radius', description: '+100% explosion size' },
+            { type: 'passive', id: 'health_boost', name: 'Health Boost', description: '+50 max health' },
+            { type: 'passive', id: 'speed_boost', name: 'Speed Boost', description: '+25% movement speed' },
+            { type: 'passive', id: 'luck', name: 'Luck', description: '+20% rare item chance' },
+
+            // Upgrades for existing items
+            { type: 'upgrade', target: 'weapon', description: 'Level up a weapon' },
+            { type: 'upgrade', target: 'passive', description: 'Level up a passive item' }
+        ];
+
+        // Filter based on what player already has
+        const availableChoices = allChoices.filter(choice => {
+            if (choice.type === 'weapon') {
+                const weapon = this.weapons.find(w => w.id === choice.id);
+                return !weapon || weapon.level < 8; // Max level 8
+            } else if (choice.type === 'passive') {
+                const passive = this.passiveItems.find(p => p.id === choice.id);
+                return !passive || passive.level < 5; // Max level 5
+            } else if (choice.type === 'upgrade') {
+                if (choice.target === 'weapon') {
+                    return this.weapons.length > 0;
+                } else {
+                    return this.passiveItems.length > 0;
+                }
+            }
+            return true;
+        });
+
+        // Apply luck effect - bias towards rare items
+        const luck = this.passiveItems.find(p => p.id === 'luck');
+        const luckMultiplier = luck ? (1 + luck.level * 0.2) : 1; // 20% better chance per level
+
+        // Categorize choices by rarity
+        const rareChoices = availableChoices.filter(choice =>
+            choice.type === 'weapon' ||
+            (choice.type === 'passive' && ['explosive_rounds', 'piercing', 'blast_radius'].includes(choice.id))
+        );
+        const commonChoices = availableChoices.filter(choice => !rareChoices.includes(choice));
+
+        // Randomly select 3-4 choices with luck bias
+        const numChoices = Math.min(4, availableChoices.length);
+        const selectedChoices = [];
+
+        for (let i = 0; i < numChoices; i++) {
+            let choicesPool = availableChoices;
+
+            // With luck, bias towards rare items
+            if (rareChoices.length > 0 && Math.random() < (0.3 * luckMultiplier)) {
+                choicesPool = rareChoices;
+            }
+
+            const randomIndex = Math.floor(Math.random() * choicesPool.length);
+            const selectedChoice = choicesPool[randomIndex];
+            selectedChoices.push(selectedChoice);
+
+            // Remove from both pools
+            availableChoices.splice(availableChoices.indexOf(selectedChoice), 1);
+            if (rareChoices.includes(selectedChoice)) {
+                rareChoices.splice(rareChoices.indexOf(selectedChoice), 1);
+            }
+            if (commonChoices.includes(selectedChoice)) {
+                commonChoices.splice(commonChoices.indexOf(selectedChoice), 1);
+            }
+        }
+
+        return selectedChoices;
+    }
+
+    showLevelUpUI(choices) {
+        // Create level up UI
+        const levelUpDiv = document.createElement('div');
+        levelUpDiv.id = 'levelUpUI';
+        levelUpDiv.innerHTML = `
+            <div class="level-up-container">
+                <h2>Level ${this.level}!</h2>
+                <p>Choose an upgrade:</p>
+                <div class="choices">
+                    ${choices.map((choice, index) => `
+                        <button class="choice-btn" data-choice="${index}">
+                            <div class="choice-name">${choice.name || this.getUpgradeDescription(choice)}</div>
+                            <div class="choice-description">${choice.description}</div>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(levelUpDiv);
+
+        // Add event listeners
+        choices.forEach((choice, index) => {
+            const btn = levelUpDiv.querySelector(`[data-choice="${index}"]`);
+            btn.addEventListener('click', () => this.selectLevelUpChoice(choice, levelUpDiv));
+        });
+    }
+
+    getUpgradeDescription(choice) {
+        if (choice.type === 'upgrade' && choice.target === 'weapon') {
+            const weapons = this.weapons.filter(w => w.level < 8);
+            if (weapons.length > 0) {
+                const weapon = weapons[Math.floor(Math.random() * weapons.length)];
+                return `Upgrade ${weapon.name}`;
+            }
+        } else if (choice.type === 'upgrade' && choice.target === 'passive') {
+            const passives = this.passiveItems.filter(p => p.level < 5);
+            if (passives.length > 0) {
+                const passive = passives[Math.floor(Math.random() * passives.length)];
+                return `Upgrade ${passive.name}`;
+            }
+        }
+        return 'Upgrade';
+    }
+
+    selectLevelUpChoice(choice, levelUpDiv) {
+        this.applyLevelUpChoice(choice);
+        levelUpDiv.remove();
+        this.levelUpPending = false;
+        this.isPaused = false;
+        this.checkForEvolutions();
+    }
+
+    applyLevelUpChoice(choice) {
+        if (choice.type === 'weapon') {
+            this.addOrUpgradeWeapon(choice.id, choice.name);
+        } else if (choice.type === 'passive') {
+            this.addOrUpgradePassiveItem(choice.id, choice.name);
+        } else if (choice.type === 'upgrade') {
+            if (choice.target === 'weapon') {
+                this.upgradeRandomWeapon();
+            } else {
+                this.upgradeRandomPassiveItem();
+            }
+        }
+    }
+
+    addOrUpgradeWeapon(id, name) {
+        const existingWeapon = this.weapons.find(w => w.id === id);
+        if (existingWeapon) {
+            existingWeapon.level++;
+        } else if (this.weapons.length < this.maxWeapons) {
+            this.weapons.push({
+                id: id,
+                name: name,
+                level: 1
+            });
+        }
+    }
+
+    addOrUpgradePassiveItem(id, name) {
+        const existingItem = this.passiveItems.find(p => p.id === id);
+        if (existingItem) {
+            existingItem.level++;
+        } else if (this.passiveItems.length < this.maxPassiveItems) {
+            this.passiveItems.push({
+                id: id,
+                name: name,
+                level: 1
+            });
+        }
+
+        // Apply immediate effects for certain passive items
+        this.applyPassiveEffect(id);
+    }
+
+    applyPassiveEffect(id) {
+        const item = this.passiveItems.find(p => p.id === id);
+        if (!item) return;
+
+        switch (id) {
+            case 'health_boost':
+                // Increase max health and heal player
+                const healthIncrease = 50 * item.level;
+                const oldMaxHealth = this.player.maxHealth;
+                this.player.maxHealth = 200 + healthIncrease; // Base 200 + boost
+                this.player.health += (this.player.maxHealth - oldMaxHealth); // Heal the difference
+                break;
+
+            case 'speed_boost':
+                // Increase player speed (applied in player update)
+                // Effect is calculated dynamically in player movement
+                break;
+
+            // Other passive effects are applied in real-time during shooting/gameplay
+        }
+    }
+
+    upgradeRandomWeapon() {
+        const upgradeable = this.weapons.filter(w => w.level < 8);
+        if (upgradeable.length > 0) {
+            const weapon = upgradeable[Math.floor(Math.random() * upgradeable.length)];
+            weapon.level++;
+        }
+    }
+
+    upgradeRandomPassiveItem() {
+        const upgradeable = this.passiveItems.filter(p => p.level < 5);
+        if (upgradeable.length > 0) {
+            const item = upgradeable[Math.floor(Math.random() * upgradeable.length)];
+            item.level++;
+        }
+    }
+
+    checkForEvolutions() {
+        for (const weaponId in this.evolutions) {
+            const evolution = this.evolutions[weaponId];
+            const weapon = this.weapons.find(w => w.id === weaponId && w.level >= evolution.level);
+            const requiredItem = this.passiveItems.find(p => p.id === evolution.requires);
+
+            if (weapon && requiredItem && !this.evolvedWeapons.includes(weaponId)) {
+                this.spawnEvolutionChest(weaponId, evolution);
+                break; // Only one evolution per level up
+            }
+        }
+    }
+
+    spawnEvolutionChest(weaponId, evolution) {
+        const x = this.getCanvasWidth() / 2;
+        const y = this.getCanvasHeight() / 2;
+
+        this.treasureChests.push({
+            x: x,
+            y: y,
+            type: 'evolution',
+            weaponId: weaponId,
+            evolution: evolution,
+            collected: false,
+            glowTime: 0
+        });
+    }
+
+    collectTreasureChest(chest, index) {
+        if (chest.type === 'evolution') {
+            // Evolve the weapon
+            this.evolveWeapon(chest.weaponId, chest.evolution);
+            this.showMultiplierPopup(chest.x, chest.y, `${chest.evolution.evolvedForm.toUpperCase()} EVOLVED!`, true);
+        }
+
+        // Remove chest from array
+        this.treasureChests.splice(index, 1);
+    }
+
+    evolveWeapon(weaponId, evolution) {
+        // Mark this weapon as evolved
+        this.evolvedWeapons.push(weaponId);
+
+        // Remove the base weapon and required passive
+        this.weapons = this.weapons.filter(w => w.id !== weaponId);
+        this.passiveItems = this.passiveItems.filter(p => p.id !== evolution.requires);
+
+        // Add the evolved weapon
+        this.weapons.push({
+            id: evolution.evolvedForm,
+            name: evolution.evolvedForm.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            level: 1,
+            isEvolved: true
+        });
+
+        // Spectacular evolution visual effects
+        const centerX = this.getCanvasWidth() / 2;
+        const centerY = this.getCanvasHeight() / 2;
+
+        VisualEffects.addScreenShake(this, 6, 1500);
+        VisualEffects.addChromaticAberration(this, 0.6, 2000);
+        VisualEffects.addTimeDistortion(this, 0.2, 1500);
+
+        // Multi-layered evolution explosion
+        setTimeout(() => {
+            // Central divine burst
+            for (let i = 0; i < 60; i++) {
+                const angle = (i / 60) * Math.PI * 2;
+                const distance = Math.random() * 120 + 40;
+                this.particles.push(new Particle(
+                    centerX + Math.cos(angle) * distance,
+                    centerY + Math.sin(angle) * distance,
+                    `hsl(${280 + Math.random() * 60}, 100%, ${60 + Math.random() * 30}%)`,
+                    'massive',
+                    'magic'
+                ));
+            }
+        }, 100);
+
+        // Spiraling energy ribbons
+        for (let spiral = 0; spiral < 4; spiral++) {
+            setTimeout(() => {
+                for (let i = 0; i < 15; i++) {
+                    const angle = (spiral * Math.PI / 2) + (i * 0.3);
+                    const distance = i * 15 + 50;
+                    this.particles.push(new Particle(
+                        centerX + Math.cos(angle) * distance,
+                        centerY + Math.sin(angle) * distance,
+                        `hsl(${45 + Math.random() * 30}, 100%, ${70 + Math.random() * 20}%)`,
+                        'large',
+                        'energy'
+                    ));
+                }
+            }, spiral * 200);
+        }
+
+        // Ascending transcendence particles
+        for (let i = 0; i < 30; i++) {
+            setTimeout(() => {
+                this.particles.push(new Particle(
+                    centerX + (Math.random() - 0.5) * 200,
+                    centerY + (Math.random() - 0.5) * 200,
+                    `hsl(${160 + Math.random() * 80}, 90%, ${50 + Math.random() * 40}%)`,
+                    'medium',
+                    'electric'
+                ));
+            }, i * 100);
+        }
+    }
+
+    renderTreasureChest(chest) {
+        const ctx = this.ctx;
+        const glow = Math.sin(chest.glowTime / 300) * 0.3 + 0.7;
+
+        // Draw glow effect
+        ctx.save();
+        ctx.shadowColor = '#FFD700';
+        ctx.shadowBlur = 20 * glow;
+
+        // Draw chest base
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(chest.x - 20, chest.y - 15, 40, 30);
+
+        // Draw chest lid
+        ctx.fillStyle = '#A0522D';
+        ctx.fillRect(chest.x - 18, chest.y - 25, 36, 15);
+
+        // Draw gold trim
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(chest.x - 20, chest.y - 17, 40, 3);
+        ctx.fillRect(chest.x - 20, chest.y + 12, 40, 3);
+        ctx.fillRect(chest.x - 2, chest.y - 25, 4, 30);
+
+        // Draw lock
+        ctx.fillStyle = '#DAA520';
+        ctx.beginPath();
+        ctx.arc(chest.x, chest.y - 5, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw keyhole
+        ctx.fillStyle = '#000';
+        ctx.fillRect(chest.x - 1, chest.y - 7, 2, 4);
+
+        // Draw sparkles
+        for (let i = 0; i < 8; i++) {
+            const angle = (chest.glowTime / 200 + i * Math.PI / 4) % (Math.PI * 2);
+            const sparkleX = chest.x + Math.cos(angle) * (30 + Math.sin(chest.glowTime / 150) * 10);
+            const sparkleY = chest.y + Math.sin(angle) * (30 + Math.sin(chest.glowTime / 150) * 10);
+
+            ctx.fillStyle = '#FFD700';
+            ctx.save();
+            ctx.translate(sparkleX, sparkleY);
+            ctx.rotate(chest.glowTime / 100);
+            ctx.fillRect(-2, -2, 4, 4);
+            ctx.fillRect(-1, -4, 2, 8);
+            ctx.restore();
+        }
+
+        ctx.restore();
+
+        // Draw "EVOLUTION!" text above chest
+        if (chest.type === 'evolution') {
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.strokeText('EVOLUTION!', chest.x, chest.y - 40);
+            ctx.fillText('EVOLUTION!', chest.x, chest.y - 40);
+
+            ctx.font = 'bold 12px Arial';
+            ctx.strokeText('Press to collect', chest.x, chest.y + 40);
+            ctx.fillText('Press to collect', chest.x, chest.y + 40);
+        }
+    }
+    
+    collectPowerup(powerup, index) {
+        this.powerups.splice(index, 1);
+
+        // Update meta progression
+        this.metaProgression.statistics.totalPowerupsCollected++;
+        
+        let message = '';
+        let isGood = true;
+        
+        switch (powerup.type) {
+            // Basic power-ups
+            case 'damage':
+                this.damageMultiplier += 0.5;
+                message = 'DAMAGE +50%!';
+                break;
+            case 'soldiers':
+                // Spawn soldier power-up around the player
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 40 + Math.random() * 20;
+                const x = this.player.x + Math.cos(angle) * distance;
+                const y = this.player.y + Math.sin(angle) * distance;
+                // Ensure power-up soldier spawn position is within bounds
+                const boundedX = Math.max(30, Math.min(this.getCanvasWidth() - 30, x));
+                const boundedY = Math.max(30, Math.min(this.getCanvasHeight() - 30, y));
+                this.soldiers.push(new Soldier(boundedX, boundedY, this));
+                message = 'NEW SOLDIER!';
+                break;
+            case 'money':
+                this.money += 200;
+                message = '+$200!';
+                break;
+            case 'health':
+                this.player.heal(75);
+                message = 'HEALTH +75!';
+                break;
+            case 'multishot':
+                this.player.multishotTime = 15000;
+                message = 'MULTISHOT 15s!';
+                break;
+                
+            // Score Multipliers
+            case 'x2':
+                this.score += Math.floor(this.score * 0.5);
+                this.money += 100;
+                message = 'SCORE x2!';
+                break;
+            case 'x3':
+                this.score += Math.floor(this.score * 1);
+                this.money += 200;
+                message = 'SCORE x3!';
+                break;
+            case 'x5':
+                this.score += Math.floor(this.score * 2);
+                this.money += 400;
+                message = 'SCORE x5!';
+                break;
+            case 'x10':
+                this.score += Math.floor(this.score * 5);
+                this.money += 1000;
+                message = 'MEGA x10!';
+                break;
+                
+            // Weapons
+            case 'shotgun':
+                this.player.currentWeapon = 'shotgun';
+                this.player.weaponTime = 15000;
+                message = 'SHOTGUN!';
+                break;
+            case 'machinegun':
+                this.player.currentWeapon = 'machinegun';
+                this.player.weaponTime = 20000;
+                message = 'MACHINE GUN!';
+                break;
+            case 'laser':
+                this.player.currentWeapon = 'laser';
+                this.player.weaponTime = 12000;
+                message = 'LASER BEAM!';
+                break;
+            case 'rocket':
+                this.player.currentWeapon = 'rocket';
+                this.player.weaponTime = 10000;
+                message = 'ROCKET LAUNCHER!';
+                break;
+            case 'plasma':
+                this.player.currentWeapon = 'plasma';
+                this.player.weaponTime = 12000;
+                message = 'PLASMA CANNON!';
+                break;
+            case 'railgun':
+                this.player.currentWeapon = 'railgun';
+                this.player.weaponTime = 8000;
+                message = 'RAILGUN!';
+                break;
+            case 'flamethrower':
+                this.player.currentWeapon = 'flamethrower';
+                this.player.weaponTime = 15000;
+                message = 'FLAMETHROWER!';
+                break;
+                
+            // Vehicles/Drones
+            case 'tank_vehicle':
+                this.player.vehicles.push(new Vehicle(this.player.x, this.player.y, 'tank', this));
+                message = 'TANK DEPLOYED!';
+                break;
+            case 'helicopter':
+                this.player.vehicles.push(new Vehicle(this.player.x, this.player.y - 50, 'helicopter', this));
+                message = 'HELICOPTER!';
+                break;
+            case 'drone':
+                this.player.drones.push(new Drone(this.player.x, this.player.y - 40, this));
+                message = 'DRONE ACTIVE!';
+                break;
+            case 'mech_suit':
+                this.player.vehicles.push(new Vehicle(this.player.x, this.player.y, 'mech', this));
+                message = 'MECH SUIT!';
+                break;
+            case 'artillery':
+                this.player.vehicles.push(new Vehicle(this.player.x, this.player.y + 40, 'artillery', this));
+                message = 'ARTILLERY!';
+                break;
+                
+            // Special Abilities
+            case 'freeze':
+                this.player.freezeTime = 8000;
+                // Freeze all zombies
+                this.zombies.forEach(zombie => zombie.frozen = true);
+                setTimeout(() => {
+                    this.zombies.forEach(zombie => zombie.frozen = false);
+                }, 8000);
+                message = 'FREEZE!';
+                break;
+            case 'shield':
+                this.player.shieldTime = 12000;
+                message = 'SHIELD!';
+                break;
+            case 'speed_boost':
+                this.player.speedBoostTime = 10000;
+                message = 'SPEED BOOST!';
+                break;
+            case 'time_slow':
+                this.player.timeSlowTime = 8000;
+                message = 'TIME SLOW!';
+                break;
+            case 'invincibility':
+                this.player.invincibilityTime = 5000;
+                message = 'INVINCIBLE!';
+                break;
+            case 'lightning_storm':
+                // Strike random zombies with lightning
+                for (let i = 0; i < 8; i++) {
+                    if (this.zombies.length > 0) {
+                        const randomZombie = this.zombies[Math.floor(Math.random() * this.zombies.length)];
+                        randomZombie.takeDamage(500);
+                        // Lightning effect
+                        for (let j = 0; j < 10; j++) {
+                            this.particles.push(new Particle(randomZombie.x, randomZombie.y, '#00ffff', 'large'));
+                        }
+                    }
+                }
+                message = 'LIGHTNING STORM!';
+                break;
+                
+            // Area Effects
+            case 'bomb':
+                let killedCount = 0;
+                for (let i = this.zombies.length - 1; i >= 0; i--) {
+                    const zombie = this.zombies[i];
+                    const dist = Math.sqrt((powerup.x - zombie.x) ** 2 + (powerup.y - zombie.y) ** 2);
+                    if (dist < 120) {
+                        this.zombieKilled(zombie);
+                        this.zombies.splice(i, 1);
+                        killedCount++;
+                    }
+                }
+                message = `BOMB! ${killedCount} KILLS!`;
+                for (let i = 0; i < 20; i++) {
+                    this.particles.push(new Particle(powerup.x, powerup.y, '#ff8800', 'large'));
+                }
+                break;
+            case 'nuke':
+                let nukeKills = 0;
+                for (let i = this.zombies.length - 1; i >= 0; i--) {
+                    const zombie = this.zombies[i];
+                    const dist = Math.sqrt((powerup.x - zombie.x) ** 2 + (powerup.y - zombie.y) ** 2);
+                    if (dist < 200) {
+                        this.zombieKilled(zombie);
+                        this.zombies.splice(i, 1);
+                        nukeKills++;
+                    }
+                }
+                message = `NUKE! ${nukeKills} KILLS!`;
+                for (let i = 0; i < 50; i++) {
+                    this.particles.push(new Particle(powerup.x, powerup.y, '#ffff00', 'large'));
+                }
+                break;
+            case 'poison_cloud':
+                // Create poison cloud that damages zombies over time
+                for (let i = 0; i < this.zombies.length; i++) {
+                    const zombie = this.zombies[i];
+                    const dist = Math.sqrt((powerup.x - zombie.x) ** 2 + (powerup.y - zombie.y) ** 2);
+                    if (dist < 150) {
+                        zombie.poisoned = true;
+                        zombie.poisonDamage = 20;
+                        zombie.poisonTime = 5000;
+                    }
+                }
+                message = 'POISON CLOUD!';
+                break;
+            case 'emp_blast':
+                // Disable all zombies temporarily
+                this.zombies.forEach(zombie => {
+                    zombie.stunned = true;
+                    setTimeout(() => zombie.stunned = false, 4000);
+                });
+                message = 'EMP BLAST!';
+                break;
+                
+            // Risk/Reward
+            case 'lose_soldier':
+                if (this.soldiers.length > 0) {
+                    this.soldiers.splice(Math.floor(Math.random() * this.soldiers.length), 1);
+                    message = 'LOST SOLDIER!';
+                    isGood = false;
+                } else {
+                    this.player.takeDamage(50);
+                    message = 'PLAYER DAMAGE!';
+                    isGood = false;
+                }
+                break;
+            case 'lose_health':
+                this.player.takeDamage(40);
+                message = 'HEALTH LOST!';
+                isGood = false;
+                break;
+            case 'mystery_box':
+                // Random good effect
+                const goodEffects = ['damage', 'soldiers', 'money', 'health', 'x5', 'shotgun', 'shield'];
+                const randomGood = goodEffects[Math.floor(Math.random() * goodEffects.length)];
+                this.collectPowerup({ type: randomGood, x: powerup.x, y: powerup.y }, -1);
+                message = 'MYSTERY BONUS!';
+                break;
+            case 'cursed_treasure':
+                // High reward but with a cost
+                this.money += 500;
+                this.score += 1000;
+                this.player.takeDamage(30);
+                message = 'CURSED GOLD!';
+                break;
+                
+            // Progression
+            case 'double_xp':
+                this.score += this.score; // Double current score
+                message = 'DOUBLE XP!';
+                break;
+            case 'coin_magnet':
+                this.money += 300;
+                // Auto-collect nearby power-ups
+                for (let i = this.powerups.length - 1; i >= 0; i--) {
+                    const otherPowerup = this.powerups[i];
+                    const dist = Math.sqrt((powerup.x - otherPowerup.x) ** 2 + (powerup.y - otherPowerup.y) ** 2);
+                    if (dist < 100 && otherPowerup !== powerup) {
+                        this.collectPowerup(otherPowerup, i);
+                    }
+                }
+                message = 'COIN MAGNET!';
+                break;
+            case 'bullet_rain':
+                // Create bullets falling from sky
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => {
+                        this.bullets.push(new Bullet(
+                            Math.random() * this.getCanvasWidth(),
+                            -10,
+                            0,
+                            300,
+                            this.player.damage * 2,
+                            'rain'
+                        ));
+                    }, i * 100);
+                }
+                message = 'BULLET RAIN!';
+                break;
+            case 'zombie_weakness':
+                // Make all zombies take double damage for a time
+                this.zombies.forEach(zombie => {
+                    zombie.vulnerable = true;
+                    setTimeout(() => zombie.vulnerable = false, 10000);
+                });
+                message = 'ZOMBIE WEAKNESS!';
+                break;
+        }
+        
+        this.showMultiplierPopup(powerup.x, powerup.y, message, isGood);
+        this.updateUI();
+    }
+    
+    showMultiplierPopup(x, y, text, isGood = true) {
+        const popup = document.createElement('div');
+        popup.className = 'multiplier-popup';
+        popup.textContent = text;
+        popup.style.left = x + 'px';
+        popup.style.top = y + 'px';
+        popup.style.color = isGood ? '#FFD700' : '#ff4444';
+        
+        document.getElementById('gameContainer').appendChild(popup);
+        
+        setTimeout(() => {
+            popup.remove();
+        }, 2000);
+    }
+    
+    render() {
+        this.ctx.save();
+
+        // Apply screen shake if active
+        VisualEffects.applyScreenShake(this, this.ctx);
+
+        // Clear canvas with dynamic night sky gradient
+        const timeOffset = Date.now() * 0.001;
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.getCanvasHeight());
+
+        // Add subtle color shifting based on game state
+        const hue1 = 240 + Math.sin(timeOffset * 0.5) * 15;
+        const hue2 = 250 + Math.sin(timeOffset * 0.3) * 20;
+
+        gradient.addColorStop(0, `hsl(${hue1}, 70%, 8%)`);
+        gradient.addColorStop(0.7, `hsl(${hue2}, 60%, 15%)`);
+        gradient.addColorStop(1, `hsl(${hue1 + 10}, 50%, 20%)`);
+
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
+
+        // Render background effects first
+        VisualEffects.renderBackgroundEffects(this, this.ctx);
+        
+        // Draw stars
+        this.drawStars();
+        
+        // Draw ground
+        const groundGradient = this.ctx.createLinearGradient(0, this.getCanvasHeight() - 120, 0, this.getCanvasHeight());
+        groundGradient.addColorStop(0, '#2d3436');
+        groundGradient.addColorStop(1, '#636e72');
+        this.ctx.fillStyle = groundGradient;
+        this.ctx.fillRect(0, this.getCanvasHeight() - 120, this.getCanvasWidth(), 120);
+        
+        // Draw battle lines
+        this.ctx.strokeStyle = '#74b9ff';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([5, 5]);
+        for (let i = 1; i < 4; i++) {
+            const y = (this.getCanvasHeight() / 4) * i;
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(this.getCanvasWidth(), y);
+            this.ctx.stroke();
+        }
+        this.ctx.setLineDash([]);
+        
+        // Render game objects (back to front)
+        this.particles.forEach(particle => particle.render(this.ctx));
+        this.powerups.forEach(powerup => powerup.render(this.ctx));
+        this.treasureChests.forEach(chest => this.renderTreasureChest(chest));
+        this.zombies.forEach(zombie => zombie.render(this.ctx));
+        this.bullets.forEach(bullet => bullet.render(this.ctx));
+
+        // Render enemy projectiles
+        this.enemyProjectiles.forEach(projectile => this.renderEnemyProjectile(projectile));
+
+        // Render hazards (poison clouds, fire areas, etc.)
+        this.hazards.forEach(hazard => this.renderHazard(hazard));
+
+        this.soldiers.forEach(soldier => soldier.render(this.ctx));
+        
+        // Render player
+        if (this.player) {
+            this.player.render(this.ctx);
+            
+            // Render vehicles and drones
+            this.player.vehicles.forEach(vehicle => vehicle.render(this.ctx));
+            this.player.drones.forEach(drone => drone.render(this.ctx));
+        }
+        
+        // Draw wave countdown
+        if (this.zombiesSpawned >= this.zombiesInWave && this.zombies.length === 0) {
+            const timeLeft = Math.ceil((this.waveDelay - this.nextWaveTime) / 1000);
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 28px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeText(`Next wave in: ${timeLeft}`, this.getCanvasWidth() / 2, 60);
+            this.ctx.fillText(`Next wave in: ${timeLeft}`, this.getCanvasWidth() / 2, 60);
+        }
+        
+        // Draw wave progress
+        const progress = this.zombiesKilled / this.zombiesInWave;
+        const barWidth = 200;
+        const barHeight = 8;
+        const barX = this.getCanvasWidth() - barWidth - 20;
+        const barY = 20;
+        
+        this.ctx.fillStyle = '#2d3436';
+        this.ctx.fillRect(barX, barY, barWidth, barHeight);
+        this.ctx.fillStyle = '#00b894';
+        this.ctx.fillRect(barX, barY, barWidth * progress, barHeight);
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+        // Restore context (removes screen shake transformation)
+        this.ctx.restore();
+    }
+
+    renderEnemyProjectile(projectile) {
+        const ctx = this.ctx;
+
+        // Draw projectile based on type
+        switch (projectile.type) {
+            case 'spit':
+                ctx.fillStyle = '#00b894';
+                ctx.beginPath();
+                ctx.arc(projectile.x, projectile.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+                // Add glow effect
+                ctx.shadowColor = '#00b894';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(projectile.x, projectile.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                break;
+
+            default:
+                // Default enemy projectile appearance
+                ctx.fillStyle = '#ff4444';
+                ctx.beginPath();
+                ctx.arc(projectile.x, projectile.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+        }
+    }
+
+    renderHazard(hazard) {
+        const ctx = this.ctx;
+        const alpha = Math.max(0.3, hazard.duration / 8000); // Fade out over time
+
+        switch (hazard.type) {
+            case 'poison':
+                // Green poison cloud
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#00b894';
+                ctx.beginPath();
+                ctx.arc(hazard.x, hazard.y, hazard.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Add pulsing effect
+                const pulseRadius = hazard.radius * (0.8 + Math.sin(Date.now() / 300) * 0.2);
+                ctx.globalAlpha = alpha * 0.5;
+                ctx.beginPath();
+                ctx.arc(hazard.x, hazard.y, pulseRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                break;
+
+            case 'fire':
+                // Red fire area
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#e17055';
+                ctx.beginPath();
+                ctx.arc(hazard.x, hazard.y, hazard.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Add flickering effect
+                for (let i = 0; i < 5; i++) {
+                    const angle = (Math.PI * 2 * i) / 5;
+                    const flickerRadius = hazard.radius * (0.6 + Math.random() * 0.4);
+                    ctx.globalAlpha = alpha * Math.random();
+                    ctx.beginPath();
+                    ctx.arc(
+                        hazard.x + Math.cos(angle) * 20,
+                        hazard.y + Math.sin(angle) * 20,
+                        flickerRadius * 0.3,
+                        0, Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+                ctx.restore();
+                break;
+
+            case 'ice':
+                // Blue ice area
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#81ecec';
+                ctx.beginPath();
+                ctx.arc(hazard.x, hazard.y, hazard.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Add crystalline pattern
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = alpha * 0.8;
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Math.PI * 2 * i) / 6;
+                    ctx.beginPath();
+                    ctx.moveTo(hazard.x, hazard.y);
+                    ctx.lineTo(
+                        hazard.x + Math.cos(angle) * hazard.radius,
+                        hazard.y + Math.sin(angle) * hazard.radius
+                    );
+                    ctx.stroke();
+                }
+                ctx.restore();
+                break;
+        }
+    }
+
+    drawStars() {
+        // Static stars for performance
+        this.ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 50; i++) {
+            const x = (i * 167) % this.getCanvasWidth();
+            const y = (i * 251) % (this.getCanvasHeight() / 2);
+            const size = (i % 3) + 1;
+            this.ctx.fillRect(x, y, size, size);
+        }
+    }
+    
+    updateUI() {
+        // Update level and experience
+        document.getElementById('levelNumber').textContent = this.level;
+        document.getElementById('expValue').textContent = this.experience;
+        document.getElementById('expMax').textContent = this.experienceToNextLevel;
+
+        // Update experience bar
+        const expBar = document.getElementById('expBar');
+        const expPercentage = (this.experience / this.experienceToNextLevel) * 100;
+        expBar.style.width = expPercentage + '%';
+
+        // Update player health
+        if (this.player) {
+            const healthBar = document.getElementById('healthBar');
+            const healthText = document.getElementById('healthText');
+            const healthPercentage = (this.player.health / this.player.maxHealth) * 100;
+            healthBar.style.width = healthPercentage + '%';
+            healthText.textContent = `${Math.ceil(this.player.health)}/${this.player.maxHealth}`;
+        }
+
+        // Update wave info
+        document.getElementById('waveNumber').textContent = this.wave;
+
+        // Update wave progress
+        const waveProgressBar = document.getElementById('waveProgressBar');
+        const waveProgressText = document.getElementById('waveProgressText');
+        const waveProgress = this.zombiesKilled / this.zombiesInWave;
+        const waveProgressPercentage = Math.min(100, waveProgress * 100);
+        waveProgressBar.style.width = waveProgressPercentage + '%';
+        waveProgressText.textContent = `${this.zombiesKilled}/${this.zombiesInWave} enemies`;
+
+        // Update combat stats
+        document.getElementById('scoreValue').textContent = this.score.toLocaleString();
+        document.getElementById('killCountValue').textContent = this.killCount.toLocaleString();
+
+        // Update survival time
+        const currentTime = Date.now();
+        const survivalSeconds = Math.floor((currentTime - this.gameStartTime) / 1000);
+        const minutes = Math.floor(survivalSeconds / 60);
+        const seconds = survivalSeconds % 60;
+        document.getElementById('survivalTimeValue').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        // Update resources
+        document.getElementById('moneyValue').textContent = this.money;
+        document.getElementById('soldierCount').textContent = this.soldiers.length;
+        document.getElementById('powerupCount').textContent = this.powerups.length;
+
+        // Update multipliers
+        document.getElementById('damageMultValue').textContent = `${this.damageMultiplier.toFixed(1)}x`;
+        document.getElementById('speedMultValue').textContent = `${this.speedMultiplier.toFixed(1)}x`;
+
+        // Update weapon and passive information
+        this.updateWeaponsPanel();
+        this.updatePassivesPanel();
+        this.updateStatusEffects();
+
+        // Update buttons
+        document.getElementById('buySoldier').textContent = `Buy Soldier ($${this.soldierCost})`;
+        document.getElementById('upgradeDamage').textContent = `Upgrade Damage ($${this.upgradeCost})`;
+        document.getElementById('upgradeSpeed').textContent = `Upgrade Speed ($${this.speedCost})`;
+
+        document.getElementById('buySoldier').disabled = this.money < this.soldierCost;
+        document.getElementById('upgradeDamage').disabled = this.money < this.upgradeCost;
+        document.getElementById('upgradeSpeed').disabled = this.money < this.speedCost;
+    }
+
+    updateWeaponsPanel() {
+        const weaponsList = document.getElementById('weaponsList');
+        if (!weaponsList) return;
+
+        weaponsList.innerHTML = '';
+
+        // Show current weapons
+        this.weapons.forEach(weapon => {
+            const weaponItem = document.createElement('div');
+            weaponItem.className = 'weapon-item';
+
+            // Check if weapon is evolved
+            const isEvolved = ['plasma_rifle', 'gatling_laser', 'missile_barrage', 'soul_reaper', 'holy_bomb', 'dragon_breath', 'death_ray'].includes(weapon.id);
+            if (isEvolved) {
+                weaponItem.classList.add('weapon-evolved');
+            }
+
+            const weaponName = document.createElement('span');
+            weaponName.className = 'weapon-name';
+            weaponName.textContent = (weapon.name || weapon.id).replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            const weaponLevel = document.createElement('span');
+            weaponLevel.className = 'weapon-level';
+            weaponLevel.textContent = `Lv.${weapon.level || 1}`;
+
+            weaponItem.appendChild(weaponName);
+            weaponItem.appendChild(weaponLevel);
+            weaponsList.appendChild(weaponItem);
+        });
+
+        // Show placeholder if no weapons
+        if (this.weapons.length === 0) {
+            const placeholder = document.createElement('div');
+            placeholder.style.color = '#888';
+            placeholder.style.fontSize = '12px';
+            placeholder.style.textAlign = 'center';
+            placeholder.style.padding = '10px';
+            placeholder.textContent = 'No weapons equipped';
+            weaponsList.appendChild(placeholder);
+        }
+    }
+
+    updatePassivesPanel() {
+        const passivesList = document.getElementById('passivesList');
+        if (!passivesList) return;
+
+        passivesList.innerHTML = '';
+
+        // Show passive items
+        this.passiveItems.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'passive-item';
+
+            const itemName = document.createElement('span');
+            itemName.className = 'passive-name';
+            itemName.textContent = (item.name || item.id).replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            const itemLevel = document.createElement('span');
+            itemLevel.className = 'passive-level';
+            itemLevel.textContent = `Lv.${item.level || 1}`;
+
+            itemElement.appendChild(itemName);
+            itemElement.appendChild(itemLevel);
+            passivesList.appendChild(itemElement);
+        });
+
+        // Show placeholder if no passives
+        if (this.passiveItems.length === 0) {
+            const placeholder = document.createElement('div');
+            placeholder.style.color = '#888';
+            placeholder.style.fontSize = '12px';
+            placeholder.style.textAlign = 'center';
+            placeholder.style.padding = '10px';
+            placeholder.textContent = 'No passive items';
+            passivesList.appendChild(placeholder);
+        }
+    }
+
+    updateStatusEffects() {
+        const statusEffects = document.getElementById('statusEffects');
+        if (!statusEffects) return;
+
+        statusEffects.innerHTML = '';
+
+        // Show active status effects
+        if (this.player) {
+            if (this.player.shieldTime > 0) {
+                const shieldEffect = document.createElement('div');
+                shieldEffect.className = 'status-effect';
+                shieldEffect.style.borderColor = '#00ffff';
+                shieldEffect.style.color = '#00ffff';
+                shieldEffect.textContent = '🛡 SHIELD';
+                statusEffects.appendChild(shieldEffect);
+            }
+
+            if (this.player.speedBoostTime > 0) {
+                const speedEffect = document.createElement('div');
+                speedEffect.className = 'status-effect';
+                speedEffect.style.borderColor = '#ffff00';
+                speedEffect.style.color = '#ffff00';
+                speedEffect.textContent = '⚡ SPEED';
+                statusEffects.appendChild(speedEffect);
+            }
+
+            if (this.player.invincibilityTime > 0) {
+                const invincEffect = document.createElement('div');
+                invincEffect.className = 'status-effect';
+                invincEffect.style.borderColor = '#ffffff';
+                invincEffect.style.color = '#ffffff';
+                invincEffect.textContent = '✨ INVINCIBLE';
+                statusEffects.appendChild(invincEffect);
+            }
+
+            if (this.player.multishotTime > 0) {
+                const multishotEffect = document.createElement('div');
+                multishotEffect.className = 'status-effect';
+                multishotEffect.style.borderColor = '#ff6b6b';
+                multishotEffect.style.color = '#ff6b6b';
+                multishotEffect.textContent = '💥 MULTISHOT';
+                statusEffects.appendChild(multishotEffect);
+            }
+        }
+    }
+    
+    gameOver() {
+        this.isRunning = false;
+
+        // Dramatic game over visual effects
+        VisualEffects.addScreenShake(this, 8, 2000);
+        VisualEffects.addChromaticAberration(this, 0.8, 3000);
+
+        // Create dramatic explosion pattern around player
+        const playerX = this.player ? this.player.x : this.canvas.width / 2;
+        const playerY = this.player ? this.player.y : this.canvas.height / 2;
+
+        // Central massive explosion
+        for (let i = 0; i < 40; i++) {
+            const angle = (i / 40) * Math.PI * 2;
+            const distance = Math.random() * 100 + 50;
+            this.particles.push(new Particle(
+                playerX + Math.cos(angle) * distance,
+                playerY + Math.sin(angle) * distance,
+                `hsl(${Math.random() < 0.5 ? 0 : 30}, 100%, ${50 + Math.random() * 40}%)`,
+                'massive',
+                'explosion'
+            ));
+        }
+
+        // Expanding shockwave particles
+        for (let ring = 0; ring < 3; ring++) {
+            setTimeout(() => {
+                for (let i = 0; i < 30; i++) {
+                    const angle = (i / 30) * Math.PI * 2;
+                    const distance = 150 + ring * 100;
+                    this.particles.push(new Particle(
+                        playerX + Math.cos(angle) * distance,
+                        playerY + Math.sin(angle) * distance,
+                        `hsl(${220 + Math.random() * 40}, 80%, ${40 + Math.random() * 30}%)`,
+                        'large',
+                        'energy'
+                    ));
+                }
+            }, ring * 300);
+        }
+
+        // Update meta progression statistics
+        this.metaProgression.statistics.totalDeaths++;
+        if (this.wave > this.metaProgression.statistics.highestWave) {
+            this.metaProgression.statistics.highestWave = this.wave;
+        }
+        if (this.survivalTime > this.metaProgression.statistics.longestSurvival) {
+            this.metaProgression.statistics.longestSurvival = this.survivalTime;
+        }
+        this.metaProgression.totalCoins += Math.floor(this.score / 100); // Convert score to coins
+
+        // Save meta progression
+        this.saveMetaProgression();
+
+        document.getElementById('finalScore').textContent = this.score;
+        document.getElementById('finalWave').textContent = this.wave;
+        document.getElementById('gameOver').classList.remove('hidden');
+    }
+    
+    restart() {
+        document.getElementById('gameOver').classList.add('hidden');
+        
+        // Reset game state
+        this.wave = 1;
+        this.score = 0;
+        this.gameStartTime = Date.now(); // Reset survival timer
+        this.money = 50;  // Match current challenging settings
+        this.soldierCost = 75;
+        this.upgradeCost = 150;
+        this.speedCost = 100;
+        this.damageMultiplier = 1;
+        this.speedMultiplier = 1;
+        
+        // Reset arrays
+        this.soldiers = [];
+        this.zombies = [];
+        this.bullets = [];
+        this.powerups = [];
+        this.particles = [];
+        this.treasureChests = [];
+        this.enemyProjectiles = [];
+        this.hazards = [];
+
+        // Reset level/experience system
+        this.experience = 0;
+        this.level = 1;
+        this.experienceToNextLevel = 100;
+        this.levelUpPending = false;
+
+        // Reset weapon/item system
+        this.weapons = [];
+        this.passiveItems = [];
+        this.evolvedWeapons = [];
+
+        this.zombiesInWave = 8;
+        this.zombiesSpawned = 0;
+        this.zombiesKilled = 0;
+        this.killCount = 0; // Reset total kill counter
+        this.nextWaveTime = 0;
+        this.powerupSpawnTimer = 0;
+        this.gameStartTime = Date.now();
+        this.survivalTime = 0;
+        
+        this.createPlayer();
+        this.updateUI();
+        this.startGame();
+    }
+}
+
+class Player {
+    constructor(x, y, game) {
+        this.x = x;
+        this.y = y;
+        this.game = game;
+
+        // Get character stats
+        const character = game.characters[game.selectedCharacter];
+        this.health = character.maxHealth;
+        this.maxHealth = character.maxHealth;
+        this.speed = character.speed;
+        this.fireRate = 300 / character.cooldown; // Adjust fire rate based on cooldown
+        this.lastShot = 0;
+        this.damage = 40 * character.damage;
+        this.multishotTime = 0;
+        this.width = 25;
+        this.height = 35;
+        
+        // Weapon system
+        this.currentWeapon = 'basic';
+        this.weaponTime = 0;
+        this.weaponCooldowns = {}; // Individual weapon cooldowns
+
+        // Special abilities
+        this.shieldTime = 0;
+        this.freezeTime = 0;
+        this.invincibilityTime = 0;
+        this.timeSlowTime = 0;
+        this.speedBoostTime = 0;
+        
+        // Vehicle/Drone system
+        this.vehicles = [];
+        this.drones = [];
+    }
+    
+    update(deltaTime) {
+        this.lastShot += deltaTime;
+        this.multishotTime = Math.max(0, this.multishotTime - deltaTime);
+
+        // Update weapon cooldowns
+        for (let weaponId in this.weaponCooldowns) {
+            this.weaponCooldowns[weaponId] = Math.max(0, this.weaponCooldowns[weaponId] - deltaTime);
+        }
+
+        // Update special abilities
+        this.weaponTime = Math.max(0, this.weaponTime - deltaTime);
+        this.shieldTime = Math.max(0, this.shieldTime - deltaTime);
+        this.freezeTime = Math.max(0, this.freezeTime - deltaTime);
+        this.invincibilityTime = Math.max(0, this.invincibilityTime - deltaTime);
+        this.timeSlowTime = Math.max(0, this.timeSlowTime - deltaTime);
+        this.speedBoostTime = Math.max(0, this.speedBoostTime - deltaTime);
+        
+        // Legacy weapon system cleanup - remove old power-up weapons when they expire
+        if (this.weaponTime <= 0 && this.currentWeapon !== 'basic') {
+            this.currentWeapon = 'basic';
+        }
+        
+        // Handle movement with speed boost
+        let speedMultiplier = this.speedBoostTime > 0 ? 2 : 1;
+
+        // Apply speed boost passive item effect
+        const speedBoost = this.game.passiveItems.find(p => p.id === 'speed_boost');
+        if (speedBoost) {
+            speedMultiplier *= (1 + (0.25 * speedBoost.level)); // 25% faster per level
+        }
+
+        const speed = this.speed * this.game.speedMultiplier * speedMultiplier;
+
+        // Horizontal movement (left/right)
+        if (this.game.keys['a'] || this.game.keys['arrowleft']) {
+            this.x = Math.max(this.width/2, this.x - speed * deltaTime / 1000);
+        }
+        if (this.game.keys['d'] || this.game.keys['arrowright']) {
+            this.x = Math.min(this.game.getCanvasWidth() - this.width/2, this.x + speed * deltaTime / 1000);
+        }
+
+        // Vertical movement (up/down)
+        if (this.game.keys['w'] || this.game.keys['arrowup']) {
+            this.y = Math.max(this.height/2, this.y - speed * deltaTime / 1000);
+        }
+        if (this.game.keys['s'] || this.game.keys['arrowdown']) {
+            this.y = Math.min(this.game.getCanvasHeight() - this.height/2 - 30, this.y + speed * deltaTime / 1000); // Leave space at bottom for UI
+        }
+        
+        // Auto-shoot with all weapons
+        const target = this.findNearestZombie();
+        if (target) {
+            this.shootAllWeapons(target);
+        }
+        
+        // Update vehicles and drones
+        this.vehicles.forEach(vehicle => vehicle.update(deltaTime));
+        this.drones.forEach(drone => drone.update(deltaTime));
+        this.vehicles = this.vehicles.filter(vehicle => vehicle.active);
+        this.drones = this.drones.filter(drone => drone.active);
+    }
+    
+    getFireRate() {
+        // Base fire rate modified by passive items
+        let baseRate = this.fireRate;
+
+        // Apply rapid fire passive item effect
+        const rapidFire = this.game.passiveItems.find(p => p.id === 'rapid_fire');
+        if (rapidFire) {
+            baseRate *= (1 - (0.3 * rapidFire.level)); // 30% faster per level
+        }
+
+        return baseRate;
+    }
+
+    shootAllWeapons(target) {
+        // Fire all equipped weapons that are off cooldown
+        if (this.game.weapons.length === 0) {
+            // Fallback to basic shot if no weapons
+            if ((this.weaponCooldowns['basic'] || 0) <= 0) {
+                this.shootWeapon('basic', target, 1);
+                this.weaponCooldowns['basic'] = this.getWeaponFireRate('basic');
+            }
+        } else {
+            this.game.weapons.forEach(weapon => {
+                if ((this.weaponCooldowns[weapon.id] || 0) <= 0) {
+                    this.shootWeapon(weapon.id, target, weapon.level);
+                    this.weaponCooldowns[weapon.id] = this.getWeaponFireRate(weapon.id);
+                }
+            });
+        }
+    }
+
+    getWeaponFireRate(weaponId) {
+        let baseRate = this.fireRate;
+
+        // Different weapons have different base fire rates
+        const weaponRates = {
+            'basic': 1.0,
+            'rifle': 0.8,      // Faster than basic
+            'shotgun': 1.5,    // Slower, powerful shots
+            'machinegun': 0.3, // Very fast
+            'laser': 0.6,      // Fast energy weapon
+            'rocket': 2.0,     // Slow, explosive
+            'knife': 0.1,      // Very fast melee
+            'grenade': 1.8,    // Slow area damage
+
+            // Evolved weapons - generally faster
+            'plasma_rifle': 0.5,
+            'dragon_breath': 1.2,
+            'gatling_laser': 0.15,
+            'death_ray': 0.4,
+            'missile_barrage': 1.5,
+            'soul_reaper': 0.05,
+            'holy_bomb': 1.6
+        };
+
+        const rate = weaponRates[weaponId] || 1.0;
+        baseRate *= rate;
+
+        // Apply rapid fire passive item effect
+        const rapidFire = this.game.passiveItems.find(p => p.id === 'rapid_fire');
+        if (rapidFire) {
+            baseRate *= (1 - (0.3 * rapidFire.level)); // 30% faster per level
+        }
+
+        return baseRate * 1000; // Convert to milliseconds
+    }
+
+    shootWeapon(weaponId, target, weaponLevel) {
+        const angle = Math.atan2(target.y - this.y, target.x - this.x);
+        const bulletSpeed = 500;
+        let baseDamage = this.damage * this.game.damageMultiplier;
+
+        // Apply ammo box passive item effect
+        const ammoBox = this.game.passiveItems.find(p => p.id === 'ammo_box');
+        if (ammoBox) {
+            baseDamage *= (1 + (0.25 * ammoBox.level)); // 25% more damage per level
+        }
+
+        // Scale damage with weapon level
+        baseDamage *= (1 + (weaponLevel - 1) * 0.2); // 20% more damage per weapon level
+
+        switch (weaponId) {
+            case 'rifle':
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle) * bulletSpeed,
+                    Math.sin(angle) * bulletSpeed,
+                    baseDamage,
+                    'rifle'
+                ));
+                break;
+
+            case 'shotgun':
+                // Spread shot
+                let projectiles = 5;
+                const spreadShot = this.game.passiveItems.find(p => p.id === 'spread_shot');
+                if (spreadShot) {
+                    projectiles += spreadShot.level * 2; // +2 projectiles per level
+                }
+
+                const spreadRange = projectiles - 1;
+                for (let i = 0; i < projectiles; i++) {
+                    const spreadAngle = angle + ((i - spreadRange/2) * 0.2);
+                    this.game.bullets.push(new Bullet(
+                        this.x, this.y - 10,
+                        Math.cos(spreadAngle) * bulletSpeed,
+                        Math.sin(spreadAngle) * bulletSpeed,
+                        baseDamage * 0.7,
+                        'shotgun'
+                    ));
+                }
+                break;
+
+            case 'machinegun':
+                // Fast, slightly inaccurate shots
+                const spread = (Math.random() - 0.5) * 0.3;
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle + spread) * bulletSpeed,
+                    Math.sin(angle + spread) * bulletSpeed,
+                    baseDamage * 0.6,
+                    'machinegun'
+                ));
+                break;
+
+            case 'laser':
+                let speed = bulletSpeed * 2;
+                const energyCore = this.game.passiveItems.find(p => p.id === 'energy_core');
+                if (energyCore) {
+                    speed *= (1 + (0.5 * energyCore.level)); // 50% faster per level
+                }
+
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed,
+                    baseDamage * 1.5,
+                    'laser'
+                ));
+                break;
+
+            case 'rocket':
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle) * 300,
+                    Math.sin(angle) * 300,
+                    baseDamage * 3,
+                    'rocket'
+                ));
+                break;
+
+            case 'knife':
+                // Spinning blade around player
+                for (let i = 0; i < weaponLevel; i++) {
+                    const knifeAngle = (Date.now() / 500 + i * (Math.PI * 2 / weaponLevel)) % (Math.PI * 2);
+                    this.game.bullets.push(new Bullet(
+                        this.x + Math.cos(knifeAngle) * 50,
+                        this.y + Math.sin(knifeAngle) * 50,
+                        Math.cos(knifeAngle) * 100,
+                        Math.sin(knifeAngle) * 100,
+                        baseDamage * 0.8,
+                        'knife'
+                    ));
+                }
+                break;
+
+            case 'grenade':
+                // Lob grenades in arc
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle) * 200,
+                    Math.sin(angle) * 200 - 100, // Arc trajectory
+                    baseDamage * 2,
+                    'grenade'
+                ));
+                break;
+
+            // Evolved weapons - more powerful versions
+            case 'plasma_rifle':
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle) * bulletSpeed * 1.5,
+                    Math.sin(angle) * bulletSpeed * 1.5,
+                    baseDamage * 2.5,
+                    'plasma_rifle'
+                ));
+                break;
+
+            case 'dragon_breath':
+                // Wide flame spread
+                for (let i = -4; i <= 4; i++) {
+                    const flameAngle = angle + (i * 0.15);
+                    this.game.bullets.push(new Bullet(
+                        this.x, this.y - 10,
+                        Math.cos(flameAngle) * (300 + Math.random() * 200),
+                        Math.sin(flameAngle) * (300 + Math.random() * 200),
+                        baseDamage * 1.2,
+                        'dragon_breath'
+                    ));
+                }
+                break;
+
+            case 'gatling_laser':
+                // Multiple laser beams
+                for (let i = -1; i <= 1; i++) {
+                    const laserAngle = angle + (i * 0.1);
+                    this.game.bullets.push(new Bullet(
+                        this.x, this.y - 10,
+                        Math.cos(laserAngle) * bulletSpeed * 3,
+                        Math.sin(laserAngle) * bulletSpeed * 3,
+                        baseDamage * 2,
+                        'gatling_laser'
+                    ));
+                }
+                break;
+
+            case 'death_ray':
+                // Piercing death beam
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle) * bulletSpeed * 4,
+                    Math.sin(angle) * bulletSpeed * 4,
+                    baseDamage * 4,
+                    'death_ray'
+                ));
+                break;
+
+            case 'missile_barrage':
+                // Multiple homing missiles
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        this.game.bullets.push(new Bullet(
+                            this.x, this.y - 10,
+                            Math.cos(angle + (Math.random() - 0.5) * 0.5) * 400,
+                            Math.sin(angle + (Math.random() - 0.5) * 0.5) * 400,
+                            baseDamage * 3.5,
+                            'missile_barrage'
+                        ));
+                    }, i * 100);
+                }
+                break;
+
+            case 'soul_reaper':
+                // Piercing spinning blades
+                for (let i = 0; i < weaponLevel * 2; i++) {
+                    const reapAngle = (Date.now() / 300 + i * (Math.PI / weaponLevel)) % (Math.PI * 2);
+                    this.game.bullets.push(new Bullet(
+                        this.x + Math.cos(reapAngle) * 80,
+                        this.y + Math.sin(reapAngle) * 80,
+                        Math.cos(reapAngle) * 150,
+                        Math.sin(reapAngle) * 150,
+                        baseDamage * 1.5,
+                        'soul_reaper'
+                    ));
+                }
+                break;
+
+            case 'holy_bomb':
+                // Screen-clearing explosion
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle) * 150,
+                    Math.sin(angle) * 150 - 80,
+                    baseDamage * 5,
+                    'holy_bomb'
+                ));
+                break;
+
+            default:
+                // Basic shot
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle) * bulletSpeed,
+                    Math.sin(angle) * bulletSpeed,
+                    baseDamage,
+                    'basic'
+                ));
+                break;
+        }
+
+        // Apply piercing effect to bullets if passive item exists
+        const piercing = this.game.passiveItems.find(p => p.id === 'piercing');
+        if (piercing && this.game.bullets.length > 0) {
+            const lastBullet = this.game.bullets[this.game.bullets.length - 1];
+            lastBullet.piercing = piercing.level; // Can pierce through this many enemies
+        }
+
+        // Apply multishot enhancement (from legacy powerup system)
+        if (this.multishotTime > 0 && weaponId !== 'knife' && weaponId !== 'soul_reaper') {
+            for (let i = -1; i <= 1; i += 2) {
+                const spreadAngle = angle + (i * 0.3);
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(spreadAngle) * bulletSpeed,
+                    Math.sin(spreadAngle) * bulletSpeed,
+                    baseDamage * 0.8,
+                    weaponId + '_multi'
+                ));
+            }
+        }
+    }
+    
+    findNearestZombie() {
+        let nearest = null;
+        let minDist = 400; // Increased range
+        
+        this.game.zombies.forEach(zombie => {
+            const dist = Math.sqrt((this.x - zombie.x) ** 2 + (this.y - zombie.y) ** 2);
+            if (dist < minDist) {
+                nearest = zombie;
+                minDist = dist;
+            }
+        });
+        
+        return nearest;
+    }
+    
+    
+    takeDamage(damage) {
+        // Invincibility prevents all damage
+        if (this.invincibilityTime > 0) return;
+        
+        // Shield reduces damage by 75%
+        if (this.shieldTime > 0) {
+            damage *= 0.25;
+        }
+        
+        this.health = Math.max(0, this.health - damage);
+    }
+    
+    heal(amount) {
+        this.health = Math.min(this.maxHealth, this.health + amount);
+    }
+    
+    render(ctx) {
+        // Draw player shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.ellipse(this.x, this.y + 20, this.width/2, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw player body (soldier)
+        ctx.fillStyle = '#2d5a3d';
+        ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+        
+        // Draw player armor details
+        ctx.fillStyle = '#3d6a4d';
+        ctx.fillRect(this.x - this.width/2 + 3, this.y - this.height/2 + 5, this.width - 6, 8);
+        ctx.fillRect(this.x - this.width/2 + 3, this.y - this.height/2 + 15, this.width - 6, 8);
+        
+        // Draw player head
+        ctx.fillStyle = '#fdbcb4';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - this.height/2 - 8, 10, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw helmet
+        ctx.fillStyle = '#4a5d23';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - this.height/2 - 8, 12, Math.PI, 2 * Math.PI);
+        ctx.fill();
+        
+        // Draw weapon
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.width/2, this.y - 5);
+        ctx.lineTo(this.x + this.width/2 + 20, this.y - 5);
+        ctx.stroke();
+        
+        // Draw weapon barrel
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.width/2 + 20, this.y - 5);
+        ctx.lineTo(this.x + this.width/2 + 30, this.y - 5);
+        ctx.stroke();
+        
+        // Draw health bar
+        const barWidth = 40;
+        const barHeight = 6;
+        const healthPercent = this.health / this.maxHealth;
+        
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 25, barWidth, barHeight);
+        ctx.fillStyle = healthPercent > 0.3 ? '#00ff00' : '#ff8800';
+        ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 25, barWidth * healthPercent, barHeight);
+        
+        // Draw special ability effects
+        if (this.multishotTime > 0) {
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.width + 5, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        if (this.shieldTime > 0) {
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.width + 8, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        if (this.invincibilityTime > 0) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 5;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.width + 12, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        if (this.speedBoostTime > 0) {
+            // Speed trails
+            for (let i = 0; i < 3; i++) {
+                ctx.fillStyle = `rgba(0, 255, 0, ${0.3 - i * 0.1})`;
+                ctx.fillRect(this.x - this.width/2 - i * 5, this.y - this.height/2, this.width, this.height);
+            }
+        }
+        
+        // Draw current weapon indicator
+        if (this.currentWeapon !== 'basic') {
+            ctx.fillStyle = '#ffff00';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.currentWeapon.toUpperCase(), this.x, this.y + this.height/2 + 15);
+        }
+    }
+}
+
+class Soldier {
+    constructor(x, y, game) {
+        this.x = x;
+        this.y = y;
+        this.game = game;
+        this.health = 80;
+        this.maxHealth = 80;
+        this.damage = 20;
+        this.range = 250;
+        this.fireRate = 600;
+        this.lastShot = 0;
+        this.target = null;
+        this.width = 18;
+        this.height = 25;
+    }
+    
+    update(deltaTime) {
+        this.lastShot += deltaTime;
+        
+        // Find nearest zombie
+        this.target = this.findNearestZombie();
+        
+        // Shoot at target
+        if (this.target && this.lastShot >= this.fireRate) {
+            this.shoot();
+            this.lastShot = 0;
+        }
+    }
+    
+    findNearestZombie() {
+        let nearest = null;
+        let minDist = this.range;
+        
+        this.game.zombies.forEach(zombie => {
+            const dist = Math.sqrt((this.x - zombie.x) ** 2 + (this.y - zombie.y) ** 2);
+            if (dist < minDist) {
+                nearest = zombie;
+                minDist = dist;
+            }
+        });
+        
+        return nearest;
+    }
+    
+    shoot() {
+        if (!this.target) return;
+        
+        const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+        const bulletSpeed = 450;
+        const damage = this.damage * this.game.damageMultiplier;
+        
+        this.game.bullets.push(new Bullet(
+            this.x, this.y - 5,
+            Math.cos(angle) * bulletSpeed,
+            Math.sin(angle) * bulletSpeed,
+            damage,
+            'soldier'
+        ));
+    }
+    
+    takeDamage(damage) {
+        this.health -= damage;
+    }
+    
+    render(ctx) {
+        // Draw soldier body
+        ctx.fillStyle = '#4a5d23';
+        ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+        
+        // Draw soldier head
+        ctx.fillStyle = '#fdbcb4';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - this.height/2 - 6, 7, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw helmet
+        ctx.fillStyle = '#3a4d1a';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - this.height/2 - 6, 8, Math.PI, 2 * Math.PI);
+        ctx.fill();
+        
+        // Draw weapon
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.width/2, this.y - 3);
+        ctx.lineTo(this.x + this.width/2 + 15, this.y - 3);
+        ctx.stroke();
+        
+        // Draw health bar
+        const barWidth = 20;
+        const barHeight = 3;
+        const healthPercent = this.health / this.maxHealth;
+        
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 18, barWidth, barHeight);
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 18, barWidth * healthPercent, barHeight);
+    }
+}
+
+class Zombie {
+    constructor(x, y, type, game) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.game = game;
+        this.speed = this.getSpeed();
+        this.health = this.getHealth();
+        this.maxHealth = this.health;
+        this.damage = this.getDamage();
+        this.scoreValue = this.getScoreValue();
+        this.moneyValue = this.getMoneyValue();
+        this.experienceValue = this.getExperienceValue();
+        this.color = this.getColor();
+        this.width = this.getWidth();
+        this.height = this.getHeight();
+
+        // Special ability timers and states
+        this.lastSpecialAbility = 0;
+        this.isPhased = false;
+        this.phaseTime = 0;
+        this.isInvisible = false;
+        this.invisibilityTime = 0;
+        this.shieldHealth = this.type === 'shielder' ? this.health * 0.5 : 0;
+        this.healCooldown = 0;
+        this.summonCooldown = 0;
+        this.jumpCooldown = 0;
+        this.spitCooldown = 0;
+        this.chargeTarget = null;
+        this.chargeCooldown = 0;
+
+        // Boss-specific mechanics
+        this.phase = 1;
+        this.maxPhases = this.getBossPhases();
+        this.bossAbilityCooldown = 0;
+        this.enrageThreshold = 0.3; // 30% health triggers enrage
+        this.isEnraged = false;
+    }
+    
+    getSpeed() {
+        switch (this.type) {
+            // Original types
+            case 'fast': return 90;
+            case 'tank': return 25;
+            case 'boss': return 40;
+            case 'mega_boss': return 20;
+
+            // New 10 Monster Types
+            case 'crawler': return 120; // Very fast swarm unit
+            case 'brute': return 15; // Slow but powerful
+            case 'spitter': return 45; // Medium speed ranged
+            case 'jumper': return 70; // Teleporting enemy
+            case 'shielder': return 50; // Protected tank
+            case 'exploder': return 80; // Suicide bomber
+            case 'healer': return 35; // Support unit
+            case 'summoner': return 30; // Spawns minions
+            case 'phase_walker': return 65; // Phasing ability
+            case 'stalker': return 55; // Stealth unit
+
+            // 10 Boss Types
+            case 'horde_king': return 20; // Wave 5 boss
+            case 'iron_colossus': return 10; // Wave 10 boss
+            case 'plague_mother': return 25; // Wave 15 boss
+            case 'shadow_reaper': return 60; // Wave 20 boss
+            case 'flame_berserker': return 45; // Wave 25 boss
+            case 'crystal_guardian': return 15; // Wave 30 boss
+            case 'void_spawner': return 30; // Wave 35 boss
+            case 'thunder_titan': return 20; // Wave 40 boss
+            case 'ice_queen': return 35; // Wave 45 boss
+            case 'final_nightmare': return 25; // Wave 50 boss
+
+            default: return 75; // Increased basic zombie speed for challenge
+        }
+    }
+    
+    getHealth() {
+        const baseHealth = 60 + this.game.wave * 15;
+        switch (this.type) {
+            // Original types
+            case 'fast': return Math.floor(baseHealth * 0.6);
+            case 'tank': return Math.floor(baseHealth * 3);
+            case 'boss': return Math.floor(baseHealth * 5);
+            case 'mega_boss': return Math.floor(baseHealth * 10);
+
+            // New 10 Monster Types
+            case 'crawler': return Math.floor(baseHealth * 0.4); // Glass cannon swarm
+            case 'brute': return Math.floor(baseHealth * 4); // Very tanky
+            case 'spitter': return Math.floor(baseHealth * 0.8); // Medium health ranged
+            case 'jumper': return Math.floor(baseHealth * 1.2); // Agile but not too tanky
+            case 'shielder': return Math.floor(baseHealth * 2.5); // Tank with shield
+            case 'exploder': return Math.floor(baseHealth * 0.3); // Very fragile bomber
+            case 'healer': return Math.floor(baseHealth * 1.5); // Support unit
+            case 'summoner': return Math.floor(baseHealth * 2); // Spawner
+            case 'phase_walker': return Math.floor(baseHealth * 1.8); // Phasing enemy
+            case 'stalker': return Math.floor(baseHealth * 1.3); // Stealth assassin
+
+            // 10 Boss Types - Escalating health
+            case 'horde_king': return Math.floor(baseHealth * 8); // Wave 5 boss
+            case 'iron_colossus': return Math.floor(baseHealth * 12); // Wave 10 boss
+            case 'plague_mother': return Math.floor(baseHealth * 15); // Wave 15 boss
+            case 'shadow_reaper': return Math.floor(baseHealth * 18); // Wave 20 boss
+            case 'flame_berserker': return Math.floor(baseHealth * 22); // Wave 25 boss
+            case 'crystal_guardian': return Math.floor(baseHealth * 25); // Wave 30 boss
+            case 'void_spawner': return Math.floor(baseHealth * 30); // Wave 35 boss
+            case 'thunder_titan': return Math.floor(baseHealth * 35); // Wave 40 boss
+            case 'ice_queen': return Math.floor(baseHealth * 40); // Wave 45 boss
+            case 'final_nightmare': return Math.floor(baseHealth * 50); // Wave 50 final boss
+
+            default: return baseHealth;
+        }
+    }
+    
+    getDamage() {
+        switch (this.type) {
+            // Original types
+            case 'fast': return 20;
+            case 'tank': return 50;
+            case 'boss': return 80;
+            case 'mega_boss': return 150;
+
+            // New 10 Monster Types
+            case 'crawler': return 15; // Low damage but swarms
+            case 'brute': return 75; // High damage slow attacker
+            case 'spitter': return 35; // Ranged attacker
+            case 'jumper': return 40; // Teleport ambush damage
+            case 'shielder': return 45; // Protected damage dealer
+            case 'exploder': return 120; // Massive explosion damage
+            case 'healer': return 25; // Low damage support
+            case 'summoner': return 30; // Spawning threat
+            case 'phase_walker': return 55; // Phasing assassin
+            case 'stalker': return 65; // Stealth critical hits
+
+            // 10 Boss Types - Escalating damage
+            case 'horde_king': return 100; // Wave 5 boss
+            case 'iron_colossus': return 140; // Wave 10 boss
+            case 'plague_mother': return 120; // Wave 15 boss (poison focus)
+            case 'shadow_reaper': return 180; // Wave 20 boss
+            case 'flame_berserker': return 220; // Wave 25 boss
+            case 'crystal_guardian': return 160; // Wave 30 boss (shield focus)
+            case 'void_spawner': return 200; // Wave 35 boss
+            case 'thunder_titan': return 250; // Wave 40 boss
+            case 'ice_queen': return 280; // Wave 45 boss
+            case 'final_nightmare': return 350; // Wave 50 final boss
+
+            default: return 30;
+        }
+    }
+    
+    getScoreValue() {
+        switch (this.type) {
+            // Original types
+            case 'fast': return 20;
+            case 'tank': return 80;
+            case 'boss': return 200;
+            case 'mega_boss': return 500;
+
+            // New 10 Monster Types
+            case 'crawler': return 10; // Low value swarm
+            case 'brute': return 100; // High value tank
+            case 'spitter': return 35; // Medium value ranged
+            case 'jumper': return 45; // Teleporter value
+            case 'shielder': return 75; // Protected unit value
+            case 'exploder': return 60; // Dangerous bomber value
+            case 'healer': return 90; // High priority target
+            case 'summoner': return 120; // Very high priority
+            case 'phase_walker': return 85; // Phasing unit value
+            case 'stalker': return 70; // Stealth unit value
+
+            // 10 Boss Types - High score values
+            case 'horde_king': return 800; // Wave 5 boss
+            case 'iron_colossus': return 1200; // Wave 10 boss
+            case 'plague_mother': return 1600; // Wave 15 boss
+            case 'shadow_reaper': return 2000; // Wave 20 boss
+            case 'flame_berserker': return 2500; // Wave 25 boss
+            case 'crystal_guardian': return 3000; // Wave 30 boss
+            case 'void_spawner': return 3500; // Wave 35 boss
+            case 'thunder_titan': return 4000; // Wave 40 boss
+            case 'ice_queen': return 4500; // Wave 45 boss
+            case 'final_nightmare': return 5000; // Wave 50 final boss
+
+            default: return 15;
+        }
+    }
+    
+    getMoneyValue() {
+        switch (this.type) {
+            // Original types
+            case 'fast': return 12;
+            case 'tank': return 35;
+            case 'boss': return 100;
+            case 'mega_boss': return 250;
+
+            // New 10 Monster Types
+            case 'crawler': return 5; // Low money swarm
+            case 'brute': return 50; // High money tank
+            case 'spitter': return 18; // Medium money ranged
+            case 'jumper': return 22; // Teleporter money
+            case 'shielder': return 40; // Protected unit money
+            case 'exploder': return 30; // Bomber money
+            case 'healer': return 45; // Support money
+            case 'summoner': return 60; // Spawner money
+            case 'phase_walker': return 42; // Phasing money
+            case 'stalker': return 35; // Stealth money
+
+            // 10 Boss Types - High money rewards
+            case 'horde_king': return 400; // Wave 5 boss
+            case 'iron_colossus': return 600; // Wave 10 boss
+            case 'plague_mother': return 800; // Wave 15 boss
+            case 'shadow_reaper': return 1000; // Wave 20 boss
+            case 'flame_berserker': return 1250; // Wave 25 boss
+            case 'crystal_guardian': return 1500; // Wave 30 boss
+            case 'void_spawner': return 1750; // Wave 35 boss
+            case 'thunder_titan': return 2000; // Wave 40 boss
+            case 'ice_queen': return 2250; // Wave 45 boss
+            case 'final_nightmare': return 2500; // Wave 50 final boss
+
+            default: return 8;
+        }
+    }
+
+    getExperienceValue() {
+        switch (this.type) {
+            // Original types
+            case 'fast': return 15;
+            case 'tank': return 30;
+            case 'boss': return 75;
+            case 'mega_boss': return 150;
+
+            // New 10 Monster Types
+            case 'crawler': return 8; // Low exp swarm
+            case 'brute': return 40; // High exp tank
+            case 'spitter': return 20; // Medium exp ranged
+            case 'jumper': return 25; // Teleporter exp
+            case 'shielder': return 35; // Protected unit exp
+            case 'exploder': return 30; // Bomber exp
+            case 'healer': return 50; // Support exp
+            case 'summoner': return 60; // Spawner exp
+            case 'phase_walker': return 45; // Phasing exp
+            case 'stalker': return 38; // Stealth exp
+
+            // 10 Boss Types - High experience rewards
+            case 'horde_king': return 200; // Wave 5 boss
+            case 'iron_colossus': return 300; // Wave 10 boss
+            case 'plague_mother': return 400; // Wave 15 boss
+            case 'shadow_reaper': return 500; // Wave 20 boss
+            case 'flame_berserker': return 625; // Wave 25 boss
+            case 'crystal_guardian': return 750; // Wave 30 boss
+            case 'void_spawner': return 875; // Wave 35 boss
+            case 'thunder_titan': return 1000; // Wave 40 boss
+            case 'ice_queen': return 1125; // Wave 45 boss
+            case 'final_nightmare': return 1250; // Wave 50 final boss
+
+            default: return 10;
+        }
+    }
+    
+    getColor() {
+        switch (this.type) {
+            // Original types
+            case 'fast': return '#ff6b6b';
+            case 'tank': return '#4a4a4a';
+            case 'boss': return '#8e44ad';
+            case 'mega_boss': return '#e74c3c';
+
+            // New 10 Monster Types with distinct colors
+            case 'crawler': return '#ff9f43'; // Orange swarm
+            case 'brute': return '#2d3436'; // Dark gray tank
+            case 'spitter': return '#00b894'; // Green ranged
+            case 'jumper': return '#a29bfe'; // Purple teleporter
+            case 'shielder': return '#74b9ff'; // Blue protected
+            case 'exploder': return '#fd79a8'; // Pink bomber
+            case 'healer': return '#55a3ff'; // Light blue support
+            case 'summoner': return '#6c5ce7'; // Purple spawner
+            case 'phase_walker': return '#fd79a8'; // Pink phaser
+            case 'stalker': return '#636e72'; // Gray stealth
+
+            // 10 Boss Types with menacing colors
+            case 'horde_king': return '#e17055'; // Red-brown horde
+            case 'iron_colossus': return '#2d3436'; // Dark iron
+            case 'plague_mother': return '#00b894'; // Sickly green
+            case 'shadow_reaper': return '#2d3436'; // Shadow black
+            case 'flame_berserker': return '#e17055'; // Flame red
+            case 'crystal_guardian': return '#74b9ff'; // Crystal blue
+            case 'void_spawner': return '#636e72'; // Void gray
+            case 'thunder_titan': return '#fdcb6e'; // Lightning yellow
+            case 'ice_queen': return '#81ecec'; // Ice cyan
+            case 'final_nightmare': return '#2d3436'; // Nightmare black
+
+            default: return '#6c5ce7';
+        }
+    }
+    
+    getWidth() {
+        switch (this.type) {
+            // Original types
+            case 'tank': return 30;
+            case 'boss': return 40;
+            case 'mega_boss': return 60;
+
+            // New 10 Monster Types with varied sizes
+            case 'crawler': return 12; // Small swarm unit
+            case 'brute': return 35; // Large tank
+            case 'spitter': return 18; // Medium ranged
+            case 'jumper': return 16; // Agile size
+            case 'shielder': return 28; // Protected size
+            case 'exploder': return 14; // Small bomber
+            case 'healer': return 22; // Medium support
+            case 'summoner': return 25; // Spawner size
+            case 'phase_walker': return 20; // Standard phaser
+            case 'stalker': return 18; // Stealth size
+
+            // 10 Boss Types with imposing sizes
+            case 'horde_king': return 50; // Wave 5 boss
+            case 'iron_colossus': return 80; // Wave 10 boss - massive
+            case 'plague_mother': return 55; // Wave 15 boss
+            case 'shadow_reaper': return 45; // Wave 20 boss - agile
+            case 'flame_berserker': return 60; // Wave 25 boss
+            case 'crystal_guardian': return 70; // Wave 30 boss
+            case 'void_spawner': return 65; // Wave 35 boss
+            case 'thunder_titan': return 90; // Wave 40 boss - huge
+            case 'ice_queen': return 75; // Wave 45 boss
+            case 'final_nightmare': return 100; // Wave 50 - ultimate size
+
+            default: return 20;
+        }
+    }
+
+    getHeight() {
+        switch (this.type) {
+            // Original types
+            case 'tank': return 35;
+            case 'boss': return 45;
+            case 'mega_boss': return 70;
+
+            // New 10 Monster Types with varied heights
+            case 'crawler': return 10; // Small swarm unit
+            case 'brute': return 40; // Large tank
+            case 'spitter': return 20; // Medium ranged
+            case 'jumper': return 18; // Agile height
+            case 'shielder': return 32; // Protected height
+            case 'exploder': return 12; // Small bomber
+            case 'healer': return 24; // Medium support
+            case 'summoner': return 28; // Spawner height
+            case 'phase_walker': return 22; // Standard phaser
+            case 'stalker': return 20; // Stealth height
+
+            // 10 Boss Types with imposing heights
+            case 'horde_king': return 55; // Wave 5 boss
+            case 'iron_colossus': return 95; // Wave 10 boss - massive
+            case 'plague_mother': return 60; // Wave 15 boss
+            case 'shadow_reaper': return 50; // Wave 20 boss - agile
+            case 'flame_berserker': return 65; // Wave 25 boss
+            case 'crystal_guardian': return 80; // Wave 30 boss
+            case 'void_spawner': return 70; // Wave 35 boss
+            case 'thunder_titan': return 105; // Wave 40 boss - huge
+            case 'ice_queen': return 85; // Wave 45 boss
+            case 'final_nightmare': return 120; // Wave 50 - ultimate height
+
+            default: return 25;
+        }
+    }
+
+    getBossPhases() {
+        switch (this.type) {
+            case 'horde_king': return 2;
+            case 'iron_colossus': return 3;
+            case 'plague_mother': return 2;
+            case 'shadow_reaper': return 3;
+            case 'flame_berserker': return 4;
+            case 'crystal_guardian': return 3;
+            case 'void_spawner': return 2;
+            case 'thunder_titan': return 3;
+            case 'ice_queen': return 3;
+            case 'final_nightmare': return 5;
+            default: return 1;
+        }
+    }
+
+    isBoss() {
+        return ['horde_king', 'iron_colossus', 'plague_mother', 'shadow_reaper',
+                'flame_berserker', 'crystal_guardian', 'void_spawner', 'thunder_titan',
+                'ice_queen', 'final_nightmare', 'boss', 'mega_boss'].includes(this.type);
+    }
+
+    update(deltaTime) {
+        // Handle status effects
+        if (this.poisoned && this.poisonTime > 0) {
+            this.poisonTime -= deltaTime;
+            if (this.poisonTime <= 0) {
+                this.poisoned = false;
+            } else {
+                this.takeDamage(this.poisonDamage * deltaTime / 1000);
+            }
+        }
+
+        // Handle burn damage from fire weapons
+        if (this.burnTime > 0) {
+            this.burnTime -= deltaTime;
+            if (this.burnTime <= 0) {
+                this.burnDamage = 0;
+            } else {
+                this.takeDamage(this.burnDamage * deltaTime / 1000);
+                // Create fire particles occasionally
+                if (Math.random() < 0.3) {
+                    this.game.particles.push(new Particle(
+                        this.x + (Math.random() - 0.5) * 20,
+                        this.y + (Math.random() - 0.5) * 20,
+                        '#ff6600',
+                        'small'
+                    ));
+                }
+            }
+        }
+
+        // Handle special abilities based on enemy type
+        this.handleSpecialAbilities(deltaTime);
+
+        // Check for boss phase transitions
+        if (this.isBoss()) {
+            this.handleBossPhases(deltaTime);
+        }
+
+        // Don't move if frozen or stunned
+        if (this.frozen || this.stunned) return;
+        
+        // Move downward and towards player
+        const player = this.game.player;
+        const speedMultiplier = this.game.player?.timeSlowTime > 0 ? 0.5 : 1;
+        
+        if (player) {
+            const angleToPlayer = Math.atan2(player.y - this.y, player.x - this.x);
+            const moveDown = 0.7; // 70% downward movement
+            const moveTowardsPlayer = 0.3; // 30% towards player
+            
+            this.y += this.speed * moveDown * speedMultiplier * deltaTime / 1000;
+            this.x += Math.cos(angleToPlayer) * this.speed * moveTowardsPlayer * speedMultiplier * deltaTime / 1000;
+        } else {
+            this.y += this.speed * speedMultiplier * deltaTime / 1000;
+        }
+        
+        // Remove if off screen bottom
+        if (this.y > this.game.getCanvasHeight() + 50) {
+            this.health = 0;
+        }
+    }
+    
+    takeDamage(damage) {
+        // Double damage if vulnerable
+        if (this.vulnerable) {
+            damage *= 2;
+        }
+        this.health -= damage;
+    }
+    
+    render(ctx) {
+        // Draw zombie shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.ellipse(this.x, this.y + this.height/2 + 5, this.width/2, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw zombie body
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+        
+        // Draw zombie details based on type
+        if (this.type === 'tank') {
+            // Armor plating
+            ctx.fillStyle = '#2d3436';
+            ctx.fillRect(this.x - this.width/2 + 2, this.y - this.height/2 + 5, this.width - 4, 8);
+            ctx.fillRect(this.x - this.width/2 + 2, this.y - this.height/2 + 15, this.width - 4, 8);
+        } else if (this.type === 'boss') {
+            // Boss markings
+            ctx.fillStyle = '#e17055';
+            ctx.fillRect(this.x - this.width/2 + 3, this.y - this.height/2 + 5, this.width - 6, 6);
+            ctx.fillRect(this.x - this.width/2 + 3, this.y - this.height/2 + 15, this.width - 6, 6);
+            ctx.fillRect(this.x - this.width/2 + 3, this.y - this.height/2 + 25, this.width - 6, 6);
+        }
+        
+        // Draw zombie head
+        const headSize = this.type === 'boss' ? 12 : this.type === 'tank' ? 10 : 8;
+        ctx.fillStyle = '#a29bfe';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - this.height/2 - headSize/2, headSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw glowing eyes
+        ctx.fillStyle = '#ff3838';
+        ctx.beginPath();
+        ctx.arc(this.x - headSize/3, this.y - this.height/2 - headSize/2, 2, 0, Math.PI * 2);
+        ctx.arc(this.x + headSize/3, this.y - this.height/2 - headSize/2, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw health bar
+        const barWidth = this.width + 5;
+        const barHeight = 4;
+        const healthPercent = this.health / this.maxHealth;
+        
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - headSize - 8, barWidth, barHeight);
+        ctx.fillStyle = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff4444';
+        ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - headSize - 8, barWidth * healthPercent, barHeight);
+    }
+
+    handleSpecialAbilities(deltaTime) {
+        const player = this.game.player;
+        if (!player) return;
+
+        switch (this.type) {
+            case 'crawler':
+                // Swarm behavior - speeds up when near other crawlers
+                const nearCrawlers = this.game.zombies.filter(z =>
+                    z.type === 'crawler' && z !== this &&
+                    Math.sqrt((z.x - this.x) ** 2 + (z.y - this.y) ** 2) < 50
+                ).length;
+                this.speed = this.getSpeed() + (nearCrawlers * 20);
+                break;
+
+            case 'brute':
+                // Charge attack when close to player
+                this.chargeCooldown -= deltaTime;
+                const distToPlayer = Math.sqrt((player.x - this.x) ** 2 + (player.y - this.y) ** 2);
+                if (distToPlayer < 150 && this.chargeCooldown <= 0) {
+                    this.chargeTarget = { x: player.x, y: player.y };
+                    this.chargeCooldown = 5000; // 5 second cooldown
+                    this.speed = this.getSpeed() * 3; // Triple speed during charge
+                }
+                break;
+
+            case 'spitter':
+                // Ranged spit attack
+                this.spitCooldown -= deltaTime;
+                if (this.spitCooldown <= 0 && Math.sqrt((player.x - this.x) ** 2 + (player.y - this.y) ** 2) < 200) {
+                    this.spitAttack(player);
+                    this.spitCooldown = 3000; // 3 second cooldown
+                }
+                break;
+
+            case 'jumper':
+                // Teleport to player occasionally
+                this.jumpCooldown -= deltaTime;
+                if (this.jumpCooldown <= 0 && Math.sqrt((player.x - this.x) ** 2 + (player.y - this.y) ** 2) > 100) {
+                    this.teleportToPlayer(player);
+                    this.jumpCooldown = 8000; // 8 second cooldown
+                }
+                break;
+
+            case 'shielder':
+                // Shield mechanics - regenerate shield over time
+                if (this.shieldHealth < this.maxHealth * 0.5) {
+                    this.shieldHealth += deltaTime * 0.01; // Slow regeneration
+                }
+                break;
+
+            case 'exploder':
+                // Explode when close to player or on death
+                if (Math.sqrt((player.x - this.x) ** 2 + (player.y - this.y) ** 2) < 30 || this.health <= 0) {
+                    this.explode();
+                }
+                break;
+
+            case 'healer':
+                // Heal nearby enemies
+                this.healCooldown -= deltaTime;
+                if (this.healCooldown <= 0) {
+                    this.healNearbyEnemies();
+                    this.healCooldown = 4000; // 4 second cooldown
+                }
+                break;
+
+            case 'summoner':
+                // Spawn minions
+                this.summonCooldown -= deltaTime;
+                if (this.summonCooldown <= 0) {
+                    this.summonMinions();
+                    this.summonCooldown = 10000; // 10 second cooldown
+                }
+                break;
+
+            case 'phase_walker':
+                // Phase in and out of reality
+                this.phaseTime -= deltaTime;
+                if (this.phaseTime <= 0) {
+                    this.isPhased = !this.isPhased;
+                    this.phaseTime = this.isPhased ? 2000 : 3000; // 2s phased, 3s normal
+                }
+                break;
+
+            case 'stalker':
+                // Stealth mechanics
+                this.invisibilityTime -= deltaTime;
+                if (this.invisibilityTime <= 0) {
+                    this.isInvisible = !this.isInvisible;
+                    this.invisibilityTime = this.isInvisible ? 3000 : 4000; // 3s invisible, 4s visible
+                }
+                break;
+        }
+    }
+
+    handleBossPhases(deltaTime) {
+        // Check for phase transitions based on health
+        const healthPercent = this.health / this.maxHealth;
+        const phaseThreshold = 1 / this.maxPhases;
+        const currentPhase = Math.ceil(healthPercent / phaseThreshold);
+
+        if (currentPhase !== this.phase && currentPhase >= 1) {
+            this.phase = currentPhase;
+            this.onPhaseChange();
+        }
+
+        // Handle enrage when health is low
+        if (healthPercent <= this.enrageThreshold && !this.isEnraged) {
+            this.isEnraged = true;
+            this.speed *= 1.5;
+            this.damage *= 1.3;
+        }
+
+        // Boss-specific abilities
+        this.bossAbilityCooldown -= deltaTime;
+        if (this.bossAbilityCooldown <= 0) {
+            this.useBossAbility();
+            this.bossAbilityCooldown = 5000 - (this.phase * 500); // Faster abilities in later phases
+        }
+    }
+
+    // Special ability implementations
+    spitAttack(target) {
+        const angle = Math.atan2(target.y - this.y, target.x - this.x);
+        // Create a projectile (similar to bullet but enemy-owned)
+        this.game.enemyProjectiles.push({
+            x: this.x,
+            y: this.y,
+            vx: Math.cos(angle) * 200,
+            vy: Math.sin(angle) * 200,
+            damage: this.damage * 0.7,
+            type: 'spit',
+            active: true
+        });
+    }
+
+    teleportToPlayer(player) {
+        // Teleport near player with some randomness
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 50 + Math.random() * 50;
+        this.x = player.x + Math.cos(angle) * distance;
+        this.y = player.y + Math.sin(angle) * distance;
+
+        // Create teleport effect
+        for (let i = 0; i < 10; i++) {
+            this.game.particles.push(new Particle(this.x, this.y, '#a29bfe', 'medium'));
+        }
+    }
+
+    explode() {
+        const explosionRadius = 80;
+        const player = this.game.player;
+
+        // Damage player if in range
+        if (player) {
+            const dist = Math.sqrt((player.x - this.x) ** 2 + (player.y - this.y) ** 2);
+            if (dist <= explosionRadius) {
+                const damage = this.damage * (1 - dist / explosionRadius);
+                player.takeDamage(damage);
+            }
+        }
+
+        // Create explosion particles
+        for (let i = 0; i < 15; i++) {
+            this.game.particles.push(new Particle(this.x, this.y, '#fd79a8', 'large'));
+        }
+
+        this.health = 0; // Kill self after explosion
+    }
+
+    healNearbyEnemies() {
+        const healRange = 100;
+        const healAmount = this.damage * 0.5;
+
+        this.game.zombies.forEach(zombie => {
+            if (zombie !== this && zombie.health > 0) {
+                const dist = Math.sqrt((zombie.x - this.x) ** 2 + (zombie.y - this.y) ** 2);
+                if (dist <= healRange) {
+                    zombie.health = Math.min(zombie.maxHealth, zombie.health + healAmount);
+                    // Create heal effect
+                    this.game.particles.push(new Particle(zombie.x, zombie.y, '#55a3ff', 'small'));
+                }
+            }
+        });
+    }
+
+    summonMinions() {
+        const minionCount = 2 + Math.floor(this.game.wave / 10);
+        for (let i = 0; i < minionCount; i++) {
+            const angle = (Math.PI * 2 * i) / minionCount;
+            const distance = 50;
+            const x = this.x + Math.cos(angle) * distance;
+            const y = this.y + Math.sin(angle) * distance;
+            this.game.zombies.push(new Zombie(x, y, 'crawler', this.game));
+        }
+    }
+
+    onPhaseChange() {
+        // Create phase change effect
+        for (let i = 0; i < 20; i++) {
+            this.game.particles.push(new Particle(this.x, this.y, this.color, 'large'));
+        }
+    }
+
+    useBossAbility() {
+        const player = this.game.player;
+        if (!player) return;
+
+        switch (this.type) {
+            case 'horde_king':
+                // Summon horde
+                this.summonMinions();
+                break;
+
+            case 'iron_colossus':
+                // Ground slam
+                this.groundSlam();
+                break;
+
+            case 'plague_mother':
+                // Poison cloud
+                this.createPoisonCloud();
+                break;
+
+            case 'shadow_reaper':
+                // Shadow dash
+                this.shadowDash(player);
+                break;
+
+            case 'flame_berserker':
+                // Fire nova
+                this.fireNova();
+                break;
+
+            case 'crystal_guardian':
+                // Crystal barrier
+                this.crystalBarrier();
+                break;
+
+            case 'void_spawner':
+                // Portal spawn
+                this.portalSpawn();
+                break;
+
+            case 'thunder_titan':
+                // Lightning storm
+                this.lightningStorm();
+                break;
+
+            case 'ice_queen':
+                // Frost wave
+                this.frostWave();
+                break;
+
+            case 'final_nightmare':
+                // All abilities based on phase
+                if (this.phase <= 2) this.summonMinions();
+                if (this.phase <= 3) this.fireNova();
+                if (this.phase <= 4) this.lightningStorm();
+                if (this.phase === 5) this.apocalypse();
+                break;
+        }
+    }
+
+    groundSlam() {
+        // Create shockwave that damages player if close
+        const shockwaveRadius = 150;
+        const player = this.game.player;
+        if (player) {
+            const dist = Math.sqrt((player.x - this.x) ** 2 + (player.y - this.y) ** 2);
+            if (dist <= shockwaveRadius) {
+                player.takeDamage(this.damage * 1.5);
+            }
+        }
+        // Visual effect
+        for (let i = 0; i < 30; i++) {
+            const angle = (Math.PI * 2 * i) / 30;
+            this.game.particles.push(new Particle(
+                this.x + Math.cos(angle) * shockwaveRadius * 0.5,
+                this.y + Math.sin(angle) * shockwaveRadius * 0.5,
+                '#2d3436', 'medium'
+            ));
+        }
+    }
+
+    createPoisonCloud() {
+        // Create poison area effect
+        this.game.hazards.push({
+            x: this.x,
+            y: this.y,
+            radius: 120,
+            damage: this.damage * 0.3,
+            duration: 8000,
+            type: 'poison'
+        });
+    }
+
+    shadowDash(target) {
+        // Dash towards player
+        const angle = Math.atan2(target.y - this.y, target.x - this.x);
+        this.x += Math.cos(angle) * 200;
+        this.y += Math.sin(angle) * 200;
+        // Create shadow trail
+        for (let i = 0; i < 10; i++) {
+            this.game.particles.push(new Particle(this.x, this.y, '#2d3436', 'medium'));
+        }
+    }
+
+    fireNova() {
+        // Fire explosion around boss
+        const novaRadius = 200;
+        const player = this.game.player;
+        if (player) {
+            const dist = Math.sqrt((player.x - this.x) ** 2 + (player.y - this.y) ** 2);
+            if (dist <= novaRadius) {
+                player.takeDamage(this.damage);
+                player.burnDamage = this.damage * 0.2;
+                player.burnTime = 3000;
+            }
+        }
+        // Visual effect
+        for (let i = 0; i < 50; i++) {
+            const angle = (Math.PI * 2 * i) / 50;
+            this.game.particles.push(new Particle(
+                this.x + Math.cos(angle) * novaRadius * Math.random(),
+                this.y + Math.sin(angle) * novaRadius * Math.random(),
+                '#e17055', 'large'
+            ));
+        }
+    }
+
+    crystalBarrier() {
+        // Increase shield health significantly
+        this.shieldHealth = this.maxHealth;
+    }
+
+    portalSpawn() {
+        // Spawn enemies from portals
+        for (let i = 0; i < 3; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 150;
+            const x = this.x + Math.cos(angle) * distance;
+            const y = this.y + Math.sin(angle) * distance;
+            this.game.zombies.push(new Zombie(x, y, 'fast', this.game));
+        }
+    }
+
+    lightningStorm() {
+        // Multiple lightning strikes
+        const player = this.game.player;
+        if (player) {
+            // Strike at player location
+            player.takeDamage(this.damage * 1.2);
+            // Create lightning effect
+            for (let i = 0; i < 20; i++) {
+                this.game.particles.push(new Particle(player.x, player.y, '#fdcb6e', 'large'));
+            }
+        }
+    }
+
+    frostWave() {
+        // Slow all enemies and damage player
+        const player = this.game.player;
+        if (player) {
+            player.takeDamage(this.damage * 0.8);
+            player.speedBoostTime = -5000; // Slow effect
+        }
+        // Visual effect
+        for (let i = 0; i < 40; i++) {
+            const angle = (Math.PI * 2 * i) / 40;
+            this.game.particles.push(new Particle(
+                this.x + Math.cos(angle) * 250,
+                this.y + Math.sin(angle) * 250,
+                '#81ecec', 'medium'
+            ));
+        }
+    }
+
+    apocalypse() {
+        // Ultimate ability - multiple effects
+        this.fireNova();
+        this.lightningStorm();
+        this.summonMinions();
+        this.createPoisonCloud();
+    }
+}
+
+class Bullet {
+    constructor(x, y, vx, vy, damage, type = 'soldier') {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.damage = damage;
+        this.type = type;
+        this.active = true;
+        this.trail = [];
+        this.piercing = this.getPiercingValue(type);
+        this.pierceCount = 0;
+    }
+
+    getPiercingValue(type) {
+        switch (type) {
+            case 'laser':
+            case 'railgun':
+                return 3;
+            case 'gatling_laser':
+            case 'plasma_rifle':
+                return 2;
+            case 'death_ray':
+                return 5; // Death ray pierces through more enemies
+            case 'knife':
+            case 'soul_reaper':
+                return 999; // Knives are persistent
+            default:
+                return 0;
+        }
+    }
+    
+    update(deltaTime) {
+        // Add to trail
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > 5) {
+            this.trail.shift();
+        }
+        
+        this.x += this.vx * deltaTime / 1000;
+        this.y += this.vy * deltaTime / 1000;
+        
+        // Remove if off screen
+        if (this.x < -50 || this.x > 850 || this.y < -50 || this.y > 650) {
+            this.active = false;
+        }
+    }
+    
+    render(ctx) {
+        // Get weapon-specific visuals
+        const visuals = this.getWeaponVisuals();
+
+        // Draw bullet trail
+        if (this.trail.length > 1) {
+            ctx.strokeStyle = visuals.trailColor;
+            ctx.lineWidth = visuals.trailWidth;
+            ctx.beginPath();
+            ctx.moveTo(this.trail[0].x, this.trail[0].y);
+            for (let i = 1; i < this.trail.length; i++) {
+                ctx.lineTo(this.trail[i].x, this.trail[i].y);
+            }
+            ctx.stroke();
+        }
+
+        // Draw weapon-specific bullet
+        ctx.fillStyle = visuals.color;
+        ctx.shadowColor = visuals.glowColor;
+        ctx.shadowBlur = visuals.glowSize;
+
+        if (visuals.shape === 'square') {
+            ctx.fillRect(this.x - visuals.size/2, this.y - visuals.size/2, visuals.size, visuals.size);
+        } else if (visuals.shape === 'triangle') {
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y - visuals.size);
+            ctx.lineTo(this.x - visuals.size, this.y + visuals.size);
+            ctx.lineTo(this.x + visuals.size, this.y + visuals.size);
+            ctx.closePath();
+            ctx.fill();
+        } else {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, visuals.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.shadowBlur = 0;
+    }
+
+    getWeaponVisuals() {
+        switch (this.type) {
+            case 'rocket':
+            case 'missile_barrage':
+                return {
+                    size: 6,
+                    color: '#ff4444',
+                    glowColor: '#ff0000',
+                    glowSize: 12,
+                    trailColor: 'rgba(255, 68, 68, 0.8)',
+                    trailWidth: 4,
+                    shape: 'triangle'
+                };
+
+            case 'grenade':
+            case 'holy_bomb':
+                return {
+                    size: 5,
+                    color: '#8B4513',
+                    glowColor: '#654321',
+                    glowSize: 8,
+                    trailColor: 'rgba(139, 69, 19, 0.6)',
+                    trailWidth: 3,
+                    shape: 'circle'
+                };
+
+            case 'laser':
+            case 'gatling_laser':
+            case 'plasma_rifle':
+                return {
+                    size: 3,
+                    color: '#00ffff',
+                    glowColor: '#00cccc',
+                    glowSize: 15,
+                    trailColor: 'rgba(0, 255, 255, 0.9)',
+                    trailWidth: 2,
+                    shape: 'circle'
+                };
+
+            case 'flamethrower':
+            case 'dragon_breath':
+                return {
+                    size: 4,
+                    color: '#ff6600',
+                    glowColor: '#ff4400',
+                    glowSize: 10,
+                    trailColor: 'rgba(255, 102, 0, 0.7)',
+                    trailWidth: 3,
+                    shape: 'circle'
+                };
+
+            case 'knife':
+            case 'soul_reaper':
+                return {
+                    size: 4,
+                    color: '#cccccc',
+                    glowColor: '#aaaaaa',
+                    glowSize: 6,
+                    trailColor: 'rgba(204, 204, 204, 0.5)',
+                    trailWidth: 2,
+                    shape: 'square'
+                };
+
+            case 'death_ray':
+                return {
+                    size: 5,
+                    color: '#ff00ff',
+                    glowColor: '#cc00cc',
+                    glowSize: 20,
+                    trailColor: 'rgba(255, 0, 255, 0.9)',
+                    trailWidth: 3,
+                    shape: 'circle'
+                };
+
+            default:
+                return {
+                    size: 4,
+                    color: '#ffd700',
+                    glowColor: '#ffcc00',
+                    glowSize: 8,
+                    trailColor: 'rgba(255, 215, 0, 0.6)',
+                    trailWidth: 2,
+                    shape: 'circle'
+                };
+        }
+    }
+}
+
+class Powerup {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.radius = 22;
+        this.active = true;
+        this.pulseTime = 0;
+        this.lifetime = 12000; // 12 seconds (enough time to fall through screen)
+        this.age = 0;
+        this.rotationAngle = 0;
+        this.fallSpeed = 80; // Falling speed
+        this.sideSpeed = (Math.random() - 0.5) * 20; // Slight horizontal movement
+    }
+    
+    update(deltaTime) {
+        this.pulseTime += deltaTime;
+        this.age += deltaTime;
+        this.rotationAngle += deltaTime * 0.003;
+        
+        // Make power-ups fall down
+        this.y += this.fallSpeed * deltaTime / 1000;
+        this.x += this.sideSpeed * deltaTime / 1000;
+        
+        // Remove if off screen or expired
+        if (this.age >= this.lifetime || this.y > 650) {
+            this.active = false;
+        }
+    }
+    
+    render(ctx) {
+        const pulse = Math.sin(this.pulseTime / 300) * 0.3 + 1;
+        const size = this.radius * pulse;
+        
+        // Draw rotating background
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotationAngle);
+        
+        // Draw powerup background with gradient
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+        gradient.addColorStop(0, this.getColor());
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw border
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.restore();
+        
+        // Draw powerup symbol
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.strokeText(this.getSymbol(), this.x, this.y);
+        ctx.fillText(this.getSymbol(), this.x, this.y);
+    }
+    
+    getColor() {
+        switch (this.type) {
+            // Basic
+            case 'damage': return '#e74c3c';
+            case 'soldiers': return '#3498db';
+            case 'money': return '#f1c40f';
+            case 'health': return '#2ecc71';
+            case 'multishot': return '#9b59b6';
+            // Multipliers
+            case 'x2': return '#ff6b35';
+            case 'x3': return '#ff8c42';
+            case 'x5': return '#ffa726';
+            case 'x10': return '#e74c3c';
+            // Weapons
+            case 'shotgun': return '#8b4513';
+            case 'machinegun': return '#2c3e50';
+            case 'laser': return '#00ffff';
+            case 'rocket': return '#ff4444';
+            case 'plasma': return '#9b59b6';
+            case 'railgun': return '#34495e';
+            case 'flamethrower': return '#ff6600';
+            // Vehicles
+            case 'tank_vehicle': return '#556b2f';
+            case 'helicopter': return '#708090';
+            case 'drone': return '#4682b4';
+            case 'mech_suit': return '#800080';
+            case 'artillery': return '#8b4513';
+            // Special Abilities
+            case 'freeze': return '#87ceeb';
+            case 'shield': return '#ffd700';
+            case 'speed_boost': return '#00ff00';
+            case 'time_slow': return '#9370db';
+            case 'invincibility': return '#ffff00';
+            case 'lightning_storm': return '#00ffff';
+            // Area Effects
+            case 'bomb': return '#e67e22';
+            case 'nuke': return '#ff0000';
+            case 'poison_cloud': return '#32cd32';
+            case 'emp_blast': return '#4169e1';
+            // Risk/Reward
+            case 'lose_soldier': return '#c0392b';
+            case 'lose_health': return '#8b0000';
+            case 'mystery_box': return '#daa520';
+            case 'cursed_treasure': return '#800080';
+            // Progression
+            case 'double_xp': return '#ffa500';
+            case 'coin_magnet': return '#ffd700';
+            case 'bullet_rain': return '#696969';
+            case 'zombie_weakness': return '#ff69b4';
+            default: return '#ffffff';
+        }
+    }
+    
+    getSymbol() {
+        switch (this.type) {
+            // Basic
+            case 'damage': return '⚡';
+            case 'soldiers': return '+';
+            case 'money': return '$';
+            case 'health': return '♥';
+            case 'multishot': return '※';
+            // Multipliers
+            case 'x2': return '2x';
+            case 'x3': return '3x';
+            case 'x5': return '5x';
+            case 'x10': return '10x';
+            // Weapons
+            case 'shotgun': return '🔫';
+            case 'machinegun': return '🔫';
+            case 'laser': return '⚡';
+            case 'rocket': return '🚀';
+            case 'plasma': return '⚡';
+            case 'railgun': return '⚡';
+            case 'flamethrower': return '🔥';
+            // Vehicles
+            case 'tank_vehicle': return '🚗';
+            case 'helicopter': return '🚁';
+            case 'drone': return '✈';
+            case 'mech_suit': return '🤖';
+            case 'artillery': return '💥';
+            // Special Abilities
+            case 'freeze': return '❄';
+            case 'shield': return '🛡';
+            case 'speed_boost': return '💨';
+            case 'time_slow': return '⏱';
+            case 'invincibility': return '⭐';
+            case 'lightning_storm': return '⚡';
+            // Area Effects
+            case 'bomb': return '💣';
+            case 'nuke': return '☢';
+            case 'poison_cloud': return '☁';
+            case 'emp_blast': return '⚡';
+            // Risk/Reward
+            case 'lose_soldier': return '💀';
+            case 'lose_health': return '💔';
+            case 'mystery_box': return '❓';
+            case 'cursed_treasure': return '💰';
+            // Progression
+            case 'double_xp': return '⬆';
+            case 'coin_magnet': return '🧲';
+            case 'bullet_rain': return '🌧';
+            case 'zombie_weakness': return '🎯';
+            default: return '?';
+        }
+    }
+}
+
+class Particle {
+    constructor(x, y, color, size = 'medium', type = 'normal') {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.vx = (Math.random() - 0.5) * 300;
+        this.vy = (Math.random() - 0.5) * 300 - 100;
+        this.color = color;
+        this.life = size === 'small' ? 500 : size === 'large' ? 1500 : 1000;
+        this.age = 0;
+        this.active = true;
+        this.size = size === 'small' ? 2 : size === 'large' ? 6 : 4;
+        this.gravity = 400;
+        this.type = type;
+
+        // Advanced visual properties
+        this.angle = Math.random() * Math.PI * 2;
+        this.angularVelocity = (Math.random() - 0.5) * 0.2;
+        this.hue = this.getHueFromColor(color);
+        this.saturation = 100;
+        this.lightness = 50;
+        this.trail = [];
+        this.maxTrail = type === 'energy' ? 8 : 3;
+
+        // Special effects based on type
+        this.setupEffectType(type);
+    }
+
+    setupEffectType(type) {
+        switch(type) {
+            case 'explosion':
+                this.vx = (Math.random() - 0.5) * 600;
+                this.vy = (Math.random() - 0.5) * 600;
+                this.gravity = 200;
+                this.life = 800;
+                this.maxTrail = 5;
+                break;
+            case 'energy':
+                this.vx = (Math.random() - 0.5) * 150;
+                this.vy = (Math.random() - 0.5) * 150;
+                this.gravity = 0;
+                this.life = 2000;
+                this.angularVelocity = (Math.random() - 0.5) * 0.3;
+                break;
+            case 'magic':
+                this.orbitRadius = Math.random() * 30 + 10;
+                this.orbitSpeed = (Math.random() - 0.5) * 0.1;
+                this.floating = true;
+                this.gravity = -50;
+                this.life = 3000;
+                break;
+            case 'blood':
+                this.gravity = 600;
+                this.life = 1200;
+                this.size *= 0.7;
+                break;
+            case 'fire':
+                this.vy -= Math.random() * 200;
+                this.gravity = -100;
+                this.life = 1000;
+                this.flickerIntensity = Math.random() * 0.5;
+                break;
+            case 'electric':
+                this.life = 300;
+                this.zigzag = true;
+                this.zigzagIntensity = 50;
+                break;
+        }
+    }
+
+    getHueFromColor(color) {
+        const colorMap = {
+            '#ff0000': 0,   // Red
+            '#ff4444': 0,   // Light Red
+            '#ffff00': 60,  // Yellow
+            '#00ff00': 120, // Green
+            '#00ffff': 180, // Cyan
+            '#0000ff': 240, // Blue
+            '#ff00ff': 300, // Magenta
+            '#ffffff': 0,   // White
+            '#FFD700': 50   // Gold
+        };
+        return colorMap[color] || Math.random() * 360;
+    }
+
+    update(deltaTime) {
+        // Store previous position for trail
+        this.trail.push({x: this.x, y: this.y, alpha: 1});
+        if (this.trail.length > this.maxTrail) {
+            this.trail.shift();
+        }
+
+        // Update trail alpha
+        this.trail.forEach((point, index) => {
+            point.alpha = index / this.trail.length;
+        });
+
+        // Special movement based on type
+        if (this.type === 'magic' && this.floating) {
+            this.angle += this.orbitSpeed * deltaTime / 16.67;
+            this.x = this.startX + Math.cos(this.angle) * this.orbitRadius;
+            this.y = this.startY + Math.sin(this.angle) * this.orbitRadius * 0.5;
+            this.y += this.vy * deltaTime / 1000;
+            this.vy += this.gravity * deltaTime / 1000;
+        } else if (this.type === 'electric' && this.zigzag) {
+            this.x += this.vx * deltaTime / 1000 + Math.sin(this.age * 0.01) * this.zigzagIntensity;
+            this.y += this.vy * deltaTime / 1000 + Math.cos(this.age * 0.015) * this.zigzagIntensity;
+        } else {
+            this.x += this.vx * deltaTime / 1000;
+            this.y += this.vy * deltaTime / 1000;
+            this.vy += this.gravity * deltaTime / 1000;
+        }
+
+        // Update rotation
+        this.angle += this.angularVelocity * deltaTime / 16.67;
+
+        // Update color animation for energy particles
+        if (this.type === 'energy') {
+            this.hue = (this.hue + deltaTime * 0.1) % 360;
+        }
+
+        this.age += deltaTime;
+        if (this.age >= this.life) {
+            this.active = false;
+        }
+    }
+
+    render(ctx) {
+        const alpha = 1 - (this.age / this.life);
+        const currentSize = this.size * (0.2 + 0.8 * (1 - this.age / this.life * 0.5));
+
+        ctx.save();
+
+        // Render trail first
+        this.renderTrail(ctx);
+
+        // Apply composite operation for energy effects
+        if (this.type === 'energy' || this.type === 'magic' || this.type === 'electric') {
+            ctx.globalCompositeOperation = 'lighter';
+        }
+
+        // Render main particle with enhanced effects
+        this.renderMainParticle(ctx, alpha, currentSize);
+
+        ctx.restore();
+    }
+
+    renderTrail(ctx) {
+        if (this.trail.length < 2) return;
+
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 1; i < this.trail.length; i++) {
+            const point = this.trail[i];
+            const prevPoint = this.trail[i - 1];
+            const trailAlpha = point.alpha * 0.3;
+
+            ctx.strokeStyle = `hsla(${this.hue}, ${this.saturation}%, ${this.lightness}%, ${trailAlpha})`;
+            ctx.lineWidth = this.size * point.alpha * 0.5;
+            ctx.lineCap = 'round';
+
+            ctx.beginPath();
+            ctx.moveTo(prevPoint.x, prevPoint.y);
+            ctx.lineTo(point.x, point.y);
+            ctx.stroke();
+        }
+    }
+
+    renderMainParticle(ctx, alpha, currentSize) {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        if (this.type === 'energy') {
+            // Pulsing energy effect
+            const pulse = 1 + Math.sin(this.age * 0.01) * 0.3;
+            const glowSize = currentSize * pulse * 2;
+
+            // Outer glow
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
+            gradient.addColorStop(0, `hsla(${this.hue}, 100%, 70%, ${alpha * 0.8})`);
+            gradient.addColorStop(0.3, `hsla(${this.hue}, 100%, 50%, ${alpha * 0.4})`);
+            gradient.addColorStop(1, `hsla(${this.hue}, 100%, 30%, 0)`);
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, glowSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Inner core
+            ctx.fillStyle = `hsla(${this.hue}, 100%, 90%, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(0, 0, currentSize * pulse, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else if (this.type === 'magic') {
+            // Sparkle effect
+            const sparkles = 6;
+            for (let i = 0; i < sparkles; i++) {
+                const sparkleAngle = (i / sparkles) * Math.PI * 2;
+                const sparkleDistance = currentSize * 2;
+                const sparkleX = Math.cos(sparkleAngle) * sparkleDistance;
+                const sparkleY = Math.sin(sparkleAngle) * sparkleDistance;
+
+                ctx.fillStyle = `hsla(${this.hue + i * 60}, 100%, 80%, ${alpha * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(sparkleX, sparkleY, currentSize * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Central star
+            this.drawStar(ctx, 0, 0, 6, currentSize * 1.5, currentSize * 0.7, `hsla(${this.hue}, 100%, 90%, ${alpha})`);
+
+        } else if (this.type === 'electric') {
+            // Electric arc effect
+            const branches = 4;
+            for (let i = 0; i < branches; i++) {
+                const branchAngle = (i / branches) * Math.PI * 2;
+                const length = currentSize * 3;
+
+                ctx.strokeStyle = `hsla(200, 100%, 80%, ${alpha * 0.8})`;
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+
+                let x = 0, y = 0;
+                const segments = 5;
+                for (let j = 1; j <= segments; j++) {
+                    x = Math.cos(branchAngle) * (length * j / segments) + (Math.random() - 0.5) * 10;
+                    y = Math.sin(branchAngle) * (length * j / segments) + (Math.random() - 0.5) * 10;
+                    ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+        } else if (this.type === 'fire') {
+            // Flickering fire effect
+            const flicker = 1 + Math.sin(this.age * 0.02) * this.flickerIntensity;
+            const fireSize = currentSize * flicker;
+
+            // Fire gradient
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, fireSize * 2);
+            gradient.addColorStop(0, `hsla(60, 100%, 90%, ${alpha})`);
+            gradient.addColorStop(0.3, `hsla(30, 100%, 60%, ${alpha * 0.8})`);
+            gradient.addColorStop(0.7, `hsla(0, 100%, 50%, ${alpha * 0.4})`);
+            gradient.addColorStop(1, `hsla(0, 100%, 20%, 0)`);
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, fireSize * 2, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else {
+            // Standard particle with glow
+            if (this.type === 'explosion') {
+                ctx.globalCompositeOperation = 'lighter';
+
+                // Explosion glow
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, currentSize * 3);
+                gradient.addColorStop(0, `${this.color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`);
+                gradient.addColorStop(0.5, `${this.color}${Math.floor(alpha * 128).toString(16).padStart(2, '0')}`);
+                gradient.addColorStop(1, `${this.color}00`);
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, currentSize * 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Main particle
+            ctx.fillStyle = `${this.color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
+            ctx.beginPath();
+            ctx.arc(0, 0, currentSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    drawStar(ctx, x, y, spikes, outerRadius, innerRadius, color) {
+        let rot = Math.PI / 2 * 3;
+        const step = Math.PI / spikes;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y - outerRadius);
+
+        for (let i = 0; i < spikes; i++) {
+            const xOuter = x + Math.cos(rot) * outerRadius;
+            const yOuter = y + Math.sin(rot) * outerRadius;
+            ctx.lineTo(xOuter, yOuter);
+            rot += step;
+
+            const xInner = x + Math.cos(rot) * innerRadius;
+            const yInner = y + Math.sin(rot) * innerRadius;
+            ctx.lineTo(xInner, yInner);
+            rot += step;
+        }
+
+        ctx.lineTo(x, y - outerRadius);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+    }
+}
+
+// Advanced Visual Effects System
+class VisualEffects {
+    static addScreenShake(game, intensity, duration) {
+        game.screenShake = {
+            intensity: Math.max(game.screenShake.intensity, intensity),
+            duration: Math.max(game.screenShake.duration, duration)
+        };
+    }
+
+    static addChromaticAberration(game, strength) {
+        game.chromaticAberration.strength = Math.max(game.chromaticAberration.strength, strength);
+    }
+
+    static addTimeDistortion(game, factor, duration) {
+        game.timeDistortion.targetFactor = factor;
+        setTimeout(() => {
+            game.timeDistortion.targetFactor = 1;
+        }, duration);
+    }
+
+    static updateEffects(game, deltaTime) {
+        // Update screen shake
+        if (game.screenShake.duration > 0) {
+            game.screenShake.duration -= deltaTime;
+            if (game.screenShake.duration <= 0) {
+                game.screenShake.intensity = 0;
+            }
+        }
+
+        // Update chromatic aberration
+        game.chromaticAberration.strength *= 0.95; // Fade out
+        if (game.chromaticAberration.strength < 0.01) {
+            game.chromaticAberration.strength = 0;
+        }
+
+        // Update time distortion
+        const distortionSpeed = 0.02;
+        if (game.timeDistortion.factor < game.timeDistortion.targetFactor) {
+            game.timeDistortion.factor = Math.min(
+                game.timeDistortion.targetFactor,
+                game.timeDistortion.factor + distortionSpeed
+            );
+        } else if (game.timeDistortion.factor > game.timeDistortion.targetFactor) {
+            game.timeDistortion.factor = Math.max(
+                game.timeDistortion.targetFactor,
+                game.timeDistortion.factor - distortionSpeed
+            );
+        }
+    }
+
+    static applyScreenShake(game, ctx) {
+        if (game.screenShake.intensity > 0) {
+            const shakeX = (Math.random() - 0.5) * game.screenShake.intensity;
+            const shakeY = (Math.random() - 0.5) * game.screenShake.intensity;
+            ctx.translate(shakeX, shakeY);
+        }
+    }
+
+    static createBackgroundEffect(game, type, x, y) {
+        game.backgroundEffects.push({
+            type: type,
+            x: x,
+            y: y,
+            age: 0,
+            maxAge: type === 'shockwave' ? 1000 : 2000,
+            active: true
+        });
+    }
+
+    static updateBackgroundEffects(game, deltaTime) {
+        game.backgroundEffects.forEach(effect => {
+            effect.age += deltaTime;
+            if (effect.age >= effect.maxAge) {
+                effect.active = false;
+            }
+        });
+        game.backgroundEffects = game.backgroundEffects.filter(effect => effect.active);
+    }
+
+    static renderBackgroundEffects(game, ctx) {
+        game.backgroundEffects.forEach(effect => {
+            const progress = effect.age / effect.maxAge;
+            const alpha = 1 - progress;
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+
+            switch (effect.type) {
+                case 'shockwave':
+                    const radius = progress * 300;
+                    const gradient = ctx.createRadialGradient(effect.x, effect.y, radius * 0.8, effect.x, effect.y, radius);
+                    gradient.addColorStop(0, `rgba(255, 255, 255, 0)`);
+                    gradient.addColorStop(0.8, `rgba(255, 255, 255, ${alpha * 0.3})`);
+                    gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
+
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(effect.x, effect.y, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    break;
+
+                case 'energy_ripple':
+                    for (let i = 0; i < 3; i++) {
+                        const rippleRadius = (progress + i * 0.3) * 200;
+                        const rippleAlpha = alpha * (1 - i * 0.3);
+
+                        ctx.strokeStyle = `hsla(${(effect.age * 0.5) % 360}, 100%, 70%, ${rippleAlpha * 0.4})`;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(effect.x, effect.y, rippleRadius, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    break;
+            }
+
+            ctx.restore();
+        });
+    }
+}
+
+class Vehicle {
+    constructor(x, y, type, game) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.game = game;
+        this.active = true;
+        this.health = this.getHealth();
+        this.maxHealth = this.health;
+        this.damage = this.getDamage();
+        this.fireRate = this.getFireRate();
+        this.lastShot = 0;
+        this.lifetime = this.getLifetime();
+        this.age = 0;
+    }
+    
+    getHealth() {
+        switch (this.type) {
+            case 'tank': return 300;
+            case 'helicopter': return 150;
+            case 'mech': return 400;
+            case 'artillery': return 200;
+            default: return 100;
+        }
+    }
+    
+    getDamage() {
+        switch (this.type) {
+            case 'tank': return 80;
+            case 'helicopter': return 50;
+            case 'mech': return 100;
+            case 'artillery': return 120;
+            default: return 40;
+        }
+    }
+    
+    getFireRate() {
+        switch (this.type) {
+            case 'tank': return 1000;
+            case 'helicopter': return 300;
+            case 'mech': return 400;
+            case 'artillery': return 2000;
+            default: return 500;
+        }
+    }
+    
+    getLifetime() {
+        switch (this.type) {
+            case 'tank': return 30000;
+            case 'helicopter': return 20000;
+            case 'mech': return 25000;
+            case 'artillery': return 15000;
+            default: return 20000;
+        }
+    }
+    
+    update(deltaTime) {
+        this.lastShot += deltaTime;
+        this.age += deltaTime;
+        
+        if (this.age >= this.lifetime) {
+            this.active = false;
+            return;
+        }
+        
+        // Find and shoot at zombies
+        const target = this.findNearestZombie();
+        if (target && this.lastShot >= this.fireRate) {
+            this.shoot(target);
+            this.lastShot = 0;
+        }
+    }
+    
+    findNearestZombie() {
+        let nearest = null;
+        let minDist = 300;
+        
+        this.game.zombies.forEach(zombie => {
+            const dist = Math.sqrt((this.x - zombie.x) ** 2 + (this.y - zombie.y) ** 2);
+            if (dist < minDist) {
+                nearest = zombie;
+                minDist = dist;
+            }
+        });
+        
+        return nearest;
+    }
+    
+    shoot(target) {
+        const angle = Math.atan2(target.y - this.y, target.x - this.x);
+        const bulletSpeed = 400;
+
+        if (this.type === 'artillery') {
+            // Artillery shoots explosive rounds with fire effects
+            this.game.bullets.push(new Bullet(
+                this.x, this.y,
+                Math.cos(angle) * bulletSpeed,
+                Math.sin(angle) * bulletSpeed,
+                this.damage,
+                'artillery'
+            ));
+
+            // Artillery muzzle fire effect
+            for (let i = 0; i < 8; i++) {
+                const spreadAngle = angle + (Math.random() - 0.5) * 0.8;
+                this.game.particles.push(new Particle(
+                    this.x + Math.cos(angle) * 30,
+                    this.y + Math.sin(angle) * 30,
+                    `hsl(${25 + Math.random() * 30}, 100%, ${50 + Math.random() * 30}%)`,
+                    'large',
+                    'fire'
+                ));
+            }
+            VisualEffects.addScreenShake(this.game, 3, 200);
+        } else {
+            // Regular bullet with energy muzzle flash
+            this.game.bullets.push(new Bullet(
+                this.x, this.y,
+                Math.cos(angle) * bulletSpeed,
+                Math.sin(angle) * bulletSpeed,
+                this.damage,
+                'vehicle'
+            ));
+
+            // Muzzle flash effect
+            for (let i = 0; i < 4; i++) {
+                this.game.particles.push(new Particle(
+                    this.x + Math.cos(angle) * 20,
+                    this.y + Math.sin(angle) * 20,
+                    `hsl(${40 + Math.random() * 20}, 100%, ${70 + Math.random() * 30}%)`,
+                    'medium',
+                    'energy'
+                ));
+            }
+        }
+    }
+    
+    render(ctx) {
+        // Draw vehicle based on type
+        switch (this.type) {
+            case 'tank':
+                ctx.fillStyle = '#556b2f';
+                ctx.fillRect(this.x - 20, this.y - 15, 40, 30);
+                ctx.fillStyle = '#2d3436';
+                ctx.fillRect(this.x - 15, this.y - 10, 30, 20);
+                break;
+            case 'helicopter':
+                ctx.fillStyle = '#708090';
+                ctx.fillRect(this.x - 15, this.y - 10, 30, 20);
+                // Rotor
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x - 25, this.y);
+                ctx.lineTo(this.x + 25, this.y);
+                ctx.stroke();
+                break;
+            case 'mech':
+                ctx.fillStyle = '#800080';
+                ctx.fillRect(this.x - 18, this.y - 25, 36, 50);
+                ctx.fillStyle = '#9b59b6';
+                ctx.fillRect(this.x - 12, this.y - 20, 24, 15);
+                break;
+            case 'artillery':
+                ctx.fillStyle = '#8b4513';
+                ctx.fillRect(this.x - 15, this.y - 10, 30, 20);
+                // Cannon
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(this.x + 15, this.y);
+                ctx.lineTo(this.x + 30, this.y - 5);
+                ctx.stroke();
+                break;
+        }
+        
+        // Health bar
+        const barWidth = 30;
+        const barHeight = 4;
+        const healthPercent = this.health / this.maxHealth;
+        
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(this.x - barWidth/2, this.y - 30, barWidth, barHeight);
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(this.x - barWidth/2, this.y - 30, barWidth * healthPercent, barHeight);
+    }
+}
+
+class Drone {
+    constructor(x, y, game) {
+        this.x = x;
+        this.y = y;
+        this.game = game;
+        this.active = true;
+        this.damage = 30;
+        this.fireRate = 200;
+        this.lastShot = 0;
+        this.lifetime = 25000; // 25 seconds
+        this.age = 0;
+        this.orbitAngle = Math.random() * Math.PI * 2;
+        this.orbitRadius = 60;
+    }
+    
+    update(deltaTime) {
+        this.lastShot += deltaTime;
+        this.age += deltaTime;
+        this.orbitAngle += deltaTime * 0.003; // Orbit around player
+        
+        if (this.age >= this.lifetime) {
+            this.active = false;
+            return;
+        }
+        
+        // Orbit around player
+        if (this.game.player) {
+            this.x = this.game.player.x + Math.cos(this.orbitAngle) * this.orbitRadius;
+            this.y = this.game.player.y + Math.sin(this.orbitAngle) * this.orbitRadius;
+        }
+        
+        // Find and shoot at zombies
+        const target = this.findNearestZombie();
+        if (target && this.lastShot >= this.fireRate) {
+            this.shoot(target);
+            this.lastShot = 0;
+        }
+    }
+    
+    findNearestZombie() {
+        let nearest = null;
+        let minDist = 200;
+        
+        this.game.zombies.forEach(zombie => {
+            const dist = Math.sqrt((this.x - zombie.x) ** 2 + (this.y - zombie.y) ** 2);
+            if (dist < minDist) {
+                nearest = zombie;
+                minDist = dist;
+            }
+        });
+        
+        return nearest;
+    }
+    
+    shoot(target) {
+        const angle = Math.atan2(target.y - this.y, target.x - this.x);
+        const bulletSpeed = 500;
+
+        this.game.bullets.push(new Bullet(
+            this.x, this.y,
+            Math.cos(angle) * bulletSpeed,
+            Math.sin(angle) * bulletSpeed,
+            this.damage,
+            'drone'
+        ));
+
+        // Drone laser effect
+        for (let i = 0; i < 3; i++) {
+            this.game.particles.push(new Particle(
+                this.x + Math.cos(angle) * 10,
+                this.y + Math.sin(angle) * 10,
+                `hsl(${180 + Math.random() * 40}, 100%, ${60 + Math.random() * 30}%)`,
+                'small',
+                'electric'
+            ));
+        }
+    }
+    
+    render(ctx) {
+        // Draw drone
+        ctx.fillStyle = '#4682b4';
+        ctx.fillRect(this.x - 8, this.y - 8, 16, 16);
+        ctx.fillStyle = '#87ceeb';
+        ctx.fillRect(this.x - 6, this.y - 6, 12, 12);
+        
+        // Propellers
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 4; i++) {
+            const angle = (i * Math.PI / 2) + this.orbitAngle * 10; // Fast spinning
+            const x1 = this.x + Math.cos(angle) * 12;
+            const y1 = this.y + Math.sin(angle) * 12;
+            const x2 = this.x + Math.cos(angle + Math.PI) * 12;
+            const y2 = this.y + Math.sin(angle + Math.PI) * 12;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+    }
+}
+
+// Start the game when page loads
+window.addEventListener('load', () => {
+    new Game();
+});

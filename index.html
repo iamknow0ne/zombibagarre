@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zombie Survival War</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Top HUD - Main Game Info -->
+        <div id="topHUD">
+            <div class="hud-section" id="playerInfo">
+                <div class="player-level">
+                    <span class="level-number" id="levelNumber">1</span>
+                    <div class="exp-container">
+                        <div class="exp-bar" id="expBar"></div>
+                        <span class="exp-text"><span id="expValue">0</span>/<span id="expMax">100</span></span>
+                    </div>
+                </div>
+                <div class="player-health">
+                    <div class="health-bar" id="healthBar"></div>
+                    <span id="healthText">200/200</span>
+                </div>
+            </div>
+
+            <div class="hud-section" id="waveInfo">
+                <div class="wave-display">
+                    <span class="wave-label">WAVE</span>
+                    <span class="wave-number" id="waveNumber">1</span>
+                </div>
+                <div class="wave-progress">
+                    <div class="progress-bar" id="waveProgressBar"></div>
+                    <span id="waveProgressText">0/12 enemies</span>
+                </div>
+            </div>
+
+            <div class="hud-section" id="gameStats">
+                <div class="stat-item">
+                    <span class="stat-label">TIME</span>
+                    <span class="stat-value" id="survivalTimeValue">0:00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">SCORE</span>
+                    <span class="stat-value" id="scoreValue">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">KILLS</span>
+                    <span class="stat-value" id="killCountValue">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Left HUD - Weapons & Build -->
+        <div id="leftHUD">
+            <div class="hud-panel" id="weaponsPanel">
+                <h3><i class="icon">⚔</i> WEAPONS</h3>
+                <div id="weaponsList">
+                    <!-- Weapon items will be added dynamically -->
+                </div>
+            </div>
+
+            <div class="hud-panel" id="passivesPanel">
+                <h3><i class="icon">🔮</i> PASSIVES</h3>
+                <div id="passivesList">
+                    <!-- Passive items will be added dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right HUD - Resources & Controls -->
+        <div id="rightHUD">
+            <div class="hud-panel" id="resourcesPanel">
+                <h3><i class="icon">💰</i> RESOURCES</h3>
+                <div class="resource-item">
+                    <span class="resource-icon">$</span>
+                    <span class="resource-value" id="moneyValue">50</span>
+                </div>
+                <div class="resource-item">
+                    <span class="resource-icon">👥</span>
+                    <span class="resource-value" id="soldierCount">0</span>
+                </div>
+                <div class="resource-item">
+                    <span class="resource-icon">📦</span>
+                    <span class="resource-value" id="powerupCount">0</span>
+                </div>
+            </div>
+
+            <div class="hud-panel" id="controlsPanel">
+                <h3><i class="icon">🎮</i> CONTROLS</h3>
+                <div id="controls">
+                    <button id="buySoldier" class="btn">Buy Soldier ($75)</button>
+                    <button id="upgradeDamage" class="btn">Upgrade Damage ($150)</button>
+                    <button id="upgradeSpeed" class="btn">Upgrade Speed ($100)</button>
+                    <button id="pauseBtn" class="btn">Pause</button>
+                </div>
+                <div class="control-info">
+                    <p>WASD or ←↑↓→ to move</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom HUD - Status Effects & Multipliers -->
+        <div id="bottomHUD">
+            <div id="statusEffects">
+                <!-- Status effects will be added dynamically -->
+            </div>
+            <div id="multiplierInfo">
+                <div class="multiplier-item">
+                    <span class="mult-label">DMG</span>
+                    <span class="mult-value" id="damageMultValue">1.0x</span>
+                </div>
+                <div class="multiplier-item">
+                    <span class="mult-label">SPD</span>
+                    <span class="mult-value" id="speedMultValue">1.0x</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Boss Warning Overlay -->
+        <div id="bossWarning" class="hidden">
+            <div class="boss-warning-content">
+                <h1>⚠ BOSS INCOMING ⚠</h1>
+                <p id="bossName">Ancient Evil Awakens</p>
+            </div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="gameOver" class="hidden">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Waves Survived: <span id="finalWave">0</span></p>
+            <button id="restartBtn" class="btn">Play Again</button>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
