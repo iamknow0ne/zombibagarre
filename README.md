@@ -1,10 +1,10 @@
-# 🧟 Zombie Survival War
+# 🧟 Zombie Bagarre
 
 A thrilling zombie survival game built with HTML5 Canvas, featuring stunning particle effects, dynamic weapon systems, and intense wave-based gameplay.
 
 ## 🎮 Play Now
 
-**[Play Zombie Survival War](https://iamknow0ne.github.io/zombibagarre/)**
+**[Play Zombie Bagarre](https://iamknow0ne.github.io/zombibagarre/)**
 
 ## ✨ Features
 
@@ -123,7 +123,7 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ## 🎮 About
 
-Zombie Survival War combines classic arcade gameplay with modern web technologies to deliver an engaging browser-based gaming experience. Built with performance and visual appeal in mind, it showcases advanced HTML5 Canvas techniques and game development principles.
+Zombie Bagarre combines classic arcade gameplay with modern web technologies to deliver an engaging browser-based gaming experience. Built with performance and visual appeal in mind, it showcases advanced HTML5 Canvas techniques and game development principles.
 
 ---
 

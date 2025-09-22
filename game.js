@@ -23,7 +23,7 @@ class Game {
         this.levelUpPending = false;
 
         // Weapon and Item System
-        this.weapons = [];
+        this.weapons = [{ id: 'rifle', name: 'Rifle', level: 1 }]; // Start with rifle
         this.passiveItems = [];
         this.maxWeapons = 6;
         this.maxPassiveItems = 6;
@@ -2350,7 +2350,7 @@ class Game {
         this.levelUpPending = false;
 
         // Reset weapon/item system
-        this.weapons = [];
+        this.weapons = [{ id: 'rifle', name: 'Rifle', level: 1 }]; // Start with rifle
         this.passiveItems = [];
         this.evolvedWeapons = [];
 
@@ -2380,7 +2380,7 @@ class Player {
         this.health = character.maxHealth;
         this.maxHealth = character.maxHealth;
         this.speed = character.speed;
-        this.fireRate = 300 / character.cooldown; // Adjust fire rate based on cooldown
+        this.fireRate = 300; // Base fire rate in milliseconds
         this.lastShot = 0;
         this.damage = 40 * character.damage;
         this.multishotTime = 0;
@@ -2453,10 +2453,12 @@ class Player {
             this.y = Math.min(this.game.getCanvasHeight() - this.height/2 - 30, this.y + speed * deltaTime / 1000); // Leave space at bottom for UI
         }
         
-        // Auto-shoot with all weapons
+        // Auto-shoot with all weapons - always try to shoot if zombies exist
         const target = this.findNearestZombie();
-        if (target) {
-            this.shootAllWeapons(target);
+        if (target || this.game.zombies.length > 0) {
+            // If no target in range but zombies exist, shoot at closest zombie regardless of range
+            const finalTarget = target || this.game.zombies[0];
+            this.shootAllWeapons(finalTarget);
         }
         
         // Update vehicles and drones
@@ -2480,16 +2482,21 @@ class Player {
     }
 
     shootAllWeapons(target) {
+        if (!target) return; // Safety check
+
         // Fire all equipped weapons that are off cooldown
         if (this.game.weapons.length === 0) {
-            // Fallback to basic shot if no weapons
-            if ((this.weaponCooldowns['basic'] || 0) <= 0) {
+            // Fallback to basic shot if no weapons - ensure it always fires initially
+            const cooldown = this.weaponCooldowns['basic'] || 0;
+            if (cooldown <= 0) {
                 this.shootWeapon('basic', target, 1);
                 this.weaponCooldowns['basic'] = this.getWeaponFireRate('basic');
             }
         } else {
+            // Fire each weapon independently based on its cooldown
             this.game.weapons.forEach(weapon => {
-                if ((this.weaponCooldowns[weapon.id] || 0) <= 0) {
+                const cooldown = this.weaponCooldowns[weapon.id] || 0;
+                if (cooldown <= 0) {
                     this.shootWeapon(weapon.id, target, weapon.level);
                     this.weaponCooldowns[weapon.id] = this.getWeaponFireRate(weapon.id);
                 }
@@ -2530,7 +2537,7 @@ class Player {
             baseRate *= (1 - (0.3 * rapidFire.level)); // 30% faster per level
         }
 
-        return baseRate * 1000; // Convert to milliseconds
+        return baseRate; // Already in milliseconds
     }
 
     shootWeapon(weaponId, target, weaponLevel) {
@@ -2769,9 +2776,12 @@ class Player {
     }
     
     findNearestZombie() {
+        if (this.game.zombies.length === 0) return null;
+
         let nearest = null;
-        let minDist = 400; // Increased range
-        
+        let minDist = 600; // Increased shooting range significantly
+
+        // First pass: find zombies in preferred range
         this.game.zombies.forEach(zombie => {
             const dist = Math.sqrt((this.x - zombie.x) ** 2 + (this.y - zombie.y) ** 2);
             if (dist < minDist) {
@@ -2779,7 +2789,19 @@ class Player {
                 minDist = dist;
             }
         });
-        
+
+        // If no zombie in range, find the absolute closest one
+        if (!nearest) {
+            minDist = Infinity;
+            this.game.zombies.forEach(zombie => {
+                const dist = Math.sqrt((this.x - zombie.x) ** 2 + (this.y - zombie.y) ** 2);
+                if (dist < minDist) {
+                    nearest = zombie;
+                    minDist = dist;
+                }
+            });
+        }
+
         return nearest;
     }
     
