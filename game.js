@@ -235,7 +235,12 @@ class Game {
     }
 
     resizeCanvas() {
-        const dpr = window.devicePixelRatio || 1;
+        // Mobile optimization: reduce DPR on mobile devices for better performance
+        const isMobile = window.innerWidth <= 768 ||
+                         ('ontouchstart' in window) ||
+                         (navigator.maxTouchPoints > 0);
+
+        const dpr = isMobile ? Math.min(window.devicePixelRatio || 1, 2) : (window.devicePixelRatio || 1);
         const rect = this.canvas.getBoundingClientRect();
 
         // Set the actual canvas size in memory (scaled by device pixel ratio)
@@ -252,6 +257,9 @@ class Game {
         // Store logical dimensions for game calculations
         this.logicalWidth = rect.width;
         this.logicalHeight = rect.height;
+
+        // Mobile zoom adjustment for better field of view
+        this.mobileZoom = isMobile ? 0.85 : 1.0;
     }
 
     getCanvasWidth() {
@@ -1872,6 +1880,16 @@ class Game {
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
 
+        // Apply mobile zoom for better field of view
+        if (this.mobileZoom && this.mobileZoom !== 1.0) {
+            this.ctx.save();
+            const centerX = this.getCanvasWidth() / 2;
+            const centerY = this.getCanvasHeight() / 2;
+            this.ctx.translate(centerX, centerY);
+            this.ctx.scale(this.mobileZoom, this.mobileZoom);
+            this.ctx.translate(-centerX, -centerY);
+        }
+
         // Render background effects first
         VisualEffects.renderBackgroundEffects(this, this.ctx);
         
@@ -1948,6 +1966,11 @@ class Game {
         this.ctx.strokeStyle = '#ffffff';
         this.ctx.lineWidth = 1;
         this.ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+        // Restore mobile zoom transformation
+        if (this.mobileZoom && this.mobileZoom !== 1.0) {
+            this.ctx.restore();
+        }
 
         // Restore context (removes screen shake transformation)
         this.ctx.restore();
@@ -4985,7 +5008,264 @@ class Drone {
     }
 }
 
+// Mobile Touch Controls Class
+class MobileControls {
+    constructor(game) {
+        this.game = game;
+        this.isMobile = this.detectMobile();
+        this.joystick = {
+            active: false,
+            startX: 0,
+            startY: 0,
+            currentX: 0,
+            currentY: 0,
+            deltaX: 0,
+            deltaY: 0,
+            magnitude: 0,
+            angle: 0
+        };
+
+        if (this.isMobile) {
+            this.initializeMobileControls();
+            this.updateMobileHUD();
+        }
+    }
+
+    detectMobile() {
+        return window.innerWidth <= 768 ||
+               ('ontouchstart' in window) ||
+               (navigator.maxTouchPoints > 0) ||
+               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    initializeMobileControls() {
+        this.setupVirtualJoystick();
+        this.setupMobileButtons();
+        this.startMobileHUDUpdates();
+    }
+
+    setupVirtualJoystick() {
+        const joystick = document.getElementById('virtualJoystick');
+        const joystickBase = document.getElementById('joystickBase');
+        const joystickKnob = document.getElementById('joystickKnob');
+
+        if (!joystick || !joystickBase || !joystickKnob) return;
+
+        // Touch events for joystick
+        joystick.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = joystickBase.getBoundingClientRect();
+
+            this.joystick.active = true;
+            this.joystick.startX = rect.left + rect.width / 2;
+            this.joystick.startY = rect.top + rect.height / 2;
+
+            this.updateJoystickPosition(touch.clientX, touch.clientY);
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!this.joystick.active) return;
+            e.preventDefault();
+
+            const touch = e.touches[0];
+            this.updateJoystickPosition(touch.clientX, touch.clientY);
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            if (this.joystick.active) {
+                this.joystick.active = false;
+                this.resetJoystick();
+            }
+        });
+
+        // Mouse events for testing on desktop
+        joystick.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const rect = joystickBase.getBoundingClientRect();
+
+            this.joystick.active = true;
+            this.joystick.startX = rect.left + rect.width / 2;
+            this.joystick.startY = rect.top + rect.height / 2;
+
+            this.updateJoystickPosition(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!this.joystick.active) return;
+            this.updateJoystickPosition(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (this.joystick.active) {
+                this.joystick.active = false;
+                this.resetJoystick();
+            }
+        });
+    }
+
+    updateJoystickPosition(clientX, clientY) {
+        const joystickKnob = document.getElementById('joystickKnob');
+        if (!joystickKnob) return;
+
+        this.joystick.currentX = clientX;
+        this.joystick.currentY = clientY;
+
+        // Calculate delta from center
+        this.joystick.deltaX = clientX - this.joystick.startX;
+        this.joystick.deltaY = clientY - this.joystick.startY;
+
+        // Calculate magnitude and clamp to joystick radius
+        const maxRadius = 35; // Half of joystick base minus knob radius
+        this.joystick.magnitude = Math.min(maxRadius, Math.sqrt(this.joystick.deltaX ** 2 + this.joystick.deltaY ** 2));
+
+        if (this.joystick.magnitude > maxRadius) {
+            const normalizeRatio = maxRadius / Math.sqrt(this.joystick.deltaX ** 2 + this.joystick.deltaY ** 2);
+            this.joystick.deltaX *= normalizeRatio;
+            this.joystick.deltaY *= normalizeRatio;
+        }
+
+        // Update visual position
+        joystickKnob.style.transform = `translate(${this.joystick.deltaX}px, ${this.joystick.deltaY}px)`;
+
+        // Calculate angle and normalize magnitude (0-1)
+        this.joystick.angle = Math.atan2(this.joystick.deltaY, this.joystick.deltaX);
+        this.joystick.magnitude = Math.min(1, this.joystick.magnitude / maxRadius);
+
+        // Update game movement
+        this.updatePlayerMovement();
+    }
+
+    resetJoystick() {
+        const joystickKnob = document.getElementById('joystickKnob');
+        if (joystickKnob) {
+            joystickKnob.style.transform = 'translate(0px, 0px)';
+        }
+
+        this.joystick.deltaX = 0;
+        this.joystick.deltaY = 0;
+        this.joystick.magnitude = 0;
+
+        // Clear movement keys
+        this.game.keys['w'] = false;
+        this.game.keys['a'] = false;
+        this.game.keys['s'] = false;
+        this.game.keys['d'] = false;
+    }
+
+    updatePlayerMovement() {
+        if (this.joystick.magnitude < 0.1) {
+            // Dead zone
+            this.game.keys['w'] = false;
+            this.game.keys['a'] = false;
+            this.game.keys['s'] = false;
+            this.game.keys['d'] = false;
+            return;
+        }
+
+        // Convert joystick input to movement keys
+        const normalizedX = this.joystick.deltaX / 35;
+        const normalizedY = this.joystick.deltaY / 35;
+
+        this.game.keys['w'] = normalizedY < -0.3;
+        this.game.keys['s'] = normalizedY > 0.3;
+        this.game.keys['a'] = normalizedX < -0.3;
+        this.game.keys['d'] = normalizedX > 0.3;
+    }
+
+    setupMobileButtons() {
+        const pauseBtn = document.getElementById('pauseMobileBtn');
+        const buyBtn = document.getElementById('buyMobileBtn');
+
+        if (pauseBtn) {
+            pauseBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.game.togglePause();
+            }, { passive: false });
+
+            pauseBtn.addEventListener('click', () => {
+                this.game.togglePause();
+            });
+        }
+
+        if (buyBtn) {
+            buyBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.buyUpgrade();
+            }, { passive: false });
+
+            buyBtn.addEventListener('click', () => {
+                this.buyUpgrade();
+            });
+        }
+    }
+
+    buyUpgrade() {
+        if (this.game.money >= 75) {
+            // Try to buy soldier first, then damage upgrade, then speed upgrade
+            if (this.game.soldiers.length < 10) {
+                this.game.buySoldier();
+            } else if (this.game.money >= 150) {
+                this.game.upgradeDamage();
+            } else if (this.game.money >= 100) {
+                this.game.upgradeSpeed();
+            }
+        }
+    }
+
+    startMobileHUDUpdates() {
+        // Update mobile HUD every frame
+        setInterval(() => {
+            this.updateMobileHUD();
+        }, 100); // 10fps for HUD updates (sufficient and efficient)
+    }
+
+    updateMobileHUD() {
+        if (!this.isMobile) return;
+
+        // Update level
+        const levelEl = document.getElementById('mobileLevelNumber');
+        if (levelEl) levelEl.textContent = this.game.level;
+
+        // Update health
+        const healthEl = document.getElementById('mobileHealth');
+        if (healthEl && this.game.player) {
+            healthEl.textContent = Math.ceil(this.game.player.health);
+        }
+
+        // Update wave
+        const waveEl = document.getElementById('mobileWave');
+        if (waveEl) waveEl.textContent = this.game.wave;
+
+        // Update time
+        const timeEl = document.getElementById('mobileTime');
+        if (timeEl) {
+            const minutes = Math.floor(this.game.survivalTime / 60000);
+            const seconds = Math.floor((this.game.survivalTime % 60000) / 1000);
+            timeEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Update money
+        const moneyEl = document.getElementById('mobileMoney');
+        if (moneyEl) moneyEl.textContent = this.game.money;
+
+        // Update weapon count
+        const weaponsEl = document.getElementById('mobileWeapons');
+        if (weaponsEl) weaponsEl.textContent = this.game.weapons.length;
+
+        // Update kills
+        const killsEl = document.getElementById('mobileKills');
+        if (killsEl && this.game.player) {
+            killsEl.textContent = this.game.player.killCount || 0;
+        }
+    }
+}
+
 // Start the game when page loads
 window.addEventListener('load', () => {
-    new Game();
+    const game = new Game();
+    const mobileControls = new MobileControls(game);
+
+    // Store mobile controls reference in game for access
+    game.mobileControls = mobileControls;
 });

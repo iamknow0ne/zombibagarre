@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Zombie Bagarre</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -113,6 +116,54 @@
                 <div class="multiplier-item">
                     <span class="mult-label">SPD</span>
                     <span class="mult-value" id="speedMultValue">1.0x</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Touch Controls -->
+        <div id="mobileControls" class="mobile-only">
+            <div id="virtualJoystick">
+                <div id="joystickBase"></div>
+                <div id="joystickKnob"></div>
+            </div>
+            <div id="mobileButtons">
+                <button id="pauseMobileBtn" class="mobile-btn">⏸</button>
+                <button id="buyMobileBtn" class="mobile-btn">💰</button>
+            </div>
+        </div>
+
+        <!-- Mobile HUD -->
+        <div id="mobileHUD" class="mobile-only">
+            <div id="mobileTopBar">
+                <div class="mobile-stat">
+                    <span class="mobile-label">LV</span>
+                    <span id="mobileLevelNumber">1</span>
+                </div>
+                <div class="mobile-stat">
+                    <span class="mobile-label">HP</span>
+                    <span id="mobileHealth">200</span>
+                </div>
+                <div class="mobile-stat">
+                    <span class="mobile-label">W</span>
+                    <span id="mobileWave">1</span>
+                </div>
+                <div class="mobile-stat">
+                    <span class="mobile-label">⏰</span>
+                    <span id="mobileTime">0:00</span>
+                </div>
+            </div>
+            <div id="mobileBottomBar">
+                <div class="mobile-resource">
+                    <span>💰</span>
+                    <span id="mobileMoney">50</span>
+                </div>
+                <div class="mobile-resource">
+                    <span>⚔</span>
+                    <span id="mobileWeapons">1</span>
+                </div>
+                <div class="mobile-resource">
+                    <span>💀</span>
+                    <span id="mobileKills">0</span>
                 </div>
             </div>
         </div>
