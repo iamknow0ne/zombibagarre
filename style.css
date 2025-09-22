@@ -820,6 +820,17 @@ body {
         opacity: 1;
     }
 
+    #joystickTouchArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 50vw; /* Left half of screen */
+        height: 100vh;
+        pointer-events: all;
+        background: transparent;
+        z-index: 151; /* Above mobileControls but below buttons */
+    }
+
     #joystickBase {
         position: absolute;
         width: 120px;
@@ -854,6 +865,7 @@ body {
         grid-template-rows: 1fr 1fr;
         gap: 12px;
         pointer-events: all;
+        z-index: 152; /* Above touch area */
     }
 
     .mobile-btn {

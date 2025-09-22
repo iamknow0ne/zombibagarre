@@ -5323,29 +5323,24 @@ class MobileControls {
         const joystick = document.getElementById('virtualJoystick');
         const joystickBase = document.getElementById('joystickBase');
         const joystickKnob = document.getElementById('joystickKnob');
-        const mobileControls = document.getElementById('mobileControls');
+        const joystickTouchArea = document.getElementById('joystickTouchArea');
 
-        if (!joystick || !joystickBase || !joystickKnob || !mobileControls) return;
+        if (!joystick || !joystickBase || !joystickKnob || !joystickTouchArea) return;
 
         // Only add touch events on touch-capable devices
         if ('ontouchstart' in window) {
-            // Listen for touches on the left half of the screen for joystick
-            mobileControls.addEventListener('touchstart', (e) => {
+            // Listen for touches on the joystick touch area (left half of screen)
+            joystickTouchArea.addEventListener('touchstart', (e) => {
+                e.preventDefault();
                 const touch = e.touches[0];
-                const screenWidth = window.innerWidth;
 
-                // Only activate joystick if touching left half of screen
-                if (touch.clientX < screenWidth / 2) {
-                    e.preventDefault();
+                this.joystick.active = true;
+                this.joystick.startX = touch.clientX;
+                this.joystick.startY = touch.clientY;
 
-                    this.joystick.active = true;
-                    this.joystick.startX = touch.clientX;
-                    this.joystick.startY = touch.clientY;
-
-                    // Position joystick at touch location
-                    this.showJoystickAt(touch.clientX, touch.clientY);
-                    this.updateJoystickPosition(touch.clientX, touch.clientY);
-                }
+                // Position joystick at touch location
+                this.showJoystickAt(touch.clientX, touch.clientY);
+                this.updateJoystickPosition(touch.clientX, touch.clientY);
             }, { passive: false });
 
             document.addEventListener('touchmove', (e) => {
@@ -5364,20 +5359,16 @@ class MobileControls {
                 }
             });
         } else {
-            // Mouse events for desktop testing - listen on left half
-            mobileControls.addEventListener('mousedown', (e) => {
-                const screenWidth = window.innerWidth;
+            // Mouse events for desktop testing
+            joystickTouchArea.addEventListener('mousedown', (e) => {
+                e.preventDefault();
 
-                if (e.clientX < screenWidth / 2) {
-                    e.preventDefault();
+                this.joystick.active = true;
+                this.joystick.startX = e.clientX;
+                this.joystick.startY = e.clientY;
 
-                    this.joystick.active = true;
-                    this.joystick.startX = e.clientX;
-                    this.joystick.startY = e.clientY;
-
-                    this.showJoystickAt(e.clientX, e.clientY);
-                    this.updateJoystickPosition(e.clientX, e.clientY);
-                }
+                this.showJoystickAt(e.clientX, e.clientY);
+                this.updateJoystickPosition(e.clientX, e.clientY);
             });
 
             document.addEventListener('mousemove', (e) => {
