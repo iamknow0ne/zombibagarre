@@ -295,7 +295,7 @@ class Game {
         this.logicalHeight = rect.height;
 
         // Zoom out for massive battle field of view to handle large hordes
-        this.globalZoom = isMobile ? 0.65 : 0.75; // Much more zoomed out for both mobile and desktop
+        this.globalZoom = isMobile ? 0.5 : 0.6; // Much more zoomed out for better battlefield view
     }
 
     getCanvasWidth() {
@@ -610,6 +610,7 @@ class Game {
         const bossY = -100; // Start off screen
 
         const boss = new Zombie(bossX, bossY, bossType, this);
+        boss.isBossWaveSpawn = true; // Mark as official boss wave spawn for victory screen
         this.zombies.push(boss);
 
         // Create dramatic boss entrance effect
@@ -632,6 +633,11 @@ class Game {
 
         // Show boss warning message
         this.showBossWarning(bossType);
+
+        // Show boss health bar after warning disappears
+        this.createTimeout(() => {
+            this.showBossHealthBar(boss);
+        }, 3000);
 
         // Add dramatic visual effects for boss entrance
         VisualEffects.addScreenShake(this, 15, 1000);
@@ -664,6 +670,63 @@ class Game {
             this.createTimeout(() => {
                 bossWarning.classList.add('hidden');
             }, 3000);
+        }
+    }
+
+    showBossHealthBar(boss) {
+        const bossHealthContainer = document.getElementById('bossHealthContainer');
+        const bossDisplayName = document.getElementById('bossDisplayName');
+        const bossHealthBar = document.getElementById('bossHealthBar');
+        const bossHealthText = document.getElementById('bossHealthText');
+
+        if (bossHealthContainer && bossDisplayName && bossHealthBar && bossHealthText) {
+            // Get display name for boss
+            const bossDisplayNames = {
+                'horde_king': 'THE HORDE KING',
+                'iron_colossus': 'IRON COLOSSUS',
+                'plague_mother': 'PLAGUE MOTHER',
+                'shadow_reaper': 'SHADOW REAPER',
+                'flame_berserker': 'FLAME BERSERKER',
+                'crystal_guardian': 'CRYSTAL GUARDIAN',
+                'void_spawner': 'VOID SPAWNER',
+                'thunder_titan': 'THUNDER TITAN',
+                'ice_queen': 'ICE QUEEN',
+                'final_nightmare': 'FINAL NIGHTMARE',
+                'boss': 'ANCIENT EVIL',
+                'mega_boss': 'NIGHTMARE INCARNATE'
+            };
+
+            bossDisplayName.textContent = bossDisplayNames[boss.type] || 'UNKNOWN HORROR';
+
+            // Store reference to current boss for updates
+            this.currentBoss = boss;
+
+            // Show the health bar
+            bossHealthContainer.classList.remove('hidden');
+
+            // Initial health display
+            this.updateBossHealthBar();
+        }
+    }
+
+    updateBossHealthBar() {
+        if (!this.currentBoss) return;
+
+        const bossHealthBar = document.getElementById('bossHealthBar');
+        const bossHealthText = document.getElementById('bossHealthText');
+
+        if (bossHealthBar && bossHealthText) {
+            const healthPercentage = (this.currentBoss.health / this.currentBoss.maxHealth) * 100;
+            bossHealthBar.style.width = healthPercentage + '%';
+            bossHealthText.textContent = `${Math.ceil(this.currentBoss.health)}/${this.currentBoss.maxHealth}`;
+        }
+    }
+
+    hideBossHealthBar() {
+        const bossHealthContainer = document.getElementById('bossHealthContainer');
+        if (bossHealthContainer) {
+            bossHealthContainer.classList.add('hidden');
+            this.currentBoss = null;
         }
     }
 
@@ -1237,10 +1300,16 @@ class Game {
             scoreGain *= 2;
             expGain *= 1.5;
 
-            // Special boss rewards - show victory screen and drop special item
-            if (zombie.type.includes('boss')) {
+            // Special boss rewards - show victory screen and drop special item (only for designated boss waves)
+            if (zombie.isBossWaveSpawn && zombie.type.includes('boss')) {
+                this.hideBossHealthBar(); // Hide boss health bar when boss dies
                 this.showBossVictoryScreen(zombie);
                 this.dropSpecialItem(zombie);
+            }
+
+            // Hide boss health bar for any boss death (including legacy ones)
+            if (this.currentBoss === zombie) {
+                this.hideBossHealthBar();
             }
         }
 
@@ -3535,8 +3604,8 @@ class Zombie {
             // Original types
             case 'fast': return Math.floor(baseHealth * 0.6);
             case 'tank': return Math.floor(baseHealth * 3);
-            case 'boss': return Math.floor(baseHealth * 5);
-            case 'mega_boss': return Math.floor(baseHealth * 10);
+            case 'boss': return Math.floor(baseHealth * 20);
+            case 'mega_boss': return Math.floor(baseHealth * 35);
 
             // New 10 Monster Types
             case 'crawler': return Math.floor(baseHealth * 0.4); // Glass cannon swarm
@@ -3550,17 +3619,17 @@ class Zombie {
             case 'phase_walker': return Math.floor(baseHealth * 1.8); // Phasing enemy
             case 'stalker': return Math.floor(baseHealth * 1.3); // Stealth assassin
 
-            // 10 Boss Types - Escalating health
-            case 'horde_king': return Math.floor(baseHealth * 8); // Wave 5 boss
-            case 'iron_colossus': return Math.floor(baseHealth * 12); // Wave 10 boss
-            case 'plague_mother': return Math.floor(baseHealth * 15); // Wave 15 boss
-            case 'shadow_reaper': return Math.floor(baseHealth * 18); // Wave 20 boss
-            case 'flame_berserker': return Math.floor(baseHealth * 22); // Wave 25 boss
-            case 'crystal_guardian': return Math.floor(baseHealth * 25); // Wave 30 boss
-            case 'void_spawner': return Math.floor(baseHealth * 30); // Wave 35 boss
-            case 'thunder_titan': return Math.floor(baseHealth * 35); // Wave 40 boss
-            case 'ice_queen': return Math.floor(baseHealth * 40); // Wave 45 boss
-            case 'final_nightmare': return Math.floor(baseHealth * 50); // Wave 50 final boss
+            // 10 Boss Types - Escalating health (MUCH MORE CHALLENGING)
+            case 'horde_king': return Math.floor(baseHealth * 25); // Wave 5 boss
+            case 'iron_colossus': return Math.floor(baseHealth * 40); // Wave 10 boss
+            case 'plague_mother': return Math.floor(baseHealth * 60); // Wave 15 boss
+            case 'shadow_reaper': return Math.floor(baseHealth * 80); // Wave 20 boss
+            case 'flame_berserker': return Math.floor(baseHealth * 100); // Wave 25 boss
+            case 'crystal_guardian': return Math.floor(baseHealth * 120); // Wave 30 boss
+            case 'void_spawner': return Math.floor(baseHealth * 150); // Wave 35 boss
+            case 'thunder_titan': return Math.floor(baseHealth * 180); // Wave 40 boss
+            case 'ice_queen': return Math.floor(baseHealth * 220); // Wave 45 boss
+            case 'final_nightmare': return Math.floor(baseHealth * 300); // Wave 50 final boss
 
             default: return baseHealth;
         }
@@ -3906,6 +3975,11 @@ class Zombie {
             damage *= 2;
         }
         this.health -= damage;
+
+        // Update boss health bar if this is the current boss
+        if (this.game.currentBoss === this) {
+            this.game.updateBossHealthBar();
+        }
     }
     
     render(ctx) {
