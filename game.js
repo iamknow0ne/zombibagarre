@@ -923,32 +923,48 @@ class Game {
         }
     }
     
+    determinePowerupRarity() {
+        const rand = Math.random();
+        if (rand < 0.60) return 'common';    // 60% chance
+        if (rand < 0.85) return 'rare';      // 25% chance
+        if (rand < 0.97) return 'epic';      // 12% chance
+        return 'legendary';                   // 3% chance
+    }
+
+    getPowerupsByRarity(rarity) {
+        const powerupTiers = {
+            common: [
+                'damage', 'soldiers', 'money', 'health', 'multishot',
+                'x2', 'shotgun', 'machinegun', 'freeze', 'shield'
+            ],
+            rare: [
+                'x3', 'laser', 'rocket', 'tank_vehicle', 'helicopter',
+                'speed_boost', 'bomb', 'double_xp', 'coin_magnet'
+            ],
+            epic: [
+                'x5', 'plasma', 'railgun', 'drone', 'mech_suit',
+                'time_slow', 'poison_cloud', 'emp_blast', 'bullet_rain'
+            ],
+            legendary: [
+                'x10', 'flamethrower', 'artillery', 'invincibility',
+                'lightning_storm', 'nuke', 'mystery_box', 'zombie_weakness'
+            ]
+        };
+        return powerupTiers[rarity] || powerupTiers.common;
+    }
+
     spawnPowerup() {
         const x = 50 + Math.random() * (this.getCanvasWidth() - 100);
         const y = -30; // Spawn from top of screen
-        
-        // Massive variety of power-ups for addictive gameplay
-        const types = [
-            // Basic power-ups
-            'damage', 'soldiers', 'money', 'health', 'multishot',
-            // Multipliers
-            'x2', 'x3', 'x5', 'x10',
-            // Weapons
-            'shotgun', 'machinegun', 'laser', 'rocket', 'plasma', 'railgun', 'flamethrower',
-            // Vehicles/Drones
-            'tank_vehicle', 'helicopter', 'drone', 'mech_suit', 'artillery',
-            // Special Abilities
-            'freeze', 'shield', 'speed_boost', 'time_slow', 'invincibility', 'lightning_storm',
-            // Area Effects
-            'bomb', 'nuke', 'poison_cloud', 'emp_blast',
-            // Risk/Reward
-            'lose_soldier', 'lose_health', 'mystery_box', 'cursed_treasure',
-            // Progression
-            'double_xp', 'coin_magnet', 'bullet_rain', 'zombie_weakness'
-        ];
-        
-        const type = types[Math.floor(Math.random() * types.length)];
-        this.powerups.push(new Powerup(x, y, type));
+
+        // Determine rarity first
+        const rarity = this.determinePowerupRarity();
+
+        // Get appropriate powerups for this rarity
+        const availablePowerups = this.getPowerupsByRarity(rarity);
+        const type = availablePowerups[Math.floor(Math.random() * availablePowerups.length)];
+
+        this.powerups.push(new Powerup(x, y, type, rarity));
     }
     
     checkCollisions() {
@@ -1297,22 +1313,22 @@ class Game {
         }
 
         // Elite enemy bonuses
-        if (zombie.type.includes('boss') || zombie.type.includes('elite')) {
+        if (zombie.isBoss() || zombie.type.includes('elite')) {
             moneyGain *= 3;
             scoreGain *= 2;
             expGain *= 1.5;
 
-            // Special boss rewards - show victory screen and drop special item (only for designated boss waves)
-            if (zombie.isBossWaveSpawn && zombie.type.includes('boss')) {
+            // Special boss rewards - show victory screen and drop special item (for all bosses)
+            if (zombie.isBoss()) {
                 this.hideBossHealthBar(); // Hide boss health bar when boss dies
                 this.showBossVictoryScreen(zombie);
                 this.dropSpecialItem(zombie);
             }
+        }
 
-            // Hide boss health bar for any boss death (including legacy ones)
-            if (this.currentBoss === zombie) {
-                this.hideBossHealthBar();
-            }
+        // Hide boss health bar for any boss death (including legacy ones)
+        if (this.currentBoss === zombie) {
+            this.hideBossHealthBar();
         }
 
         // Apply rewards
@@ -2935,10 +2951,9 @@ class Player {
         
         // Auto-shoot with all weapons - always try to shoot if zombies exist
         const target = this.findNearestZombie();
-        if (target || this.game.zombies.length > 0) {
-            // If no target in range but zombies exist, shoot at closest zombie regardless of range
-            const finalTarget = target || this.game.zombies[0];
-            this.shootAllWeapons(finalTarget);
+        if (target) {
+            // Only shoot if we have a valid target within range
+            this.shootAllWeapons(target);
         }
         
         // Update vehicles and drones
@@ -3948,18 +3963,26 @@ class Zombie {
         // Don't move if frozen or stunned
         if (this.frozen || this.stunned) return;
         
-        // Move downward and towards player
+        // Move directly towards player position
         const player = this.game.player;
         const speedMultiplier = this.game.player?.timeSlowTime > 0 ? 0.5 : 1;
-        
+
         if (player) {
-            const angleToPlayer = Math.atan2(player.y - this.y, player.x - this.x);
-            const moveDown = 0.7; // 70% downward movement
-            const moveTowardsPlayer = 0.3; // 30% towards player
-            
-            this.y += this.speed * moveDown * speedMultiplier * deltaTime / 1000;
-            this.x += Math.cos(angleToPlayer) * this.speed * moveTowardsPlayer * speedMultiplier * deltaTime / 1000;
+            // Calculate direct path to player
+            const dx = player.x - this.x;
+            const dy = player.y - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 10) { // Don't move if very close to prevent jittering
+                // Normalize direction and move directly towards player
+                const moveX = (dx / distance) * this.speed * speedMultiplier * deltaTime / 1000;
+                const moveY = (dy / distance) * this.speed * speedMultiplier * deltaTime / 1000;
+
+                this.x += moveX;
+                this.y += moveY;
+            }
         } else {
+            // Fallback: move downward if no player
             this.y += this.speed * speedMultiplier * deltaTime / 1000;
         }
         
@@ -4598,11 +4621,12 @@ class Bullet {
 }
 
 class Powerup {
-    constructor(x, y, type) {
+    constructor(x, y, type, rarity = 'common') {
         this.x = x;
         this.y = y;
         this.type = type;
-        this.radius = 22;
+        this.rarity = rarity;
+        this.radius = this.getRarityRadius(rarity);
         this.active = true;
         this.pulseTime = 0;
         this.lifetime = 12000; // 12 seconds (enough time to fall through screen)
@@ -4610,17 +4634,72 @@ class Powerup {
         this.rotationAngle = 0;
         this.fallSpeed = 80; // Falling speed
         this.sideSpeed = (Math.random() - 0.5) * 20; // Slight horizontal movement
+        this.sparkleTimer = 0;
+        this.particles = []; // For legendary particle effects
+    }
+
+    getRarityRadius(rarity) {
+        switch(rarity) {
+            case 'common': return 20;
+            case 'rare': return 24;
+            case 'epic': return 28;
+            case 'legendary': return 32;
+            default: return 22;
+        }
+    }
+
+    getRarityColor(rarity) {
+        switch(rarity) {
+            case 'common': return '#ffffff'; // White
+            case 'rare': return '#00bfff'; // Blue
+            case 'epic': return '#8a2be2'; // Purple
+            case 'legendary': return '#ffd700'; // Gold
+            default: return '#ffffff';
+        }
+    }
+
+    getRarityGlow(rarity) {
+        switch(rarity) {
+            case 'common': return 'rgba(255, 255, 255, 0.3)';
+            case 'rare': return 'rgba(0, 191, 255, 0.5)';
+            case 'epic': return 'rgba(138, 43, 226, 0.7)';
+            case 'legendary': return 'rgba(255, 215, 0, 0.9)';
+            default: return 'rgba(255, 255, 255, 0.3)';
+        }
     }
     
     update(deltaTime) {
         this.pulseTime += deltaTime;
         this.age += deltaTime;
         this.rotationAngle += deltaTime * 0.003;
-        
+        this.sparkleTimer += deltaTime;
+
         // Make power-ups fall down
         this.y += this.fallSpeed * deltaTime / 1000;
         this.x += this.sideSpeed * deltaTime / 1000;
-        
+
+        // Legendary items create particle trails
+        if (this.rarity === 'legendary' && this.sparkleTimer > 100) {
+            this.particles.push({
+                x: this.x + (Math.random() - 0.5) * 40,
+                y: this.y + (Math.random() - 0.5) * 40,
+                vx: (Math.random() - 0.5) * 100,
+                vy: (Math.random() - 0.5) * 100,
+                life: 800,
+                age: 0,
+                color: this.getRarityColor(this.rarity)
+            });
+            this.sparkleTimer = 0;
+        }
+
+        // Update particles
+        this.particles.forEach(particle => {
+            particle.age += deltaTime;
+            particle.x += particle.vx * deltaTime / 1000;
+            particle.y += particle.vy * deltaTime / 1000;
+        });
+        this.particles = this.particles.filter(particle => particle.age < particle.life);
+
         // Remove if off screen or expired
         if (this.age >= this.lifetime || this.y > 650) {
             this.active = false;
@@ -4630,12 +4709,37 @@ class Powerup {
     render(ctx) {
         const pulse = Math.sin(this.pulseTime / 300) * 0.3 + 1;
         const size = this.radius * pulse;
-        
+
+        // Render particle effects for legendary items
+        if (this.rarity === 'legendary') {
+            this.particles.forEach(particle => {
+                const alpha = 1 - (particle.age / particle.life);
+                ctx.fillStyle = particle.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Draw rarity glow effect
+        if (this.rarity !== 'common') {
+            ctx.save();
+            ctx.shadowColor = this.getRarityColor(this.rarity);
+            ctx.shadowBlur = this.rarity === 'legendary' ? 20 : this.rarity === 'epic' ? 15 : 10;
+            ctx.globalCompositeOperation = 'lighter';
+
+            ctx.fillStyle = this.getRarityGlow(this.rarity);
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, size * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
         // Draw rotating background
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotationAngle);
-        
+
         // Draw powerup background with gradient
         const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
         gradient.addColorStop(0, this.getColor());
@@ -4644,25 +4748,37 @@ class Powerup {
         ctx.beginPath();
         ctx.arc(0, 0, size, 0, Math.PI * 2);
         ctx.fill();
-        
-        // Draw border
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
+
+        // Draw rarity border
+        ctx.strokeStyle = this.getRarityColor(this.rarity);
+        ctx.lineWidth = this.rarity === 'legendary' ? 4 : this.rarity === 'epic' ? 3 : 2;
         ctx.beginPath();
         ctx.arc(0, 0, size, 0, Math.PI * 2);
         ctx.stroke();
-        
+
         ctx.restore();
-        
+
         // Draw powerup symbol
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 18px Arial';
+        ctx.fillStyle = this.getRarityColor(this.rarity);
+        ctx.font = `bold ${this.rarity === 'legendary' ? '22px' : '18px'} Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 2;
         ctx.strokeText(this.getSymbol(), this.x, this.y);
         ctx.fillText(this.getSymbol(), this.x, this.y);
+
+        // Draw rarity indicator below powerup
+        if (this.rarity !== 'common') {
+            ctx.fillStyle = this.getRarityColor(this.rarity);
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            const rarityText = this.rarity.toUpperCase();
+            ctx.strokeText(rarityText, this.x, this.y + size + 15);
+            ctx.fillText(rarityText, this.x, this.y + size + 15);
+        }
     }
     
     getColor() {
