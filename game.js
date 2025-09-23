@@ -9,7 +9,7 @@ class Game {
         this.wave = 1;
         this.score = 0;
         this.gameStartTime = Date.now(); // Track game start time for survival timer
-        this.money = 50;  // Reduced starting money for challenge
+        this.money = 20;  // Very little starting money for extreme challenge
         this.soldierCost = 75;  // Increased costs
         this.upgradeCost = 150;
         this.speedCost = 100;
@@ -294,8 +294,8 @@ class Game {
         this.logicalWidth = rect.width;
         this.logicalHeight = rect.height;
 
-        // Zoom out for massive battle field of view to handle large hordes
-        this.globalZoom = isMobile ? 0.5 : 0.6; // Much more zoomed out for better battlefield view
+        // Set to fullscreen battlefield view - no zoom reduction
+        this.globalZoom = 1.0; // Fullscreen battlefield view for maximum immersion
     }
 
     getCanvasWidth() {
@@ -548,13 +548,13 @@ class Game {
     
     updateWaveSpawning(deltaTime) {
         if (this.zombiesSpawned < this.zombiesInWave) {
-            // Spawn zombies in massive bursts - high frequency for challenging hordes
-            const spawnRate = Math.min(0.15, 0.04 + (this.wave * 0.002)); // Increase spawn rate with waves
+            // Spawn zombies in EXTREME bursts - brutal frequency for overwhelming hordes
+            const spawnRate = Math.min(0.35, 0.08 + (this.wave * 0.005)); // Much higher spawn rate
             if (Math.random() < spawnRate) {
                 this.spawnZombieBurst();
             }
-            // Also spawn individual zombies continuously for massive hordes
-            if (Math.random() < Math.min(0.08, 0.02 + (this.wave * 0.001))) {
+            // Also spawn individual zombies continuously for brutal hordes
+            if (Math.random() < Math.min(0.20, 0.05 + (this.wave * 0.003))) {
                 this.spawnZombie();
             }
         } else if (this.zombies.length === 0) {
@@ -567,16 +567,16 @@ class Game {
     
     startNextWave() {
         this.wave++;
-        // Massive horde scaling for challenging gameplay
-        // Massive horde progression for more challenging gameplay
-        const baseSize = 25; // Start with more zombies
-        const growthFactor = this.wave < 5 ? 8 :
-                           this.wave < 10 ? 12 :
-                           this.wave < 15 ? 18 :
-                           this.wave < 20 ? 25 :
-                           this.wave < 30 ? 35 :
-                           this.wave < 40 ? 50 : 70;
-        this.zombiesInWave = Math.floor(baseSize + this.wave * growthFactor); // Massive exponential growth
+        // EXTREME horde scaling for brutal gameplay
+        // Overwhelming horde progression for maximum challenge
+        const baseSize = 50; // Start with way more zombies
+        const growthFactor = this.wave < 5 ? 15 :
+                           this.wave < 10 ? 25 :
+                           this.wave < 15 ? 40 :
+                           this.wave < 20 ? 60 :
+                           this.wave < 30 ? 85 :
+                           this.wave < 40 ? 120 : 200;
+        this.zombiesInWave = Math.floor(baseSize + this.wave * growthFactor); // EXTREME exponential growth
         this.zombiesSpawned = 0;
         this.zombiesKilled = 0;
         this.nextWaveTime = 0;
@@ -1084,6 +1084,8 @@ class Game {
                     if (projectile.type === 'spit') {
                         for (let k = 0; k < 2; k++) {
                             this.particles.push(new Particle(this.player.x, this.player.y, '#00ff00', 'small', 'magic'));
+                        // Add weapon hit effect
+                        this.createWeaponHitEffect(zombie.x, zombie.y, bullet.type);
                         }
                     }
                     VisualEffects.addScreenShake(this, projectile.damage * 0.2, 150);
@@ -1141,6 +1143,7 @@ class Game {
                     // Fire damage over time
                     zombie.takeDamage(damage);
                     this.createFireEffect(zombie);
+                    this.createWeaponHitEffect(zombie.x, zombie.y, bullet.type);
                     // Apply burn effect
                     zombie.burnDamage = damage * 0.1;
                     zombie.burnTime = 3000; // 3 seconds
@@ -1153,6 +1156,7 @@ class Game {
                     // Energy weapons - piercing damage
                     zombie.takeDamage(damage);
                     this.createEnergyEffect(zombie);
+                    this.createWeaponHitEffect(zombie.x, zombie.y, bullet.type);
                     break;
 
                 case 'knife':
@@ -1166,6 +1170,7 @@ class Game {
                     // Standard weapons
                     zombie.takeDamage(damage);
                     this.createHitEffect(zombie);
+                    this.createWeaponHitEffect(zombie.x, zombie.y, bullet.type);
                     break;
             }
         }
@@ -1318,8 +1323,8 @@ class Game {
             scoreGain *= 2;
             expGain *= 1.5;
 
-            // Special boss rewards - show victory screen and drop special item (for all bosses)
-            if (zombie.isBoss()) {
+            // Special boss rewards - show victory screen and drop special item (only for official boss wave spawns)
+            if (zombie.isBoss() && zombie.isBossWaveSpawn) {
                 this.hideBossHealthBar(); // Hide boss health bar when boss dies
                 this.showBossVictoryScreen(zombie);
                 this.dropSpecialItem(zombie);
@@ -1768,6 +1773,46 @@ class Game {
                 // Effect is calculated dynamically in player movement
                 break;
 
+            case 'rapid_fire':
+                // Increase fire rate (applied in weapon shooting logic)
+                // Effect is calculated dynamically during shooting
+                break;
+
+            case 'ammo_box':
+                // Increase damage (applied in weapon shooting logic)
+                // Effect is calculated dynamically during shooting
+                break;
+
+            case 'energy_core':
+                // Increase projectile speed (applied in weapon shooting logic)
+                // Effect is calculated dynamically during shooting
+                break;
+
+            case 'spread_shot':
+                // Add extra projectiles for shotgun (applied in weapon shooting logic)
+                // Effect is calculated dynamically during shooting
+                break;
+
+            case 'piercing':
+                // Allow bullets to pierce through enemies (applied after bullet creation)
+                // Effect is calculated dynamically after bullet creation
+                break;
+
+            case 'explosive_rounds':
+                // Make bullets explode on impact (applied in bullet collision logic)
+                // Effect is calculated dynamically during bullet hits
+                break;
+
+            case 'blast_radius':
+                // Increase explosion radius (applied with explosive_rounds)
+                // Effect is calculated dynamically during explosions
+                break;
+
+            case 'luck':
+                // Increase rare item chance (applied in loot generation)
+                // Effect is calculated dynamically during loot drops
+                break;
+
             // Other passive effects are applied in real-time during shooting/gameplay
         }
     }
@@ -2026,43 +2071,6 @@ class Game {
                 message = 'MEGA x10!';
                 break;
                 
-            // Weapons
-            case 'shotgun':
-                this.player.currentWeapon = 'shotgun';
-                this.player.weaponTime = 15000;
-                message = 'SHOTGUN!';
-                break;
-            case 'machinegun':
-                this.player.currentWeapon = 'machinegun';
-                this.player.weaponTime = 20000;
-                message = 'MACHINE GUN!';
-                break;
-            case 'laser':
-                this.player.currentWeapon = 'laser';
-                this.player.weaponTime = 12000;
-                message = 'LASER BEAM!';
-                break;
-            case 'rocket':
-                this.player.currentWeapon = 'rocket';
-                this.player.weaponTime = 10000;
-                message = 'ROCKET LAUNCHER!';
-                break;
-            case 'plasma':
-                this.player.currentWeapon = 'plasma';
-                this.player.weaponTime = 12000;
-                message = 'PLASMA CANNON!';
-                break;
-            case 'railgun':
-                this.player.currentWeapon = 'railgun';
-                this.player.weaponTime = 8000;
-                message = 'RAILGUN!';
-                break;
-            case 'flamethrower':
-                this.player.currentWeapon = 'flamethrower';
-                this.player.weaponTime = 15000;
-                message = 'FLAMETHROWER!';
-                break;
-                
             // Vehicles/Drones
             case 'tank_vehicle':
                 this.player.vehicles.push(new Vehicle(this.player.x, this.player.y, 'tank', this));
@@ -2200,7 +2208,7 @@ class Game {
                 break;
             case 'mystery_box':
                 // Random good effect
-                const goodEffects = ['damage', 'soldiers', 'money', 'health', 'x5', 'shotgun', 'shield'];
+                const goodEffects = ['damage', 'soldiers', 'money', 'health', 'x5', 'shield'];
                 const randomGood = goodEffects[Math.floor(Math.random() * goodEffects.length)];
                 this.collectPowerup({ type: randomGood, x: powerup.x, y: powerup.y }, -1);
                 message = 'MYSTERY BONUS!';
@@ -2240,7 +2248,9 @@ class Game {
                             0,
                             300,
                             this.player.damage * 2,
-                            'rain'
+                            'rain',
+                            this,
+                            1
                         ));
                     }, i * 100);
                 }
@@ -2257,6 +2267,7 @@ class Game {
         }
         
         this.showMultiplierPopup(powerup.x, powerup.y, message, isGood);
+        this.createPowerupCollectionEffect(powerup.x, powerup.y, powerup.type, powerup.rarity || 'common');
         this.updateUI();
     }
     
@@ -2821,7 +2832,7 @@ class Game {
         this.wave = 1;
         this.score = 0;
         this.gameStartTime = Date.now(); // Reset survival timer
-        this.money = 50;  // Match current challenging settings
+        this.money = 20;  // Match current extreme challenge settings
         this.soldierCost = 75;
         this.upgradeCost = 150;
         this.speedCost = 100;
@@ -2878,7 +2889,7 @@ class Player {
         this.speed = character.speed;
         this.fireRate = 300; // Base fire rate in milliseconds
         this.lastShot = 0;
-        this.damage = 40 * character.damage;
+        this.damage = 25 * character.damage; // Much lower base damage for challenge
         this.multishotTime = 0;
         this.width = 25;
         this.height = 35;
@@ -3046,19 +3057,29 @@ class Player {
             baseDamage *= (1 + (0.25 * ammoBox.level)); // 25% more damage per level
         }
 
-        // Scale damage with weapon level
-        baseDamage *= (1 + (weaponLevel - 1) * 0.2); // 20% more damage per weapon level
+        // Reduced damage scaling to make upgrades more necessary
+        baseDamage *= (1 + (weaponLevel - 1) * 0.15); // Only 15% more damage per weapon level
+
+        // Apply energy core speed boost to all weapons
+        const energyCore = this.game.passiveItems.find(p => p.id === 'energy_core');
+        let enhancedBulletSpeed = bulletSpeed;
+        if (energyCore) {
+            enhancedBulletSpeed *= (1 + (0.5 * energyCore.level)); // 50% faster per level
+        }
 
         switch (weaponId) {
             case 'rifle':
                 this.game.bullets.push(new Bullet(
                     this.x, this.y - 10,
-                    Math.cos(angle) * bulletSpeed,
-                    Math.sin(angle) * bulletSpeed,
+                    Math.cos(angle) * enhancedBulletSpeed,
+                    Math.sin(angle) * enhancedBulletSpeed,
                     baseDamage,
                     'rifle',
-                    this.game
+                    this.game,
+                    weaponLevel
                 ));
+                // Add weapon fire effect
+                this.createMuzzleFlash('rifle', weaponLevel);
                 break;
 
             case 'shotgun':
@@ -3074,13 +3095,16 @@ class Player {
                     const spreadAngle = angle + ((i - spreadRange/2) * 0.2);
                     this.game.bullets.push(new Bullet(
                         this.x, this.y - 10,
-                        Math.cos(spreadAngle) * bulletSpeed,
-                        Math.sin(spreadAngle) * bulletSpeed,
+                        Math.cos(spreadAngle) * enhancedBulletSpeed,
+                        Math.sin(spreadAngle) * enhancedBulletSpeed,
                         baseDamage * 0.7,
                         'shotgun',
-                        this.game
+                        this.game,
+                        weaponLevel
                     ));
                 }
+                // Add weapon fire effect
+                this.createMuzzleFlash('shotgun', weaponLevel);
                 break;
 
             case 'machinegun':
@@ -3088,20 +3112,20 @@ class Player {
                 const spread = (Math.random() - 0.5) * 0.3;
                 this.game.bullets.push(new Bullet(
                     this.x, this.y - 10,
-                    Math.cos(angle + spread) * bulletSpeed,
-                    Math.sin(angle + spread) * bulletSpeed,
+                    Math.cos(angle + spread) * enhancedBulletSpeed,
+                    Math.sin(angle + spread) * enhancedBulletSpeed,
                     baseDamage * 0.6,
                     'machinegun',
-                    this.game
+                    this.game,
+                    weaponLevel
                 ));
+                // Add weapon fire effect
+                this.createMuzzleFlash('machinegun', weaponLevel);
                 break;
 
             case 'laser':
-                let speed = bulletSpeed * 2;
-                const energyCore = this.game.passiveItems.find(p => p.id === 'energy_core');
-                if (energyCore) {
-                    speed *= (1 + (0.5 * energyCore.level)); // 50% faster per level
-                }
+                // Laser gets additional speed boost on top of energy core
+                let speed = enhancedBulletSpeed * 2;
 
                 this.game.bullets.push(new Bullet(
                     this.x, this.y - 10,
@@ -3109,19 +3133,25 @@ class Player {
                     Math.sin(angle) * speed,
                     baseDamage * 1.5,
                     'laser',
-                    this.game
+                    this.game,
+                    weaponLevel
                 ));
+                // Add weapon fire effect
+                this.createMuzzleFlash('laser', weaponLevel);
                 break;
 
             case 'rocket':
                 this.game.bullets.push(new Bullet(
                     this.x, this.y - 10,
-                    Math.cos(angle) * 300,
-                    Math.sin(angle) * 300,
+                    Math.cos(angle) * (300 + (enhancedBulletSpeed - bulletSpeed)),
+                    Math.sin(angle) * (300 + (enhancedBulletSpeed - bulletSpeed)),
                     baseDamage * 3,
                     'rocket',
-                    this.game
+                    this.game,
+                    weaponLevel
                 ));
+                // Add weapon fire effect
+                this.createMuzzleFlash('rocket', weaponLevel);
                 break;
 
             case 'knife':
@@ -3134,9 +3164,84 @@ class Player {
                         Math.cos(knifeAngle) * 100,
                         Math.sin(knifeAngle) * 100,
                         baseDamage * 0.8,
-                        'knife'
+                        'knife',
+                        this.game,
+                        weaponLevel
                     ));
                 }
+                break;
+
+            case 'plasma':
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle) * enhancedBulletSpeed,
+                    Math.sin(angle) * enhancedBulletSpeed,
+                    baseDamage * 2,
+                    'plasma',
+                    this.game,
+                    weaponLevel
+                ));
+                this.createMuzzleFlash('plasma', weaponLevel);
+                break;
+
+            case 'railgun':
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle) * enhancedBulletSpeed * 3,
+                    Math.sin(angle) * enhancedBulletSpeed * 3,
+                    baseDamage * 4,
+                    'railgun',
+                    this.game,
+                    weaponLevel
+                ));
+                this.createMuzzleFlash('railgun', weaponLevel);
+                break;
+
+            case 'flamethrower':
+                // Wide flame spread
+                for (let i = -2; i <= 2; i++) {
+                    const flameAngle = angle + (i * 0.2);
+                    this.game.bullets.push(new Bullet(
+                        this.x, this.y - 10,
+                        Math.cos(flameAngle) * (200 + Math.random() * 100),
+                        Math.sin(flameAngle) * (200 + Math.random() * 100),
+                        baseDamage * 1.2,
+                        'flamethrower',
+                        this.game,
+                        weaponLevel
+                    ));
+                }
+                this.createMuzzleFlash('flamethrower', weaponLevel);
+                break;
+
+            case 'pistol':
+                this.game.bullets.push(new Bullet(
+                    this.x, this.y - 10,
+                    Math.cos(angle) * enhancedBulletSpeed,
+                    Math.sin(angle) * enhancedBulletSpeed,
+                    baseDamage * 0.8,
+                    'pistol',
+                    this.game,
+                    weaponLevel
+                ));
+                this.createMuzzleFlash('pistol', weaponLevel);
+                break;
+
+            case 'dual_pistols':
+                // Fire two bullets at slightly different angles
+                for (let i = 0; i < 2; i++) {
+                    const offsetAngle = angle + (i - 0.5) * 0.1;
+                    this.game.bullets.push(new Bullet(
+                        this.x + (i - 0.5) * 10, this.y - 10,
+                        Math.cos(offsetAngle) * enhancedBulletSpeed,
+                        Math.sin(offsetAngle) * enhancedBulletSpeed,
+                        baseDamage * 0.9,
+                        'dual_pistols',
+                        this.game,
+                        weaponLevel
+                    ));
+                }
+                this.createMuzzleFlash('dual_pistols', weaponLevel);
                 break;
 
             case 'grenade':
@@ -3146,8 +3251,11 @@ class Player {
                     Math.cos(angle) * 200,
                     Math.sin(angle) * 200 - 100, // Arc trajectory
                     baseDamage * 2,
-                    'grenade'
+                    'grenade',
+                    this.game,
+                    weaponLevel
                 ));
+                this.createMuzzleFlash('grenade', weaponLevel);
                 break;
 
             // Evolved weapons - more powerful versions
@@ -3157,8 +3265,11 @@ class Player {
                     Math.cos(angle) * bulletSpeed * 1.5,
                     Math.sin(angle) * bulletSpeed * 1.5,
                     baseDamage * 2.5,
-                    'plasma_rifle'
+                    'plasma_rifle',
+                    this.game,
+                    weaponLevel
                 ));
+                this.createMuzzleFlash('plasma_rifle', weaponLevel);
                 break;
 
             case 'dragon_breath':
@@ -3170,9 +3281,12 @@ class Player {
                         Math.cos(flameAngle) * (300 + Math.random() * 200),
                         Math.sin(flameAngle) * (300 + Math.random() * 200),
                         baseDamage * 1.2,
-                        'dragon_breath'
+                        'dragon_breath',
+                        this.game,
+                        weaponLevel
                     ));
                 }
+                this.createMuzzleFlash('dragon_breath', weaponLevel);
                 break;
 
             case 'gatling_laser':
@@ -3184,9 +3298,12 @@ class Player {
                         Math.cos(laserAngle) * bulletSpeed * 3,
                         Math.sin(laserAngle) * bulletSpeed * 3,
                         baseDamage * 2,
-                        'gatling_laser'
+                        'gatling_laser',
+                        this.game,
+                        weaponLevel
                     ));
                 }
+                this.createMuzzleFlash('gatling_laser', weaponLevel);
                 break;
 
             case 'death_ray':
@@ -3196,23 +3313,31 @@ class Player {
                     Math.cos(angle) * bulletSpeed * 4,
                     Math.sin(angle) * bulletSpeed * 4,
                     baseDamage * 4,
-                    'death_ray'
+                    'death_ray',
+                    this.game,
+                    weaponLevel
                 ));
+                this.createMuzzleFlash('death_ray', weaponLevel);
                 break;
 
             case 'missile_barrage':
                 // Multiple homing missiles
                 for (let i = 0; i < 3; i++) {
-                    setTimeout(() => {
+                    const timeoutId = setTimeout(() => {
                         this.game.bullets.push(new Bullet(
                             this.x, this.y - 10,
                             Math.cos(angle + (Math.random() - 0.5) * 0.5) * 400,
                             Math.sin(angle + (Math.random() - 0.5) * 0.5) * 400,
                             baseDamage * 3.5,
-                            'missile_barrage'
+                            'missile_barrage',
+                            this.game,
+                            weaponLevel
                         ));
                     }, i * 100);
+                    // Track timeout for cleanup
+                    this.game.activeTimeouts.push(timeoutId);
                 }
+                this.createMuzzleFlash('rocket', weaponLevel);
                 break;
 
             case 'soul_reaper':
@@ -3225,9 +3350,12 @@ class Player {
                         Math.cos(reapAngle) * 150,
                         Math.sin(reapAngle) * 150,
                         baseDamage * 1.5,
-                        'soul_reaper'
+                        'soul_reaper',
+                        this.game,
+                        weaponLevel
                     ));
                 }
+                this.createMuzzleFlash('soul_reaper', weaponLevel);
                 break;
 
             case 'holy_bomb':
@@ -3237,8 +3365,29 @@ class Player {
                     Math.cos(angle) * 150,
                     Math.sin(angle) * 150 - 80,
                     baseDamage * 5,
-                    'holy_bomb'
+                    'holy_bomb',
+                    this.game,
+                    weaponLevel
                 ));
+                this.createMuzzleFlash('holy_bomb', weaponLevel);
+                break;
+
+            case 'phieraggi':
+                // Ultimate dual weapon - fires in multiple directions
+                const phieraggiShots = 8;
+                for (let i = 0; i < phieraggiShots; i++) {
+                    const phieraggiAngle = (Math.PI * 2 * i) / phieraggiShots;
+                    this.game.bullets.push(new Bullet(
+                        this.x, this.y - 10,
+                        Math.cos(phieraggiAngle) * enhancedBulletSpeed * 1.5,
+                        Math.sin(phieraggiAngle) * enhancedBulletSpeed * 1.5,
+                        baseDamage * 2,
+                        'phieraggi',
+                        this.game,
+                        weaponLevel
+                    ));
+                }
+                this.createMuzzleFlash('laser', weaponLevel);
                 break;
 
             default:
@@ -3248,8 +3397,11 @@ class Player {
                     Math.cos(angle) * bulletSpeed,
                     Math.sin(angle) * bulletSpeed,
                     baseDamage,
-                    'basic'
+                    'basic',
+                    this.game,
+                    weaponLevel
                 ));
+                this.createMuzzleFlash('rifle', weaponLevel);
                 break;
         }
 
@@ -3269,18 +3421,20 @@ class Player {
                     Math.cos(spreadAngle) * bulletSpeed,
                     Math.sin(spreadAngle) * bulletSpeed,
                     baseDamage * 0.8,
-                    weaponId + '_multi'
+                    weaponId + '_multi',
+                    this.game,
+                    weaponLevel
                 ));
             }
         }
     }
     
     getWeaponRange() {
-        // Progressive weapon range scaling with level - starts low, gets better
-        const baseRange = 200; // Start with shorter range for early game challenge
-        const levelBonus = this.game.level * 25; // +25 range per level
+        // Much shorter weapon range for extreme challenge - positioning is critical
+        const baseRange = 120; // Very short starting range
+        const levelBonus = this.game.level * 15; // Only +15 range per level
         const specialItemBonus = this.game.rangeBonus || 0; // Bonus from special items
-        const maxRange = 1000; // Increased cap to accommodate special items
+        const maxRange = 600; // Lower cap for more challenge
         return Math.min(maxRange, baseRange + levelBonus + specialItemBonus);
     }
 
@@ -3313,8 +3467,105 @@ class Player {
 
         return nearest;
     }
-    
-    
+
+    createMuzzleFlash(weaponType, weaponLevel = 1) {
+        // Much more subtle level scaling for visual effects
+        const levelMultiplier = 1 + (weaponLevel - 1) * 0.15; // Only 15% more particles per level
+        const sizeMultiplier = 1 + (weaponLevel - 1) * 0.1; // Only 10% larger effects per level
+
+        // Create weapon-specific muzzle flash effects with subtle scaling
+        const effectMap = {
+            'rifle': () => this.createBasicMuzzleFlash('#ffd700', Math.floor(2 * levelMultiplier), sizeMultiplier),
+            'shotgun': () => this.createBasicMuzzleFlash('#ffaa00', Math.floor(3 * levelMultiplier), sizeMultiplier),
+            'machinegun': () => this.createBasicMuzzleFlash('#ffcc00', Math.floor(2 * levelMultiplier), sizeMultiplier),
+            'laser': () => this.createEnergyMuzzleFlash('#00ffff', Math.floor(3 * levelMultiplier), sizeMultiplier),
+            'rocket': () => this.createExplosiveMuzzleFlash('#ff4444', Math.floor(4 * levelMultiplier), sizeMultiplier),
+            'flamethrower': () => this.createFlameMuzzleFlash('#ff6600', Math.floor(5 * levelMultiplier), sizeMultiplier),
+            'plasma': () => this.createEnergyMuzzleFlash('#9b59b6', Math.floor(4 * levelMultiplier), sizeMultiplier),
+            'railgun': () => this.createEnergyMuzzleFlash('#34495e', Math.floor(5 * levelMultiplier), sizeMultiplier),
+            'pistol': () => this.createBasicMuzzleFlash('#ffd700', Math.floor(1 * levelMultiplier), sizeMultiplier),
+            'dual_pistols': () => this.createBasicMuzzleFlash('#ffdd00', Math.floor(2 * levelMultiplier), sizeMultiplier),
+            'grenade': () => this.createExplosiveMuzzleFlash('#ff6600', Math.floor(3 * levelMultiplier), sizeMultiplier),
+
+            // Evolved weapons - still subtle but slightly more visible
+            'plasma_rifle': () => this.createEnergyMuzzleFlash('#e74c3c', Math.floor(5 * levelMultiplier), sizeMultiplier),
+            'dragon_breath': () => this.createFlameMuzzleFlash('#e17055', Math.floor(6 * levelMultiplier), sizeMultiplier),
+            'gatling_laser': () => this.createEnergyMuzzleFlash('#3498db', Math.floor(5 * levelMultiplier), sizeMultiplier),
+            'death_ray': () => this.createEnergyMuzzleFlash('#2c3e50', Math.floor(6 * levelMultiplier), sizeMultiplier),
+            'missile_barrage': () => this.createExplosiveMuzzleFlash('#e67e22', Math.floor(5 * levelMultiplier), sizeMultiplier),
+            'soul_reaper': () => this.createEnergyMuzzleFlash('#8e44ad', Math.floor(6 * levelMultiplier), sizeMultiplier),
+            'holy_bomb': () => this.createExplosiveMuzzleFlash('#f39c12', Math.floor(7 * levelMultiplier), sizeMultiplier),
+            'phieraggi': () => this.createEnergyMuzzleFlash('#ff00ff', Math.floor(8 * levelMultiplier), sizeMultiplier)
+        };
+
+        if (effectMap[weaponType]) {
+            effectMap[weaponType]();
+        } else {
+            this.createBasicMuzzleFlash('#ffd700', Math.floor(3 * levelMultiplier), sizeMultiplier);
+        }
+    }
+
+    createBasicMuzzleFlash(color, count, sizeMultiplier = 1) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = (Math.random() * 8 + 3) * sizeMultiplier;
+            const size = sizeMultiplier > 2 ? 'large' : sizeMultiplier > 1.5 ? 'medium' : 'small';
+            this.game.particles.push(new Particle(
+                this.x + Math.cos(angle) * distance,
+                this.y + Math.sin(angle) * distance,
+                color,
+                size,
+                'sparks'
+            ));
+        }
+    }
+
+    createEnergyMuzzleFlash(color, count, sizeMultiplier = 1) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = (Math.random() * 12 + 5) * sizeMultiplier;
+            const size = sizeMultiplier > 2 ? 'large' : 'medium';
+            this.game.particles.push(new Particle(
+                this.x + Math.cos(angle) * distance,
+                this.y + Math.sin(angle) * distance,
+                color,
+                size,
+                'electric'
+            ));
+        }
+    }
+
+    createExplosiveMuzzleFlash(color, count, sizeMultiplier = 1) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = (Math.random() * 10 + 4) * sizeMultiplier;
+            const size = sizeMultiplier > 2 ? 'large' : 'medium';
+            this.game.particles.push(new Particle(
+                this.x + Math.cos(angle) * distance,
+                this.y + Math.sin(angle) * distance,
+                i % 2 === 0 ? color : '#ff8800',
+                size,
+                'explosion'
+            ));
+        }
+    }
+
+    createFlameMuzzleFlash(color, count, sizeMultiplier = 1) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = (Math.random() * 15 + 5) * sizeMultiplier;
+            const size = 'large';
+            this.game.particles.push(new Particle(
+                this.x + Math.cos(angle) * distance,
+                this.y + Math.sin(angle) * distance,
+                i % 3 === 0 ? color : (i % 3 === 1 ? '#ff4400' : '#ffaa00'),
+                size,
+                'fire'
+            ));
+        }
+    }
+
+
     takeDamage(damage) {
         // Invincibility prevents all damage
         if (this.invincibilityTime > 0) return;
@@ -3493,7 +3744,9 @@ class Soldier {
             Math.cos(angle) * bulletSpeed,
             Math.sin(angle) * bulletSpeed,
             damage,
-            'soldier'
+            'soldier',
+            this.game,
+            1
         ));
     }
     
@@ -3579,23 +3832,23 @@ class Zombie {
     
     getSpeed() {
         switch (this.type) {
-            // Original types
-            case 'fast': return 90;
-            case 'tank': return 25;
-            case 'boss': return 40;
-            case 'mega_boss': return 20;
+            // Original types - much faster and more aggressive
+            case 'fast': return 130; // Extremely fast
+            case 'tank': return 45; // Faster tanks
+            case 'boss': return 60; // Faster bosses
+            case 'mega_boss': return 40;
 
-            // New 10 Monster Types
-            case 'crawler': return 120; // Very fast swarm unit
-            case 'brute': return 15; // Slow but powerful
-            case 'spitter': return 45; // Medium speed ranged
-            case 'jumper': return 70; // Teleporting enemy
-            case 'shielder': return 50; // Protected tank
-            case 'exploder': return 80; // Suicide bomber
-            case 'healer': return 35; // Support unit
-            case 'summoner': return 30; // Spawns minions
-            case 'phase_walker': return 65; // Phasing ability
-            case 'stalker': return 55; // Stealth unit
+            // New 10 Monster Types - all faster
+            case 'crawler': return 160; // Lightning fast swarm
+            case 'brute': return 35; // Still slow but faster
+            case 'spitter': return 70; // Faster ranged
+            case 'jumper': return 100; // Much faster teleporter
+            case 'shielder': return 75; // Faster protected tank
+            case 'exploder': return 120; // Faster suicide bomber
+            case 'healer': return 60; // Faster support
+            case 'summoner': return 55; // Faster spawner
+            case 'phase_walker': return 95; // Much faster phasing
+            case 'stalker': return 85; // Faster stealth
 
             // 10 Boss Types
             case 'horde_king': return 20; // Wave 5 boss
@@ -3609,42 +3862,42 @@ class Zombie {
             case 'ice_queen': return 35; // Wave 45 boss
             case 'final_nightmare': return 25; // Wave 50 boss
 
-            default: return 75; // Increased basic zombie speed for challenge
+            default: return 110; // Much faster basic zombies for extreme challenge
         }
     }
     
     getHealth() {
-        const baseHealth = 60 + this.game.wave * 15;
+        const baseHealth = 120 + this.game.wave * 35; // Much higher base health and scaling
         switch (this.type) {
-            // Original types
-            case 'fast': return Math.floor(baseHealth * 0.6);
-            case 'tank': return Math.floor(baseHealth * 3);
-            case 'boss': return Math.floor(baseHealth * 20);
-            case 'mega_boss': return Math.floor(baseHealth * 35);
+            // Original types - much tankier
+            case 'fast': return Math.floor(baseHealth * 1.0); // No longer weak
+            case 'tank': return Math.floor(baseHealth * 5); // Much more tanky
+            case 'boss': return Math.floor(baseHealth * 30); // Stronger bosses
+            case 'mega_boss': return Math.floor(baseHealth * 50);
 
-            // New 10 Monster Types
-            case 'crawler': return Math.floor(baseHealth * 0.4); // Glass cannon swarm
-            case 'brute': return Math.floor(baseHealth * 4); // Very tanky
-            case 'spitter': return Math.floor(baseHealth * 0.8); // Medium health ranged
-            case 'jumper': return Math.floor(baseHealth * 1.2); // Agile but not too tanky
-            case 'shielder': return Math.floor(baseHealth * 2.5); // Tank with shield
-            case 'exploder': return Math.floor(baseHealth * 0.3); // Very fragile bomber
-            case 'healer': return Math.floor(baseHealth * 1.5); // Support unit
-            case 'summoner': return Math.floor(baseHealth * 2); // Spawner
-            case 'phase_walker': return Math.floor(baseHealth * 1.8); // Phasing enemy
-            case 'stalker': return Math.floor(baseHealth * 1.3); // Stealth assassin
+            // New 10 Monster Types - all much stronger
+            case 'crawler': return Math.floor(baseHealth * 0.8); // Still swarm but tougher
+            case 'brute': return Math.floor(baseHealth * 7); // Extremely tanky
+            case 'spitter': return Math.floor(baseHealth * 1.5); // Tougher ranged
+            case 'jumper': return Math.floor(baseHealth * 2.0); // Much more durable
+            case 'shielder': return Math.floor(baseHealth * 4.0); // Super tank
+            case 'exploder': return Math.floor(baseHealth * 0.6); // Less fragile
+            case 'healer': return Math.floor(baseHealth * 2.5); // Tankier support
+            case 'summoner': return Math.floor(baseHealth * 3.5); // Much stronger spawner
+            case 'phase_walker': return Math.floor(baseHealth * 3.0); // Tougher elite
+            case 'stalker': return Math.floor(baseHealth * 2.2); // Stronger assassin
 
-            // 10 Boss Types - Escalating health (MUCH MORE CHALLENGING)
-            case 'horde_king': return Math.floor(baseHealth * 25); // Wave 5 boss
-            case 'iron_colossus': return Math.floor(baseHealth * 40); // Wave 10 boss
-            case 'plague_mother': return Math.floor(baseHealth * 60); // Wave 15 boss
-            case 'shadow_reaper': return Math.floor(baseHealth * 80); // Wave 20 boss
-            case 'flame_berserker': return Math.floor(baseHealth * 100); // Wave 25 boss
-            case 'crystal_guardian': return Math.floor(baseHealth * 120); // Wave 30 boss
-            case 'void_spawner': return Math.floor(baseHealth * 150); // Wave 35 boss
-            case 'thunder_titan': return Math.floor(baseHealth * 180); // Wave 40 boss
-            case 'ice_queen': return Math.floor(baseHealth * 220); // Wave 45 boss
-            case 'final_nightmare': return Math.floor(baseHealth * 300); // Wave 50 final boss
+            // 10 Boss Types - EXTREME health (BRUTAL CHALLENGE)
+            case 'horde_king': return Math.floor(baseHealth * 50); // Wave 5 boss
+            case 'iron_colossus': return Math.floor(baseHealth * 80); // Wave 10 boss
+            case 'plague_mother': return Math.floor(baseHealth * 120); // Wave 15 boss
+            case 'shadow_reaper': return Math.floor(baseHealth * 160); // Wave 20 boss
+            case 'flame_berserker': return Math.floor(baseHealth * 220); // Wave 25 boss
+            case 'crystal_guardian': return Math.floor(baseHealth * 300); // Wave 30 boss
+            case 'void_spawner': return Math.floor(baseHealth * 400); // Wave 35 boss
+            case 'thunder_titan': return Math.floor(baseHealth * 550); // Wave 40 boss
+            case 'ice_queen': return Math.floor(baseHealth * 750); // Wave 45 boss
+            case 'final_nightmare': return Math.floor(baseHealth * 1000); // Wave 50 final boss
 
             default: return baseHealth;
         }
@@ -3652,37 +3905,37 @@ class Zombie {
     
     getDamage() {
         switch (this.type) {
-            // Original types
-            case 'fast': return 20;
-            case 'tank': return 50;
-            case 'boss': return 80;
-            case 'mega_boss': return 150;
+            // Original types - much higher damage
+            case 'fast': return 45; // Much more dangerous
+            case 'tank': return 85; // Devastating damage
+            case 'boss': return 150; // Lethal bosses
+            case 'mega_boss': return 250;
 
-            // New 10 Monster Types
-            case 'crawler': return 15; // Low damage but swarms
-            case 'brute': return 75; // High damage slow attacker
-            case 'spitter': return 35; // Ranged attacker
-            case 'jumper': return 40; // Teleport ambush damage
-            case 'shielder': return 45; // Protected damage dealer
-            case 'exploder': return 120; // Massive explosion damage
-            case 'healer': return 25; // Low damage support
-            case 'summoner': return 30; // Spawning threat
-            case 'phase_walker': return 55; // Phasing assassin
-            case 'stalker': return 65; // Stealth critical hits
+            // New 10 Monster Types - all much more dangerous
+            case 'crawler': return 30; // Dangerous swarms
+            case 'brute': return 140; // Devastating slow attacker
+            case 'spitter': return 70; // Deadly ranged
+            case 'jumper': return 80; // Brutal ambush damage
+            case 'shielder': return 90; // High protected damage
+            case 'exploder': return 200; // Massive explosion damage
+            case 'healer': return 50; // Even support hurts
+            case 'summoner': return 60; // Dangerous spawner
+            case 'phase_walker': return 110; // Lethal assassin
+            case 'stalker': return 130; // Brutal stealth hits
 
-            // 10 Boss Types - Escalating damage
-            case 'horde_king': return 100; // Wave 5 boss
-            case 'iron_colossus': return 140; // Wave 10 boss
-            case 'plague_mother': return 120; // Wave 15 boss (poison focus)
-            case 'shadow_reaper': return 180; // Wave 20 boss
-            case 'flame_berserker': return 220; // Wave 25 boss
-            case 'crystal_guardian': return 160; // Wave 30 boss (shield focus)
-            case 'void_spawner': return 200; // Wave 35 boss
-            case 'thunder_titan': return 250; // Wave 40 boss
-            case 'ice_queen': return 280; // Wave 45 boss
-            case 'final_nightmare': return 350; // Wave 50 final boss
+            // 10 Boss Types - BRUTAL damage
+            case 'horde_king': return 200; // Wave 5 boss
+            case 'iron_colossus': return 280; // Wave 10 boss
+            case 'plague_mother': return 240; // Wave 15 boss (poison focus)
+            case 'shadow_reaper': return 360; // Wave 20 boss
+            case 'flame_berserker': return 440; // Wave 25 boss
+            case 'crystal_guardian': return 320; // Wave 30 boss (shield focus)
+            case 'void_spawner': return 400; // Wave 35 boss
+            case 'thunder_titan': return 500; // Wave 40 boss
+            case 'ice_queen': return 560; // Wave 45 boss
+            case 'final_nightmare': return 700; // Wave 50 final boss
 
-            default: return 30;
+            default: return 60; // Much higher base damage
         }
     }
     
@@ -4442,7 +4695,7 @@ class Zombie {
 }
 
 class Bullet {
-    constructor(x, y, vx, vy, damage, type = 'soldier', game = null) {
+    constructor(x, y, vx, vy, damage, type = 'soldier', game = null, weaponLevel = 1) {
         this.x = x;
         this.y = y;
         this.vx = vx;
@@ -4454,6 +4707,8 @@ class Bullet {
         this.piercing = this.getPiercingValue(type);
         this.pierceCount = 0;
         this.game = game;
+        this.weaponLevel = weaponLevel;
+        this.levelScale = 1 + (weaponLevel - 1) * 0.4; // 40% larger per level
     }
 
     getPiercingValue(type) {
@@ -4533,6 +4788,22 @@ class Bullet {
     }
 
     getWeaponVisuals() {
+        // Apply level scaling to all visual properties
+        const baseVisuals = this.getBaseWeaponVisuals();
+        const scale = this.levelScale || 1;
+
+        return {
+            size: Math.floor(baseVisuals.size * scale),
+            color: baseVisuals.color,
+            glowColor: baseVisuals.glowColor,
+            glowSize: Math.floor(baseVisuals.glowSize * scale),
+            trailColor: baseVisuals.trailColor,
+            trailWidth: Math.floor(baseVisuals.trailWidth * scale),
+            shape: baseVisuals.shape
+        };
+    }
+
+    getBaseWeaponVisuals() {
         switch (this.type) {
             case 'rocket':
             case 'missile_barrage':
@@ -5424,7 +5695,9 @@ class Vehicle {
                 Math.cos(angle) * bulletSpeed,
                 Math.sin(angle) * bulletSpeed,
                 this.damage,
-                'artillery'
+                'artillery',
+                this.game,
+                1
             ));
 
             // Artillery muzzle fire effect
@@ -5446,7 +5719,9 @@ class Vehicle {
                 Math.cos(angle) * bulletSpeed,
                 Math.sin(angle) * bulletSpeed,
                 this.damage,
-                'vehicle'
+                'vehicle',
+                this.game,
+                1
             ));
 
             // Muzzle flash effect
@@ -5576,7 +5851,9 @@ class Drone {
             Math.cos(angle) * bulletSpeed,
             Math.sin(angle) * bulletSpeed,
             this.damage,
-            'drone'
+            'drone',
+            this.game,
+            1
         ));
 
         // Drone laser effect
@@ -5974,11 +6251,274 @@ class MobileControls {
     }
 }
 
-// Start the game when page loads
-window.addEventListener('load', () => {
-    const game = new Game();
-    const mobileControls = new MobileControls(game);
+// Enhanced Visual Effects System
+class EnhancedVisualEffects {
+    static createWeaponFireEffect(game, x, y, weaponType) {
+        const effects = {
+            'laser': () => {
+                for (let i = 0; i < 8; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 30 + 10;
+                    game.particles.push(new Particle(
+                        x + Math.cos(angle) * distance,
+                        y + Math.sin(angle) * distance,
+                        '#00ffff',
+                        'small',
+                        'electric'
+                    ));
+                }
+            },
+            'rocket': () => {
+                for (let i = 0; i < 12; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 25 + 5;
+                    game.particles.push(new Particle(
+                        x + Math.cos(angle) * distance,
+                        y + Math.sin(angle) * distance,
+                        i % 2 === 0 ? '#ff4444' : '#ff8800',
+                        'medium',
+                        'explosion'
+                    ));
+                }
+            },
+            'flamethrower': () => {
+                for (let i = 0; i < 15; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 40 + 10;
+                    game.particles.push(new Particle(
+                        x + Math.cos(angle) * distance,
+                        y + Math.sin(angle) * distance,
+                        i % 3 === 0 ? '#ff6600' : (i % 3 === 1 ? '#ff4400' : '#ffaa00'),
+                        'large',
+                        'fire'
+                    ));
+                }
+            },
+            'shotgun': () => {
+                for (let i = 0; i < 6; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 20 + 5;
+                    game.particles.push(new Particle(
+                        x + Math.cos(angle) * distance,
+                        y + Math.sin(angle) * distance,
+                        '#ffd700',
+                        'small',
+                        'sparks'
+                    ));
+                }
+            },
+            'machinegun': () => {
+                for (let i = 0; i < 4; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 15 + 3;
+                    game.particles.push(new Particle(
+                        x + Math.cos(angle) * distance,
+                        y + Math.sin(angle) * distance,
+                        '#ffcc00',
+                        'small',
+                        'sparks'
+                    ));
+                }
+            },
+            'plasma': () => {
+                for (let i = 0; i < 10; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 35 + 15;
+                    game.particles.push(new Particle(
+                        x + Math.cos(angle) * distance,
+                        y + Math.sin(angle) * distance,
+                        '#9b59b6',
+                        'medium',
+                        'electric'
+                    ));
+                }
+            },
+            'railgun': () => {
+                for (let i = 0; i < 20; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 50 + 20;
+                    game.particles.push(new Particle(
+                        x + Math.cos(angle) * distance,
+                        y + Math.sin(angle) * distance,
+                        '#34495e',
+                        'large',
+                        'electric'
+                    ));
+                }
+            }
+        };
 
-    // Store mobile controls reference in game for access
-    game.mobileControls = mobileControls;
+        if (effects[weaponType]) {
+            effects[weaponType]();
+        } else {
+            // Default effect
+            for (let i = 0; i < 3; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 10 + 5;
+                game.particles.push(new Particle(
+                    x + Math.cos(angle) * distance,
+                    y + Math.sin(angle) * distance,
+                    '#ffd700',
+                    'small',
+                    'sparks'
+                ));
+            }
+        }
+    }
+
+    static createWeaponHitEffect(game, x, y, weaponType) {
+        const effects = {
+            'laser': () => {
+                for (let i = 0; i < 6; i++) {
+                    game.particles.push(new Particle(x, y, '#00ffff', 'large', 'electric'));
+                }
+            },
+            'rocket': () => {
+                for (let i = 0; i < 15; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 60 + 20;
+                    game.particles.push(new Particle(
+                        x + Math.cos(angle) * distance,
+                        y + Math.sin(angle) * distance,
+                        '#ff4444',
+                        'large',
+                        'explosion'
+                    ));
+                }
+            },
+            'flamethrower': () => {
+                for (let i = 0; i < 8; i++) {
+                    game.particles.push(new Particle(x, y, '#ff6600', 'medium', 'fire'));
+                }
+            },
+            'plasma': () => {
+                for (let i = 0; i < 10; i++) {
+                    game.particles.push(new Particle(x, y, '#9b59b6', 'large', 'electric'));
+                }
+            }
+        };
+
+        if (effects[weaponType]) {
+            effects[weaponType]();
+        }
+    }
+
+    static createPowerupCollectionEffect(game, x, y, powerupType, rarity) {
+        const baseCount = rarity === 'legendary' ? 25 : rarity === 'epic' ? 15 : rarity === 'rare' ? 10 : 5;
+        const color = game.getRarityColor ? game.getRarityColor(rarity) : '#ffd700';
+
+        for (let i = 0; i < baseCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 50 + 20;
+            game.particles.push(new Particle(
+                x + Math.cos(angle) * distance,
+                y + Math.sin(angle) * distance,
+                color,
+                rarity === 'legendary' ? 'large' : 'medium',
+                'magic'
+            ));
+        }
+    }
+}
+
+// Add missing powerup implementations to Game class
+Game.prototype.createWeaponHitEffect = function(x, y, weaponType) {
+    EnhancedVisualEffects.createWeaponHitEffect(this, x, y, weaponType);
+};
+
+Game.prototype.createWeaponFireEffect = function(x, y, weaponType) {
+    EnhancedVisualEffects.createWeaponFireEffect(this, x, y, weaponType);
+};
+
+Game.prototype.createPowerupCollectionEffect = function(x, y, powerupType, rarity) {
+    EnhancedVisualEffects.createPowerupCollectionEffect(this, x, y, powerupType, rarity);
+};
+
+// Enhanced Particle class with more visual types
+const originalParticleUpdate = Particle.prototype.update;
+Particle.prototype.update = function(deltaTime) {
+    originalParticleUpdate.call(this, deltaTime);
+
+    // Add special movement patterns
+    if (this.type === 'electric') {
+        this.x += Math.sin(this.age * 0.01) * 2;
+        this.y += Math.cos(this.age * 0.01) * 2;
+    } else if (this.type === 'sparks') {
+        this.vy += 100 * deltaTime / 1000; // Gravity
+    } else if (this.type === 'fire') {
+        this.y -= 50 * deltaTime / 1000; // Float upward
+        this.x += Math.sin(this.age * 0.005) * 1;
+    }
+};
+
+// Splash Screen Management
+class SplashScreen {
+    constructor() {
+        this.splashElement = document.getElementById('splashScreen');
+        this.startBtn = document.getElementById('startGameBtn');
+        this.selectCharacterBtn = document.getElementById('selectCharacterBtn');
+        this.gameStarted = false;
+
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        this.startBtn.addEventListener('click', () => {
+            this.startGame();
+        });
+
+        this.selectCharacterBtn.addEventListener('click', () => {
+            this.showCharacterSelection();
+        });
+
+        // Allow Enter key to start game
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !this.gameStarted) {
+                this.startGame();
+            }
+        });
+    }
+
+    startGame() {
+        if (this.gameStarted) return;
+
+        this.gameStarted = true;
+        this.splashElement.style.animation = 'fadeOut 0.5s ease-out';
+
+        setTimeout(() => {
+            this.splashElement.classList.add('hidden');
+            this.initializeGame();
+        }, 500);
+    }
+
+    showCharacterSelection() {
+        // TODO: Implement character selection screen
+        alert('Character selection coming soon!');
+    }
+
+    initializeGame() {
+        const game = new Game();
+        const mobileControls = new MobileControls(game);
+
+        // Store mobile controls reference in game for access
+        game.mobileControls = mobileControls;
+
+        // Auto-start the game
+        game.startGame();
+    }
+}
+
+// Add fadeOut animation to CSS dynamically
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeOut {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.9); }
+    }
+`;
+document.head.appendChild(style);
+
+// Initialize splash screen when page loads
+window.addEventListener('load', () => {
+    new SplashScreen();
 });
