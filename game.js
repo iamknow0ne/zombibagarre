@@ -506,9 +506,10 @@ class Game {
             projectile.x += projectile.vx * deltaTime / 1000;
             projectile.y += projectile.vy * deltaTime / 1000;
 
-            // Remove if off screen
-            if (projectile.x < -50 || projectile.x > this.getCanvasWidth() + 50 ||
-                projectile.y < -50 || projectile.y > this.getCanvasHeight() + 50) {
+            // Remove if off screen - increased boundaries for zoom-out
+            const boundary = 300; // Larger boundary for zoom-out view
+            if (projectile.x < -boundary || projectile.x > this.getCanvasWidth() + boundary ||
+                projectile.y < -boundary || projectile.y > this.getCanvasHeight() + boundary) {
                 projectile.active = false;
             }
         });
@@ -605,9 +606,9 @@ class Game {
         else if (this.wave >= 10) bossType = 'iron_colossus';
         else if (this.wave >= 5) bossType = 'horde_king';
 
-        // Spawn boss at center top of screen
+        // Spawn boss at center top of screen - increased distance for zoom-out
         const bossX = this.getCanvasWidth() / 2;
-        const bossY = -100; // Start off screen
+        const bossY = -250; // Start further off screen for zoom-out view
 
         const boss = new Zombie(bossX, bossY, bossType, this);
         boss.isBossWaveSpawn = true; // Mark as official boss wave spawn for victory screen
@@ -771,7 +772,7 @@ class Game {
     
     getFormationPosition(formation, index, total) {
         const centerX = this.getCanvasWidth() / 2;
-        const baseY = -100 - Math.random() * 100;
+        const baseY = -200 - Math.random() * 100; // Increased spawn distance for zoom-out
         
         switch (formation) {
             case 'line':
@@ -822,21 +823,21 @@ class Game {
     spawnZombie() {
         // Spawn from all sides for massive horde attacks
         const formations = [
-            // Top spawn (traditional)
-            () => ({ x: Math.random() * (this.getCanvasWidth() - 100) + 50, y: -50 }),
-            // Left side spawn for flanking
-            () => ({ x: -50, y: Math.random() * (this.getCanvasHeight() - 200) + 100 }),
-            // Right side spawn for flanking
-            () => ({ x: this.getCanvasWidth() + 50, y: Math.random() * (this.getCanvasHeight() - 200) + 100 }),
+            // Top spawn (traditional) - increased distance for zoom-out
+            () => ({ x: Math.random() * (this.getCanvasWidth() - 100) + 50, y: -200 }),
+            // Left side spawn for flanking - increased distance for zoom-out
+            () => ({ x: -200, y: Math.random() * (this.getCanvasHeight() - 200) + 100 }),
+            // Right side spawn for flanking - increased distance for zoom-out
+            () => ({ x: this.getCanvasWidth() + 200, y: Math.random() * (this.getCanvasHeight() - 200) + 100 }),
             // Double line from top
             () => ({
                 x: Math.random() * (this.getCanvasWidth() - 100) + 50,
-                y: -50 - (Math.random() * 2) * 40
+                y: -200 - (Math.random() * 2) * 40 // Increased spawn distance for zoom-out
             }),
-            // Corner clusters for aggressive spawning
+            // Corner clusters for aggressive spawning - increased margins for zoom-out
             () => {
                 const corner = Math.floor(Math.random() * 4);
-                const margin = 80;
+                const margin = 200; // Much larger margin to account for zoom-out
                 switch(corner) {
                     case 0: return { x: -margin, y: -margin }; // Top-left
                     case 1: return { x: this.getCanvasWidth() + margin, y: -margin }; // Top-right
@@ -844,14 +845,15 @@ class Game {
                     case 3: return { x: this.getCanvasWidth() + margin, y: this.getCanvasHeight() + margin }; // Bottom-right
                 }
             },
-            // Random edge spawn for chaos
+            // Random edge spawn for chaos - increased margins for zoom-out view
             () => {
                 const edge = Math.floor(Math.random() * 4);
+                const spawnMargin = 200; // Much larger margin to account for zoom-out
                 switch(edge) {
-                    case 0: return { x: Math.random() * this.getCanvasWidth(), y: -50 }; // Top
-                    case 1: return { x: this.getCanvasWidth() + 50, y: Math.random() * this.getCanvasHeight() }; // Right
-                    case 2: return { x: Math.random() * this.getCanvasWidth(), y: this.getCanvasHeight() + 50 }; // Bottom
-                    case 3: return { x: -50, y: Math.random() * this.getCanvasHeight() }; // Left
+                    case 0: return { x: Math.random() * this.getCanvasWidth(), y: -spawnMargin }; // Top
+                    case 1: return { x: this.getCanvasWidth() + spawnMargin, y: Math.random() * this.getCanvasHeight() }; // Right
+                    case 2: return { x: Math.random() * this.getCanvasWidth(), y: this.getCanvasHeight() + spawnMargin }; // Bottom
+                    case 3: return { x: -spawnMargin, y: Math.random() * this.getCanvasHeight() }; // Left
                 }
             }
         ];
@@ -2266,21 +2268,10 @@ class Game {
     }
     
     render() {
+        // Clear canvas first with no transformations
         this.ctx.save();
 
-        // Apply global zoom for massive battlefield view
-        if (this.globalZoom && this.globalZoom !== 1.0) {
-            const centerX = this.getCanvasWidth() / 2;
-            const centerY = this.getCanvasHeight() / 2;
-            this.ctx.translate(centerX, centerY);
-            this.ctx.scale(this.globalZoom, this.globalZoom);
-            this.ctx.translate(-centerX, -centerY);
-        }
-
-        // Apply screen shake if active
-        VisualEffects.applyScreenShake(this, this.ctx);
-
-        // Clear canvas with dynamic night sky gradient
+        // Clear canvas with dynamic night sky gradient (full screen, no zoom)
         const timeOffset = Date.now() * 0.001;
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.getCanvasHeight());
 
@@ -2295,30 +2286,32 @@ class Game {
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
 
-        // Apply mobile zoom for better field of view
-        if (this.mobileZoom && this.mobileZoom !== 1.0) {
-            this.ctx.save();
+        // Now apply transformations for all game elements
+        this.ctx.save();
+
+        // Apply global zoom for massive battlefield view
+        if (this.globalZoom && this.globalZoom !== 1.0) {
             const centerX = this.getCanvasWidth() / 2;
             const centerY = this.getCanvasHeight() / 2;
             this.ctx.translate(centerX, centerY);
-            this.ctx.scale(this.mobileZoom, this.mobileZoom);
+            this.ctx.scale(this.globalZoom, this.globalZoom);
             this.ctx.translate(-centerX, -centerY);
         }
 
-        // Render background effects first
-        VisualEffects.renderBackgroundEffects(this, this.ctx);
-        
-        // Draw stars
+        // Apply screen shake if active
+        VisualEffects.applyScreenShake(this, this.ctx);
+
+        // Draw stars (affected by zoom)
         this.drawStars();
-        
-        // Draw ground
+
+        // Draw ground (affected by zoom)
         const groundGradient = this.ctx.createLinearGradient(0, this.getCanvasHeight() - 120, 0, this.getCanvasHeight());
         groundGradient.addColorStop(0, '#2d3436');
         groundGradient.addColorStop(1, '#636e72');
         this.ctx.fillStyle = groundGradient;
         this.ctx.fillRect(0, this.getCanvasHeight() - 120, this.getCanvasWidth(), 120);
-        
-        // Draw battle lines
+
+        // Draw battle lines (affected by zoom)
         this.ctx.strokeStyle = '#74b9ff';
         this.ctx.lineWidth = 2;
         this.ctx.setLineDash([5, 5]);
@@ -2330,8 +2323,11 @@ class Game {
             this.ctx.stroke();
         }
         this.ctx.setLineDash([]);
-        
-        // Render game objects (back to front)
+
+        // Render background effects (affected by zoom)
+        VisualEffects.renderBackgroundEffects(this, this.ctx);
+
+        // Render game objects (back to front) - all affected by zoom
         this.particles.forEach(particle => particle.render(this.ctx));
         this.powerups.forEach(powerup => powerup.render(this.ctx));
         this.treasureChests.forEach(chest => this.renderTreasureChest(chest));
@@ -2345,17 +2341,23 @@ class Game {
         this.hazards.forEach(hazard => this.renderHazard(hazard));
 
         this.soldiers.forEach(soldier => soldier.render(this.ctx));
-        
+
         // Render player
         if (this.player) {
             this.player.render(this.ctx);
-            
+
             // Render vehicles and drones
             this.player.vehicles.forEach(vehicle => vehicle.render(this.ctx));
             this.player.drones.forEach(drone => drone.render(this.ctx));
         }
-        
-        // Draw wave countdown
+
+        // Restore game world transform before drawing UI elements
+        this.ctx.restore();
+
+        // Draw UI elements without zoom transformation
+        this.ctx.save();
+
+        // Draw wave countdown (UI - no zoom)
         if (this.zombiesSpawned >= this.zombiesInWave && this.zombies.length === 0) {
             const timeLeft = Math.ceil((this.waveDelay - this.nextWaveTime) / 1000);
             this.ctx.fillStyle = '#ffffff';
@@ -2366,14 +2368,14 @@ class Game {
             this.ctx.strokeText(`Next wave in: ${timeLeft}`, this.getCanvasWidth() / 2, 60);
             this.ctx.fillText(`Next wave in: ${timeLeft}`, this.getCanvasWidth() / 2, 60);
         }
-        
-        // Draw wave progress
+
+        // Draw wave progress (UI - no zoom)
         const progress = this.zombiesKilled / this.zombiesInWave;
         const barWidth = 200;
         const barHeight = 8;
         const barX = this.getCanvasWidth() - barWidth - 20;
         const barY = 20;
-        
+
         this.ctx.fillStyle = '#2d3436';
         this.ctx.fillRect(barX, barY, barWidth, barHeight);
         this.ctx.fillStyle = '#00b894';
@@ -2382,12 +2384,10 @@ class Game {
         this.ctx.lineWidth = 1;
         this.ctx.strokeRect(barX, barY, barWidth, barHeight);
 
-        // Restore mobile zoom transformation
-        if (this.mobileZoom && this.mobileZoom !== 1.0) {
-            this.ctx.restore();
-        }
+        // Restore UI context
+        this.ctx.restore();
 
-        // Restore context (removes screen shake transformation)
+        // Restore main context
         this.ctx.restore();
     }
 
@@ -3963,8 +3963,8 @@ class Zombie {
             this.y += this.speed * speedMultiplier * deltaTime / 1000;
         }
         
-        // Remove if off screen bottom
-        if (this.y > this.game.getCanvasHeight() + 50) {
+        // Remove if off screen bottom - increased boundary for zoom-out
+        if (this.y > this.game.getCanvasHeight() + 300) {
             this.health = 0;
         }
     }
@@ -4895,7 +4895,19 @@ class Particle {
         }
 
         this.age += deltaTime;
+
+        // Remove particle if expired or moved off-screen
         if (this.age >= this.life) {
+            this.active = false;
+        }
+
+        // Remove particles that have moved too far off-screen to prevent edge artifacts
+        // Use generous boundaries that work regardless of zoom level
+        const maxDistance = 2000; // Much larger boundary to handle zoom out
+        if (Math.abs(this.x - this.startX) > maxDistance ||
+            Math.abs(this.y - this.startY) > maxDistance ||
+            this.x < -maxDistance || this.x > maxDistance ||
+            this.y < -maxDistance || this.y > maxDistance) {
             this.active = false;
         }
     }
