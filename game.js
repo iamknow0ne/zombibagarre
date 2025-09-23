@@ -2608,6 +2608,13 @@ class Game {
             if (damageMultEl) damageMultEl.textContent = `${this.damageMultiplier.toFixed(1)}x`;
             if (speedMultEl) speedMultEl.textContent = `${this.speedMultiplier.toFixed(1)}x`;
 
+            // Update character display
+            const characterEl = document.getElementById('characterValue');
+            if (characterEl) {
+                const characterName = this.characters[this.selectedCharacter].name.toUpperCase();
+                characterEl.textContent = characterName;
+            }
+
             // Update weapon and passive information
             this.updateWeaponsPanel();
             this.updatePassivesPanel();
@@ -2909,6 +2916,22 @@ class Player {
         // Vehicle/Drone system
         this.vehicles = [];
         this.drones = [];
+
+        // Initialize character-specific abilities
+        this.initializeCharacterAbilities(character);
+    }
+
+    initializeCharacterAbilities(character) {
+        // Set starting weapon
+        if (character.startWeapon) {
+            this.currentWeapon = character.startWeapon;
+        }
+
+        // Handle special abilities
+        if (character.specialAbility === 'drone') {
+            // Engineer starts with a drone
+            this.drones.push(new Drone(this.x, this.y - 40, this.game));
+        }
     }
     
     update(deltaTime) {
@@ -6451,6 +6474,135 @@ Particle.prototype.update = function(deltaTime) {
     }
 };
 
+// Character Selection Management
+class CharacterSelection {
+    constructor(splashScreen) {
+        this.splashScreen = splashScreen;
+        this.characterElement = document.getElementById('characterSelection');
+        this.selectedCharacter = 'soldier'; // Default character
+        this.setupEventListeners();
+        this.checkUnlockedCharacters();
+    }
+
+    setupEventListeners() {
+        // Character card selection
+        const characterCards = document.querySelectorAll('.character-card');
+        characterCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const character = card.dataset.character;
+                if (!card.classList.contains('locked')) {
+                    this.selectCharacter(character);
+                }
+            });
+        });
+
+        // Action buttons
+        const selectBtn = document.getElementById('selectCharacterBtn2');
+        const backBtn = document.getElementById('backToMenuBtn');
+
+        selectBtn.addEventListener('click', () => {
+            this.confirmSelection();
+        });
+
+        backBtn.addEventListener('click', () => {
+            this.backToMenu();
+        });
+    }
+
+    checkUnlockedCharacters() {
+        const metaProgression = JSON.parse(localStorage.getItem('zombieBagarreProgress') || '{}');
+        const stats = metaProgression.statistics || {};
+
+        // Check unlock conditions
+        const unlockConditions = {
+            soldier: true, // Always unlocked
+            commando: stats.highestWave >= 10,
+            scout: stats.totalZombiesKilled >= 500,
+            engineer: stats.totalPowerupsCollected >= 50,
+            tank: stats.totalSurvivalTime >= 1800000 // 30 minutes
+        };
+
+        // Apply locked state to cards and update unlock progress
+        Object.keys(unlockConditions).forEach(character => {
+            const card = document.querySelector(`[data-character="${character}"]`);
+            if (!unlockConditions[character]) {
+                card.classList.add('locked');
+
+                // Update unlock progress text
+                const unlockEl = card.querySelector('.character-unlock span');
+                if (unlockEl && character !== 'soldier') {
+                    let progressText = '';
+                    switch (character) {
+                        case 'commando':
+                            progressText = `🔒 Unlock: Reach Wave 10 (${stats.highestWave || 0}/10)`;
+                            break;
+                        case 'scout':
+                            progressText = `🔒 Unlock: Kill 500 Zombies (${stats.totalZombiesKilled || 0}/500)`;
+                            break;
+                        case 'engineer':
+                            progressText = `🔒 Unlock: Collect 50 Powerups (${stats.totalPowerupsCollected || 0}/50)`;
+                            break;
+                        case 'tank':
+                            const minutes = Math.floor((stats.totalSurvivalTime || 0) / 60000);
+                            progressText = `🔒 Unlock: Survive 30 Minutes (${minutes}/30)`;
+                            break;
+                    }
+                    unlockEl.textContent = progressText;
+                }
+            }
+        });
+
+        // Select first unlocked character
+        const unlockedCharacters = Object.keys(unlockConditions).filter(char => unlockConditions[char]);
+        if (unlockedCharacters.length > 0) {
+            this.selectCharacter(unlockedCharacters[0]);
+        }
+    }
+
+    selectCharacter(character) {
+        // Remove previous selection
+        document.querySelectorAll('.character-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Select new character
+        const selectedCard = document.querySelector(`[data-character="${character}"]`);
+        if (selectedCard && !selectedCard.classList.contains('locked')) {
+            selectedCard.classList.add('selected');
+            this.selectedCharacter = character;
+
+            // Enable select button
+            const selectBtn = document.getElementById('selectCharacterBtn2');
+            selectBtn.classList.remove('disabled');
+        }
+    }
+
+    show() {
+        this.characterElement.classList.remove('hidden');
+        this.checkUnlockedCharacters();
+    }
+
+    hide() {
+        this.characterElement.classList.add('hidden');
+    }
+
+    confirmSelection() {
+        if (this.selectedCharacter) {
+            // Store selected character
+            localStorage.setItem('selectedCharacter', this.selectedCharacter);
+
+            // Hide character selection and start game
+            this.hide();
+            this.splashScreen.startGameWithCharacter(this.selectedCharacter);
+        }
+    }
+
+    backToMenu() {
+        this.hide();
+        this.splashScreen.show();
+    }
+}
+
 // Splash Screen Management
 class SplashScreen {
     constructor() {
@@ -6458,6 +6610,9 @@ class SplashScreen {
         this.startBtn = document.getElementById('startGameBtn');
         this.selectCharacterBtn = document.getElementById('selectCharacterBtn');
         this.gameStarted = false;
+
+        // Initialize character selection
+        this.characterSelection = new CharacterSelection(this);
 
         this.setupEventListeners();
     }
@@ -6473,31 +6628,54 @@ class SplashScreen {
 
         // Allow Enter key to start game
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !this.gameStarted) {
+            if (e.key === 'Enter' && !this.gameStarted && !this.characterSelection.characterElement.classList.contains('hidden')) {
                 this.startGame();
             }
         });
     }
 
+    show() {
+        this.splashElement.classList.remove('hidden');
+    }
+
+    hide() {
+        this.splashElement.classList.add('hidden');
+    }
+
     startGame() {
         if (this.gameStarted) return;
 
+        // Get selected character from localStorage or default
+        const selectedCharacter = localStorage.getItem('selectedCharacter') || 'soldier';
+        this.startGameWithCharacter(selectedCharacter);
+    }
+
+    startGameWithCharacter(character) {
+        if (this.gameStarted) return;
+
         this.gameStarted = true;
+
+        // Hide both screens
         this.splashElement.style.animation = 'fadeOut 0.5s ease-out';
+        this.characterSelection.hide();
 
         setTimeout(() => {
-            this.splashElement.classList.add('hidden');
-            this.initializeGame();
+            this.hide();
+            this.initializeGame(character);
         }, 500);
     }
 
     showCharacterSelection() {
-        // TODO: Implement character selection screen
-        alert('Character selection coming soon!');
+        this.hide();
+        this.characterSelection.show();
     }
 
-    initializeGame() {
+    initializeGame(selectedCharacter = 'soldier') {
         const game = new Game();
+
+        // Set selected character
+        game.selectedCharacter = selectedCharacter;
+
         const mobileControls = new MobileControls(game);
 
         // Store mobile controls reference in game for access

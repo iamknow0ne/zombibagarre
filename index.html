@@ -51,6 +51,10 @@
                     <span class="stat-label">KILLS</span>
                     <span class="stat-value" id="killCountValue">0</span>
                 </div>
+                <div class="stat-item">
+                    <span class="stat-label">CLASS</span>
+                    <span class="stat-value" id="characterValue">SOLDIER</span>
+                </div>
             </div>
         </div>
 
@@ -224,6 +228,201 @@
                 </div>
                 <div class="splash-credits">
                     <p>Made with ❤️ by VibeCoding</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Character Selection Screen -->
+        <div id="characterSelection" class="hidden">
+            <div class="character-background"></div>
+            <div class="character-content">
+                <div class="character-header">
+                    <h2 class="character-title">CHOOSE YOUR SURVIVOR</h2>
+                    <p class="character-subtitle">Each character has unique stats and abilities</p>
+                </div>
+
+                <div class="characters-grid">
+                    <div class="character-card" data-character="soldier">
+                        <div class="character-portrait">
+                            <div class="character-icon">🪖</div>
+                        </div>
+                        <div class="character-info">
+                            <h3 class="character-name">SOLDIER</h3>
+                            <p class="character-description">Balanced fighter with rifle</p>
+                            <div class="character-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Health</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 60%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Speed</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 70%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Damage</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="character-weapon">
+                                <span>🔫 Starts with: Rifle</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="character-card" data-character="commando">
+                        <div class="character-portrait">
+                            <div class="character-icon">💀</div>
+                        </div>
+                        <div class="character-info">
+                            <h3 class="character-name">COMMANDO</h3>
+                            <p class="character-description">High damage, slower movement</p>
+                            <div class="character-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Health</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 80%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Speed</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 40%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Damage</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="character-weapon">
+                                <span>💥 Starts with: Shotgun</span>
+                            </div>
+                            <div class="character-unlock">
+                                <span>🔒 Unlock: Reach Wave 10</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="character-card" data-character="scout">
+                        <div class="character-portrait">
+                            <div class="character-icon">⚡</div>
+                        </div>
+                        <div class="character-info">
+                            <h3 class="character-name">SCOUT</h3>
+                            <p class="character-description">Fast and agile</p>
+                            <div class="character-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Health</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 40%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Speed</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Damage</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 45%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="character-weapon">
+                                <span>🔫 Starts with: Machine Gun</span>
+                            </div>
+                            <div class="character-unlock">
+                                <span>🔒 Unlock: Kill 500 Zombies</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="character-card" data-character="engineer">
+                        <div class="character-portrait">
+                            <div class="character-icon">🔧</div>
+                        </div>
+                        <div class="character-info">
+                            <h3 class="character-name">ENGINEER</h3>
+                            <p class="character-description">Tech specialist with drone</p>
+                            <div class="character-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Health</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 55%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Speed</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 60%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Damage</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="character-weapon">
+                                <span>⚡ Starts with: Laser + Drone</span>
+                            </div>
+                            <div class="character-unlock">
+                                <span>🔒 Unlock: Collect 50 Powerups</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="character-card" data-character="tank">
+                        <div class="character-portrait">
+                            <div class="character-icon">🛡️</div>
+                        </div>
+                        <div class="character-info">
+                            <h3 class="character-name">TANK</h3>
+                            <p class="character-description">Heavy armor, devastating power</p>
+                            <div class="character-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Health</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Speed</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 30%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Damage</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 70%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="character-weapon">
+                                <span>🚀 Starts with: Rocket Launcher</span>
+                            </div>
+                            <div class="character-unlock">
+                                <span>🔒 Unlock: Survive 30 Minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="character-actions">
+                    <button id="selectCharacterBtn2" class="character-btn primary disabled">SELECT CHARACTER</button>
+                    <button id="backToMenuBtn" class="character-btn secondary">BACK TO MENU</button>
                 </div>
             </div>
         </div>
