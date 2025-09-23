@@ -52,7 +52,7 @@ class Game {
         this.hazards = []; // Initialize hazards array
 
         // Wave management
-        this.zombiesInWave = 8;
+        this.zombiesInWave = 25; // Start with challenging first wave
         this.zombiesSpawned = 0;
         this.zombiesKilled = 0;
         this.killCount = 0; // Total kill counter
@@ -294,8 +294,8 @@ class Game {
         this.logicalWidth = rect.width;
         this.logicalHeight = rect.height;
 
-        // Mobile zoom adjustment for better field of view
-        this.mobileZoom = isMobile ? 0.85 : 1.0;
+        // Zoom out for massive battle field of view to handle large hordes
+        this.globalZoom = isMobile ? 0.65 : 0.75; // Much more zoomed out for both mobile and desktop
     }
 
     getCanvasWidth() {
@@ -567,9 +567,15 @@ class Game {
     startNextWave() {
         this.wave++;
         // Massive horde scaling for challenging gameplay
-        const baseSize = 12;
-        const growthFactor = this.wave < 10 ? 2.5 : this.wave < 20 ? 4 : this.wave < 30 ? 6 : 8;
-        this.zombiesInWave = Math.floor(baseSize + this.wave * growthFactor); // Exponential growth
+        // Massive horde progression for more challenging gameplay
+        const baseSize = 25; // Start with more zombies
+        const growthFactor = this.wave < 5 ? 8 :
+                           this.wave < 10 ? 12 :
+                           this.wave < 15 ? 18 :
+                           this.wave < 20 ? 25 :
+                           this.wave < 30 ? 35 :
+                           this.wave < 40 ? 50 : 70;
+        this.zombiesInWave = Math.floor(baseSize + this.wave * growthFactor); // Massive exponential growth
         this.zombiesSpawned = 0;
         this.zombiesKilled = 0;
         this.nextWaveTime = 0;
@@ -663,7 +669,7 @@ class Game {
 
     spawnZombieBurst() {
         // Scale burst size with wave progression for massive hordes
-        const maxBurstSize = Math.min(20, 6 + Math.floor(this.wave / 2));
+        const maxBurstSize = Math.min(50, 15 + Math.floor(this.wave / 1.5)); // Much larger bursts
         const burstSize = Math.min(maxBurstSize, this.zombiesInWave - this.zombiesSpawned);
         const formations = [
             'line', 'v_formation', 'cluster', 'diamond', 'arrow', 'circle'
@@ -1230,6 +1236,12 @@ class Game {
             moneyGain *= 3;
             scoreGain *= 2;
             expGain *= 1.5;
+
+            // Special boss rewards - show victory screen and drop special item
+            if (zombie.type.includes('boss')) {
+                this.showBossVictoryScreen(zombie);
+                this.dropSpecialItem(zombie);
+            }
         }
 
         // Apply rewards
@@ -1267,6 +1279,98 @@ class Game {
         }
 
         this.updateUI();
+    }
+
+    showBossVictoryScreen(boss) {
+        const bossVictory = document.getElementById('bossVictory');
+        const specialItemText = document.getElementById('specialItemText');
+
+        if (bossVictory && specialItemText) {
+            // Get the special item name for this boss
+            const specialItem = this.getBossSpecialItem(boss.type);
+            specialItemText.textContent = `${specialItem.name} ACQUIRED!`;
+
+            // Show the retro victory screen
+            bossVictory.classList.remove('hidden');
+
+            // Hide it after 4 seconds
+            this.createTimeout(() => {
+                bossVictory.classList.add('hidden');
+            }, 4000);
+        }
+    }
+
+    getBossSpecialItem(bossType) {
+        const bossItems = {
+            'boss': { name: 'POWER CORE', effect: 'damage', value: 1.5 },
+            'iron_colossus': { name: 'STEEL PLATES', effect: 'armor', value: 50 },
+            'plague_mother': { name: 'ANTIDOTE', effect: 'health_regen', value: 2 },
+            'shadow_reaper': { name: 'DARK ESSENCE', effect: 'speed', value: 1.3 },
+            'flame_berserker': { name: 'FIRE CRYSTAL', effect: 'fire_damage', value: 2.0 },
+            'crystal_guardian': { name: 'CRYSTAL SHARD', effect: 'piercing', value: 3 },
+            'void_spawner': { name: 'VOID FRAGMENT', effect: 'range', value: 200 },
+            'thunder_titan': { name: 'STORM CORE', effect: 'attack_speed', value: 1.4 },
+            'ice_queen': { name: 'ICE CROWN', effect: 'freeze_chance', value: 0.3 },
+            'final_nightmare': { name: 'NIGHTMARE ORB', effect: 'all_stats', value: 1.25 }
+        };
+
+        return bossItems[bossType] || bossItems['boss'];
+    }
+
+    dropSpecialItem(boss) {
+        const specialItem = this.getBossSpecialItem(boss.type);
+
+        // Apply the special item effect immediately
+        this.applySpecialItemEffect(specialItem);
+
+        // Show popup with the effect
+        this.showMultiplierPopup(
+            boss.x,
+            boss.y,
+            `+${specialItem.name}!`,
+            true
+        );
+
+        // Add to player's special items collection for tracking
+        if (!this.specialItems) this.specialItems = [];
+        this.specialItems.push(specialItem);
+    }
+
+    applySpecialItemEffect(item) {
+        switch (item.effect) {
+            case 'damage':
+                this.damageMultiplier *= item.value;
+                break;
+            case 'armor':
+                if (this.player) this.player.maxHealth += item.value;
+                break;
+            case 'health_regen':
+                this.healthRegenRate = (this.healthRegenRate || 0) + item.value;
+                break;
+            case 'speed':
+                this.speedMultiplier *= item.value;
+                break;
+            case 'fire_damage':
+                this.fireDamageMultiplier = (this.fireDamageMultiplier || 1) * item.value;
+                break;
+            case 'piercing':
+                this.piercingBonus = (this.piercingBonus || 0) + item.value;
+                break;
+            case 'range':
+                this.rangeBonus = (this.rangeBonus || 0) + item.value;
+                break;
+            case 'attack_speed':
+                this.attackSpeedMultiplier = (this.attackSpeedMultiplier || 1) * item.value;
+                break;
+            case 'freeze_chance':
+                this.freezeChance = (this.freezeChance || 0) + item.value;
+                break;
+            case 'all_stats':
+                this.damageMultiplier *= item.value;
+                this.speedMultiplier *= item.value;
+                this.attackSpeedMultiplier = (this.attackSpeedMultiplier || 1) * item.value;
+                break;
+        }
     }
 
     triggerScarcityEvent() {
@@ -2095,6 +2199,15 @@ class Game {
     render() {
         this.ctx.save();
 
+        // Apply global zoom for massive battlefield view
+        if (this.globalZoom && this.globalZoom !== 1.0) {
+            const centerX = this.getCanvasWidth() / 2;
+            const centerY = this.getCanvasHeight() / 2;
+            this.ctx.translate(centerX, centerY);
+            this.ctx.scale(this.globalZoom, this.globalZoom);
+            this.ctx.translate(-centerX, -centerY);
+        }
+
         // Apply screen shake if active
         VisualEffects.applyScreenShake(this, this.ctx);
 
@@ -2651,7 +2764,7 @@ class Game {
         this.passiveItems = [];
         this.evolvedWeapons = [];
 
-        this.zombiesInWave = 8;
+        this.zombiesInWave = 25; // Challenging restart
         this.zombiesSpawned = 0;
         this.zombiesKilled = 0;
         this.killCount = 0; // Reset total kill counter
@@ -3078,11 +3191,20 @@ class Player {
         }
     }
     
+    getWeaponRange() {
+        // Progressive weapon range scaling with level - starts low, gets better
+        const baseRange = 200; // Start with shorter range for early game challenge
+        const levelBonus = this.game.level * 25; // +25 range per level
+        const specialItemBonus = this.game.rangeBonus || 0; // Bonus from special items
+        const maxRange = 1000; // Increased cap to accommodate special items
+        return Math.min(maxRange, baseRange + levelBonus + specialItemBonus);
+    }
+
     findNearestZombie() {
         if (this.game.zombies.length === 0) return null;
 
         let nearest = null;
-        let minDist = 600; // Increased shooting range significantly
+        let minDist = this.getWeaponRange(); // Progressive range based on level
 
         // First pass: find zombies in preferred range
         this.game.zombies.forEach(zombie => {
@@ -3231,7 +3353,7 @@ class Soldier {
         this.health = 80;
         this.maxHealth = 80;
         this.damage = 20;
-        this.range = 250;
+        this.baseRange = 150; // Start with shorter range
         this.fireRate = 600;
         this.lastShot = 0;
         this.target = null;
@@ -3252,9 +3374,17 @@ class Soldier {
         }
     }
     
+    getCurrentRange() {
+        // Progressive range for soldiers based on player level
+        const levelBonus = this.game.level * 20; // +20 range per level
+        const specialItemBonus = (this.game.rangeBonus || 0) * 0.8; // 80% of player's range bonus
+        const maxRange = 800; // Increased cap for soldiers
+        return Math.min(maxRange, this.baseRange + levelBonus + specialItemBonus);
+    }
+
     findNearestZombie() {
         let nearest = null;
-        let minDist = this.range;
+        let minDist = this.getCurrentRange();
         
         this.game.zombies.forEach(zombie => {
             const dist = Math.sqrt((this.x - zombie.x) ** 2 + (this.y - zombie.y) ** 2);
