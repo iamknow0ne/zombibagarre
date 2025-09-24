@@ -9,7 +9,7 @@ class Game {
         this.wave = 1;
         this.score = 0;
         this.gameStartTime = Date.now(); // Track game start time for survival timer
-        this.money = 20;  // Very little starting money for extreme challenge
+        this.money = 75;  // Reasonable starting money for upgrades
         this.soldierCost = 75;  // Increased costs
         this.upgradeCost = 150;
         this.speedCost = 100;
@@ -548,13 +548,13 @@ class Game {
     
     updateWaveSpawning(deltaTime) {
         if (this.zombiesSpawned < this.zombiesInWave) {
-            // Spawn zombies in EXTREME bursts - brutal frequency for overwhelming hordes
-            const spawnRate = Math.min(0.35, 0.08 + (this.wave * 0.005)); // Much higher spawn rate
+            // Spawn zombies in manageable bursts - challenging but fair frequency
+            const spawnRate = Math.min(0.15, 0.04 + (this.wave * 0.002)); // Reasonable spawn rate
             if (Math.random() < spawnRate) {
                 this.spawnZombieBurst();
             }
-            // Also spawn individual zombies continuously for brutal hordes
-            if (Math.random() < Math.min(0.20, 0.05 + (this.wave * 0.003))) {
+            // Also spawn individual zombies for steady pressure
+            if (Math.random() < Math.min(0.08, 0.02 + (this.wave * 0.001))) {
                 this.spawnZombie();
             }
         } else if (this.zombies.length === 0) {
@@ -567,16 +567,16 @@ class Game {
     
     startNextWave() {
         this.wave++;
-        // EXTREME horde scaling for brutal gameplay
-        // Overwhelming horde progression for maximum challenge
-        const baseSize = 50; // Start with way more zombies
-        const growthFactor = this.wave < 5 ? 15 :
-                           this.wave < 10 ? 25 :
-                           this.wave < 15 ? 40 :
-                           this.wave < 20 ? 60 :
-                           this.wave < 30 ? 85 :
-                           this.wave < 40 ? 120 : 200;
-        this.zombiesInWave = Math.floor(baseSize + this.wave * growthFactor); // EXTREME exponential growth
+        // Balanced horde scaling for challenging but fair gameplay
+        // Progressive horde growth with reasonable difficulty curve
+        const baseSize = 15; // Start with manageable numbers
+        const growthFactor = this.wave < 5 ? 5 :
+                           this.wave < 10 ? 8 :
+                           this.wave < 15 ? 12 :
+                           this.wave < 20 ? 18 :
+                           this.wave < 30 ? 25 :
+                           this.wave < 40 ? 35 : 50;
+        this.zombiesInWave = Math.floor(baseSize + this.wave * growthFactor); // Balanced exponential growth
         this.zombiesSpawned = 0;
         this.zombiesKilled = 0;
         this.nextWaveTime = 0;
@@ -2839,7 +2839,7 @@ class Game {
         this.wave = 1;
         this.score = 0;
         this.gameStartTime = Date.now(); // Reset survival timer
-        this.money = 20;  // Match current extreme challenge settings
+        this.money = 75;  // Match reasonable starting money
         this.soldierCost = 75;
         this.upgradeCost = 150;
         this.speedCost = 100;
@@ -2896,7 +2896,7 @@ class Player {
         this.speed = character.speed;
         this.fireRate = 300; // Base fire rate in milliseconds
         this.lastShot = 0;
-        this.damage = 25 * character.damage; // Much lower base damage for challenge
+        this.damage = 35 * character.damage; // Balanced base damage
         this.multishotTime = 0;
         this.width = 25;
         this.height = 35;
@@ -3080,8 +3080,8 @@ class Player {
             baseDamage *= (1 + (0.25 * ammoBox.level)); // 25% more damage per level
         }
 
-        // Reduced damage scaling to make upgrades more necessary
-        baseDamage *= (1 + (weaponLevel - 1) * 0.15); // Only 15% more damage per weapon level
+        // Reasonable damage scaling for weapon upgrades
+        baseDamage *= (1 + (weaponLevel - 1) * 0.20); // 20% more damage per weapon level
 
         // Apply energy core speed boost to all weapons
         const energyCore = this.game.passiveItems.find(p => p.id === 'energy_core');
@@ -3453,11 +3453,11 @@ class Player {
     }
     
     getWeaponRange() {
-        // Much shorter weapon range for extreme challenge - positioning is critical
-        const baseRange = 120; // Very short starting range
-        const levelBonus = this.game.level * 15; // Only +15 range per level
+        // Reasonable weapon range for balanced gameplay
+        const baseRange = 180; // Decent starting range
+        const levelBonus = this.game.level * 20; // +20 range per level
         const specialItemBonus = this.game.rangeBonus || 0; // Bonus from special items
-        const maxRange = 600; // Lower cap for more challenge
+        const maxRange = 800; // Good maximum range
         return Math.min(maxRange, baseRange + levelBonus + specialItemBonus);
     }
 
@@ -3855,23 +3855,23 @@ class Zombie {
     
     getSpeed() {
         switch (this.type) {
-            // Original types - much faster and more aggressive
-            case 'fast': return 130; // Extremely fast
-            case 'tank': return 45; // Faster tanks
-            case 'boss': return 60; // Faster bosses
-            case 'mega_boss': return 40;
+            // Original types - balanced speeds
+            case 'fast': return 100; // Fast but manageable
+            case 'tank': return 30; // Slow heavy unit
+            case 'boss': return 45; // Moderate boss speed
+            case 'mega_boss': return 25;
 
-            // New 10 Monster Types - all faster
-            case 'crawler': return 160; // Lightning fast swarm
-            case 'brute': return 35; // Still slow but faster
-            case 'spitter': return 70; // Faster ranged
-            case 'jumper': return 100; // Much faster teleporter
-            case 'shielder': return 75; // Faster protected tank
-            case 'exploder': return 120; // Faster suicide bomber
-            case 'healer': return 60; // Faster support
-            case 'summoner': return 55; // Faster spawner
-            case 'phase_walker': return 95; // Much faster phasing
-            case 'stalker': return 85; // Faster stealth
+            // New 10 Monster Types - varied speeds
+            case 'crawler': return 110; // Fast swarm unit
+            case 'brute': return 20; // Very slow but powerful
+            case 'spitter': return 50; // Medium ranged speed
+            case 'jumper': return 70; // Mobile teleporter
+            case 'shielder': return 40; // Slow protected unit
+            case 'exploder': return 85; // Fast bomber
+            case 'healer': return 35; // Slow support
+            case 'summoner': return 30; // Slow spawner
+            case 'phase_walker': return 65; // Elite mobility
+            case 'stalker': return 60; // Moderate stealth
 
             // 10 Boss Types
             case 'horde_king': return 20; // Wave 5 boss
@@ -3885,42 +3885,42 @@ class Zombie {
             case 'ice_queen': return 35; // Wave 45 boss
             case 'final_nightmare': return 25; // Wave 50 boss
 
-            default: return 110; // Much faster basic zombies for extreme challenge
+            default: return 75; // Reasonable basic zombie speed
         }
     }
     
     getHealth() {
-        const baseHealth = 120 + this.game.wave * 35; // Much higher base health and scaling
+        const baseHealth = 50 + this.game.wave * 12; // Reasonable base health and scaling
         switch (this.type) {
-            // Original types - much tankier
-            case 'fast': return Math.floor(baseHealth * 1.0); // No longer weak
-            case 'tank': return Math.floor(baseHealth * 5); // Much more tanky
-            case 'boss': return Math.floor(baseHealth * 30); // Stronger bosses
-            case 'mega_boss': return Math.floor(baseHealth * 50);
+            // Original types - balanced
+            case 'fast': return Math.floor(baseHealth * 0.7); // Glass cannon
+            case 'tank': return Math.floor(baseHealth * 2.5); // Tanky but reasonable
+            case 'boss': return Math.floor(baseHealth * 15); // Challenging bosses
+            case 'mega_boss': return Math.floor(baseHealth * 25);
 
-            // New 10 Monster Types - all much stronger
-            case 'crawler': return Math.floor(baseHealth * 0.8); // Still swarm but tougher
-            case 'brute': return Math.floor(baseHealth * 7); // Extremely tanky
-            case 'spitter': return Math.floor(baseHealth * 1.5); // Tougher ranged
-            case 'jumper': return Math.floor(baseHealth * 2.0); // Much more durable
-            case 'shielder': return Math.floor(baseHealth * 4.0); // Super tank
-            case 'exploder': return Math.floor(baseHealth * 0.6); // Less fragile
-            case 'healer': return Math.floor(baseHealth * 2.5); // Tankier support
-            case 'summoner': return Math.floor(baseHealth * 3.5); // Much stronger spawner
-            case 'phase_walker': return Math.floor(baseHealth * 3.0); // Tougher elite
-            case 'stalker': return Math.floor(baseHealth * 2.2); // Stronger assassin
+            // New 10 Monster Types - balanced variety
+            case 'crawler': return Math.floor(baseHealth * 0.5); // Fragile swarm
+            case 'brute': return Math.floor(baseHealth * 3.0); // Heavy but manageable
+            case 'spitter': return Math.floor(baseHealth * 0.9); // Moderate ranged
+            case 'jumper': return Math.floor(baseHealth * 1.2); // Mobile threat
+            case 'shielder': return Math.floor(baseHealth * 2.0); // Protected tank
+            case 'exploder': return Math.floor(baseHealth * 0.4); // Fragile bomber
+            case 'healer': return Math.floor(baseHealth * 1.3); // Support unit
+            case 'summoner': return Math.floor(baseHealth * 1.8); // Spawner threat
+            case 'phase_walker': return Math.floor(baseHealth * 1.6); // Elite enemy
+            case 'stalker': return Math.floor(baseHealth * 1.1); // Stealthy assassin
 
-            // 10 Boss Types - EXTREME health (BRUTAL CHALLENGE)
-            case 'horde_king': return Math.floor(baseHealth * 50); // Wave 5 boss
-            case 'iron_colossus': return Math.floor(baseHealth * 80); // Wave 10 boss
-            case 'plague_mother': return Math.floor(baseHealth * 120); // Wave 15 boss
-            case 'shadow_reaper': return Math.floor(baseHealth * 160); // Wave 20 boss
-            case 'flame_berserker': return Math.floor(baseHealth * 220); // Wave 25 boss
-            case 'crystal_guardian': return Math.floor(baseHealth * 300); // Wave 30 boss
-            case 'void_spawner': return Math.floor(baseHealth * 400); // Wave 35 boss
-            case 'thunder_titan': return Math.floor(baseHealth * 550); // Wave 40 boss
-            case 'ice_queen': return Math.floor(baseHealth * 750); // Wave 45 boss
-            case 'final_nightmare': return Math.floor(baseHealth * 1000); // Wave 50 final boss
+            // 10 Boss Types - Challenging but fair health
+            case 'horde_king': return Math.floor(baseHealth * 20); // Wave 5 boss
+            case 'iron_colossus': return Math.floor(baseHealth * 30); // Wave 10 boss
+            case 'plague_mother': return Math.floor(baseHealth * 45); // Wave 15 boss
+            case 'shadow_reaper': return Math.floor(baseHealth * 60); // Wave 20 boss
+            case 'flame_berserker': return Math.floor(baseHealth * 80); // Wave 25 boss
+            case 'crystal_guardian': return Math.floor(baseHealth * 100); // Wave 30 boss
+            case 'void_spawner': return Math.floor(baseHealth * 125); // Wave 35 boss
+            case 'thunder_titan': return Math.floor(baseHealth * 150); // Wave 40 boss
+            case 'ice_queen': return Math.floor(baseHealth * 200); // Wave 45 boss
+            case 'final_nightmare': return Math.floor(baseHealth * 300); // Wave 50 final boss
 
             default: return baseHealth;
         }
@@ -3928,37 +3928,37 @@ class Zombie {
     
     getDamage() {
         switch (this.type) {
-            // Original types - much higher damage
-            case 'fast': return 45; // Much more dangerous
-            case 'tank': return 85; // Devastating damage
-            case 'boss': return 150; // Lethal bosses
-            case 'mega_boss': return 250;
+            // Original types - balanced damage
+            case 'fast': return 25; // Quick but light damage
+            case 'tank': return 40; // Heavy but slow damage
+            case 'boss': return 60; // Strong boss damage
+            case 'mega_boss': return 100;
 
-            // New 10 Monster Types - all much more dangerous
-            case 'crawler': return 30; // Dangerous swarms
-            case 'brute': return 140; // Devastating slow attacker
-            case 'spitter': return 70; // Deadly ranged
-            case 'jumper': return 80; // Brutal ambush damage
-            case 'shielder': return 90; // High protected damage
-            case 'exploder': return 200; // Massive explosion damage
-            case 'healer': return 50; // Even support hurts
-            case 'summoner': return 60; // Dangerous spawner
-            case 'phase_walker': return 110; // Lethal assassin
-            case 'stalker': return 130; // Brutal stealth hits
+            // New 10 Monster Types - balanced damage variety
+            case 'crawler': return 15; // Light swarm damage
+            case 'brute': return 50; // Heavy slow attacker
+            case 'spitter': return 30; // Ranged threat
+            case 'jumper': return 35; // Ambush damage
+            case 'shielder': return 35; // Protected damage
+            case 'exploder': return 80; // Significant explosion
+            case 'healer': return 20; // Light support damage
+            case 'summoner': return 25; // Spawner threat
+            case 'phase_walker': return 45; // Elite damage
+            case 'stalker': return 40; // Stealth attack
 
-            // 10 Boss Types - BRUTAL damage
-            case 'horde_king': return 200; // Wave 5 boss
-            case 'iron_colossus': return 280; // Wave 10 boss
-            case 'plague_mother': return 240; // Wave 15 boss (poison focus)
-            case 'shadow_reaper': return 360; // Wave 20 boss
-            case 'flame_berserker': return 440; // Wave 25 boss
-            case 'crystal_guardian': return 320; // Wave 30 boss (shield focus)
-            case 'void_spawner': return 400; // Wave 35 boss
-            case 'thunder_titan': return 500; // Wave 40 boss
-            case 'ice_queen': return 560; // Wave 45 boss
-            case 'final_nightmare': return 700; // Wave 50 final boss
+            // 10 Boss Types - Challenging but fair damage
+            case 'horde_king': return 80; // Wave 5 boss
+            case 'iron_colossus': return 100; // Wave 10 boss
+            case 'plague_mother': return 90; // Wave 15 boss (poison focus)
+            case 'shadow_reaper': return 120; // Wave 20 boss
+            case 'flame_berserker': return 140; // Wave 25 boss
+            case 'crystal_guardian': return 110; // Wave 30 boss (shield focus)
+            case 'void_spawner': return 130; // Wave 35 boss
+            case 'thunder_titan': return 150; // Wave 40 boss
+            case 'ice_queen': return 170; // Wave 45 boss
+            case 'final_nightmare': return 250; // Wave 50 final boss
 
-            default: return 60; // Much higher base damage
+            default: return 20; // Reasonable base damage
         }
     }
     
