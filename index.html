@@ -11,121 +11,150 @@
 </head>
 <body>
     <div id="gameContainer">
-        <!-- Modern Minimalist HUD -->
-
-        <!-- Essential Stats (Floating Widgets) -->
-        <div id="floatingStats">
-            <!-- Top Left Corner -->
-            <div class="stat-widget top-left">
-                <div class="widget-content">
-                    <span class="stat-icon">🌊</span>
-                    <span class="stat-value" id="waveNumber">1</span>
+        <!-- Game HUD - Top Bar Design -->
+        <div id="gameHUD">
+            <!-- Main Top Bar -->
+            <div id="topBar">
+                <!-- Left Section: Health & XP -->
+                <div class="hud-section left-section">
+                    <div class="health-container">
+                        <div class="health-bar">
+                            <div class="health-fill" id="healthBar"></div>
+                        </div>
+                        <span class="health-text" id="healthText">200/200</span>
+                    </div>
+                    <div class="xp-container">
+                        <div class="xp-bar">
+                            <div class="xp-fill" id="expBar"></div>
+                        </div>
+                        <span class="level-text">LVL <span id="levelNumber">1</span></span>
+                    </div>
                 </div>
-                <div class="wave-progress-mini">
-                    <div class="progress-mini" id="waveProgressBar"></div>
+
+                <!-- Center Section: Wave Progress -->
+                <div class="hud-section center-section">
+                    <div class="wave-info">
+                        <span class="wave-label">WAVE</span>
+                        <span class="wave-number" id="waveNumber">1</span>
+                    </div>
+                    <div class="wave-progress">
+                        <div class="wave-bar">
+                            <div class="wave-fill" id="waveProgressBar"></div>
+                        </div>
+                        <span class="wave-text" id="waveProgressText">0/15 enemies</span>
+                    </div>
+                </div>
+
+                <!-- Right Section: Weapon & Money -->
+                <div class="hud-section right-section">
+                    <div class="weapon-info">
+                        <span class="weapon-name" id="currentWeapon">RIFLE</span>
+                        <span class="ammo-count" id="ammoCount">∞</span>
+                    </div>
+                    <div class="money-container">
+                        <span class="money-icon">💰</span>
+                        <span class="money-value" id="moneyValue">75</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Top Right Corner -->
-            <div class="stat-widget top-right">
-                <div class="widget-content">
-                    <span class="stat-icon">⏱️</span>
-                    <span class="stat-value" id="survivalTimeValue">0:00</span>
-                </div>
+            <!-- Bottom Quick Actions -->
+            <div id="bottomActions">
+                <button id="buySoldier" class="action-btn">
+                    <span class="btn-label">Buy Soldier</span>
+                    <span class="btn-cost">$75</span>
+                </button>
+                <button id="upgradeDamage" class="action-btn">
+                    <span class="btn-label">Upgrade DMG</span>
+                    <span class="btn-cost">$150</span>
+                </button>
+                <button id="upgradeSpeed" class="action-btn">
+                    <span class="btn-label">Upgrade SPD</span>
+                    <span class="btn-cost">$100</span>
+                </button>
+                <button id="pauseBtn" class="action-btn pause-btn">
+                    <span class="btn-label">Menu</span>
+                </button>
             </div>
+        </div>
 
-            <!-- Money (Top Left, below wave) -->
-            <div class="stat-widget money-widget">
-                <div class="widget-content">
-                    <span class="stat-icon">💰</span>
-                    <span class="stat-value" id="moneyValue">75</span>
+        <!-- Enhanced Pause Menu (will show detailed stats) -->
+        <div id="pauseMenu" class="menu-overlay" style="display: none;">
+            <div class="menu-content">
+                <h2>Game Menu</h2>
+
+                <div class="menu-tabs">
+                    <button class="tab-btn active" data-tab="stats">Stats</button>
+                    <button class="tab-btn" data-tab="build">Build</button>
+                    <button class="tab-btn" data-tab="settings">Settings</button>
                 </div>
-            </div>
 
-            <!-- Character Class (Top Right, below time) -->
-            <div class="stat-widget class-widget">
-                <div class="widget-content">
-                    <span class="stat-icon">👤</span>
-                    <span class="stat-value" id="characterValue">SOLDIER</span>
+                <!-- Stats Tab -->
+                <div class="tab-content active" id="statsTab">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-label">Survival Time</span>
+                            <span class="stat-value" id="survivalTimeValue">0:00</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Score</span>
+                            <span class="stat-value" id="scoreValue">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Kills</span>
+                            <span class="stat-value" id="killCountValue">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Character</span>
+                            <span class="stat-value" id="characterValue">SOLDIER</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Damage Multi</span>
+                            <span class="stat-value" id="damageMultValue">1.0x</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Speed Multi</span>
+                            <span class="stat-value" id="speedMultValue">1.0x</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Build Tab -->
+                <div class="tab-content" id="buildTab">
+                    <div class="build-section">
+                        <h3>Weapons</h3>
+                        <div id="weaponsList" class="item-list">
+                            <!-- Weapons will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="build-section">
+                        <h3>Passive Items</h3>
+                        <div id="passivesList" class="item-list">
+                            <!-- Passives will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div class="tab-content" id="settingsTab">
+                    <div class="settings-group">
+                        <h3>Controls</h3>
+                        <p>WASD or Arrow Keys to move</p>
+                        <p>Automatic shooting</p>
+                        <p>P or Menu button to pause</p>
+                    </div>
+                </div>
+
+                <div class="menu-actions">
+                    <button id="resumeBtn" class="menu-btn primary">Resume</button>
+                    <button id="restartBtn" class="menu-btn">Restart</button>
                 </div>
             </div>
         </div>
 
-        <!-- Health & XP (Bottom Center) -->
-        <div id="healthXpWidget">
-            <div class="health-section">
-                <div class="health-bar" id="healthBar"></div>
-                <span class="health-text" id="healthText">200/200</span>
-            </div>
-            <div class="xp-section">
-                <div class="level-badge">
-                    <span class="level-number" id="levelNumber">1</span>
-                </div>
-                <div class="xp-bar">
-                    <div class="exp-bar" id="expBar"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Score & Kills (Bottom Right) -->
-        <div id="gameMetrics">
-            <div class="metric-item">
-                <span class="metric-icon">🎯</span>
-                <span class="metric-value" id="scoreValue">0</span>
-            </div>
-            <div class="metric-item">
-                <span class="metric-icon">💀</span>
-                <span class="metric-value" id="killCountValue">0</span>
-            </div>
-        </div>
-
-        <!-- Build Info (Left Edge - Compact) -->
-        <div id="buildWidget">
-            <div class="build-header" title="Weapons">⚔️</div>
-            <div class="build-items" id="weaponsList">
-                <!-- Weapon icons will be added dynamically -->
-            </div>
-
-            <div class="build-header" title="Passives">🔮</div>
-            <div class="build-items" id="passivesList">
-                <!-- Passive icons will be added dynamically -->
-            </div>
-        </div>
-
-        <!-- Quick Actions (Right Edge) -->
-        <div id="quickActions">
-            <button id="buySoldier" class="quick-btn" title="Buy Soldier ($75)">
-                <span class="btn-icon">👥</span>
-                <span class="btn-cost">$75</span>
-            </button>
-            <button id="upgradeDamage" class="quick-btn" title="Upgrade Damage ($150)">
-                <span class="btn-icon">⚔️</span>
-                <span class="btn-cost">$150</span>
-            </button>
-            <button id="upgradeSpeed" class="quick-btn" title="Upgrade Speed ($100)">
-                <span class="btn-icon">💨</span>
-                <span class="btn-cost">$100</span>
-            </button>
-            <button id="pauseBtn" class="quick-btn pause-btn" title="Pause Game">
-                <span class="btn-icon">⏸️</span>
-            </button>
-        </div>
-
-        <!-- Status Effects (Floating, Auto-hide) -->
+        <!-- Status Effects (minimal floating) -->
         <div id="statusEffects">
-            <!-- Status effects will be added dynamically as floating badges -->
-        </div>
-
-        <!-- Multipliers (Bottom Left Corner - Minimal) -->
-        <div id="multiplierWidget">
-            <div class="multiplier-item">
-                <span class="mult-icon">⚔️</span>
-                <span class="mult-value" id="damageMultValue">1.0x</span>
-            </div>
-            <div class="multiplier-item">
-                <span class="mult-icon">💨</span>
-                <span class="mult-value" id="speedMultValue">1.0x</span>
-            </div>
+            <!-- Status effects will be added dynamically -->
         </div>
 
         <!-- Mobile Touch Controls -->
