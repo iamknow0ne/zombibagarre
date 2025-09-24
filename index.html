@@ -116,6 +116,18 @@
                             <span class="stat-label">Speed Multi</span>
                             <span class="stat-value" id="speedMultValue">1.0x</span>
                         </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Soldiers</span>
+                            <span class="stat-value" id="soldierCount">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Powerups</span>
+                            <span class="stat-value" id="powerupCount">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">XP</span>
+                            <span class="stat-value"><span id="expValue">0</span>/<span id="expMax">100</span></span>
+                        </div>
                     </div>
                 </div>
 
@@ -147,6 +159,8 @@
 
                 <div class="menu-actions">
                     <button id="resumeBtn" class="menu-btn primary">Resume</button>
+                    <button id="saveBtn" class="menu-btn save">Save Game (Ctrl+S)</button>
+                    <button id="loadBtn" class="menu-btn load">Load Game (Ctrl+L)</button>
                     <button id="restartBtn" class="menu-btn">Restart</button>
                 </div>
             </div>
@@ -155,6 +169,11 @@
         <!-- Status Effects (minimal floating) -->
         <div id="statusEffects">
             <!-- Status effects will be added dynamically -->
+        </div>
+
+        <!-- Combo Display -->
+        <div id="comboDisplay" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100;">
+            <div id="comboMultiplier" style="color: #fff; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);"></div>
         </div>
 
         <!-- Mobile Touch Controls -->
@@ -257,6 +276,7 @@
                 </div>
                 <div class="splash-buttons">
                     <button id="startGameBtn" class="splash-btn primary">START GAME</button>
+                    <button id="continueGameBtn" class="splash-btn continue hidden">CONTINUE GAME</button>
                     <button id="selectCharacterBtn" class="splash-btn secondary">SELECT CHARACTER</button>
                 </div>
                 <div class="splash-credits">

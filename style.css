@@ -2067,6 +2067,39 @@ body.combat-mode #multiplierWidget:hover {
 }
 
 /* ===================
+   SAVE/LOAD BUTTONS
+   =================== */
+.menu-btn.save {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    border-color: #27ae60;
+}
+
+.menu-btn.save:hover {
+    background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+    border-color: #229954;
+}
+
+.menu-btn.load {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border-color: #3498db;
+}
+
+.menu-btn.load:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #2471a3 100%);
+    border-color: #2980b9;
+}
+
+.splash-btn.continue {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    border-color: #e67e22;
+}
+
+.splash-btn.continue:hover {
+    background: linear-gradient(135deg, #d35400 0%, #ba4a00 100%);
+    border-color: #d35400;
+}
+
+/* ===================
    MOBILE OPTIMIZATIONS
    =================== */
 

@@ -5,21 +5,21 @@ class Game {
         this.isRunning = false;
         this.isPaused = false;
         
-        // Game state - Challenging resource management
+        // Game state - Demo optimized for client engagement
         this.wave = 1;
         this.score = 0;
         this.gameStartTime = Date.now(); // Track game start time for survival timer
-        this.money = 75;  // Reasonable starting money for upgrades
-        this.soldierCost = 75;  // Increased costs
-        this.upgradeCost = 150;
-        this.speedCost = 100;
+        this.money = 150;  // More starting money for immediate demo engagement
+        this.soldierCost = 75;  // Balanced costs for demo flow
+        this.upgradeCost = 120; // Slightly reduced for better demo flow
+        this.speedCost = 80;
         this.damageMultiplier = 1;
         this.speedMultiplier = 1;
 
-        // Experience and Level System
+        // Experience and Level System - Demo optimized
         this.experience = 0;
         this.level = 1;
-        this.experienceToNextLevel = 100;
+        this.experienceToNextLevel = 80; // Faster leveling for demo engagement
         this.levelUpPending = false;
 
         // Weapon and Item System
@@ -80,6 +80,16 @@ class Game {
         this.chromaticAberration = { strength: 0 };
         this.timeDistortion = { factor: 1, targetFactor: 1 };
         this.backgroundEffects = [];
+
+        // Audio System
+        this.audioSystem = new AudioSystem();
+        this.comboSystem = new ComboSystem();
+
+        // Achievement System
+        this.achievementSystem = new AchievementSystem(this);
+
+        // Enable auto-save every 2 minutes
+        this.enableAutoSave(2);
 
         this.init();
     }
@@ -247,6 +257,295 @@ class Game {
         }
     }
 
+    // Save current game state
+    saveGame() {
+        try {
+            const gameState = {
+                version: '1.0', // For future compatibility
+                timestamp: Date.now(),
+
+                // Game Progress
+                wave: this.wave,
+                score: this.score,
+                money: this.money,
+                level: this.level,
+                experience: this.experience,
+                experienceToNextLevel: this.experienceToNextLevel,
+                killCount: this.killCount,
+                gameStartTime: this.gameStartTime,
+                survivalTime: this.survivalTime,
+
+                // Character and upgrades
+                selectedCharacter: this.selectedCharacter,
+                damageMultiplier: this.damageMultiplier,
+                speedMultiplier: this.speedMultiplier,
+                soldierCost: this.soldierCost,
+                upgradeCost: this.upgradeCost,
+                speedCost: this.speedCost,
+
+                // Weapons and items
+                weapons: this.weapons,
+                passiveItems: this.passiveItems,
+                evolvedWeapons: this.evolvedWeapons,
+
+                // Player state (if game is running)
+                player: this.player ? {
+                    x: this.player.x,
+                    y: this.player.y,
+                    health: this.player.health,
+                    maxHealth: this.player.maxHealth
+                } : null,
+
+                // Combo system state
+                comboData: this.comboSystem.getComboData(),
+
+                // Achievement system state
+                achievements: this.achievementSystem.achievements,
+
+                // Wave state
+                zombiesInWave: this.zombiesInWave,
+                zombiesSpawned: this.zombiesSpawned,
+                zombiesKilled: this.zombiesKilled
+            };
+
+            localStorage.setItem('zombieSurvivalSave', JSON.stringify(gameState));
+
+            // Show save confirmation
+            this.showNotification('Game saved successfully!', 'success');
+            return true;
+        } catch (error) {
+            console.error('Failed to save game:', error);
+            this.showNotification('Failed to save game', 'error');
+            return false;
+        }
+    }
+
+    // Load game state
+    loadGame() {
+        try {
+            const savedData = localStorage.getItem('zombieSurvivalSave');
+            if (!savedData) {
+                return false; // No save data exists
+            }
+
+            const gameState = JSON.parse(savedData);
+
+            // Validate save data version and structure
+            if (!gameState.version || !gameState.timestamp) {
+                console.warn('Invalid save data structure');
+                return false;
+            }
+
+            // Stop current game
+            this.isRunning = false;
+            this.cleanup();
+
+            // Restore game progress
+            this.wave = gameState.wave || 1;
+            this.score = gameState.score || 0;
+            this.money = gameState.money || 75;
+            this.level = gameState.level || 1;
+            this.experience = gameState.experience || 0;
+            this.experienceToNextLevel = gameState.experienceToNextLevel || 100;
+            this.killCount = gameState.killCount || 0;
+            this.gameStartTime = gameState.gameStartTime || Date.now();
+            this.survivalTime = gameState.survivalTime || 0;
+
+            // Restore character and upgrades
+            this.selectedCharacter = gameState.selectedCharacter || 'soldier';
+            this.damageMultiplier = gameState.damageMultiplier || 1;
+            this.speedMultiplier = gameState.speedMultiplier || 1;
+            this.soldierCost = gameState.soldierCost || 75;
+            this.upgradeCost = gameState.upgradeCost || 150;
+            this.speedCost = gameState.speedCost || 100;
+
+            // Restore weapons and items
+            this.weapons = gameState.weapons || [{ id: 'rifle', name: 'Rifle', level: 1 }];
+            this.passiveItems = gameState.passiveItems || [];
+            this.evolvedWeapons = gameState.evolvedWeapons || [];
+
+            // Restore combo system
+            if (gameState.comboData) {
+                this.comboSystem.kills = gameState.comboData.kills || 0;
+                this.comboSystem.comboLevel = gameState.comboData.comboLevel || -1;
+                this.comboSystem.comboMultiplier = gameState.comboData.multiplier || 1;
+                this.comboSystem.lastKillTime = Date.now(); // Reset timing
+            }
+
+            // Restore achievement system
+            if (gameState.achievements) {
+                for (const [id, achievement] of Object.entries(gameState.achievements)) {
+                    if (this.achievementSystem.achievements[id]) {
+                        this.achievementSystem.achievements[id].unlocked = achievement.unlocked;
+                    }
+                }
+            }
+
+            // Restore wave state
+            this.zombiesInWave = gameState.zombiesInWave || 25;
+            this.zombiesSpawned = gameState.zombiesSpawned || 0;
+            this.zombiesKilled = gameState.zombiesKilled || 0;
+
+            // Clear game objects (will be repopulated)
+            this.soldiers = [];
+            this.zombies = [];
+            this.bullets = [];
+            this.powerups = [];
+            this.particles = [];
+            this.enemyProjectiles = [];
+            this.treasureChests = [];
+
+            // Recreate player if saved
+            if (gameState.player) {
+                this.createPlayer();
+                this.player.x = gameState.player.x;
+                this.player.y = gameState.player.y;
+                this.player.health = gameState.player.health;
+                this.player.maxHealth = gameState.player.maxHealth;
+            } else {
+                this.createPlayer();
+            }
+
+            // Update UI with loaded state
+            this.updateUI();
+
+            // Show load confirmation
+            this.showNotification(`Game loaded! Wave ${this.wave}`, 'success');
+
+            return true;
+        } catch (error) {
+            console.error('Failed to load game:', error);
+            this.showNotification('Failed to load saved game', 'error');
+            return false;
+        }
+    }
+
+    // Delete saved game
+    deleteSave() {
+        try {
+            localStorage.removeItem('zombieSurvivalSave');
+            this.showNotification('Save game deleted', 'info');
+            return true;
+        } catch (error) {
+            console.error('Failed to delete save:', error);
+            return false;
+        }
+    }
+
+    // Check if save game exists
+    hasSavedGame() {
+        try {
+            const savedData = localStorage.getItem('zombieSurvivalSave');
+            return !!savedData;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    // Get save game info
+    getSaveGameInfo() {
+        try {
+            const savedData = localStorage.getItem('zombieSurvivalSave');
+            if (savedData) {
+                const gameState = JSON.parse(savedData);
+                return {
+                    wave: gameState.wave || 1,
+                    level: gameState.level || 1,
+                    score: gameState.score || 0,
+                    character: gameState.selectedCharacter || 'soldier',
+                    timestamp: gameState.timestamp,
+                    timeAgo: this.getTimeAgo(gameState.timestamp)
+                };
+            }
+        } catch (error) {
+            console.error('Failed to get save info:', error);
+        }
+        return null;
+    }
+
+    // Auto-save functionality
+    enableAutoSave(intervalMinutes = 5) {
+        // Clear any existing auto-save interval
+        if (this.autoSaveInterval) {
+            clearInterval(this.autoSaveInterval);
+        }
+
+        // Set up auto-save every N minutes (only when game is running)
+        this.autoSaveInterval = setInterval(() => {
+            if (this.isRunning && !this.isPaused) {
+                this.saveGame();
+            }
+        }, intervalMinutes * 60 * 1000);
+
+        // Store interval reference for cleanup
+        this.activeIntervals.push(this.autoSaveInterval);
+    }
+
+    getTimeAgo(timestamp) {
+        const now = Date.now();
+        const diffMs = now - timestamp;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        if (diffMins > 0) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+        return 'Just now';
+    }
+
+    // Notification system for save/load feedback
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `game-notification ${type}`;
+        notification.textContent = message;
+
+        // Add styles
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+
+        // Set background color based on type
+        const colors = {
+            success: '#27ae60',
+            error: '#e74c3c',
+            info: '#3498db',
+            warning: '#f39c12'
+        };
+        notification.style.backgroundColor = colors[type] || colors.info;
+
+        document.body.appendChild(notification);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            notification.style.opacity = '1';
+            notification.style.transform = 'translateX(0)';
+        });
+
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+
     getSelectedCharacter() {
         try {
             return localStorage.getItem('selectedCharacter') || 'soldier';
@@ -313,10 +612,45 @@ class Game {
         const upgradeSpeedHandler = () => this.upgradeSpeed();
         const pauseHandler = () => this.togglePause();
         const restartHandler = () => this.restart();
+        const resumeHandler = () => this.resumeGame();
+
+        // Pause menu handlers
+        this.setupPauseMenuHandlers();
 
         const keydownHandler = (e) => {
             this.keys[e.key.toLowerCase()] = true;
             this.keys[e.code] = true;
+
+            // Save/Load shortcuts
+            if (e.ctrlKey || e.metaKey) { // Support both Ctrl and Cmd (Mac)
+                switch(e.key.toLowerCase()) {
+                    case 's':
+                        e.preventDefault(); // Prevent browser save dialog
+                        if (this.isRunning) {
+                            this.saveGame();
+                            this.audioSystem.playSound('button_click');
+                        }
+                        break;
+                    case 'l':
+                        e.preventDefault(); // Prevent browser location bar
+                        if (this.hasSavedGame()) {
+                            this.loadGame();
+                            this.audioSystem.playSound('button_click');
+                            // Start the loaded game
+                            if (!this.isRunning) {
+                                this.startGame();
+                            }
+                        } else {
+                            this.showNotification('No saved game found', 'warning');
+                        }
+                        break;
+                }
+            }
+
+            // Regular pause with P key
+            if (e.key.toLowerCase() === 'p' && this.isRunning) {
+                this.togglePause();
+            }
         };
 
         const keyupHandler = (e) => {
@@ -410,6 +744,7 @@ class Game {
     buySoldier() {
         const adjustedCost = this.getAdjustedUpgradeCost(this.soldierCost);
         if (this.money >= adjustedCost) {
+            this.audioSystem.playSound('purchase');
             this.money -= adjustedCost;
             // Spawn soldiers around the player in a circle formation
             const angle = Math.random() * Math.PI * 2;
@@ -428,6 +763,7 @@ class Game {
     upgradeDamage() {
         const adjustedCost = this.getAdjustedUpgradeCost(this.upgradeCost);
         if (this.money >= adjustedCost) {
+            this.audioSystem.playSound('upgrade');
             this.money -= adjustedCost;
             this.damageMultiplier += 0.4; // Slightly reduced bonus
             this.upgradeCost = Math.floor(this.upgradeCost * 1.7); // Increased scaling
@@ -438,6 +774,7 @@ class Game {
     upgradeSpeed() {
         const adjustedCost = this.getAdjustedUpgradeCost(this.speedCost);
         if (this.money >= adjustedCost) {
+            this.audioSystem.playSound('upgrade');
             this.money -= adjustedCost;
             this.speedMultiplier += 0.25; // Slightly reduced bonus
             this.speedCost = Math.floor(this.speedCost * 1.6); // Increased scaling
@@ -453,7 +790,94 @@ class Game {
     
     togglePause() {
         this.isPaused = !this.isPaused;
-        document.getElementById('pauseBtn').textContent = this.isPaused ? 'Resume' : 'Pause';
+        const pauseMenu = document.getElementById('pauseMenu');
+        if (this.isPaused) {
+            if (pauseMenu) pauseMenu.style.display = 'flex';
+            // Update pause menu with current stats
+            this.updatePauseMenuStats();
+        } else {
+            if (pauseMenu) pauseMenu.style.display = 'none';
+        }
+    }
+
+    resumeGame() {
+        this.isPaused = false;
+        const pauseMenu = document.getElementById('pauseMenu');
+        if (pauseMenu) pauseMenu.style.display = 'none';
+    }
+
+    setupPauseMenuHandlers() {
+        try {
+            // Tab switching
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove active class from all tabs
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+
+                    // Add active class to clicked tab
+                    btn.classList.add('active');
+                    const targetTab = btn.getAttribute('data-tab');
+                    const targetContent = document.getElementById(targetTab + 'Tab');
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                    }
+                });
+            });
+
+            // Resume and restart buttons
+            const resumeBtn = document.getElementById('resumeBtn');
+            const restartBtn = document.getElementById('restartBtn');
+
+            if (resumeBtn) {
+                resumeBtn.addEventListener('click', () => this.resumeGame());
+            }
+            if (restartBtn) {
+                restartBtn.addEventListener('click', () => {
+                    this.restart();
+                    this.resumeGame();
+                });
+            }
+
+            // Save and load buttons
+            const saveBtn = document.getElementById('saveBtn');
+            const loadBtn = document.getElementById('loadBtn');
+
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    this.saveGame();
+                    this.audioSystem.playSound('button_click');
+                });
+            }
+            if (loadBtn) {
+                loadBtn.addEventListener('click', () => {
+                    if (this.hasSavedGame()) {
+                        this.loadGame();
+                        this.audioSystem.playSound('button_click');
+                        this.resumeGame();
+                        if (!this.isRunning) {
+                            this.startGame();
+                        }
+                    } else {
+                        this.showNotification('No saved game found', 'warning');
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Failed to setup pause menu handlers:', error);
+        }
+    }
+
+    updatePauseMenuStats() {
+        // Update all stats in the pause menu
+        this.updateUI();
+
+        // Update weapons and passives in pause menu tabs
+        this.updateWeaponsPanel();
+        this.updatePassivesPanel();
     }
     
     startGame() {
@@ -483,6 +907,17 @@ class Game {
         // Update survival time
         this.survivalTime = Date.now() - this.gameStartTime;
 
+        // Check survival time achievements (only check every few seconds to avoid spam)
+        if (Math.floor(this.survivalTime / 1000) % 30 === 0 && Math.floor(this.survivalTime / 1000) > 0) {
+            this.achievementSystem.checkAchievements('survival_time', this.survivalTime);
+        }
+
+        // Update combo system
+        const comboUpdate = this.comboSystem.update();
+        if (comboUpdate.comboLost) {
+            // Optional: Play combo lost sound or visual effect
+        }
+
         // Update player
         if (this.player) {
             this.player.update(deltaTime);
@@ -491,44 +926,66 @@ class Game {
         // Update wave spawning
         this.updateWaveSpawning(deltaTime);
         
-        // Update game objects
-        this.soldiers.forEach(soldier => soldier.update(deltaTime));
-        this.zombies.forEach(zombie => zombie.update(deltaTime));
-        this.bullets.forEach(bullet => bullet.update(deltaTime));
-        this.powerups.forEach(powerup => powerup.update(deltaTime));
-        this.particles.forEach(particle => particle.update(deltaTime));
-        this.treasureChests.forEach(chest => {
-            chest.glowTime += deltaTime;
-        });
+        // Update game objects - Optimized for demo performance
+        for (let i = this.soldiers.length - 1; i >= 0; i--) {
+            this.soldiers[i].update(deltaTime);
+        }
 
-        // Update enemy projectiles
-        this.enemyProjectiles.forEach(projectile => {
+        for (let i = this.zombies.length - 1; i >= 0; i--) {
+            this.zombies[i].update(deltaTime);
+            if (this.zombies[i].health <= 0) {
+                this.zombies.splice(i, 1);
+            }
+        }
+
+        for (let i = this.bullets.length - 1; i >= 0; i--) {
+            this.bullets[i].update(deltaTime);
+            if (!this.bullets[i].active) {
+                this.bullets.splice(i, 1);
+            }
+        }
+
+        for (let i = this.powerups.length - 1; i >= 0; i--) {
+            this.powerups[i].update(deltaTime);
+            if (!this.powerups[i].active) {
+                this.powerups.splice(i, 1);
+            }
+        }
+
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            this.particles[i].update(deltaTime);
+            if (!this.particles[i].active) {
+                this.particles.splice(i, 1);
+            }
+        }
+
+        for (let i = this.treasureChests.length - 1; i >= 0; i--) {
+            this.treasureChests[i].glowTime += deltaTime;
+        }
+
+        // Update enemy projectiles - Optimized
+        const boundary = 300;
+        const canvasW = this.getCanvasWidth();
+        const canvasH = this.getCanvasHeight();
+
+        for (let i = this.enemyProjectiles.length - 1; i >= 0; i--) {
+            const projectile = this.enemyProjectiles[i];
             projectile.x += projectile.vx * deltaTime / 1000;
             projectile.y += projectile.vy * deltaTime / 1000;
 
-            // Remove if off screen - increased boundaries for zoom-out
-            const boundary = 300; // Larger boundary for zoom-out view
-            if (projectile.x < -boundary || projectile.x > this.getCanvasWidth() + boundary ||
-                projectile.y < -boundary || projectile.y > this.getCanvasHeight() + boundary) {
-                projectile.active = false;
+            if (projectile.x < -boundary || projectile.x > canvasW + boundary ||
+                projectile.y < -boundary || projectile.y > canvasH + boundary) {
+                this.enemyProjectiles.splice(i, 1);
             }
-        });
+        }
 
-        // Update hazards (poison clouds, fire areas, etc.)
-        this.hazards.forEach(hazard => {
-            hazard.duration -= deltaTime;
-            if (hazard.duration <= 0) {
-                hazard.active = false;
+        // Update hazards - Optimized
+        for (let i = this.hazards.length - 1; i >= 0; i--) {
+            this.hazards[i].duration -= deltaTime;
+            if (this.hazards[i].duration <= 0) {
+                this.hazards.splice(i, 1);
             }
-        });
-
-        // Remove dead objects
-        this.bullets = this.bullets.filter(bullet => bullet.active);
-        this.zombies = this.zombies.filter(zombie => zombie.health > 0);
-        this.powerups = this.powerups.filter(powerup => powerup.active);
-        this.particles = this.particles.filter(particle => particle.active);
-        this.enemyProjectiles = this.enemyProjectiles.filter(projectile => projectile.active);
-        this.hazards = this.hazards.filter(hazard => hazard.active !== false);
+        }
         
         // Check collisions
         this.checkCollisions();
@@ -567,6 +1024,10 @@ class Game {
     
     startNextWave() {
         this.wave++;
+        this.audioSystem.playSound('wave_complete');
+
+        // Check wave-based achievements
+        this.achievementSystem.checkAchievements('wave', this.wave);
         // Balanced horde scaling for challenging but fair gameplay
         // Progressive horde growth with reasonable difficulty curve
         const baseSize = 15; // Start with manageable numbers
@@ -1325,6 +1786,10 @@ class Game {
 
             // Special boss rewards - show victory screen and drop special item (only for official boss wave spawns)
             if (zombie.isBoss() && zombie.isBossWaveSpawn) {
+                // Check boss achievement
+                this.metaProgression.statistics.bossesKilled = (this.metaProgression.statistics.bossesKilled || 0) + 1;
+                this.achievementSystem.checkAchievements('bosses_killed', this.metaProgression.statistics.bossesKilled);
+
                 this.hideBossHealthBar(); // Hide boss health bar when boss dies
                 this.showBossVictoryScreen(zombie);
                 this.dropSpecialItem(zombie);
@@ -1336,13 +1801,49 @@ class Game {
             this.hideBossHealthBar();
         }
 
-        // Apply rewards
-        this.score += scoreGain;
-        this.money += moneyGain;
+        // Apply rewards with combo multiplier
+        const comboMultiplier = comboResult ? comboResult.multiplier : this.comboSystem.getComboData().multiplier;
+        const finalScoreGain = Math.floor(scoreGain * comboMultiplier);
+        const finalMoneyGain = Math.floor(moneyGain * comboMultiplier);
+
+        this.score += finalScoreGain;
+        this.money += finalMoneyGain;
+
+        // Check score-based achievements
+        this.achievementSystem.checkAchievements('score', this.score);
         this.zombiesKilled++;
         this.killCount++; // Total kill counter for statistics
 
+        // Play kill sound and update combo
+        this.audioSystem.playSound('zombie_death');
+        const comboResult = this.comboSystem.addKill();
+
+        // Combo level up feedback
+        if (comboResult.levelUp) {
+            this.audioSystem.playSound('combo_kill', { comboLevel: comboResult.kills });
+
+            // Check combo achievements
+            this.achievementSystem.checkAchievements('combo', comboResult.kills);
+
+            // Add visual effect for combo level up
+            this.particles.push(new Particle(
+                zombie.x, zombie.y - 30,
+                0, -50,
+                '#FFD700', 'large', 'magic',
+                1000
+            ));
+
+            // Screen shake for epic combos
+            if (comboResult.kills >= 50) {
+                this.screenShake.intensity = 15;
+                this.screenShake.duration = 300;
+            }
+        }
+
         this.gainExperience(expGain);
+
+        // Check kill-based achievements
+        this.achievementSystem.checkAchievements('kills', this.killCount);
 
         // Update meta progression
         this.metaProgression.statistics.totalKills++;
@@ -1514,6 +2015,9 @@ class Game {
     levelUp() {
         this.level++;
 
+        // Check level-based achievements
+        this.achievementSystem.checkAchievements('level', this.level);
+
         // Stunning level up visual effects
         VisualEffects.addScreenShake(this, 4, 800);
         VisualEffects.addTimeDistortion(this, 0.3, 1000);
@@ -1572,6 +2076,7 @@ class Game {
             { type: 'weapon', id: 'knife', name: 'Knife', description: 'Melee spinning blade', minWave: 7 },
 
             // Late Game Weapons (High wave requirement)
+            { type: 'weapon', id: 'pistol', name: 'Pistol', description: 'Fast firing sidearm', minWave: 8 },
             { type: 'weapon', id: 'rocket', name: 'Rocket Launcher', description: 'Explosive projectiles', minWave: 10 },
             { type: 'weapon', id: 'grenade', name: 'Grenade', description: 'Area explosion', minWave: 12 },
 
@@ -1730,12 +2235,18 @@ class Game {
         const existingWeapon = this.weapons.find(w => w.id === id);
         if (existingWeapon) {
             existingWeapon.level++;
+            // Check for max weapon level achievement
+            if (existingWeapon.level === 8) {
+                this.achievementSystem.checkAchievements('max_weapon_level', existingWeapon.level);
+            }
         } else if (this.weapons.length < this.maxWeapons) {
             this.weapons.push({
                 id: id,
                 name: name,
                 level: 1
             });
+            // Check weapons unlocked achievement
+            this.achievementSystem.checkAchievements('weapons_unlocked', this.weapons.length);
         }
     }
 
@@ -2354,28 +2865,52 @@ class Game {
         // Render background effects (affected by zoom)
         VisualEffects.renderBackgroundEffects(this, this.ctx);
 
-        // Render game objects (back to front) - all affected by zoom
-        this.particles.forEach(particle => particle.render(this.ctx));
-        this.powerups.forEach(powerup => powerup.render(this.ctx));
-        this.treasureChests.forEach(chest => this.renderTreasureChest(chest));
-        this.zombies.forEach(zombie => zombie.render(this.ctx));
-        this.bullets.forEach(bullet => bullet.render(this.ctx));
+        // Render game objects (back to front) - Optimized for demo performance
+        for (let i = 0; i < this.particles.length; i++) {
+            this.particles[i].render(this.ctx);
+        }
+
+        for (let i = 0; i < this.powerups.length; i++) {
+            this.powerups[i].render(this.ctx);
+        }
+
+        for (let i = 0; i < this.treasureChests.length; i++) {
+            this.renderTreasureChest(this.treasureChests[i]);
+        }
+
+        for (let i = 0; i < this.zombies.length; i++) {
+            this.zombies[i].render(this.ctx);
+        }
+
+        for (let i = 0; i < this.bullets.length; i++) {
+            this.bullets[i].render(this.ctx);
+        }
 
         // Render enemy projectiles
-        this.enemyProjectiles.forEach(projectile => this.renderEnemyProjectile(projectile));
+        for (let i = 0; i < this.enemyProjectiles.length; i++) {
+            this.renderEnemyProjectile(this.enemyProjectiles[i]);
+        }
 
         // Render hazards (poison clouds, fire areas, etc.)
-        this.hazards.forEach(hazard => this.renderHazard(hazard));
+        for (let i = 0; i < this.hazards.length; i++) {
+            this.renderHazard(this.hazards[i]);
+        }
 
-        this.soldiers.forEach(soldier => soldier.render(this.ctx));
+        for (let i = 0; i < this.soldiers.length; i++) {
+            this.soldiers[i].render(this.ctx);
+        }
 
         // Render player
         if (this.player) {
             this.player.render(this.ctx);
 
-            // Render vehicles and drones
-            this.player.vehicles.forEach(vehicle => vehicle.render(this.ctx));
-            this.player.drones.forEach(drone => drone.render(this.ctx));
+            // Render vehicles and drones - Optimized
+            for (let i = 0; i < this.player.vehicles.length; i++) {
+                this.player.vehicles[i].render(this.ctx);
+            }
+            for (let i = 0; i < this.player.drones.length; i++) {
+                this.player.drones[i].render(this.ctx);
+            }
         }
 
         // Restore game world transform before drawing UI elements
@@ -2571,11 +3106,28 @@ class Game {
             // Update wave progress
             const waveProgressBar = document.getElementById('waveProgressBar');
             const waveProgressText = document.getElementById('waveProgressText');
-            if (waveProgressBar && waveProgressText) {
+            if (waveProgressBar) {
                 const waveProgress = this.zombiesKilled / this.zombiesInWave;
                 const waveProgressPercentage = Math.min(100, waveProgress * 100);
                 waveProgressBar.style.width = waveProgressPercentage + '%';
+            }
+            if (waveProgressText) {
                 waveProgressText.textContent = `${this.zombiesKilled}/${this.zombiesInWave} enemies`;
+            }
+
+            // Update current weapon display in top bar
+            const currentWeaponEl = document.getElementById('currentWeapon');
+            const ammoCountEl = document.getElementById('ammoCount');
+            if (currentWeaponEl) {
+                if (this.weapons.length > 0) {
+                    const primaryWeapon = this.weapons[0];
+                    currentWeaponEl.textContent = primaryWeapon.name.toUpperCase();
+                } else {
+                    currentWeaponEl.textContent = 'RIFLE';
+                }
+            }
+            if (ammoCountEl) {
+                ammoCountEl.textContent = '∞'; // Infinite ammo for now
             }
 
             // Update combat stats
@@ -2615,6 +3167,26 @@ class Game {
                 characterEl.textContent = characterName;
             }
 
+            // Update combo display
+            const comboData = this.comboSystem.getComboData();
+            const comboDisplayEl = document.getElementById('comboDisplay');
+            const comboMultiplierEl = document.getElementById('comboMultiplier');
+
+            if (comboDisplayEl && comboData.comboName) {
+                comboDisplayEl.textContent = `${comboData.comboName} (${comboData.kills})`;
+                comboDisplayEl.style.display = 'block';
+                comboDisplayEl.style.color = comboData.kills >= 50 ? '#ff6b35' : '#FFD700';
+            } else if (comboDisplayEl) {
+                comboDisplayEl.style.display = 'none';
+            }
+
+            if (comboMultiplierEl && comboData.multiplier > 1) {
+                comboMultiplierEl.textContent = `${comboData.multiplier.toFixed(1)}x COMBO`;
+                comboMultiplierEl.style.display = 'block';
+            } else if (comboMultiplierEl) {
+                comboMultiplierEl.style.display = 'none';
+            }
+
             // Update weapon and passive information
             this.updateWeaponsPanel();
             this.updatePassivesPanel();
@@ -2630,15 +3202,24 @@ class Game {
             const upgradeSpeedBtn = document.getElementById('upgradeSpeed');
 
             if (buySoldierBtn) {
-                buySoldierBtn.textContent = `Buy Soldier ($${adjustedSoldierCost})`;
+                const labelEl = buySoldierBtn.querySelector('.btn-label');
+                const costEl = buySoldierBtn.querySelector('.btn-cost');
+                if (labelEl) labelEl.textContent = 'Buy Soldier';
+                if (costEl) costEl.textContent = `$${adjustedSoldierCost}`;
                 buySoldierBtn.disabled = this.money < adjustedSoldierCost;
             }
             if (upgradeDamageBtn) {
-                upgradeDamageBtn.textContent = `Upgrade Damage ($${adjustedUpgradeCost})`;
+                const labelEl = upgradeDamageBtn.querySelector('.btn-label');
+                const costEl = upgradeDamageBtn.querySelector('.btn-cost');
+                if (labelEl) labelEl.textContent = 'Upgrade DMG';
+                if (costEl) costEl.textContent = `$${adjustedUpgradeCost}`;
                 upgradeDamageBtn.disabled = this.money < adjustedUpgradeCost;
             }
             if (upgradeSpeedBtn) {
-                upgradeSpeedBtn.textContent = `Upgrade Speed ($${adjustedSpeedCost})`;
+                const labelEl = upgradeSpeedBtn.querySelector('.btn-label');
+                const costEl = upgradeSpeedBtn.querySelector('.btn-cost');
+                if (labelEl) labelEl.textContent = 'Upgrade SPD';
+                if (costEl) costEl.textContent = `$${adjustedSpeedCost}`;
                 upgradeSpeedBtn.disabled = this.money < adjustedSpeedCost;
             }
         } catch (error) {
@@ -3073,6 +3654,9 @@ class Player {
         const angle = Math.atan2(target.y - this.y, target.x - this.x);
         const bulletSpeed = 500;
         let baseDamage = this.damage * this.game.damageMultiplier;
+
+        // Play weapon sound
+        this.game.audioSystem.playSound('weapon_' + weaponId, 0.3);
 
         // Apply ammo box passive item effect
         const ammoBox = this.game.passiveItems.find(p => p.id === 'ammo_box');
@@ -6608,6 +7192,7 @@ class SplashScreen {
     constructor() {
         this.splashElement = document.getElementById('splashScreen');
         this.startBtn = document.getElementById('startGameBtn');
+        this.continueBtn = document.getElementById('continueGameBtn');
         this.selectCharacterBtn = document.getElementById('selectCharacterBtn');
         this.gameStarted = false;
 
@@ -6615,11 +7200,16 @@ class SplashScreen {
         this.characterSelection = new CharacterSelection(this);
 
         this.setupEventListeners();
+        this.checkSavedGame();
     }
 
     setupEventListeners() {
         this.startBtn.addEventListener('click', () => {
             this.startGame();
+        });
+
+        this.continueBtn.addEventListener('click', () => {
+            this.continueGame();
         });
 
         this.selectCharacterBtn.addEventListener('click', () => {
@@ -6670,6 +7260,51 @@ class SplashScreen {
         this.characterSelection.show();
     }
 
+    checkSavedGame() {
+        // Create a temporary game instance to check for saved games
+        const tempGame = new Game();
+
+        if (tempGame.hasSavedGame()) {
+            const saveInfo = tempGame.getSaveGameInfo();
+            this.continueBtn.classList.remove('hidden');
+
+            // Update button text with save info
+            if (saveInfo) {
+                this.continueBtn.textContent = `CONTINUE (Wave ${saveInfo.wave}, Level ${saveInfo.level})`;
+            }
+        } else {
+            this.continueBtn.classList.add('hidden');
+        }
+
+        // Clean up temporary game instance
+        tempGame.cleanup();
+    }
+
+    continueGame() {
+        if (this.gameStarted) return;
+
+        this.gameStarted = true;
+        this.splashElement.style.animation = 'fadeOut 0.5s ease-out';
+
+        setTimeout(() => {
+            this.hide();
+
+            // Create new game and load saved state
+            const game = new Game();
+
+            if (game.loadGame()) {
+                const mobileControls = new MobileControls(game);
+                game.mobileControls = mobileControls;
+
+                // Start the loaded game
+                game.startGame();
+            } else {
+                // Fallback to new game if load fails
+                this.initializeGame('soldier');
+            }
+        }, 500);
+    }
+
     initializeGame(selectedCharacter = 'soldier') {
         const game = new Game();
 
@@ -6683,6 +7318,525 @@ class SplashScreen {
 
         // Auto-start the game
         game.startGame();
+    }
+}
+
+// AudioSystem - Procedural sound generation for immersive audio
+class AudioSystem {
+    constructor() {
+        this.audioContext = null;
+        this.masterGain = null;
+        this.soundEnabled = true;
+        this.volume = 0.5;
+
+        this.initAudioContext();
+    }
+
+    initAudioContext() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.masterGain = this.audioContext.createGain();
+            this.masterGain.connect(this.audioContext.destination);
+            this.masterGain.gain.setValueAtTime(this.volume, this.audioContext.currentTime);
+        } catch (error) {
+            console.warn('AudioContext not supported:', error);
+            this.soundEnabled = false;
+        }
+    }
+
+    resumeAudioContext() {
+        if (this.audioContext && this.audioContext.state === 'suspended') {
+            return this.audioContext.resume();
+        }
+        return Promise.resolve();
+    }
+
+    createOscillator(type, frequency, duration, volume = 0.1) {
+        if (!this.soundEnabled || !this.audioContext) return;
+
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.masterGain);
+
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+
+        gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + duration);
+
+        return oscillator;
+    }
+
+    createNoise(duration, volume = 0.1, filterFreq = 1000) {
+        if (!this.soundEnabled || !this.audioContext) return;
+
+        const bufferSize = this.audioContext.sampleRate * duration;
+        const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+        }
+
+        const noiseSource = this.audioContext.createBufferSource();
+        noiseSource.buffer = noiseBuffer;
+
+        const filter = this.audioContext.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(filterFreq, this.audioContext.currentTime);
+
+        const gainNode = this.audioContext.createGain();
+        gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+
+        noiseSource.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.masterGain);
+
+        noiseSource.start(this.audioContext.currentTime);
+
+        return noiseSource;
+    }
+
+    playSound(soundType, options = {}) {
+        if (!this.soundEnabled) return;
+
+        this.resumeAudioContext();
+
+        const sounds = {
+            'weapon_rifle': () => {
+                this.createOscillator('square', 80 + Math.random() * 20, 0.1, 0.15);
+                this.createNoise(0.05, 0.1, 2000);
+            },
+            'weapon_shotgun': () => {
+                this.createNoise(0.2, 0.2, 800);
+                this.createOscillator('sawtooth', 60, 0.3, 0.1);
+            },
+            'weapon_machinegun': () => {
+                this.createOscillator('square', 100 + Math.random() * 30, 0.05, 0.1);
+                this.createNoise(0.03, 0.08, 3000);
+            },
+            'weapon_plasma': () => {
+                this.createOscillator('sine', 300 + Math.random() * 200, 0.15, 0.12);
+                this.createOscillator('square', 150, 0.1, 0.08);
+            },
+            'weapon_laser': () => {
+                this.createOscillator('sine', 800 + Math.random() * 400, 0.2, 0.1);
+                this.createOscillator('triangle', 400, 0.15, 0.06);
+            },
+            'weapon_flamethrower': () => {
+                this.createNoise(0.3, 0.15, 500);
+                this.createOscillator('sawtooth', 40 + Math.random() * 20, 0.2, 0.08);
+            },
+            'weapon_rocket': () => {
+                this.createOscillator('sawtooth', 50, 0.4, 0.2);
+                this.createNoise(0.6, 0.25, 300);
+            },
+            'zombie_death': () => {
+                this.createOscillator('sawtooth', 150 + Math.random() * 50, 0.3, 0.1);
+                this.createNoise(0.2, 0.08, 1500);
+            },
+            'zombie_hit': () => {
+                this.createOscillator('triangle', 200 + Math.random() * 100, 0.1, 0.06);
+            },
+            'powerup_pickup': () => {
+                this.createOscillator('sine', 440, 0.1, 0.08);
+                this.createOscillator('sine', 554, 0.15, 0.08);
+                this.createOscillator('sine', 659, 0.2, 0.08);
+            },
+            'level_up': () => {
+                this.createOscillator('sine', 523, 0.2, 0.1);
+                this.createOscillator('sine', 659, 0.3, 0.1);
+                this.createOscillator('sine', 784, 0.4, 0.1);
+            },
+            'purchase': () => {
+                this.createOscillator('triangle', 330, 0.1, 0.08);
+                this.createOscillator('triangle', 415, 0.15, 0.08);
+            },
+            'button_click': () => {
+                this.createOscillator('square', 800, 0.05, 0.05);
+            },
+            'wave_start': () => {
+                this.createOscillator('sine', 220, 0.5, 0.12);
+                this.createOscillator('sine', 440, 0.4, 0.1);
+            },
+            'boss_spawn': () => {
+                this.createOscillator('sawtooth', 40, 1.0, 0.2);
+                this.createNoise(0.8, 0.15, 200);
+            },
+            'combo_kill': () => {
+                const pitch = 440 + (options.comboLevel || 1) * 100;
+                this.createOscillator('sine', pitch, 0.1, 0.08);
+            }
+        };
+
+        if (sounds[soundType]) {
+            sounds[soundType]();
+        }
+    }
+
+    setVolume(volume) {
+        this.volume = Math.max(0, Math.min(1, volume));
+        if (this.masterGain) {
+            this.masterGain.gain.setValueAtTime(this.volume, this.audioContext.currentTime);
+        }
+    }
+
+    toggleSound() {
+        this.soundEnabled = !this.soundEnabled;
+        return this.soundEnabled;
+    }
+}
+
+// Achievement & Notification System
+class AchievementSystem {
+    constructor(game) {
+        this.game = game;
+        this.achievements = this.initAchievements();
+        this.notifications = [];
+        this.loadProgress();
+    }
+
+    initAchievements() {
+        return {
+            // Kill-based achievements
+            first_blood: { id: 'first_blood', name: 'First Blood', description: 'Kill your first zombie', condition: 'kills', threshold: 1, unlocked: false },
+            monster_hunter: { id: 'monster_hunter', name: 'Monster Hunter', description: 'Kill 100 zombies', condition: 'kills', threshold: 100, unlocked: false },
+            slayer: { id: 'slayer', name: 'Slayer', description: 'Kill 500 zombies', condition: 'kills', threshold: 500, unlocked: false },
+            exterminator: { id: 'exterminator', name: 'Exterminator', description: 'Kill 1,000 zombies', condition: 'kills', threshold: 1000, unlocked: false },
+            apocalypse_survivor: { id: 'apocalypse_survivor', name: 'Apocalypse Survivor', description: 'Kill 5,000 zombies', condition: 'kills', threshold: 5000, unlocked: false },
+
+            // Wave-based achievements
+            getting_started: { id: 'getting_started', name: 'Getting Started', description: 'Survive to wave 5', condition: 'wave', threshold: 5, unlocked: false },
+            veteran: { id: 'veteran', name: 'Veteran', description: 'Survive to wave 10', condition: 'wave', threshold: 10, unlocked: false },
+            elite: { id: 'elite', name: 'Elite', description: 'Survive to wave 20', condition: 'wave', threshold: 20, unlocked: false },
+            legendary: { id: 'legendary', name: 'Legendary', description: 'Survive to wave 30', condition: 'wave', threshold: 30, unlocked: false },
+            godlike: { id: 'godlike', name: 'Godlike', description: 'Survive to wave 50', condition: 'wave', threshold: 50, unlocked: false },
+
+            // Level-based achievements
+            power_up: { id: 'power_up', name: 'Power Up!', description: 'Reach level 10', condition: 'level', threshold: 10, unlocked: false },
+            experienced: { id: 'experienced', name: 'Experienced', description: 'Reach level 25', condition: 'level', threshold: 25, unlocked: false },
+            master: { id: 'master', name: 'Master', description: 'Reach level 50', condition: 'level', threshold: 50, unlocked: false },
+            transcendent: { id: 'transcendent', name: 'Transcendent', description: 'Reach level 100', condition: 'level', threshold: 100, unlocked: false },
+
+            // Score-based achievements
+            high_scorer: { id: 'high_scorer', name: 'High Scorer', description: 'Score 100,000 points', condition: 'score', threshold: 100000, unlocked: false },
+            point_master: { id: 'point_master', name: 'Point Master', description: 'Score 500,000 points', condition: 'score', threshold: 500000, unlocked: false },
+            score_legend: { id: 'score_legend', name: 'Score Legend', description: 'Score 1,000,000 points', condition: 'score', threshold: 1000000, unlocked: false },
+
+            // Combo achievements
+            combo_starter: { id: 'combo_starter', name: 'Combo Starter', description: 'Get a 5 kill combo', condition: 'combo', threshold: 5, unlocked: false },
+            combo_master: { id: 'combo_master', name: 'Combo Master', description: 'Get a 20 kill combo', condition: 'combo', threshold: 20, unlocked: false },
+            combo_god: { id: 'combo_god', name: 'Combo God', description: 'Get a 50 kill combo', condition: 'combo', threshold: 50, unlocked: false },
+
+            // Survival achievements
+            survivor: { id: 'survivor', name: 'Survivor', description: 'Survive for 5 minutes', condition: 'survival_time', threshold: 300000, unlocked: false },
+            endurance: { id: 'endurance', name: 'Endurance', description: 'Survive for 15 minutes', condition: 'survival_time', threshold: 900000, unlocked: false },
+            marathon: { id: 'marathon', name: 'Marathon', description: 'Survive for 30 minutes', condition: 'survival_time', threshold: 1800000, unlocked: false },
+
+            // Weapon achievements
+            arsenal: { id: 'arsenal', name: 'Arsenal', description: 'Unlock 5 different weapons', condition: 'weapons_unlocked', threshold: 5, unlocked: false },
+            weapon_master: { id: 'weapon_master', name: 'Weapon Master', description: 'Max level a weapon', condition: 'max_weapon_level', threshold: 8, unlocked: false },
+
+            // Boss achievements
+            boss_slayer: { id: 'boss_slayer', name: 'Boss Slayer', description: 'Defeat your first boss', condition: 'bosses_killed', threshold: 1, unlocked: false },
+            boss_hunter: { id: 'boss_hunter', name: 'Boss Hunter', description: 'Defeat 10 bosses', condition: 'bosses_killed', threshold: 10, unlocked: false },
+
+            // Special achievements
+            lucky: { id: 'lucky', name: 'Lucky', description: 'Find 10 legendary items', condition: 'legendary_items', threshold: 10, unlocked: false },
+            wealthy: { id: 'wealthy', name: 'Wealthy', description: 'Earn 10,000 coins in one run', condition: 'money_earned', threshold: 10000, unlocked: false },
+        };
+    }
+
+    checkAchievements(type, value) {
+        const newUnlocks = [];
+
+        for (const achievement of Object.values(this.achievements)) {
+            if (!achievement.unlocked && achievement.condition === type && value >= achievement.threshold) {
+                achievement.unlocked = true;
+                newUnlocks.push(achievement);
+                this.showAchievementNotification(achievement);
+
+                // Play achievement sound
+                this.game.audioSystem.playSound('level_up');
+
+                // Add visual effects
+                this.createAchievementEffects();
+            }
+        }
+
+        if (newUnlocks.length > 0) {
+            this.saveProgress();
+        }
+
+        return newUnlocks;
+    }
+
+    showAchievementNotification(achievement) {
+        const notification = document.createElement('div');
+        notification.className = 'achievement-notification';
+        notification.innerHTML = `
+            <div class="achievement-icon">🏆</div>
+            <div class="achievement-content">
+                <div class="achievement-title">Achievement Unlocked!</div>
+                <div class="achievement-name">${achievement.name}</div>
+                <div class="achievement-description">${achievement.description}</div>
+            </div>
+        `;
+
+        // Style the notification
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            border: 3px solid #d35400;
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            font-weight: bold;
+            z-index: 2000;
+            box-shadow: 0 8px 25px rgba(243, 156, 18, 0.5);
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px) scale(0.8);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        `;
+
+        document.body.appendChild(notification);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            notification.style.opacity = '1';
+            notification.style.transform = 'translateX(-50%) translateY(0) scale(1)';
+        });
+
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(-50%) translateY(-20px) scale(0.8)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 500);
+        }, 4000);
+    }
+
+    createAchievementEffects() {
+        // Screen flash effect
+        const flash = document.createElement('div');
+        flash.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(243,156,18,0.3) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 1500;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+
+        document.body.appendChild(flash);
+
+        // Flash animation
+        requestAnimationFrame(() => {
+            flash.style.opacity = '1';
+            setTimeout(() => {
+                flash.style.opacity = '0';
+                setTimeout(() => {
+                    if (flash.parentNode) {
+                        flash.parentNode.removeChild(flash);
+                    }
+                }, 300);
+            }, 200);
+        });
+
+        // Particle effects around player
+        if (this.game.player) {
+            for (let i = 0; i < 15; i++) {
+                const angle = (i / 15) * Math.PI * 2;
+                const distance = Math.random() * 60 + 30;
+                this.game.particles.push(new Particle(
+                    this.game.player.x + Math.cos(angle) * distance,
+                    this.game.player.y + Math.sin(angle) * distance,
+                    '#f39c12',
+                    'large',
+                    'magic',
+                    2000
+                ));
+            }
+        }
+    }
+
+    getUnlockedAchievements() {
+        return Object.values(this.achievements).filter(a => a.unlocked);
+    }
+
+    getAchievementProgress(achievementId) {
+        const achievement = this.achievements[achievementId];
+        if (!achievement) return null;
+
+        let currentValue = 0;
+        switch (achievement.condition) {
+            case 'kills':
+                currentValue = this.game.killCount;
+                break;
+            case 'wave':
+                currentValue = this.game.wave;
+                break;
+            case 'level':
+                currentValue = this.game.level;
+                break;
+            case 'score':
+                currentValue = this.game.score;
+                break;
+            case 'combo':
+                currentValue = this.game.comboSystem.kills;
+                break;
+            case 'survival_time':
+                currentValue = this.game.survivalTime;
+                break;
+            case 'weapons_unlocked':
+                currentValue = this.game.weapons.length;
+                break;
+            case 'bosses_killed':
+                currentValue = this.game.metaProgression.statistics.bossesKilled || 0;
+                break;
+        }
+
+        return {
+            current: Math.min(currentValue, achievement.threshold),
+            max: achievement.threshold,
+            progress: Math.min(currentValue / achievement.threshold, 1),
+            unlocked: achievement.unlocked
+        };
+    }
+
+    saveProgress() {
+        try {
+            const progress = {};
+            for (const [id, achievement] of Object.entries(this.achievements)) {
+                progress[id] = achievement.unlocked;
+            }
+            localStorage.setItem('zombieAchievements', JSON.stringify(progress));
+        } catch (error) {
+            console.error('Failed to save achievement progress:', error);
+        }
+    }
+
+    loadProgress() {
+        try {
+            const saved = localStorage.getItem('zombieAchievements');
+            if (saved) {
+                const progress = JSON.parse(saved);
+                for (const [id, unlocked] of Object.entries(progress)) {
+                    if (this.achievements[id]) {
+                        this.achievements[id].unlocked = unlocked;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load achievement progress:', error);
+        }
+    }
+}
+
+// ComboSystem - Kill streak tracking and multiplier bonuses
+class ComboSystem {
+    constructor() {
+        this.kills = 0;
+        this.comboLevel = 0;
+        this.comboMultiplier = 1;
+        this.lastKillTime = 0;
+        this.comboTimeout = 3000; // 3 seconds between kills to maintain combo
+        this.comboThresholds = [5, 10, 20, 35, 50, 75, 100, 150, 200];
+        this.comboNames = [
+            'KILLING SPREE', 'RAMPAGE', 'DOMINATING', 'UNSTOPPABLE',
+            'GODLIKE', 'LEGENDARY', 'IMMORTAL', 'APOCALYPTIC', 'TRANSCENDENT'
+        ];
+        this.bonusMultipliers = [1.2, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 7.0, 10.0];
+    }
+
+    addKill() {
+        const currentTime = Date.now();
+
+        // Check if combo has timed out
+        if (currentTime - this.lastKillTime > this.comboTimeout) {
+            this.resetCombo();
+        }
+
+        this.kills++;
+        this.lastKillTime = currentTime;
+
+        // Check for combo level up
+        const newComboLevel = this.getComboLevelForKills(this.kills);
+        if (newComboLevel > this.comboLevel) {
+            this.comboLevel = newComboLevel;
+            this.comboMultiplier = this.bonusMultipliers[this.comboLevel] || 1;
+            return {
+                levelUp: true,
+                comboName: this.comboNames[this.comboLevel],
+                multiplier: this.comboMultiplier,
+                kills: this.kills
+            };
+        }
+
+        return {
+            levelUp: false,
+            multiplier: this.comboMultiplier,
+            kills: this.kills
+        };
+    }
+
+    getComboLevelForKills(kills) {
+        for (let i = this.comboThresholds.length - 1; i >= 0; i--) {
+            if (kills >= this.comboThresholds[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    resetCombo() {
+        this.kills = 0;
+        this.comboLevel = -1;
+        this.comboMultiplier = 1;
+    }
+
+    getComboData() {
+        return {
+            kills: this.kills,
+            comboLevel: this.comboLevel,
+            comboName: this.comboLevel >= 0 ? this.comboNames[this.comboLevel] : null,
+            multiplier: this.comboMultiplier,
+            nextThreshold: this.getNextThreshold()
+        };
+    }
+
+    getNextThreshold() {
+        const nextLevel = this.comboLevel + 1;
+        return nextLevel < this.comboThresholds.length ? this.comboThresholds[nextLevel] : null;
+    }
+
+    update() {
+        const currentTime = Date.now();
+        if (this.kills > 0 && currentTime - this.lastKillTime > this.comboTimeout) {
+            this.resetCombo();
+            return { comboLost: true };
+        }
+        return { comboLost: false };
     }
 }
 
