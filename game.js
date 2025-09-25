@@ -1801,6 +1801,10 @@ class Game {
             this.hideBossHealthBar();
         }
 
+        // Play kill sound and update combo
+        this.audioSystem.playSound('zombie_death');
+        const comboResult = this.comboSystem.addKill();
+
         // Apply rewards with combo multiplier
         const comboMultiplier = comboResult ? comboResult.multiplier : this.comboSystem.getComboData().multiplier;
         const finalScoreGain = Math.floor(scoreGain * comboMultiplier);
@@ -1813,10 +1817,6 @@ class Game {
         this.achievementSystem.checkAchievements('score', this.score);
         this.zombiesKilled++;
         this.killCount++; // Total kill counter for statistics
-
-        // Play kill sound and update combo
-        this.audioSystem.playSound('zombie_death');
-        const comboResult = this.comboSystem.addKill();
 
         // Combo level up feedback
         if (comboResult.levelUp) {
@@ -7328,16 +7328,20 @@ class AudioSystem {
         this.masterGain = null;
         this.soundEnabled = true;
         this.volume = 0.5;
+        this.audioContextInitialized = false;
 
-        this.initAudioContext();
+        // Don't initialize AudioContext immediately - wait for user interaction
     }
 
     initAudioContext() {
+        if (this.audioContextInitialized) return;
+
         try {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.masterGain = this.audioContext.createGain();
             this.masterGain.connect(this.audioContext.destination);
             this.masterGain.gain.setValueAtTime(this.volume, this.audioContext.currentTime);
+            this.audioContextInitialized = true;
         } catch (error) {
             console.warn('AudioContext not supported:', error);
             this.soundEnabled = false;
@@ -7405,6 +7409,11 @@ class AudioSystem {
 
     playSound(soundType, options = {}) {
         if (!this.soundEnabled) return;
+
+        // Initialize AudioContext on first user interaction
+        if (!this.audioContextInitialized) {
+            this.initAudioContext();
+        }
 
         this.resumeAudioContext();
 
