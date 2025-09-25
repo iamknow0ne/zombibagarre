@@ -557,10 +557,41 @@ class Game {
     
     init() {
         this.setupCanvas();
+        this.cacheDOMElements(); // Cache DOM elements for performance
         this.setupEventListeners();
         this.createPlayer();
         this.startGame();
         this.updateUI();
+    }
+
+    cacheDOMElements() {
+        // Cache frequently accessed DOM elements to avoid repeated getElementById calls
+        this.domElements = {
+            // UI Elements
+            levelNumber: document.getElementById('levelNumber'),
+            expValue: document.getElementById('expValue'),
+            expMax: document.getElementById('expMax'),
+            expBar: document.getElementById('expBar'),
+            healthBar: document.getElementById('healthBar'),
+            healthText: document.getElementById('healthText'),
+            waveNumber: document.getElementById('waveNumber'),
+            waveProgressBar: document.getElementById('waveProgressBar'),
+            waveProgressText: document.getElementById('waveProgressText'),
+            moneyValue: document.getElementById('moneyValue'),
+            currentWeapon: document.getElementById('currentWeapon'),
+            ammoCount: document.getElementById('ammoCount'),
+
+            // Boss Elements
+            bossHealthContainer: document.getElementById('bossHealthContainer'),
+            bossHealthBar: document.getElementById('bossHealthBar'),
+            bossHealthText: document.getElementById('bossHealthText'),
+            bossDisplayName: document.getElementById('bossDisplayName'),
+
+            // Game Over Elements
+            finalScore: document.getElementById('finalScore'),
+            finalWave: document.getElementById('finalWave'),
+            gameOver: document.getElementById('gameOver')
+        };
     }
 
     setupCanvas() {
@@ -606,6 +637,15 @@ class Game {
     }
     
     setupEventListeners() {
+        // Prevent mobile page scrolling and zoom
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) e.preventDefault(); // Prevent zoom
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Prevent scrolling
+        }, { passive: false });
+
         // Store listeners for cleanup
         const buySoldierHandler = (e) => {
             e.preventDefault();
@@ -1203,20 +1243,18 @@ class Game {
     updateBossHealthBar() {
         if (!this.currentBoss) return;
 
-        const bossHealthBar = document.getElementById('bossHealthBar');
-        const bossHealthText = document.getElementById('bossHealthText');
-
-        if (bossHealthBar && bossHealthText) {
+        const dom = this.domElements || {};
+        if (dom.bossHealthBar && dom.bossHealthText) {
             const healthPercentage = (this.currentBoss.health / this.currentBoss.maxHealth) * 100;
-            bossHealthBar.style.width = healthPercentage + '%';
-            bossHealthText.textContent = `${Math.ceil(this.currentBoss.health)}/${this.currentBoss.maxHealth}`;
+            dom.bossHealthBar.style.width = healthPercentage + '%';
+            dom.bossHealthText.textContent = `${Math.ceil(this.currentBoss.health)}/${this.currentBoss.maxHealth}`;
         }
     }
 
     hideBossHealthBar() {
-        const bossHealthContainer = document.getElementById('bossHealthContainer');
-        if (bossHealthContainer) {
-            bossHealthContainer.classList.add('hidden');
+        const dom = this.domElements || {};
+        if (dom.bossHealthContainer) {
+            dom.bossHealthContainer.classList.add('hidden');
             this.currentBoss = null;
         }
     }
@@ -1574,8 +1612,6 @@ class Game {
                     if (projectile.type === 'spit') {
                         for (let k = 0; k < 2; k++) {
                             this.particles.push(new Particle(this.player.x, this.player.y, '#00ff00', 'small', 'magic'));
-                        // Add weapon hit effect
-                        this.createWeaponHitEffect(zombie.x, zombie.y, bullet.type);
                         }
                     }
                     VisualEffects.addScreenShake(this, projectile.damage * 0.2, 150);
@@ -1592,13 +1628,13 @@ class Game {
                     // Apply hazard effects based on type
                     switch (hazard.type) {
                         case 'poison':
-                            this.player.takeDamage(hazard.damage * deltaTime / 1000);
+                            this.player.takeDamage(hazard.damage * 0.5); // Fixed damage per collision
                             this.player.poisoned = true;
                             this.player.poisonTime = 1000;
                             this.player.poisonDamage = hazard.damage * 0.5;
                             break;
                         case 'fire':
-                            this.player.takeDamage(hazard.damage * deltaTime / 1000);
+                            this.player.takeDamage(hazard.damage * 0.75); // Fixed damage per collision
                             this.player.burnDamage = hazard.damage * 0.3;
                             this.player.burnTime = 2000;
                             break;
@@ -3105,62 +3141,51 @@ class Game {
     
     updateUI() {
         try {
-            // Update level and experience
-            const levelEl = document.getElementById('levelNumber');
-            const expValueEl = document.getElementById('expValue');
-            const expMaxEl = document.getElementById('expMax');
+            // Use cached DOM elements for better performance
+            const dom = this.domElements || {};
 
-            if (levelEl) levelEl.textContent = this.level;
-            if (expValueEl) expValueEl.textContent = this.experience;
-            if (expMaxEl) expMaxEl.textContent = this.experienceToNextLevel;
+            // Update level and experience
+            if (dom.levelNumber) dom.levelNumber.textContent = this.level;
+            if (dom.expValue) dom.expValue.textContent = this.experience;
+            if (dom.expMax) dom.expMax.textContent = this.experienceToNextLevel;
 
             // Update experience bar
-            const expBar = document.getElementById('expBar');
-            if (expBar) {
+            if (dom.expBar) {
                 const expPercentage = (this.experience / this.experienceToNextLevel) * 100;
-                expBar.style.width = expPercentage + '%';
+                dom.expBar.style.width = expPercentage + '%';
             }
 
             // Update player health
-            if (this.player) {
-                const healthBar = document.getElementById('healthBar');
-                const healthText = document.getElementById('healthText');
-                if (healthBar && healthText) {
-                    const healthPercentage = (this.player.health / this.player.maxHealth) * 100;
-                    healthBar.style.width = healthPercentage + '%';
-                    healthText.textContent = `${Math.ceil(this.player.health)}/${this.player.maxHealth}`;
-                }
+            if (this.player && dom.healthBar && dom.healthText) {
+                const healthPercentage = (this.player.health / this.player.maxHealth) * 100;
+                dom.healthBar.style.width = healthPercentage + '%';
+                dom.healthText.textContent = `${Math.ceil(this.player.health)}/${this.player.maxHealth}`;
             }
 
             // Update wave info
-            const waveNumberEl = document.getElementById('waveNumber');
-            if (waveNumberEl) waveNumberEl.textContent = this.wave;
+            if (dom.waveNumber) dom.waveNumber.textContent = this.wave;
 
             // Update wave progress
-            const waveProgressBar = document.getElementById('waveProgressBar');
-            const waveProgressText = document.getElementById('waveProgressText');
-            if (waveProgressBar) {
+            if (dom.waveProgressBar) {
                 const waveProgress = this.zombiesKilled / this.zombiesInWave;
                 const waveProgressPercentage = Math.min(100, waveProgress * 100);
-                waveProgressBar.style.width = waveProgressPercentage + '%';
+                dom.waveProgressBar.style.width = waveProgressPercentage + '%';
             }
-            if (waveProgressText) {
-                waveProgressText.textContent = `${this.zombiesKilled}/${this.zombiesInWave} enemies`;
+            if (dom.waveProgressText) {
+                dom.waveProgressText.textContent = `${this.zombiesKilled}/${this.zombiesInWave} enemies`;
             }
 
-            // Update current weapon display in top bar
-            const currentWeaponEl = document.getElementById('currentWeapon');
-            const ammoCountEl = document.getElementById('ammoCount');
-            if (currentWeaponEl) {
+            // Update current weapon display in top bar (using cached elements)
+            if (dom.currentWeapon) {
                 if (this.weapons.length > 0) {
                     const primaryWeapon = this.weapons[0];
-                    currentWeaponEl.textContent = primaryWeapon.name.toUpperCase();
+                    dom.currentWeapon.textContent = primaryWeapon.name.toUpperCase();
                 } else {
-                    currentWeaponEl.textContent = 'RIFLE';
+                    dom.currentWeapon.textContent = 'RIFLE';
                 }
             }
-            if (ammoCountEl) {
-                ammoCountEl.textContent = '∞'; // Infinite ammo for now
+            if (dom.ammoCount) {
+                dom.ammoCount.textContent = '∞'; // Infinite ammo for now
             }
 
             // Update combat stats
@@ -3438,9 +3463,12 @@ class Game {
         // Save meta progression
         this.saveMetaProgression();
 
-        document.getElementById('finalScore').textContent = this.score;
-        document.getElementById('finalWave').textContent = this.wave;
-        document.getElementById('gameOver').classList.remove('hidden');
+        // Safe DOM updates with cached elements
+        const dom = this.domElements || {};
+
+        if (dom.finalScore) dom.finalScore.textContent = this.score;
+        if (dom.finalWave) dom.finalWave.textContent = this.wave;
+        if (dom.gameOver) dom.gameOver.classList.remove('hidden');
     }
     
     restart() {
