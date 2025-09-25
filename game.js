@@ -1096,9 +1096,9 @@ class Game {
         else if (this.wave >= 10) bossType = 'iron_colossus';
         else if (this.wave >= 5) bossType = 'horde_king';
 
-        // Spawn boss at center top of screen - increased distance for zoom-out
+        // Spawn boss at the CENTER of the stage for dramatic entrance
         const bossX = this.getCanvasWidth() / 2;
-        const bossY = -250; // Start further off screen for zoom-out view
+        const bossY = this.getCanvasHeight() / 2; // Center of the stage
 
         const boss = new Zombie(bossX, bossY, bossType, this);
         boss.isBossWaveSpawn = true; // Mark as official boss wave spawn for victory screen
@@ -4527,17 +4527,17 @@ class Zombie {
             case 'phase_walker': return Math.floor(baseHealth * 1.6); // Elite enemy
             case 'stalker': return Math.floor(baseHealth * 1.1); // Stealthy assassin
 
-            // 10 Boss Types - Challenging but fair health
-            case 'horde_king': return Math.floor(baseHealth * 20); // Wave 5 boss
-            case 'iron_colossus': return Math.floor(baseHealth * 30); // Wave 10 boss
-            case 'plague_mother': return Math.floor(baseHealth * 45); // Wave 15 boss
-            case 'shadow_reaper': return Math.floor(baseHealth * 60); // Wave 20 boss
-            case 'flame_berserker': return Math.floor(baseHealth * 80); // Wave 25 boss
-            case 'crystal_guardian': return Math.floor(baseHealth * 100); // Wave 30 boss
-            case 'void_spawner': return Math.floor(baseHealth * 125); // Wave 35 boss
-            case 'thunder_titan': return Math.floor(baseHealth * 150); // Wave 40 boss
-            case 'ice_queen': return Math.floor(baseHealth * 200); // Wave 45 boss
-            case 'final_nightmare': return Math.floor(baseHealth * 300); // Wave 50 final boss
+            // 10 Boss Types - EPIC TANK HEALTH (10x stronger than before!)
+            case 'horde_king': return Math.floor(baseHealth * 200); // Wave 5 boss (was 20x, now 200x)
+            case 'iron_colossus': return Math.floor(baseHealth * 300); // Wave 10 boss (was 30x, now 300x)
+            case 'plague_mother': return Math.floor(baseHealth * 450); // Wave 15 boss (was 45x, now 450x)
+            case 'shadow_reaper': return Math.floor(baseHealth * 600); // Wave 20 boss (was 60x, now 600x)
+            case 'flame_berserker': return Math.floor(baseHealth * 800); // Wave 25 boss (was 80x, now 800x)
+            case 'crystal_guardian': return Math.floor(baseHealth * 1000); // Wave 30 boss (was 100x, now 1000x)
+            case 'void_spawner': return Math.floor(baseHealth * 1250); // Wave 35 boss (was 125x, now 1250x)
+            case 'thunder_titan': return Math.floor(baseHealth * 1500); // Wave 40 boss (was 150x, now 1500x)
+            case 'ice_queen': return Math.floor(baseHealth * 2000); // Wave 45 boss (was 200x, now 2000x)
+            case 'final_nightmare': return Math.floor(baseHealth * 3000); // Wave 50 final boss (was 300x, now 3000x)
 
             default: return baseHealth;
         }
