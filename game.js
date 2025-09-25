@@ -9,10 +9,10 @@ class Game {
         this.wave = 1;
         this.score = 0;
         this.gameStartTime = Date.now(); // Track game start time for survival timer
-        this.money = 100;  // Balanced starting money
-        this.soldierCost = 100;  // Proper soldier cost progression
-        this.upgradeCost = 200; // Challenging upgrade costs
-        this.speedCost = 150;
+        this.money = 150;  // Balanced starting money for meaningful choices
+        this.soldierCost = 75;  // Affordable soldier cost progression
+        this.upgradeCost = 125; // Reasonable upgrade costs
+        this.speedCost = 100;
         this.damageMultiplier = 1;
         this.speedMultiplier = 1;
 
@@ -52,7 +52,7 @@ class Game {
         this.hazards = []; // Initialize hazards array
 
         // Wave management
-        this.zombiesInWave = 25; // Start with challenging first wave
+        this.zombiesInWave = 10; // Match wave 1 calculation: 8 + (1*2.5) + 0 = 10
         this.zombiesSpawned = 0;
         this.zombiesKilled = 0;
         this.killCount = 0; // Total kill counter
@@ -343,7 +343,7 @@ class Game {
             // Restore game progress
             this.wave = gameState.wave || 1;
             this.score = gameState.score || 0;
-            this.money = gameState.money || 75;
+            this.money = gameState.money || 150;
             this.level = gameState.level || 1;
             this.experience = gameState.experience || 0;
             this.experienceToNextLevel = gameState.experienceToNextLevel || 100;
@@ -607,9 +607,21 @@ class Game {
     
     setupEventListeners() {
         // Store listeners for cleanup
-        const buySoldierHandler = () => this.buySoldier();
-        const upgradeDamageHandler = () => this.upgradeDamage();
-        const upgradeSpeedHandler = () => this.upgradeSpeed();
+        const buySoldierHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.buySoldier();
+        };
+        const upgradeDamageHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.upgradeDamage();
+        };
+        const upgradeSpeedHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.upgradeSpeed();
+        };
         const pauseHandler = () => this.togglePause();
         const restartHandler = () => this.restart();
         const resumeHandler = () => this.resumeGame();
@@ -668,9 +680,19 @@ class Game {
             const pauseEl = document.getElementById('pauseBtn');
             const restartEl = document.getElementById('restartBtn');
 
-            buySoldierEl?.addEventListener('click', buySoldierHandler);
-            upgradeDamageEl?.addEventListener('click', upgradeDamageHandler);
-            upgradeSpeedEl?.addEventListener('click', upgradeSpeedHandler);
+            if (buySoldierEl) {
+                buySoldierEl.addEventListener('click', buySoldierHandler);
+                buySoldierEl.addEventListener('touchend', buySoldierHandler);
+            }
+            if (upgradeDamageEl) {
+                upgradeDamageEl.addEventListener('click', upgradeDamageHandler);
+                upgradeDamageEl.addEventListener('touchend', upgradeDamageHandler);
+            }
+            if (upgradeSpeedEl) {
+                upgradeSpeedEl.addEventListener('click', upgradeSpeedHandler);
+                upgradeSpeedEl.addEventListener('touchend', upgradeSpeedHandler);
+            }
+
             pauseEl?.addEventListener('click', pauseHandler);
             restartEl?.addEventListener('click', restartHandler);
             window.addEventListener('keydown', keydownHandler);
@@ -679,9 +701,18 @@ class Game {
 
             // Store for cleanup (only valid elements)
             this.eventListeners.push(
-                ...(buySoldierEl ? [{ element: buySoldierEl, event: 'click', handler: buySoldierHandler }] : []),
-                ...(upgradeDamageEl ? [{ element: upgradeDamageEl, event: 'click', handler: upgradeDamageHandler }] : []),
-                ...(upgradeSpeedEl ? [{ element: upgradeSpeedEl, event: 'click', handler: upgradeSpeedHandler }] : []),
+                ...(buySoldierEl ? [
+                    { element: buySoldierEl, event: 'click', handler: buySoldierHandler },
+                    { element: buySoldierEl, event: 'touchend', handler: buySoldierHandler }
+                ] : []),
+                ...(upgradeDamageEl ? [
+                    { element: upgradeDamageEl, event: 'click', handler: upgradeDamageHandler },
+                    { element: upgradeDamageEl, event: 'touchend', handler: upgradeDamageHandler }
+                ] : []),
+                ...(upgradeSpeedEl ? [
+                    { element: upgradeSpeedEl, event: 'click', handler: upgradeSpeedHandler },
+                    { element: upgradeSpeedEl, event: 'touchend', handler: upgradeSpeedHandler }
+                ] : []),
                 ...(pauseEl ? [{ element: pauseEl, event: 'click', handler: pauseHandler }] : []),
                 ...(restartEl ? [{ element: restartEl, event: 'click', handler: restartHandler }] : []),
                 { element: window, event: 'keydown', handler: keydownHandler },
@@ -1028,16 +1059,14 @@ class Game {
 
         // Check wave-based achievements
         this.achievementSystem.checkAchievements('wave', this.wave);
-        // Balanced horde scaling for challenging but fair gameplay
-        // Progressive horde growth with reasonable difficulty curve
-        const baseSize = 15; // Start with manageable numbers
-        const growthFactor = this.wave < 5 ? 5 :
-                           this.wave < 10 ? 8 :
-                           this.wave < 15 ? 12 :
-                           this.wave < 20 ? 18 :
-                           this.wave < 30 ? 25 :
-                           this.wave < 40 ? 35 : 50;
-        this.zombiesInWave = Math.floor(baseSize + this.wave * growthFactor); // Balanced exponential growth
+
+        // Balanced and predictable wave progression
+        // Each wave adds reasonable amounts for sustainable difficulty
+        const baseSize = 8; // Reasonable starting base
+        const waveMultiplier = Math.floor(this.wave * 2.5); // Steady linear growth
+        const exponentialBonus = Math.floor(this.wave / 5) * 3; // Small bonus every 5 waves
+
+        this.zombiesInWave = baseSize + waveMultiplier + exponentialBonus;
         this.zombiesSpawned = 0;
         this.zombiesKilled = 0;
         this.nextWaveTime = 0;
@@ -1045,8 +1074,8 @@ class Game {
         // Check if this is a boss wave (every 5 waves)
         if (this.wave % 5 === 0) {
             this.spawnBoss();
-            // Boss waves have fewer regular enemies
-            this.zombiesInWave = Math.floor(this.zombiesInWave * 0.5);
+            // Boss waves keep the same zombie count for consistent progression
+            // The boss is an additional challenge, not a replacement
         }
 
         this.updateUI();
@@ -1813,8 +1842,10 @@ class Game {
         this.score += finalScoreGain;
         this.money += finalMoneyGain;
 
-        // Check score-based achievements
-        this.achievementSystem.checkAchievements('score', this.score);
+        // Check score-based achievements (throttled - only check every 10 kills to prevent spam)
+        if (this.killCount % 10 === 0) {
+            this.achievementSystem.checkAchievements('score', this.score);
+        }
         this.zombiesKilled++;
         this.killCount++; // Total kill counter for statistics
 
@@ -1842,8 +1873,10 @@ class Game {
 
         this.gainExperience(expGain);
 
-        // Check kill-based achievements
-        this.achievementSystem.checkAchievements('kills', this.killCount);
+        // Check kill-based achievements (throttled - only check every 5 kills to prevent spam)
+        if (this.killCount % 5 === 0 || this.killCount === 1) { // Always check first kill for "First Blood"
+            this.achievementSystem.checkAchievements('kills', this.killCount);
+        }
 
         // Update meta progression
         this.metaProgression.statistics.totalKills++;
@@ -3420,10 +3453,10 @@ class Game {
         this.wave = 1;
         this.score = 0;
         this.gameStartTime = Date.now(); // Reset survival timer
-        this.money = 100;  // Balanced starting money
-        this.soldierCost = 100;
-        this.upgradeCost = 200;
-        this.speedCost = 150;
+        this.money = 150;  // Balanced starting money for meaningful choices
+        this.soldierCost = 75;
+        this.upgradeCost = 125;
+        this.speedCost = 100;
         this.damageMultiplier = 1;
         this.speedMultiplier = 1;
         
@@ -3448,7 +3481,7 @@ class Game {
         this.passiveItems = [];
         this.evolvedWeapons = [];
 
-        this.zombiesInWave = 25; // Challenging restart
+        this.zombiesInWave = 10; // Match wave 1 calculation: 8 + (1*2.5) + 0 = 10
         this.zombiesSpawned = 0;
         this.zombiesKilled = 0;
         this.killCount = 0; // Reset total kill counter
@@ -6823,9 +6856,10 @@ class MobileControls {
         const upgradeDamageBtn = document.getElementById('upgradeDamageMobileBtn');
         const upgradeSpeedBtn = document.getElementById('upgradeSpeedMobileBtn');
 
-        // Update soldier buy button (cost: 75)
+        // Update soldier buy button (use actual cost)
         if (buyBtn) {
-            if (this.game.money >= 75 && this.game.soldiers.length < 10) {
+            const adjustedSoldierCost = this.game.getAdjustedUpgradeCost(this.game.soldierCost);
+            if (this.game.money >= adjustedSoldierCost && this.game.soldiers.length < 10) {
                 buyBtn.style.opacity = '1';
                 buyBtn.style.filter = 'none';
             } else {
@@ -6834,9 +6868,10 @@ class MobileControls {
             }
         }
 
-        // Update damage upgrade button (cost: 150)
+        // Update damage upgrade button (use actual cost)
         if (upgradeDamageBtn) {
-            if (this.game.money >= 150) {
+            const adjustedUpgradeCost = this.game.getAdjustedUpgradeCost(this.game.upgradeCost);
+            if (this.game.money >= adjustedUpgradeCost) {
                 upgradeDamageBtn.style.opacity = '1';
                 upgradeDamageBtn.style.filter = 'none';
             } else {
@@ -6845,9 +6880,10 @@ class MobileControls {
             }
         }
 
-        // Update speed upgrade button (cost: 100)
+        // Update speed upgrade button (use actual cost)
         if (upgradeSpeedBtn) {
-            if (this.game.money >= 100) {
+            const adjustedSpeedCost = this.game.getAdjustedUpgradeCost(this.game.speedCost);
+            if (this.game.money >= adjustedSpeedCost) {
                 upgradeSpeedBtn.style.opacity = '1';
                 upgradeSpeedBtn.style.filter = 'none';
             } else {

@@ -726,6 +726,7 @@ body {
     display: flex;
     gap: 12px;
     z-index: 100;
+    pointer-events: auto;
 }
 
 .action-btn {
@@ -742,6 +743,7 @@ body {
     color: white;
     min-width: 90px;
     backdrop-filter: blur(8px);
+    pointer-events: auto;
 }
 
 .action-btn:hover {
