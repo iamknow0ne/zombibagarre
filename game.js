@@ -5,21 +5,21 @@ class Game {
         this.isRunning = false;
         this.isPaused = false;
         
-        // Game state - Demo optimized for client engagement
+        // Game state - Properly balanced for challenging gameplay
         this.wave = 1;
         this.score = 0;
         this.gameStartTime = Date.now(); // Track game start time for survival timer
-        this.money = 150;  // More starting money for immediate demo engagement
-        this.soldierCost = 75;  // Balanced costs for demo flow
-        this.upgradeCost = 120; // Slightly reduced for better demo flow
-        this.speedCost = 80;
+        this.money = 100;  // Balanced starting money
+        this.soldierCost = 100;  // Proper soldier cost progression
+        this.upgradeCost = 200; // Challenging upgrade costs
+        this.speedCost = 150;
         this.damageMultiplier = 1;
         this.speedMultiplier = 1;
 
-        // Experience and Level System - Demo optimized
+        // Experience and Level System - Properly balanced
         this.experience = 0;
         this.level = 1;
-        this.experienceToNextLevel = 80; // Faster leveling for demo engagement
+        this.experienceToNextLevel = 150; // Balanced leveling progression
         this.levelUpPending = false;
 
         // Weapon and Item System
@@ -990,9 +990,9 @@ class Game {
         // Check collisions
         this.checkCollisions();
         
-        // Spawn powerups occasionally
+        // Spawn powerups rarely - balanced for challenge
         this.powerupSpawnTimer += deltaTime;
-        if (this.powerupSpawnTimer > 3000 + Math.random() * 4000) {
+        if (this.powerupSpawnTimer > 12000 + Math.random() * 8000) { // 12-20 seconds instead of 3-7 seconds
             this.spawnPowerup();
             this.powerupSpawnTimer = 0;
         }
@@ -1762,7 +1762,7 @@ class Game {
         // Base rewards with wave scaling for balance
         let scoreGain = zombie.scoreValue;
         let moneyGain = zombie.moneyValue;
-        let expGain = zombie.experienceValue || 10;
+        let expGain = zombie.experienceValue || 6;
 
         // Resource depletion mechanic - rewards decrease over time but spike at milestones
         const depletionFactor = Math.max(0.6, 1 - (this.wave * 0.015)); // Gradual reduction
@@ -2053,7 +2053,7 @@ class Game {
         }
 
         // More balanced scaling - starts slower, gets progressively harder but stays fun
-        this.experienceToNextLevel = Math.floor(100 * Math.pow(1.25, this.level - 1)); // Better exponential scaling
+        this.experienceToNextLevel = Math.floor(150 * Math.pow(1.35, this.level - 1)); // Proper challenging exponential scaling
         this.levelUpPending = true;
         this.isPaused = true; // Pause game for level up choice
         this.showLevelUpChoices();
@@ -3420,10 +3420,10 @@ class Game {
         this.wave = 1;
         this.score = 0;
         this.gameStartTime = Date.now(); // Reset survival timer
-        this.money = 75;  // Match reasonable starting money
-        this.soldierCost = 75;
-        this.upgradeCost = 150;
-        this.speedCost = 100;
+        this.money = 100;  // Balanced starting money
+        this.soldierCost = 100;
+        this.upgradeCost = 200;
+        this.speedCost = 150;
         this.damageMultiplier = 1;
         this.speedMultiplier = 1;
         
@@ -3440,7 +3440,7 @@ class Game {
         // Reset level/experience system
         this.experience = 0;
         this.level = 1;
-        this.experienceToNextLevel = 100;
+        this.experienceToNextLevel = 150;
         this.levelUpPending = false;
 
         // Reset weapon/item system
@@ -4620,37 +4620,37 @@ class Zombie {
 
     getExperienceValue() {
         switch (this.type) {
-            // Original types
-            case 'fast': return 15;
-            case 'tank': return 30;
-            case 'boss': return 75;
-            case 'mega_boss': return 150;
+            // Original types - Reduced for balanced progression
+            case 'fast': return 8;
+            case 'tank': return 18;
+            case 'boss': return 45;
+            case 'mega_boss': return 85;
 
-            // New 10 Monster Types
-            case 'crawler': return 8; // Low exp swarm
-            case 'brute': return 40; // High exp tank
-            case 'spitter': return 20; // Medium exp ranged
-            case 'jumper': return 25; // Teleporter exp
-            case 'shielder': return 35; // Protected unit exp
-            case 'exploder': return 30; // Bomber exp
-            case 'healer': return 50; // Support exp
-            case 'summoner': return 60; // Spawner exp
-            case 'phase_walker': return 45; // Phasing exp
-            case 'stalker': return 38; // Stealth exp
+            // New 10 Monster Types - Reduced for proper challenge
+            case 'crawler': return 4; // Low exp swarm
+            case 'brute': return 22; // High exp tank
+            case 'spitter': return 12; // Medium exp ranged
+            case 'jumper': return 14; // Teleporter exp
+            case 'shielder': return 20; // Protected unit exp
+            case 'exploder': return 16; // Bomber exp
+            case 'healer': return 25; // Support exp
+            case 'summoner': return 30; // Spawner exp
+            case 'phase_walker': return 24; // Phasing exp
+            case 'stalker': return 20; // Stealth exp
 
-            // 10 Boss Types - High experience rewards
-            case 'horde_king': return 200; // Wave 5 boss
-            case 'iron_colossus': return 300; // Wave 10 boss
-            case 'plague_mother': return 400; // Wave 15 boss
-            case 'shadow_reaper': return 500; // Wave 20 boss
-            case 'flame_berserker': return 625; // Wave 25 boss
-            case 'crystal_guardian': return 750; // Wave 30 boss
-            case 'void_spawner': return 875; // Wave 35 boss
-            case 'thunder_titan': return 1000; // Wave 40 boss
-            case 'ice_queen': return 1125; // Wave 45 boss
-            case 'final_nightmare': return 1250; // Wave 50 final boss
+            // 10 Boss Types - Balanced experience rewards
+            case 'horde_king': return 120; // Wave 5 boss
+            case 'iron_colossus': return 180; // Wave 10 boss
+            case 'plague_mother': return 240; // Wave 15 boss
+            case 'shadow_reaper': return 300; // Wave 20 boss
+            case 'flame_berserker': return 375; // Wave 25 boss
+            case 'crystal_guardian': return 450; // Wave 30 boss
+            case 'void_spawner': return 525; // Wave 35 boss
+            case 'thunder_titan': return 600; // Wave 40 boss
+            case 'ice_queen': return 675; // Wave 45 boss
+            case 'final_nightmare': return 750; // Wave 50 final boss
 
-            default: return 10;
+            default: return 6; // Basic zombie exp - reduced for balance
         }
     }
     
