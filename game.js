@@ -3022,12 +3022,9 @@ class Game {
         this.ctx.shadowBlur = 0;
         this.ctx.shadowColor = 'transparent';
         this.ctx.globalAlpha = 1.0;
-
-        // DEBUG: Render test rectangle to verify canvas is working
-        this.ctx.fillStyle = '#ff0000';
-        this.ctx.fillRect(100, 100, 50, 50);
-        this.ctx.fillStyle = '#00ff00';
-        this.ctx.fillRect(200, 200, 50, 50);
+        this.ctx.globalCompositeOperation = 'source-over'; // CRITICAL: Reset blend mode
+        this.ctx.filter = 'none'; // Reset any filters
+        this.ctx.setLineDash([]); // Reset line dash
 
         // Render game objects (back to front) - Optimized for demo performance
         for (let i = 0; i < this.particles.length; i++) {
@@ -3083,18 +3080,6 @@ class Game {
 
         // Render player
         if (this.player) {
-            // DEBUG: Log rendering info periodically
-            if (!this._debugCounter) this._debugCounter = 0;
-            this._debugCounter++;
-            if (this._debugCounter === 60) {
-                console.log('Render debug:', {
-                    playerPos: `(${Math.floor(this.player.x)}, ${Math.floor(this.player.y)})`,
-                    canvasSize: `${this.getCanvasWidth()}x${this.getCanvasHeight()}`,
-                    zombieCount: this.zombies.length,
-                    playerSize: `${this.player.width}x${this.player.height}`
-                });
-                this._debugCounter = 0;
-            }
             this.player.render(this.ctx);
 
             // Render vehicles and drones - Optimized
