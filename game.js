@@ -3018,6 +3018,17 @@ class Game {
         // Render background effects (affected by zoom)
         VisualEffects.renderBackgroundEffects(this, this.ctx);
 
+        // CRITICAL: Reset canvas state before rendering game objects
+        this.ctx.shadowBlur = 0;
+        this.ctx.shadowColor = 'transparent';
+        this.ctx.globalAlpha = 1.0;
+
+        // DEBUG: Render test rectangle to verify canvas is working
+        this.ctx.fillStyle = '#ff0000';
+        this.ctx.fillRect(100, 100, 50, 50);
+        this.ctx.fillStyle = '#00ff00';
+        this.ctx.fillRect(200, 200, 50, 50);
+
         // Render game objects (back to front) - Optimized for demo performance
         for (let i = 0; i < this.particles.length; i++) {
             this.particles[i].render(this.ctx);
