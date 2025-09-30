@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Zombie Bagarre</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧟</text></svg>">
+    <link rel="stylesheet" href="style-v1.css">
+</head>
+<body>
+    <!-- V1 LEGACY VERSION - Canvas 2D -->
+    <div id="gameContainer">
+        <!-- Game HUD - Top Bar Design -->
+        <div id="gameHUD">
+            <!-- Main Top Bar -->
+            <div id="topBar">
+                <!-- Left Section: Health & XP -->
+                <div class="hud-section left-section">
+                    <div class="health-container">
+                        <div class="health-bar">
+                            <div class="health-fill" id="healthBar"></div>
+                        </div>
+                        <span class="health-text" id="healthText">200/200</span>
+                    </div>
+                    <div class="xp-container">
+                        <div class="xp-bar">
+                            <div class="xp-fill" id="expBar"></div>
+                        </div>
+                        <span class="level-text">LVL <span id="levelNumber">1</span></span>
+                    </div>
+                </div>
+
+                <!-- Center Section: Wave Progress -->
+                <div class="hud-section center-section">
+                    <div class="wave-info">
+                        <span class="wave-label">WAVE</span>
+                        <span class="wave-number" id="waveNumber">1</span>
+                    </div>
+                    <div class="wave-progress">
+                        <div class="wave-bar">
+                            <div class="wave-fill" id="waveProgressBar"></div>
+                        </div>
+                        <span class="wave-text" id="waveProgressText">0/15 enemies</span>
+                    </div>
+                </div>
+
+                <!-- Right Section: Weapon & Money -->
+                <div class="hud-section right-section">
+                    <div class="weapon-info">
+                        <span class="weapon-name" id="currentWeapon">RIFLE</span>
+                        <span class="ammo-count" id="ammoCount">∞</span>
+                    </div>
+                    <div class="money-container">
+                        <span class="money-icon">💰</span>
+                        <span class="money-value" id="moneyValue">150</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Quick Actions (Outside gameHUD to avoid pointer-events: none) -->
+        <div id="bottomActions">
+                <button id="buySoldier" class="action-btn">
+                    <span class="btn-label">Buy Soldier</span>
+                    <span class="btn-cost">$75</span>
+                </button>
+                <button id="upgradeDamage" class="action-btn">
+                    <span class="btn-label">Upgrade DMG</span>
+                    <span class="btn-cost">$125</span>
+                </button>
+                <button id="upgradeSpeed" class="action-btn">
+                    <span class="btn-label">Upgrade SPD</span>
+                    <span class="btn-cost">$100</span>
+                </button>
+                <button id="pauseBtn" class="action-btn pause-btn">
+                    <span class="btn-label">Menu</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Enhanced Pause Menu (will show detailed stats) -->
+        <div id="pauseMenu" class="menu-overlay" style="display: none;">
+            <div class="menu-content">
+                <h2>Game Menu</h2>
+
+                <div class="menu-tabs">
+                    <button class="tab-btn active" data-tab="stats">Stats</button>
+                    <button class="tab-btn" data-tab="build">Build</button>
+                    <button class="tab-btn" data-tab="settings">Settings</button>
+                </div>
+
+                <!-- Stats Tab -->
+                <div class="tab-content active" id="statsTab">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-label">Survival Time</span>
+                            <span class="stat-value" id="survivalTimeValue">0:00</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Score</span>
+                            <span class="stat-value" id="scoreValue">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Kills</span>
+                            <span class="stat-value" id="killCountValue">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Character</span>
+                            <span class="stat-value" id="characterValue">SOLDIER</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Damage Multi</span>
+                            <span class="stat-value" id="damageMultValue">1.0x</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Speed Multi</span>
+                            <span class="stat-value" id="speedMultValue">1.0x</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Soldiers</span>
+                            <span class="stat-value" id="soldierCount">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Powerups</span>
+                            <span class="stat-value" id="powerupCount">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">XP</span>
+                            <span class="stat-value"><span id="expValue">0</span>/<span id="expMax">100</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Build Tab -->
+                <div class="tab-content" id="buildTab">
+                    <div class="build-section">
+                        <h3>Weapons</h3>
+                        <div id="weaponsList" class="item-list">
+                            <!-- Weapons will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="build-section">
+                        <h3>Passive Items</h3>
+                        <div id="passivesList" class="item-list">
+                            <!-- Passives will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div class="tab-content" id="settingsTab">
+                    <div class="settings-group">
+                        <h3>Controls</h3>
+                        <p>WASD or Arrow Keys to move</p>
+                        <p>Automatic shooting</p>
+                        <p>P or Menu button to pause</p>
+                    </div>
+                </div>
+
+                <div class="menu-actions">
+                    <button id="resumeBtn" class="menu-btn primary">Resume</button>
+                    <button id="saveBtn" class="menu-btn save">Save Game (Ctrl+S)</button>
+                    <button id="loadBtn" class="menu-btn load">Load Game (Ctrl+L)</button>
+                    <button id="restartBtn" class="menu-btn">Restart</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Effects (minimal floating) -->
+        <div id="statusEffects">
+            <!-- Status effects will be added dynamically -->
+        </div>
+
+        <!-- Combo Display -->
+        <div id="comboDisplay" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100;">
+            <div id="comboMultiplier" style="color: #fff; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);"></div>
+        </div>
+
+        <!-- Mobile Touch Controls -->
+        <div id="mobileControls" class="mobile-only">
+            <div id="joystickTouchArea"></div>
+            <div id="virtualJoystick">
+                <div id="joystickBase"></div>
+                <div id="joystickKnob"></div>
+            </div>
+            <div id="mobileButtons">
+                <button id="pauseMobileBtn" class="mobile-btn">⏸</button>
+                <button id="buyMobileBtn" class="mobile-btn">👥</button>
+                <button id="upgradeDamageMobileBtn" class="mobile-btn">⚔</button>
+                <button id="upgradeSpeedMobileBtn" class="mobile-btn">⚡</button>
+            </div>
+        </div>
+
+        <!-- Mobile HUD -->
+        <div id="mobileHUD" class="mobile-only">
+            <div id="mobileTopBar">
+                <div class="mobile-stat">
+                    <span class="mobile-label">LV</span>
+                    <span id="mobileLevelNumber">1</span>
+                </div>
+                <div class="mobile-stat">
+                    <span class="mobile-label">HP</span>
+                    <span id="mobileHealth">200</span>
+                </div>
+                <div class="mobile-stat">
+                    <span class="mobile-label">W</span>
+                    <span id="mobileWave">1</span>
+                </div>
+                <div class="mobile-stat">
+                    <span class="mobile-label">⏰</span>
+                    <span id="mobileTime">0:00</span>
+                </div>
+            </div>
+            <div id="mobileBottomBar">
+                <div class="mobile-resource">
+                    <span>💰</span>
+                    <span id="mobileMoney">50</span>
+                </div>
+                <div class="mobile-resource">
+                    <span>⚔</span>
+                    <span id="mobileWeapons">1</span>
+                </div>
+                <div class="mobile-resource">
+                    <span>💀</span>
+                    <span id="mobileKills">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Boss Warning Overlay -->
+        <div id="bossWarning" class="hidden">
+            <div class="boss-warning-content">
+                <h1>⚠ BOSS INCOMING ⚠</h1>
+                <p id="bossName">Ancient Evil Awakens</p>
+            </div>
+        </div>
+
+        <!-- Boss Victory Overlay -->
+        <div id="bossVictory" class="hidden">
+            <div class="boss-victory-content">
+                <div class="retro-logo">
+                    <h1 class="logo-text">ZOMBIE</h1>
+                    <h1 class="logo-text logo-bagarre">BAGARRE</h1>
+                </div>
+                <div class="victory-details">
+                    <p class="victory-message">BOSS ELIMINATED!</p>
+                    <p class="special-item" id="specialItemText">Special Item Acquired!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Boss Health Bar - Souls-like -->
+        <div id="bossHealthContainer" class="hidden">
+            <div class="boss-health-bar">
+                <div class="boss-name" id="bossDisplayName">ANCIENT EVIL</div>
+                <div class="boss-health-wrapper">
+                    <div class="boss-health-bg">
+                        <div class="boss-health-fill" id="bossHealthBar"></div>
+                        <div class="boss-health-text">
+                            <span id="bossHealthText">10000/10000</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Splash Screen -->
+        <div id="splashScreen">
+            <div class="splash-background"></div>
+            <div class="splash-content">
+                <div class="game-title">
+                    <h1 class="title-zombie">ZOMBIE</h1>
+                    <h1 class="title-bagarre">BAGARRE</h1>
+                </div>
+                <div class="splash-subtitle">
+                    <p>Survive the undead apocalypse</p>
+                </div>
+                <div class="splash-buttons">
+                    <button id="startGameBtn" class="splash-btn primary">START GAME</button>
+                    <button id="continueGameBtn" class="splash-btn continue hidden">CONTINUE GAME</button>
+                    <button id="selectCharacterBtn" class="splash-btn secondary">SELECT CHARACTER</button>
+                </div>
+                <div class="splash-credits">
+                    <p>Made with ❤️ by VibeCoding</p>
+                    <p style="font-size: 12px; color: #888; margin-top: 5px;">v2.0.3 - Legacy Canvas 2D</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Character Selection Screen -->
+        <div id="characterSelection" class="hidden">
+            <div class="character-background"></div>
+            <div class="character-content">
+                <div class="character-header">
+                    <h2 class="character-title">CHOOSE YOUR SURVIVOR</h2>
+                    <p class="character-subtitle">Each character has unique stats and abilities</p>
+                </div>
+
+                <div class="characters-grid">
+                    <div class="character-card" data-character="soldier">
+                        <div class="character-portrait">
+                            <div class="character-icon">🪖</div>
+                        </div>
+                        <div class="character-info">
+                            <h3 class="character-name">SOLDIER</h3>
+                            <p class="character-description">Balanced fighter with rifle</p>
+                            <div class="character-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Health</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 60%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Speed</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 70%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Damage</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="character-weapon">
+                                <span>🔫 Starts with: Rifle</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="character-card" data-character="commando">
+                        <div class="character-portrait">
+                            <div class="character-icon">💀</div>
+                        </div>
+                        <div class="character-info">
+                            <h3 class="character-name">COMMANDO</h3>
+                            <p class="character-description">High damage, slower movement</p>
+                            <div class="character-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Health</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 80%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Speed</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 40%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Damage</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="character-weapon">
+                                <span>💥 Starts with: Shotgun</span>
+                            </div>
+                            <div class="character-unlock">
+                                <span>🔒 Unlock: Reach Wave 10</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="character-card" data-character="scout">
+                        <div class="character-portrait">
+                            <div class="character-icon">⚡</div>
+                        </div>
+                        <div class="character-info">
+                            <h3 class="character-name">SCOUT</h3>
+                            <p class="character-description">Fast and agile</p>
+                            <div class="character-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Health</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 40%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Speed</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Damage</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 45%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="character-weapon">
+                                <span>🔫 Starts with: Machine Gun</span>
+                            </div>
+                            <div class="character-unlock">
+                                <span>🔒 Unlock: Kill 500 Zombies</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="character-card" data-character="engineer">
+                        <div class="character-portrait">
+                            <div class="character-icon">🔧</div>
+                        </div>
+                        <div class="character-info">
+                            <h3 class="character-name">ENGINEER</h3>
+                            <p class="character-description">Tech specialist with drone</p>
+                            <div class="character-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Health</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 55%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Speed</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 60%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Damage</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="character-weapon">
+                                <span>⚡ Starts with: Laser + Drone</span>
+                            </div>
+                            <div class="character-unlock">
+                                <span>🔒 Unlock: Collect 50 Powerups</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="character-card" data-character="tank">
+                        <div class="character-portrait">
+                            <div class="character-icon">🛡️</div>
+                        </div>
+                        <div class="character-info">
+                            <h3 class="character-name">TANK</h3>
+                            <p class="character-description">Heavy armor, devastating power</p>
+                            <div class="character-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Health</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Speed</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 30%"></div>
+                                    </div>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Damage</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-fill" style="width: 70%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="character-weapon">
+                                <span>🚀 Starts with: Rocket Launcher</span>
+                            </div>
+                            <div class="character-unlock">
+                                <span>🔒 Unlock: Survive 30 Minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="character-actions">
+                    <button id="selectCharacterBtn2" class="character-btn primary disabled">SELECT CHARACTER</button>
+                    <button id="backToMenuBtn" class="character-btn secondary">BACK TO MENU</button>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+        <div id="gameOver" class="hidden">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Waves Survived: <span id="finalWave">0</span></p>
+            <button id="restartBtn" class="btn">Play Again</button>
+        </div>
+    </div>
+    <script src="game-v1.js"></script>
+</body>
+</html>

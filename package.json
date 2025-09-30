@@ -1,0 +1,18 @@
+{
+  "name": "zombie-bagarre-3d",
+  "version": "3.0.0",
+  "description": "Zombie Bagarre - Three.js 3D Edition",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.11",
+    "vite-plugin-glsl": "^1.3.0"
+  }
+}
