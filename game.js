@@ -16,10 +16,10 @@ class Game {
         this.damageMultiplier = 1;
         this.speedMultiplier = 1;
 
-        // Experience and Level System - Properly balanced
+        // Experience and Level System - PHASE 2.1: Linear scaling
         this.experience = 0;
         this.level = 1;
-        this.experienceToNextLevel = 150; // Balanced leveling progression
+        this.experienceToNextLevel = 150; // First level: 100 + (50*1) = 150
         this.levelUpPending = false;
 
         // Weapon and Item System
@@ -58,6 +58,7 @@ class Game {
         this.killCount = 0; // Total kill counter
         this.waveDelay = 2000; // Shorter delay for faster paced challenge
         this.nextWaveTime = 0;
+        this.eliteSpawnChance = 0.1; // PHASE 1.2: Elite enemy spawn rate
 
         // Controls
         this.keys = {};
@@ -74,6 +75,14 @@ class Game {
 
         // Treasure Chest System
         this.treasureChests = [];
+
+        // PHASE 1.1: Boss Arena System
+        this.bossArenaActive = false;
+        this.arenaFogWalls = [];
+        this.inBossTransition = false;
+
+        // PHASE 4.2: Damage Numbers System
+        this.floatingTexts = [];
 
         // Visual Effects System
         this.screenShake = { intensity: 0, duration: 0 };
@@ -854,9 +863,8 @@ class Game {
     }
 
     getAdjustedUpgradeCost(baseCost) {
-        // Wave-based cost inflation - becomes expensive in late game
-        const inflationRate = 1 + Math.min(1.5, this.wave * 0.03); // Cap at 2.5x cost
-        return Math.floor(baseCost * inflationRate);
+        // PHASE 1.3: REMOVED wave-based inflation - costs stay constant
+        return baseCost;
     }
     
     togglePause() {
@@ -1030,6 +1038,19 @@ class Game {
             }
         }
 
+        // PHASE 4.2: Update floating damage numbers
+        for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+            const text = this.floatingTexts[i];
+            text.lifetime -= deltaTime;
+            text.y += text.velocity.y * deltaTime / 1000;
+            text.x += text.velocity.x * deltaTime / 1000;
+            text.velocity.y -= 200 * deltaTime / 1000; // Gravity
+
+            if (text.lifetime <= 0) {
+                this.floatingTexts.splice(i, 1);
+            }
+        }
+
         for (let i = this.treasureChests.length - 1; i >= 0; i--) {
             this.treasureChests[i].glowTime += deltaTime;
         }
@@ -1075,6 +1096,9 @@ class Game {
     }
     
     updateWaveSpawning(deltaTime) {
+        // PHASE 1.1: Don't spawn during boss transition
+        if (this.inBossTransition) return;
+
         if (this.zombiesSpawned < this.zombiesInWave) {
             // Spawn zombies in manageable bursts - challenging but fair frequency
             const spawnRate = Math.min(0.15, 0.04 + (this.wave * 0.002)); // Reasonable spawn rate
@@ -1100,13 +1124,19 @@ class Game {
         // Check wave-based achievements
         this.achievementSystem.checkAchievements('wave', this.wave);
 
-        // Balanced and predictable wave progression
-        // Each wave adds reasonable amounts for sustainable difficulty
-        const baseSize = 8; // Reasonable starting base
-        const waveMultiplier = Math.floor(this.wave * 2.5); // Steady linear growth
-        const exponentialBonus = Math.floor(this.wave / 5) * 3; // Small bonus every 5 waves
+        // PHASE 1.2: LOGARITHMIC WAVE SCALING - Sustainable difficulty curve
+        // Quality over quantity: Fewer enemies but more elite types
+        const baseSize = 8;
+        const linearGrowth = Math.floor(this.wave * 1.5); // Reduced from 2.5
+        const logarithmicGrowth = Math.floor(Math.log(this.wave + 1) * 10); // Logarithmic scaling
 
-        this.zombiesInWave = baseSize + waveMultiplier + exponentialBonus;
+        // CAP: Never more than 40 simultaneous enemies
+        const calculatedSize = baseSize + linearGrowth + logarithmicGrowth;
+        this.zombiesInWave = Math.min(40, calculatedSize);
+
+        // Increase elite spawn rates instead of quantity
+        this.eliteSpawnChance = Math.min(0.5, 0.1 + (this.wave * 0.02));
+
         this.zombiesSpawned = 0;
         this.zombiesKilled = 0;
         this.nextWaveTime = 0;
@@ -1114,8 +1144,8 @@ class Game {
         // Check if this is a boss wave (every 5 waves)
         if (this.wave % 5 === 0) {
             this.spawnBoss();
-            // Boss waves keep the same zombie count for consistent progression
-            // The boss is an additional challenge, not a replacement
+            // Boss waves: Reduce regular enemy count by 50%
+            this.zombiesInWave = Math.floor(this.zombiesInWave * 0.5);
         }
 
         this.updateUI();
@@ -1136,47 +1166,61 @@ class Game {
         else if (this.wave >= 10) bossType = 'iron_colossus';
         else if (this.wave >= 5) bossType = 'horde_king';
 
-        // Spawn boss at the CENTER of the stage for dramatic entrance
+        // PHASE 1.1: BOSS ARENA SYSTEM - Clear all enemies and create safe zone
+        this.inBossTransition = true;
+
+        // Clear remaining non-boss enemies for clean arena
+        this.zombies = this.zombies.filter(z => z.isBoss && z.isBoss());
+
+        // Create boss arena with fog walls (Dark Souls style)
+        this.createBossArena();
+
+        // Show fog gate warning first
+        this.showFogGateWarning(bossType);
+
+        // CRITICAL FIX: Spawn boss OFF-SCREEN at top, not on player
         const bossX = this.getCanvasWidth() / 2;
-        const bossY = this.getCanvasHeight() / 2; // Center of the stage
+        const bossY = -200; // OFF screen - boss walks in dramatically
 
-        const boss = new Zombie(bossX, bossY, bossType, this);
-        boss.isBossWaveSpawn = true; // Mark as official boss wave spawn for victory screen
-        this.zombies.push(boss);
-
-        // Create dramatic boss entrance effect
-        for (let i = 0; i < 30; i++) {
-            this.particles.push(new Particle(bossX, bossY, boss.color, 'large', 'explosion'));
-        }
-        for (let i = 0; i < 20; i++) {
-            this.particles.push(new Particle(bossX, bossY, '#FFD700', 'medium', 'energy'));
-        }
-        // Add magic sparkles for dramatic effect
-        for (let i = 0; i < 15; i++) {
-            this.particles.push(new Particle(
-                bossX + (Math.random() - 0.5) * 100,
-                bossY + (Math.random() - 0.5) * 100,
-                '#ffffff',
-                'small',
-                'magic'
-            ));
-        }
-
-        // Show boss warning message
-        this.showBossWarning(bossType);
-
-        // Show boss health bar after warning disappears
+        // Wait 3 seconds for player to prepare, then spawn boss
         this.createTimeout(() => {
-            this.showBossHealthBar(boss);
-        }, 3000);
+            const boss = new Zombie(bossX, bossY, bossType, this);
+            boss.isBossWaveSpawn = true;
+            this.zombies.push(boss);
 
-        // Add dramatic visual effects for boss entrance
-        VisualEffects.addScreenShake(this, 15, 1000);
-        VisualEffects.createBackgroundEffect(this, 'energy_ripple', bossX, bossY);
-        VisualEffects.addTimeDistortion(this, 0.3, 2000);
+            // Create dramatic boss entrance effect at spawn location
+            for (let i = 0; i < 30; i++) {
+                this.particles.push(new Particle(bossX, bossY, boss.color, 'large', 'explosion'));
+            }
+            for (let i = 0; i < 20; i++) {
+                this.particles.push(new Particle(bossX, bossY, '#FFD700', 'medium', 'energy'));
+            }
+            // Add magic sparkles for dramatic effect
+            for (let i = 0; i < 15; i++) {
+                this.particles.push(new Particle(
+                    bossX + (Math.random() - 0.5) * 100,
+                    bossY + (Math.random() - 0.5) * 100,
+                    '#ffffff',
+                    'small',
+                    'magic'
+                ));
+            }
+
+            // Show boss health bar
+            this.showBossHealthBar(boss);
+
+            // Add dramatic visual effects
+            VisualEffects.addScreenShake(this, 15, 1000);
+            VisualEffects.createBackgroundEffect(this, 'energy_ripple', bossX, bossY);
+            VisualEffects.addTimeDistortion(this, 0.3, 2000);
+
+            // End transition - allow combat
+            this.inBossTransition = false;
+        }, 3000);
     }
 
-    showBossWarning(bossType) {
+    // NEW: Dark Souls style fog gate warning
+    showFogGateWarning(bossType) {
         const bossNames = {
             'horde_king': 'THE HORDE KING APPROACHES!',
             'iron_colossus': 'IRON COLOSSUS AWAKENS!',
@@ -1197,12 +1241,32 @@ class Game {
             bossName.textContent = bossNames[bossType] || 'BOSS APPROACHES!';
             bossWarning.classList.remove('hidden');
 
-            // Remove warning after 3 seconds
+            // Show for full 3 seconds of preparation time
             this.createTimeout(() => {
                 bossWarning.classList.add('hidden');
             }, 3000);
         }
     }
+
+    // NEW: Create boss arena boundaries
+    createBossArena() {
+        this.bossArenaActive = true;
+
+        // Create visual fog walls at screen edges (for rendering)
+        this.arenaFogWalls = [
+            { x: -50, y: 0, width: 50, height: this.getCanvasHeight() }, // Left
+            { x: this.getCanvasWidth(), y: 0, width: 50, height: this.getCanvasHeight() }, // Right
+            { x: 0, y: -50, width: this.getCanvasWidth(), height: 50 }, // Top
+            { x: 0, y: this.getCanvasHeight(), width: this.getCanvasWidth(), height: 50 } // Bottom
+        ];
+    }
+
+    // NEW: Clear boss arena after boss death
+    clearBossArena() {
+        this.bossArenaActive = false;
+        this.arenaFogWalls = [];
+    }
+
 
     showBossHealthBar(boss) {
         const bossHealthContainer = document.getElementById('bossHealthContainer');
@@ -1257,6 +1321,9 @@ class Game {
             dom.bossHealthContainer.classList.add('hidden');
             this.currentBoss = null;
         }
+
+        // PHASE 1.1: Clear boss arena when boss dies
+        this.clearBossArena();
     }
 
     spawnZombieBurst() {
@@ -1389,33 +1456,32 @@ class Game {
         const formation = formations[Math.floor(Math.random() * formations.length)];
         const pos = formation();
         
-        // Different zombie types based on wave - includes new monster types
+        // PHASE 1.2: Elite-focused spawning system
         let type = 'basic';
         const rand = Math.random();
 
-        // Enhanced progressive monster spawning with increasing difficulty
-        const waveMultiplier = Math.min(2.0, 1 + (this.wave * 0.05)); // Cap at 2x probability
+        // Check if this should be an elite spawn
+        const isEliteSpawn = rand < this.eliteSpawnChance;
 
-        if (this.wave >= 1 && rand < (0.2 * waveMultiplier)) type = 'crawler';  // Swarm increases over time
-        if (this.wave >= 2 && rand < (0.25 * waveMultiplier)) type = 'fast';
-        if (this.wave >= 3 && rand < (0.15 * waveMultiplier)) type = 'spitter';  // Ranged threats scale
-        if (this.wave >= 4 && rand < (0.2 * waveMultiplier)) type = 'tank';
-        if (this.wave >= 5 && rand < (0.12 * waveMultiplier)) type = 'jumper';   // Teleporters become common
-        if (this.wave >= 6 && rand < (0.18 * waveMultiplier)) type = 'brute';
-        if (this.wave >= 7 && rand < (0.08 * waveMultiplier)) type = 'exploder'; // Dangerous bombers
-        if (this.wave >= 8 && rand < (0.15 * waveMultiplier)) type = 'shielder'; // Tanky enemies
-        if (this.wave >= 10 && rand < (0.08 * waveMultiplier)) type = 'healer';  // Support units
-        if (this.wave >= 12 && rand < (0.06 * waveMultiplier)) type = 'summoner'; // Spawners
-        if (this.wave >= 15 && rand < (0.04 * waveMultiplier)) type = 'phase_walker'; // Elite enemies
-        if (this.wave >= 17 && rand < (0.03 * waveMultiplier)) type = 'stalker'; // Ultra rare threats
+        if (isEliteSpawn) {
+            // Elite enemy pool - more dangerous, appears based on wave
+            const eliteTypes = [];
+            if (this.wave >= 5) eliteTypes.push('jumper', 'tank', 'brute');
+            if (this.wave >= 10) eliteTypes.push('healer', 'shielder', 'exploder');
+            if (this.wave >= 15) eliteTypes.push('summoner', 'phase_walker');
+            if (this.wave >= 20) eliteTypes.push('stalker');
 
-        // Late game elite waves - increasingly challenging
-        if (this.wave >= 20 && rand < 0.02) type = 'mini_boss'; // Mini bosses appear regularly
-        if (this.wave >= 25 && rand < 0.15) type = 'elite_swarm'; // Elite swarms become common
+            if (eliteTypes.length > 0) {
+                type = eliteTypes[Math.floor(Math.random() * eliteTypes.length)];
+            }
+        } else {
+            // Regular enemy pool - basic wave filler
+            const regularTypes = ['basic', 'crawler', 'fast'];
+            if (this.wave >= 3) regularTypes.push('spitter');
+            if (this.wave >= 8) regularTypes.push('tank');
 
-        // Legacy boss types (reduced frequency in regular spawns)
-        if (this.wave >= 8 && rand < 0.02) type = 'boss';
-        if (this.wave >= 10 && rand < 0.01) type = 'mega_boss';
+            type = regularTypes[Math.floor(Math.random() * regularTypes.length)];
+        }
         
         // Add zombie with enhanced scaling
         const zombie = new Zombie(pos.x, pos.y, type, this);
@@ -1829,25 +1895,19 @@ class Game {
         let moneyGain = zombie.moneyValue;
         let expGain = zombie.experienceValue || 6;
 
-        // Resource depletion mechanic - rewards decrease over time but spike at milestones
-        const depletionFactor = Math.max(0.6, 1 - (this.wave * 0.015)); // Gradual reduction
+        // PHASE 1.3: REMOVED depletion mechanic - consistent rewards
 
-        // Apply depletion to money and score but not experience (to avoid blocking progression)
-        moneyGain = Math.floor(moneyGain * depletionFactor);
-        scoreGain = Math.floor(scoreGain * depletionFactor);
-
-        // Milestone bonuses to maintain engagement
+        // Milestone bonuses ONLY
         if (this.wave % 5 === 0) {
-            moneyGain *= 2; // Double money on milestone waves
-            scoreGain *= 1.5;
-            expGain *= 1.3;
+            moneyGain *= 2; // Double money on boss waves
+            expGain *= 1.5;
         }
 
-        // Elite enemy bonuses
-        if (zombie.isBoss() || zombie.type.includes('elite')) {
-            moneyGain *= 3;
-            scoreGain *= 2;
-            expGain *= 1.5;
+        // Boss bonuses
+        if (zombie.isBoss()) {
+            moneyGain *= 5; // Bosses are very lucrative
+            scoreGain *= 3;
+            expGain *= 3;
 
             // Special boss rewards - show victory screen and drop special item (only for official boss wave spawns)
             if (zombie.isBoss() && zombie.isBossWaveSpawn) {
@@ -1941,6 +2001,20 @@ class Game {
         }
 
         this.updateUI();
+    }
+
+    // PHASE 4.2: Show floating damage number
+    showDamageNumber(x, y, damage, isCrit = false) {
+        const damageText = {
+            x: x,
+            y: y,
+            text: Math.floor(damage),
+            color: isCrit ? '#ff6b35' : '#ffffff',
+            fontSize: isCrit ? 32 : 24,
+            lifetime: 1000,
+            velocity: { x: (Math.random() - 0.5) * 20, y: -100 }
+        };
+        this.floatingTexts.push(damageText);
     }
 
     showBossVictoryScreen(boss) {
@@ -2121,8 +2195,16 @@ class Game {
             }, i * 50);
         }
 
-        // More balanced scaling - starts slower, gets progressively harder but stays fun
-        this.experienceToNextLevel = Math.floor(150 * Math.pow(1.35, this.level - 1)); // Proper challenging exponential scaling
+        // PHASE 2.1: LINEAR XP SCALING - Sustainable level progression
+        const baseXP = 100;
+        const linearGrowth = 50 * this.level;
+        const diminishingFactor = Math.pow(1.15, Math.max(0, this.level - 10));
+
+        this.experienceToNextLevel = Math.floor(baseXP + linearGrowth + diminishingFactor);
+        // Level 10: ~650 XP (was 3,466)
+        // Level 20: ~1,450 XP (was 113,780)
+        // Level 30: ~2,653 XP (was insane)
+
         this.levelUpPending = true;
         this.isPaused = true; // Pause game for level up choice
         this.showLevelUpChoices();
@@ -2939,6 +3021,23 @@ class Game {
             this.particles[i].render(this.ctx);
         }
 
+        // PHASE 4.2: Render floating damage numbers
+        this.ctx.save();
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        for (let i = 0; i < this.floatingTexts.length; i++) {
+            const text = this.floatingTexts[i];
+            const alpha = Math.min(1, text.lifetime / 300); // Fade out
+            this.ctx.globalAlpha = alpha;
+            this.ctx.font = `bold ${text.fontSize}px Arial`;
+            this.ctx.fillStyle = text.color;
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeText(text.text, text.x, text.y);
+            this.ctx.fillText(text.text, text.x, text.y);
+        }
+        this.ctx.restore();
+
         for (let i = 0; i < this.powerups.length; i++) {
             this.powerups[i].render(this.ctx);
         }
@@ -3554,7 +3653,17 @@ class Player {
         this.invincibilityTime = 0;
         this.timeSlowTime = 0;
         this.speedBoostTime = 0;
-        
+
+        // PHASE 3.1: DODGE ROLL SYSTEM
+        this.dashCooldown = 0;
+        this.dashDuration = 0;
+        this.isDashing = false;
+        this.dashSpeed = 600; // Fast dash movement
+        this.dashAngle = 0;
+        this.iframes = 0; // Invincibility frames during dash
+        this.dashMaxCooldown = 1500; // 1.5 second cooldown
+        this.dashMaxDuration = 200; // 0.2 second dash
+
         // Vehicle/Drone system
         this.vehicles = [];
         this.drones = [];
@@ -3592,13 +3701,27 @@ class Player {
         this.invincibilityTime = Math.max(0, this.invincibilityTime - deltaTime);
         this.timeSlowTime = Math.max(0, this.timeSlowTime - deltaTime);
         this.speedBoostTime = Math.max(0, this.speedBoostTime - deltaTime);
-        
+
+        // PHASE 3.1: Update dash system
+        this.dashCooldown = Math.max(0, this.dashCooldown - deltaTime);
+        this.dashDuration = Math.max(0, this.dashDuration - deltaTime);
+        this.iframes = Math.max(0, this.iframes - deltaTime);
+
+        if (this.dashDuration <= 0) {
+            this.isDashing = false;
+        }
+
         // Legacy weapon system cleanup - remove old power-up weapons when they expire
         if (this.weaponTime <= 0 && this.currentWeapon !== 'basic') {
             this.currentWeapon = 'basic';
         }
-        
-        // Handle movement with speed boost
+
+        // PHASE 3.1: Check for dash input (Spacebar or Shift)
+        if ((this.game.keys[' '] || this.game.keys['shift']) && this.dashCooldown <= 0 && !this.isDashing) {
+            this.startDash();
+        }
+
+        // Handle movement
         let speedMultiplier = this.speedBoostTime > 0 ? 2 : 1;
 
         // Apply speed boost passive item effect
@@ -3609,20 +3732,42 @@ class Player {
 
         const speed = this.speed * this.game.speedMultiplier * speedMultiplier;
 
-        // Horizontal movement (left/right)
-        if (this.game.keys['a'] || this.game.keys['arrowleft']) {
-            this.x = Math.max(this.width/2, this.x - speed * deltaTime / 1000);
-        }
-        if (this.game.keys['d'] || this.game.keys['arrowright']) {
-            this.x = Math.min(this.game.getCanvasWidth() - this.width/2, this.x + speed * deltaTime / 1000);
-        }
+        // PHASE 3.1: Dash movement overrides normal movement
+        if (this.isDashing) {
+            // Fast dash in locked direction
+            this.x += Math.cos(this.dashAngle) * this.dashSpeed * deltaTime / 1000;
+            this.y += Math.sin(this.dashAngle) * this.dashSpeed * deltaTime / 1000;
 
-        // Vertical movement (up/down)
-        if (this.game.keys['w'] || this.game.keys['arrowup']) {
-            this.y = Math.max(this.height/2, this.y - speed * deltaTime / 1000);
-        }
-        if (this.game.keys['s'] || this.game.keys['arrowdown']) {
-            this.y = Math.min(this.game.getCanvasHeight() - this.height/2 - 30, this.y + speed * deltaTime / 1000); // Leave space at bottom for UI
+            // Keep within bounds
+            this.x = Math.max(this.width/2, Math.min(this.game.getCanvasWidth() - this.width/2, this.x));
+            this.y = Math.max(this.height/2, Math.min(this.game.getCanvasHeight() - this.height/2 - 30, this.y));
+
+            // Create dash trail particles
+            if (Math.random() < 0.5) {
+                this.game.particles.push(new Particle(
+                    this.x,
+                    this.y,
+                    'rgba(255, 255, 255, 0.6)',
+                    'medium',
+                    'energy'
+                ));
+            }
+        } else {
+            // Normal movement (left/right)
+            if (this.game.keys['a'] || this.game.keys['arrowleft']) {
+                this.x = Math.max(this.width/2, this.x - speed * deltaTime / 1000);
+            }
+            if (this.game.keys['d'] || this.game.keys['arrowright']) {
+                this.x = Math.min(this.game.getCanvasWidth() - this.width/2, this.x + speed * deltaTime / 1000);
+            }
+
+            // Normal movement (up/down)
+            if (this.game.keys['w'] || this.game.keys['arrowup']) {
+                this.y = Math.max(this.height/2, this.y - speed * deltaTime / 1000);
+            }
+            if (this.game.keys['s'] || this.game.keys['arrowdown']) {
+                this.y = Math.min(this.game.getCanvasHeight() - this.height/2 - 30, this.y + speed * deltaTime / 1000); // Leave space at bottom for UI
+            }
         }
         
         // Auto-shoot with all weapons - always try to shoot if zombies exist
@@ -4234,15 +4379,44 @@ class Player {
     }
 
 
+    // PHASE 3.1: startDash method
+    startDash() {
+        // Calculate dash direction from current input
+        let dx = 0;
+        let dy = 0;
+
+        if (this.game.keys['a'] || this.game.keys['arrowleft']) dx -= 1;
+        if (this.game.keys['d'] || this.game.keys['arrowright']) dx += 1;
+        if (this.game.keys['w'] || this.game.keys['arrowup']) dy -= 1;
+        if (this.game.keys['s'] || this.game.keys['arrowdown']) dy += 1;
+
+        // If no direction, dash in facing direction (default down)
+        if (dx === 0 && dy === 0) {
+            dy = 1;
+        }
+
+        this.dashAngle = Math.atan2(dy, dx);
+        this.isDashing = true;
+        this.dashDuration = this.dashMaxDuration;
+        this.dashCooldown = this.dashMaxCooldown;
+        this.iframes = this.dashMaxDuration; // Invincible during entire dash
+
+        // Visual feedback
+        this.game.audioSystem.playSound('dash'); // Will fail gracefully if sound doesn't exist
+    }
+
     takeDamage(damage) {
+        // PHASE 3.1: Invincibility from dash roll
+        if (this.iframes > 0) return;
+
         // Invincibility prevents all damage
         if (this.invincibilityTime > 0) return;
-        
+
         // Shield reduces damage by 75%
         if (this.shieldTime > 0) {
             damage *= 0.25;
         }
-        
+
         this.health = Math.max(0, this.health - damage);
     }
     
@@ -4251,11 +4425,33 @@ class Player {
     }
     
     render(ctx) {
+        // PHASE 3.1: Dash visual effect
+        if (this.isDashing) {
+            // Draw afterimage/trail
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.width, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
         // Draw player shadow
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.beginPath();
         ctx.ellipse(this.x, this.y + 20, this.width/2, 8, 0, 0, Math.PI * 2);
         ctx.fill();
-        
+
+        // PHASE 3.1: Flash white during invincibility frames
+        if (this.iframes > 0) {
+            ctx.save();
+            ctx.globalAlpha = 0.6;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(this.x - this.width/2 - 2, this.y - this.height/2 - 2, this.width + 4, this.height + 4);
+            ctx.restore();
+        }
+
         // Draw player body (soldier)
         ctx.fillStyle = '#2d5a3d';
         ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
@@ -4915,10 +5111,14 @@ class Zombie {
     
     takeDamage(damage) {
         // Double damage if vulnerable
-        if (this.vulnerable) {
+        const isCrit = this.vulnerable;
+        if (isCrit) {
             damage *= 2;
         }
         this.health -= damage;
+
+        // PHASE 4.2: Show damage number
+        this.game.showDamageNumber(this.x, this.y - this.height/2, damage, isCrit);
 
         // Update boss health bar if this is the current boss
         if (this.game.currentBoss === this) {
@@ -4929,6 +5129,7 @@ class Zombie {
     render(ctx) {
         // Draw zombie shadow
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.beginPath();
         ctx.ellipse(this.x, this.y + this.height/2 + 5, this.width/2, 6, 0, 0, Math.PI * 2);
         ctx.fill();
         
