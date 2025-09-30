@@ -626,7 +626,9 @@ class Game {
         this.canvas.style.width = rect.width + 'px';
         this.canvas.style.height = rect.height + 'px';
 
-        // Scale the drawing context so everything draws at the correct size
+        // CRITICAL FIX: Reset transform before applying scale
+        // Setting canvas.width/height automatically resets the context, so scale is safe here
+        // No need to reset transform as canvas resize already did it
         this.ctx.scale(dpr, dpr);
 
         // Store logical dimensions for game calculations
@@ -3070,6 +3072,12 @@ class Game {
 
         // Render player
         if (this.player) {
+            // DEBUG: Check if player has valid coordinates
+            if (isNaN(this.player.x) || isNaN(this.player.y)) {
+                console.error('Player has invalid coordinates:', this.player.x, this.player.y);
+                this.player.x = this.getCanvasWidth() / 2;
+                this.player.y = this.getCanvasHeight() / 2;
+            }
             this.player.render(this.ctx);
 
             // Render vehicles and drones - Optimized
