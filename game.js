@@ -3072,11 +3072,17 @@ class Game {
 
         // Render player
         if (this.player) {
-            // DEBUG: Check if player has valid coordinates
-            if (isNaN(this.player.x) || isNaN(this.player.y)) {
-                console.error('Player has invalid coordinates:', this.player.x, this.player.y);
-                this.player.x = this.getCanvasWidth() / 2;
-                this.player.y = this.getCanvasHeight() / 2;
+            // DEBUG: Log rendering info periodically
+            if (!this._debugCounter) this._debugCounter = 0;
+            this._debugCounter++;
+            if (this._debugCounter === 60) {
+                console.log('Render debug:', {
+                    playerPos: `(${Math.floor(this.player.x)}, ${Math.floor(this.player.y)})`,
+                    canvasSize: `${this.getCanvasWidth()}x${this.getCanvasHeight()}`,
+                    zombieCount: this.zombies.length,
+                    playerSize: `${this.player.width}x${this.player.height}`
+                });
+                this._debugCounter = 0;
             }
             this.player.render(this.ctx);
 
