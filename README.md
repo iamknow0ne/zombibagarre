@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.9 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.10 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,14 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.10
+
+- Floating damage numbers use bone for bullets, orange for fire, cyan for electricity, coral for blasts and pale green for blades. Headshots, finishers and critical hits get distinct callouts. Number size follows calculated damage, including evolution, perks, synergies and overkill; rapid hits are combined into short bursts.
+- Recently wounded enemies show compact health bars with a delayed damage trail. Dense fights prioritize heavier/critical hits and suppress overlapping indicators. Feedback is bounded and reduced-motion mode removes drift and impact scaling.
+- All ten weapons have their own base critical chance (2–16%). Critical hits deal double damage, each evolution adds 2 percentage points, and Deadeye adds 20 points, capped at 80% total. Headshots multiply by 1.65 and can also be critical. Lingering burn ticks cannot critically hit. Check current weapon chances in the arsenal.
+- Settings independently control damage numbers, enemy/boss health bars, critical emphasis and damage colors. These display preferences persist and work with keyboard, touch and controller menus; they do not disable the combat mechanics.
+- Development-only `/dev/combat-qa.html` demonstrates damage types, power growth and a crowded encounter. The phone QA page can also show combat feedback at 390×844.
 
 ## New in 4.9
 

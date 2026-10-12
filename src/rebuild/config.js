@@ -55,7 +55,7 @@ UPGRADES.push(
   {id:'armour',title:'Ballistic weave',tag:'DEFENCE',description:'Take 15% less damage. Stacks up to 60%.',apply:p=>p.resistance=Math.min(.6,p.resistance+.15)},
   {id:'regeneration',title:'Keep breathing',tag:'RECOVERY',description:'Recover 1 health every second.',apply:p=>p.regen+=1},
   {id:'piercing',title:'Through and through',tag:'BALLISTICS',description:'Every projectile pierces one extra enemy.',apply:p=>p.pierce+=1},
-  {id:'critical',title:'Deadeye',tag:'PRECISION',description:'+20% chance to deal double damage.',apply:p=>p.crit=Math.min(.8,p.crit+.2)},
+  {id:'critical',title:'Deadeye',tag:'PRECISION',description:'+20 points of critical chance. Double damage; 80% maximum chance.',apply:p=>p.crit=Math.min(.8,p.crit+.2)},
   {id:'magazine',title:'Extended magazines',tag:'CAPACITY',description:'+30% magazine capacity for every weapon.',apply:p=>p.magazineBonus+=.3},
   {id:'incendiary',title:'Dragon’s breath',tag:'INCENDIARY',description:'Every shot burns enemies for 2 seconds.',apply:p=>p.burn+=2},
   {id:'frost',title:'Cold shoulder',tag:'CONTROL',description:'Shots slow enemies by 45% for 2 seconds.',apply:p=>p.frost=2},

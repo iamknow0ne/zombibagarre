@@ -1,3 +1,4 @@
+import {CombatOverlay} from './CombatOverlay.js';
 import {bloodDecal,bloodSpray,stepBlood,ageBlood} from './BloodFX.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {weaponShot,weaponImpact,projectileMesh,evolutionFX,cutWave,ejectCasing,plume} from './WeaponFX.js';
@@ -55,7 +56,7 @@ let shadowTexture;
 
 export class World {
   constructor(canvas,settings,district=0,layout=generateMap(73,district)){
-    this.layout=layout;this.district=district;this.biome=DISTRICTS[district];
+    this.feedback=new CombatOverlay(canvas);this.feedback.applySettings(settings);this.layout=layout;this.district=district;this.biome=DISTRICTS[district];
     this.fireClock={value:0};this.settings=settings;this.random=seededRandom(layout.mapSeed);this.canvas=canvas;
     this.renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
     this.renderer.localClippingEnabled=true;this.renderer.info.autoReset=false;this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?1.5:1.15));
@@ -307,6 +308,7 @@ export class World {
     for(const {material,geos}of batches.values()){const mesh=new T.Mesh(mergeGeometries(geos),material);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.shellPart=true;shell.add(mesh);geos.forEach(g=>g.dispose());}g.add(shell);g.userData.shell=shell;const faded=g.userData.faded;g.userData.faded=undefined;this.fadeBuilding(g,!!faded);
   }
   destroy(){
+    this.feedback.destroy();
     this.reflectionTarget?.dispose();for(const tex of this.bloodTextures?.values()||[])tex.dispose();
     this.scene.traverse(o=>{if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==sphereGeo&&!o.geometry.userData.shared)o.geometry.dispose();if(o.material){for(const m of Array.isArray(o.material)?o.material:[o.material]){if(!m.userData.shared){m.map?.dispose();m.dispose();}}}if(o.isLight)o.shadow?.map?.dispose();});
     for(const pass of this.composer.passes)pass.dispose?.();this.composer.dispose();this.renderer.dispose();
@@ -461,8 +463,8 @@ export class World {
   screenPoint(x,y,z){const p=new T.Vector3(x,y,z).project(this.camera);return{x:(p.x*.5+.5)*innerWidth,y:(-.5*p.y+.5)*innerHeight,visible:p.z>=-1&&p.z<=1&&Math.abs(p.x)<.95&&Math.abs(p.y)<.9};}
   aim(x,y){this.raycaster.setFromCamera(new T.Vector2(x*2-1,1-y*2),this.camera);const p=new T.Vector3();this.raycaster.ray.intersectPlane(this.groundPlane,p);return{x:p.x,z:p.z};}
   resize(){const w=innerWidth,h=innerHeight;this.renderer.setSize(w,h);this.composer?.setSize(w,h);this.ao?.setSize(Math.max(1,Math.floor(w*.65)),Math.max(1,Math.floor(h*.65)));this.aspect=w/h;}
-  applySettings(settings){this.settings=settings;if(!settings.gore){for(const m of this.decals)this.removeDynamic(m);this.decals=[];this.effects=this.effects.filter(e=>{if(['blood','gib'].includes(e.kind)){this.removeDynamic(e.mesh);return false;}return true;});for(const c of this.corpses)this.removeDynamic(c.mesh);this.corpses=[];}this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?1.5:1.15));this.renderer.shadowMap.enabled=settings.quality!=='low';this.ash.visible=!settings.reducedMotion;if(this.ao)this.ao.enabled=settings.quality==='high';this.composer?.setPixelRatio(this.renderer.getPixelRatio());this.ao?.setSize(Math.max(1,Math.floor(innerWidth*.65)),Math.max(1,Math.floor(innerHeight*.65)));}
-  clearDynamic(){for(const collection of [this.characters,this.projectiles,this.items,this.rings,this.grenades,this.streetJobs]){for(const m of collection.values())this.removeDynamic(m);collection.clear();}for(const e of this.effects)this.removeDynamic(e.mesh);this.effects=[];for(const c of this.corpses)this.removeDynamic(c.mesh);this.corpses=[];for(const m of this.decals)this.removeDynamic(m);this.decals=[];for(const m of this.wrecks)this.removeDynamic(m);this.wrecks=[];for(const g of this.propMeshes.values())g.visible=true;for(const g of this.buildingMeshes.values()){g.visible=true;for(const pane of g.userData.glass)pane.visible=true;for(const section of g.userData.sections||[])section.visible=true;g.userData.damageStage=0;if(g.userData.roofAccessories)g.userData.roofAccessories.visible=true;}for(const m of this.impacts)this.removeDynamic(m);this.impacts=[];}
+  applySettings(settings){this.feedback.applySettings(settings);this.settings=settings;if(!settings.gore){for(const m of this.decals)this.removeDynamic(m);this.decals=[];this.effects=this.effects.filter(e=>{if(['blood','gib'].includes(e.kind)){this.removeDynamic(e.mesh);return false;}return true;});for(const c of this.corpses)this.removeDynamic(c.mesh);this.corpses=[];}this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?1.5:1.15));this.renderer.shadowMap.enabled=settings.quality!=='low';this.ash.visible=!settings.reducedMotion;if(this.ao)this.ao.enabled=settings.quality==='high';this.composer?.setPixelRatio(this.renderer.getPixelRatio());this.ao?.setSize(Math.max(1,Math.floor(innerWidth*.65)),Math.max(1,Math.floor(innerHeight*.65)));}
+  clearDynamic(){this.feedback.clear();for(const collection of [this.characters,this.projectiles,this.items,this.rings,this.grenades,this.streetJobs]){for(const m of collection.values())this.removeDynamic(m);collection.clear();}for(const e of this.effects)this.removeDynamic(e.mesh);this.effects=[];for(const c of this.corpses)this.removeDynamic(c.mesh);this.corpses=[];for(const m of this.decals)this.removeDynamic(m);this.decals=[];for(const m of this.wrecks)this.removeDynamic(m);this.wrecks=[];for(const g of this.propMeshes.values())g.visible=true;for(const g of this.buildingMeshes.values()){g.visible=true;for(const pane of g.userData.glass)pane.visible=true;for(const section of g.userData.sections||[])section.visible=true;g.userData.damageStage=0;if(g.userData.roofAccessories)g.userData.roofAccessories.visible=true;}for(const m of this.impacts)this.removeDynamic(m);this.impacts=[];}
   removeDynamic(mesh){mesh.removeFromParent();mesh.traverse(o=>{
     if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==sphereGeo&&!o.geometry.userData.shared&&!o.isSprite)o.geometry.dispose();
     if(o.material&&!o.material.userData.shared){if(o.material.map&&!o.material.map.userData.shared&&o.material.map!==shadowTexture&&o.material.map!==this.smokeTex&&o.material.map!==this.fireTex)o.material.map.dispose();o.material.dispose();}
@@ -480,6 +482,7 @@ export class World {
     if(this.effects.length>320){for(const e of this.effects.splice(0,this.effects.length-320))this.removeDynamic(e.mesh);}
   }
   onEvent(e){
+    this.feedback.event(e);
     if(e.type==='splash')this.splash(e.x,e.z,e.power);
     if(e.type==='vehicle-hit'){debris(this,{x:e.x,z:e.z,material:'metal',count:12,power:4});this.shake=Math.max(this.shake,Math.min(.3,e.power*.012));}
     if(e.type==='vehicle-skid')this.smoke(e.x,e.z,1,.1,0x7c8075);
@@ -585,6 +588,7 @@ export class World {
     for(const fire of sim.fires)if(this.random()<dt*18){this.flame(fire.x+(this.random()-.5)*fire.radius,fire.z+(this.random()-.5)*fire.radius,2,.25);if(this.random()<.25)this.smoke(fire.x,fire.z,1);}
     for(const lamp of this.blastLights){lamp.userData.life=Math.max(0,lamp.userData.life-dt);lamp.intensity=(lamp.userData.power||160)*lamp.userData.life/.55;}
     this.muzzleLight.intensity=Math.max(0,this.muzzleLight.intensity-dt*220);
+    this.camera.updateMatrixWorld();this.feedback.draw(sim,motionDt,this.camera);
     this.renderer.info.reset();
     if(this.ao.enabled){this.ao.ssaoMaterial.uniforms.cameraNear.value=this.camera.near;this.ao.ssaoMaterial.uniforms.cameraFar.value=this.camera.far;this.ao.ssaoMaterial.uniforms.cameraProjectionMatrix.value.copy(this.camera.projectionMatrix);this.ao.ssaoMaterial.uniforms.cameraInverseProjectionMatrix.value.copy(this.camera.projectionMatrixInverse);this.composer.render();}else this.renderer.render(this.scene,this.camera);
   }

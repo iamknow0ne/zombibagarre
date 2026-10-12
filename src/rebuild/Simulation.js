@@ -1,3 +1,4 @@
+import {resolveCritical} from './Combat.js';
 import {addMastery,weaponTier,WEAPON_FINISHES} from './Evolution.js';
 import {circleContact,boxNormal,reflectVelocity} from './Ballistics.js';
 import {driveVehicle} from './Driving.js';
@@ -99,13 +100,16 @@ export class Simulation {
     if (p.health === 0) { this.state = 'dead'; this.emit('dead'); }
   }
   damageEnemy(e, amount, dx = 0, dz = 0, impact = {}) {
-    if (e.health <= 0) return;
+    if (e.health <= 0 || !Number.isFinite(amount) || amount <= 0) return;
+    impact={...impact,tier:impact.tier??weaponTier(this.player,impact.weapon)};
+    const crit=resolveCritical(this.player,impact,impact.weapon&&!impact.periodic&&!impact.execution?this.random():1);amount*=crit.multiplier;
     const dealt=Math.min(e.health,Math.max(0,amount));e.health -= amount; e.flash = .1;const mass=e.type==='boss'?5:e.type==='brute'?2.5:e.type==='armored'?1.8:1;e.knockX=clamp(e.knockX+dx/mass,-12,12);e.knockZ=clamp(e.knockZ+dz/mass,-12,12);if(impact.weapon)this.earnMastery(impact.weapon,dealt);
     if(e.health>0&&e.type!=='boss'&&amount>=18&&['ballistic','explosion','slice'].includes(impact.kind)){
       const cripple=impact.part==='legs'||(impact.kind==='slice'&&this.random()<.3)||(impact.kind==='explosion'&&amount>55&&this.random()<.65)||(e.health<e.maxHealth*.45&&this.random()<.16);
       if(cripple&&!e.crawling){e.crawling=true;e.speed*=.38;e.damage*=.7;e.radius=Math.min(e.radius,.4);this.emit('dismember',{id:e.id,x:e.x,z:e.z,part:'legs',angle:e.angle});}
       else if(!e.missingArm&&(impact.part==='arm'||(e.health<e.maxHealth*.6&&this.random()<.13))){e.missingArm=true;e.damage*=.7;this.emit('dismember',{id:e.id,x:e.x,z:e.z,part:'arm',angle:e.angle});}
     }
+    this.emit('damage',{enemyId:e.id,x:e.x,z:e.z,enemyType:e.type,crawling:!!e.crawling,amount,dealt,health:Math.max(0,e.health),maxHealth:e.maxHealth,weapon:impact.weapon,kind:impact.kind,tier:impact.tier,critical:crit.critical,headshot:!!impact.headshot,finisher:!!impact.finisher,execution:!!impact.execution,periodic:!!impact.periodic,killed:e.health<=0});
     if(amount>=1)this.emit('hit' , { x:e.x,z:e.z,amount,enemyType:e.type,weapon:impact.weapon,tier:impact.tier||0,dx,dz,kind:impact.kind,crawling:!!e.crawling,headshot:!!impact.headshot });
     if (e.health <= 0) {
       this.kills++; this.waveKills++; this.combo++; this.comboTimer = 3.5;
@@ -225,7 +229,7 @@ export class Simulation {
     if(hand)p.offhandRecoil=.12;const offset=(p.equipped.length>1?(hand?-.35:.35):.2);const originX=p.x+Math.cos(angle)*offset,originZ=p.z-Math.sin(angle)*offset;
     if(w.chain)this.arcAttack(aim,w,{x:originX+Math.sin(angle)*.85,z:originZ+Math.cos(angle)*.85});else for(let i=0;i<w.pellets;i++){
       const a=angle+(this.random()-.5)*w.spread*2,headshot=!['flame','launcher','arc'].includes(key)&&this.random()<(key==='marksman'?.32:key==='revolver'?.22:.07);
-      this.bullets.push({id:this.nextId++,x:originX,z:originZ,vx:Math.sin(a)*w.speed,vz:Math.cos(a)*w.speed,life:w.range/w.speed,headshot,damage:w.damage*(headshot?1.65:1)*p.damage*(p.swapBoost>0?1.25:1)*(this.random()<p.crit?2:1),enemy:false,tier:w.tier,ricochets:w.ricochet||0,y:1.1,vy:key==='launcher'?3.8:0,gravity:key==='launcher'?8:0,terminal:key==='marksman'&&w.tier===3,cluster:key==='launcher'&&w.tier===3,pierce:(w.pierce||0)+p.pierce,hitIds:[],weapon:key,burn:(w.burn||0)+p.burn,frost:p.frost,explosive:(key==='revolver'&&w.tier===3&&count%4===0?1.6:w.explosive||0)*p.blastRadius});
+      this.bullets.push({id:this.nextId++,x:originX,z:originZ,vx:Math.sin(a)*w.speed,vz:Math.cos(a)*w.speed,life:w.range/w.speed,headshot,damage:w.damage*(headshot?1.65:1)*p.damage*(p.swapBoost>0?1.25:1),enemy:false,tier:w.tier,ricochets:w.ricochet||0,y:1.1,vy:key==='launcher'?3.8:0,gravity:key==='launcher'?8:0,terminal:key==='marksman'&&w.tier===3,cluster:key==='launcher'&&w.tier===3,pierce:(w.pierce||0)+p.pierce,hitIds:[],weapon:key,burn:(w.burn||0)+p.burn,frost:p.frost,explosive:(key==='revolver'&&w.tier===3&&count%4===0?1.6:w.explosive||0)*p.blastRadius});
     }
     this.emit('shoot',{x:originX,z:originZ,angle,weapon:key,hand,variant,tier:w.tier});
   }
@@ -243,10 +247,10 @@ export class Simulation {
     const range=w.range*p.blastRadius*(finisher?1.2:1),damage=w.damage*p.damage*(finisher?1.6:1),angle=attack.angle;
     const inArc=(x,z)=>Math.abs(Math.atan2(Math.sin(Math.atan2(x-p.x,z-p.z)-angle),Math.cos(Math.atan2(x-p.x,z-p.z)-angle)))<(finisher?1.8:1.15);
     let hits=0;
-    for(const e of this.enemies)if(e.health>0&&distance(e,p)<range+e.radius&&inArc(e.x,e.z)&&!this.blocked(p,e,.05)){this.damageEnemy(e,damage,Math.sin(angle)*4,Math.cos(angle)*4,{kind:'slice',weapon:key,tier:w.tier,part:finisher?'legs':key==='dual'?'arm':null});hits++;}
+    for(const e of this.enemies)if(e.health>0&&distance(e,p)<range+e.radius&&inArc(e.x,e.z)&&!this.blocked(p,e,.05)){this.damageEnemy(e,damage,Math.sin(angle)*4,Math.cos(angle)*4,{kind:'slice',weapon:key,tier:w.tier,finisher,part:finisher?'legs':key==='dual'?'arm':null});hits++;}
     for(const o of this.props)if(o.health>0){const x=clamp(p.x,o.x-o.w/2,o.x+o.w/2),z=clamp(p.z,o.z-o.d/2,o.z+o.d/2);if(Math.hypot(x-p.x,z-p.z)<range&&inArc(x,z)){this.damageProp(o,damage*(['crate','planter'].includes(o.kind)?2:.3),{x,z,slicing:true});hits++;}}
     if(finisher){p.dashCooldown=Math.max(0,p.dashCooldown-.45);p.invulnerable=Math.max(p.invulnerable,.12);}
-    if(finisher&&w.tier===3){for(const e of this.enemies)if(e.health>0&&distance(e,p)>=range+e.radius&&distance(e,p)<range+2.6&&inArc(e.x,e.z)&&!this.blocked(p,e))this.damageEnemy(e,damage*.55,Math.sin(angle)*6,Math.cos(angle)*6,{kind:'slice',weapon:key,tier:3});this.emit('cut-wave',{x:p.x,z:p.z,angle,weapon:key,radius:range+2.6});}
+    if(finisher&&w.tier===3){for(const e of this.enemies)if(e.health>0&&distance(e,p)>=range+e.radius&&distance(e,p)<range+2.6&&inArc(e.x,e.z)&&!this.blocked(p,e))this.damageEnemy(e,damage*.55,Math.sin(angle)*6,Math.cos(angle)*6,{kind:'slice',weapon:key,tier:3,finisher:true});this.emit('cut-wave',{x:p.x,z:p.z,angle,weapon:key,radius:range+2.6});}
     this.emit('slice',{x:p.x,z:p.z,angle,weapon:key,combo:attack.combo,variant:attack.variant,tier:w.tier,radius:range,hits});
   }
   interactVehicle(){
@@ -275,7 +279,7 @@ export class Simulation {
     for(let i=0;target&&i<=w.chain;i++){
       visited.add(target.id);this.emit('arc',{x:from.x,z:from.z,toX:target.x,toZ:target.z,weapon:'arc',tier:w.tier});
       if(target.burning>0)this.emit('combo',{name:'PLASMA ARC',description:'Fire + electricity: +40% arc damage'});
-      this.damageEnemy(target,w.damage*p.damage*Math.pow(.83,i)*(target.burning>0?1.4:1)*(p.swapBoost>0?1.25:1)*(this.random()<p.crit?2:1),0,0,{kind:'electric',weapon:'arc',tier:w.tier});target.slow=Math.max(target.slow||0,.6);target.electrified=.8;this.emit('electrify',{x:target.x,z:target.z});if(p.burn){target.burning=p.burn;target.burnWeapon='arc';}
+      this.damageEnemy(target,w.damage*p.damage*Math.pow(.83,i)*(target.burning>0?1.4:1)*(p.swapBoost>0?1.25:1),0,0,{kind:'electric',weapon:'arc',tier:w.tier});target.slow=Math.max(target.slow||0,.6);target.electrified=.8;this.emit('electrify',{x:target.x,z:target.z});if(p.burn){target.burning=p.burn;target.burnWeapon='arc';}
       from=target;target=this.enemies.filter(e=>e.health>0&&!visited.has(e.id)&&distance(from,e)<4.5&&!this.blocked(from,e)).sort((a,b)=>distance(from,a)-distance(from,b))[0];
     }
   }
@@ -286,7 +290,7 @@ export class Simulation {
       e.electrified=Math.max(0,(e.electrified||0)-dt);e.exposed=Math.max(0,(e.exposed||0)-dt);e.shockCooldown=Math.max(0,(e.shockCooldown||0)-dt);
       e.flash = Math.max(0, e.flash - dt); e.attack -= dt; e.slow=Math.max(0,(e.slow||0)-dt);
       if(e.burning>0){
-        e.burning-=dt;this.damageEnemy(e,18*dt,0,0,{kind:'fire',weapon:e.burnWeapon});if(e.health<=0)continue;
+        e.burning-=dt;this.damageEnemy(e,18*dt,0,0,{kind:'fire',weapon:e.burnWeapon,periodic:true});if(e.health<=0)continue;
         e.spreadTimer=(e.spreadTimer||0)-dt;
         if(e.spreadTimer<=0){e.spreadTimer=.4;
           for(const other of this.enemies)if(other!==e&&other.health>0&&distance(e,other)<e.radius+other.radius+.5&&!(other.burning>1.5)){other.burning=2.8;other.burnWeapon=e.burnWeapon;this.emit('ignite',{x:other.x,z:other.z});}
@@ -419,15 +423,15 @@ export class Simulation {
         }
         const e=c.o;b.hitIds.push(e.id);
         if(b.explosive){this.detonateBullet(b);stopped=true;break;}
-        let damage=b.damage;const p=this.player;
-        if(p.crit>0&&p.pierce>0&&e.type!=='boss'&&e.health/e.maxHealth<.2)damage=e.health+1;
+        let damage=b.damage;const p=this.player,execution=p.crit>0&&p.pierce>0&&e.type!=='boss'&&e.health/e.maxHealth<.2;
+        if(execution)damage=Math.max(damage,e.health+1);
         if(e.lastHitWeapon&&e.lastHitWeapon!==b.weapon&&this.time-(e.lastHitAt||0)<3){
           if(b.weapon==='marksman'&&e.lastHitWeapon==='shotgun'){damage*=1.5;this.emit('combo',{name:'SHATTERSHOT',description:'Shotgun + piercing rifle: +50% damage'});}
           if((b.weapon==='revolver'&&e.lastHitWeapon==='carbine')||(b.weapon==='carbine'&&e.lastHitWeapon==='revolver')){damage*=1.3;p.swapBoost=3;this.emit('combo',{name:'DOUBLE TAP',description:'Carbine + revolver: +30% crossfire damage'});}
         }
         if(b.weapon==='smg'&&e.exposed>0){damage*=1.35;this.emit('combo',{name:'BREACH & CLEAR',description:'Explosive + SMG: +35% damage'});}e.lastHitWeapon=b.weapon;e.lastHitAt=this.time;
         const impulse=b.weapon==='shotgun'?.055:b.weapon==='revolver'?.075:b.weapon==='marksman'?.05:.025;
-        this.damageEnemy(e,damage,b.vx*impulse,b.vz*impulse,{kind:b.weapon==='flame'?'fire':'ballistic',weapon:b.weapon,tier:b.tier,headshot:b.headshot});
+        this.damageEnemy(e,damage,b.vx*impulse,b.vz*impulse,{kind:b.weapon==='flame'?'fire':'ballistic',weapon:b.weapon,tier:b.tier,headshot:b.headshot,execution});
         if(b.burn){e.burning=b.burn;e.burnWeapon=b.weapon;}if(b.frost)e.slow=b.frost;
         if(b.weapon==='flame'&&b.tier===3&&this.time>(p.poolAfter||0)){p.poolAfter=this.time+.6;this.addFire(e.x,e.z,1.2);}
         if(p.frost>0&&e.burning>0&&e.slow>0&&!e.shockCooldown){e.shockCooldown=2;this.blast(e.x,e.z,2.2,45*p.damage,'explosion','thermal',b.weapon,b.tier);this.emit('combo',{name:'THERMAL SHOCK',description:'Fire + frost detonation'});}
