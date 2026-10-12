@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.3 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.4 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -28,7 +28,14 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
 
-## New in 4.3
+## New in 4.4
+
+- Independent hand attacks, fully remappable controller combat controls and controller-aware prompts.
+- Controller navigation through menus, settings, loadouts, upgrades and the atlas; free map crosshair, zoom/pan, marker removal and layer filters.
+- Optional vibration and experimental direct DualSense trigger/lightbar output with lifecycle reset handling.
+- Manual touch aim/fire, with a revised narrow-screen control layout.
+
+## City detail pass (4.3)
 
 - Five city architecture styles: shuttered apartments, balcony hotels, a civic clock tower, industrial sheds and dock warehouses. Tiled roofs, dormers, vents, water tanks, storefront awnings, posters, lit windows and street signs add detail.
 - Paved sidewalks, crossings, drains, irregular wet patches and planted parks with paths, benches, fountains, flower beds or pavilions.
@@ -46,7 +53,7 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 | Toggle auto targeting/fire | T or the HUD button |
 | Dodge / melee / grenade | Space / F / E |
 | Reload equipped guns | R |
-| Change lead weapon | 1–8 ranged; 9 katana; 0 dual swords; wheel cycles equipped weapons |
+| Change lead weapon | 1–8 ranged; 9 katana; 0 dual swords; wheel cycles the right-hand weapon |
 | Enter / exit vehicle | V or vehicle button |
 | Drive / brake | Movement keys / hold Space |
 | City atlas / waypoint | M; click a street or landmark |
@@ -55,34 +62,38 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 
 ### DualSense / standard gamepads
 
-Connect by USB or Bluetooth, focus the game and press a button. The bottom corner shows when the controller is detected. Browser Gamepad support and standard mapping are required.
+Connect by USB or Bluetooth, focus the game and press a button. Settings includes remappable combat buttons, L2/R3 and L2/R2 presets, move/aim dead zones, aim response, aim assist, inversion, vibration intensity and button-symbol selection. Reassigning an occupied button swaps the two actions to avoid conflicts. The active input selects keyboard or PlayStation/Xbox/numbered prompts.
 
-| Action | DualSense |
+| Action | Default DualSense mapping |
 | --- | --- |
 | Move / aim | Left / right stick |
-| Shoot or swing | R2 |
-| Grenade / dodge | L1 / Cross or Circle |
+| Right weapon / left weapon | R3 / L2 (L2/R2 preset available) |
+| Grenade / dodge | L1 / Cross |
 | Reload / enter or exit car | Square / Triangle |
-| Brake / cycle guns | L2 / R1 |
-| Toggle auto fire / arsenal | L3 / R3 |
-| Map / pause | Share / Options |
-| Menus | D-pad moves focus, Cross selects, Circle closes; left/right changes a selected option |
+| Vehicle brake | Circle |
+| Cycle right weapon | R1 / D-pad Left |
+| Toggle auto fire / arsenal | L3 / D-pad Up |
+| Map / pause | Create or touchpad click / Options |
+| Menus | D-pad or left stick moves focus; Cross selects; Circle returns; left/right adjusts values |
+| Atlas | Right stick cursor, left stick pan, L2/R2 zoom, Cross mark, Square clear, R3 centre; D-pad reaches filters and destinations |
 
-Disconnecting pauses active play. Release the sticks and buttons after closing a menu before moving or attacking.
+Manual controller attacks fire only the chosen hand and override auto fire while held. Either attack button swings an equipped blade. A visible aiming reticle and a Triangle prompt above nearby cars clarify the target. Keyboard/mouse fire still fires the equipped guns together. Disconnecting pauses active play. Release controls after closing a menu to prevent accidental attacks.
 
-Touchscreen controls use a movement stick, action buttons, swap/reload and auto fire. Touch hardware has not been validated in this checkout. Settings include sound volume, three graphics levels, gore and reduced motion. Records, scrap, upgrades and settings use browser-local storage. Clearing browser data removes them; runs are not saved mid-campaign.
+Weapon-specific vibration uses the browser's supported actuator; unsupported devices continue without feedback. **Settings → DualSense extras → Connect DualSense** optionally opens the WebHID device chooser in compatible desktop browsers. Direct output supports standard DualSense and Edge IDs, USB and Bluetooth report framing, per-weapon trigger resistance and a health lightbar. Trigger effects apply only to attacks assigned to L2/R2. They reset on pause, blur, disconnect and disable. This path is experimental: protocol/queue tests pass, but trigger feel and Bluetooth/USB hardware output have not been physically validated. Standard Gamepad vibration is not PS5 audio haptics; speaker, microphone and gyro are not used. The device chooser requires a mouse/touch gesture; gameplay and menus do not require WebHID.
+
+On touchscreens, the left stick moves and the right stick aims/fires, including when auto fire is off. Dodge, grenade, melee, swap, reload, map and vehicle controls remain available. The 390×844 layout and pointer-drag control path have been checked; physical phone hardware has not been validated. Settings, records, scrap and upgrades use browser-local storage; runs are not saved mid-campaign.
 
 ## Verification
 
 ```sh
-npm test                  # 52 tests, including 320 generated district layouts
+npm test                  # 62 tests, including 320 generated district layouts
 npm run test:campaign     # deterministic full-campaign bot, all difficulties
 npm run test:campaign -- standard
 npm run test:campaign -- standard city  # extended city simulation
 npm run build
 ```
 
-`/dev/visual-qa.html` on the development server is a staged effects test range using the real simulation and renderer. It freezes each scenario for inspection, offers small time steps, and never writes player saves. It is not included in the production bundle. Screenshots and detailed validation notes are in `docs/`.
+`/dev/visual-qa.html` on the development server is a staged effects test range using the real simulation and renderer. It freezes each scenario for inspection, offers small time steps, and never writes player saves. It is not included in the production bundle. Screenshots and detailed validation notes are in `docs/`. `/?controllerQA=1` in development exposes an explicitly labelled virtual-pad adapter for controller regression checks; it makes the test survivor invulnerable and suppresses record writes. It is stripped from production builds.
 
 ## Publishing
 

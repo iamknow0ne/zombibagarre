@@ -77,13 +77,13 @@ export class Simulation {
   setLoadout(keys){
     const p=this.player,next=normalizeLoadout(keys),changed=next.join('|')!==p.equipped.join('|');
     const hadTwin=p.equipped.length===2&&p.equipped[0]===p.equipped[1]&&p.equipped[0]===next[0];p.equipped=next;
-    if(!next.includes(p.weapon))p.weapon=next[0];
+    p.weapon=next[0];
     if(next.length===2&&next[0]===next[1]&&!hadTwin){p.magazines.offhand=magazineSize(p,next[1]);p.reloads.offhand=0;p.weaponTimers.offhand=WEAPONS[next[1]].interval*.5;}
     if(changed){p.swing=0;p.swingWeapon=null;p.swingCombo=0;p.lastSwing=-99;p.dashCooldown=Math.min(p.dashCooldown,isMelee(p)?1.1:p.dashMax);this.emit('switch');}
     p.reload=p.reloads[p.weapon]||0;return changed;
   }
   equipWeapon(key){if(!WEAPONS[key])return false;return this.setLoadout(toggleLoadout(this.player.equipped,key));}
-  switchWeapon(key){if(!WEAPONS[key])return;const p=this.player;if(!p.equipped.includes(key)){this.setLoadout(WEAPONS[key].melee||isMelee(p)?[key]:[key,...p.equipped.slice(1)]);}p.weapon=key;p.swing=0;p.swingWeapon=null;p.reload=p.reloads[key]||0;p.fire=p.weaponTimers[key]||0;this.emit('switch');}
+  switchWeapon(key){if(!WEAPONS[key])return;const p=this.player;if(p.equipped.includes(key)&&key!==p.equipped[0])this.setLoadout([key,p.equipped[0]]);if(!p.equipped.includes(key)){this.setLoadout(WEAPONS[key].melee||isMelee(p)?[key]:[key,...p.equipped.slice(1)]);}p.weapon=key;p.swing=0;p.swingWeapon=null;p.reload=p.reloads[key]||0;p.fire=p.weaponTimers[key]||0;this.emit('switch');}
   reload(key=this.player.weapon,slot=key){const p=this.player,w=WEAPONS[key];if(w.melee)return;if(!p.reloads[slot]&&p.magazines[slot]<magazineSize(p,key)){p.reloads[slot]=w.reload*p.reloadMultiplier;if(slot===p.weapon){p.reload=p.reloadTotal=p.reloads[slot];}this.emit('reload');}}
   damagePlayer(amount) {
     const p = this.player; if (p.invulnerable > 0 || !['playing', 'extracting'].includes(this.state)) return;
@@ -152,13 +152,15 @@ export class Simulation {
     const w = WEAPONS[p.weapon];
     const target = this.enemies.filter(e => e.health > 0 && distance(p, e) < w.range && !this.blocked(p, e)).sort((a, b) => distance(p, a) - distance(p, b))[0];
     let aim = input.aim;
-    if (input.auto !== false && !input.firing) aim = target;
+    const manual=input.firing||input.fireHands?.some(Boolean);
+    if (input.auto !== false && !manual) aim = target;
     if (aim&&!p.vehicleId) p.angle = Math.atan2(aim.x - p.x, aim.z - p.z);
     else if (length > .1&&!p.vehicleId) p.angle = Math.atan2(mx, mz);
     for(const [i,key] of (p.vehicleId?[]:p.equipped).entries()){
       const slot=slotKey(p.equipped,key,i),gun=WEAPONS[key];const gunTarget=key===p.weapon?target:this.enemies.filter(e=>e.health>0&&distance(p,e)<gun.range&&!this.blocked(p,e)).sort((a,b)=>distance(p,a)-distance(p,b))[0];
-      const gunAim=input.firing?input.aim:input.auto!==false?gunTarget:null;
-      if(gunAim&&((input.auto!==false&&gunTarget)||input.firing)&&!p.weaponTimers[slot]&&!p.reloads[slot]&&p.dash<=0){
+      const firing=input.fireHands?!!input.fireHands[i]||(gun.melee&&input.fireHands.some(Boolean)):input.firing;
+      const gunAim=firing?input.aim:!manual&&input.auto!==false?gunTarget:null;
+      if(gunAim&&((!manual&&input.auto!==false&&gunTarget)||firing)&&!p.weaponTimers[slot]&&!p.reloads[slot]&&p.dash<=0){
         if(!gun.melee&&p.magazines[slot]<=0)this.reload(key,slot);else this.fireWeapon(key,gunAim,slot,i);
       }
     }
