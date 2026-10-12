@@ -34,3 +34,16 @@ test('display toggles clear existing indicators and never mutate damage or gamep
  assert.equal(new Set(Object.values(DAMAGE_STYLES).map(s=>s.label)).size,6);
 });
 test('invalid damage cannot corrupt health, feedback or mastery',()=>{const s=game(),e=s.spawnEnemy('walker',0,0),hp=e.health;for(const n of [NaN,Infinity,-5,0])s.damageEnemy(e,n,0,0,{weapon:'carbine'});assert.equal(e.health,hp);assert.equal(s.events.length,0);});
+test('mobile feedback respects reserved HUD and thumb regions and limits visible damage labels',()=>{
+ const saved=['innerWidth','innerHeight','devicePixelRatio'].map(k=>[k,Object.getOwnPropertyDescriptor(globalThis,k)]);
+ try{
+  Object.assign(globalThis,{innerWidth:390,innerHeight:844,devicePixelRatio:1});
+  const o=Object.create(CombatOverlay.prototype),noop=()=>{};
+  o.canvas={};o.ctx=new Proxy({measureText:()=>({width:24})},{get:(t,k)=>t[k]??noop});o.feed=new DamageFeed();o.bars=new Map();o.settings={};o.mobile=true;o.project=(x,y,z)=>({x,y:z});
+  for(let i=0;i<20;i++)o.event({type:'damage',enemyId:i,x:50+i%4*90,z:130+Math.floor(i/4)*120,amount:30,dealt:30,health:70,maxHealth:100,kind:'ballistic'});
+  const sim={state:'playing',enemies:[],player:{x:0,z:0}};
+  o.reserved=[{x:195,y:422,w:390,h:844}];o.draw(sim,0,{});assert.equal(o.drawnNumbers,0,'no label may cover a reserved region');
+  o.reserved=[];o.draw(sim,0,{});assert.equal(o.drawnNumbers,10,'mobile keeps a bounded set of readable hits');
+  o.mobile=false;o.draw(sim,0,{});assert.ok(o.drawnNumbers>10,'desktop retains its existing density');
+ }finally{for(const [key,descriptor]of saved){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}}
+});

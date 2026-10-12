@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.13 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.14 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,13 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.14
+
+- Mobile combat uses a compact health/wave/ammo header and separate thumb controls. The minimap becomes a map button; detailed score, evolution, buffs and encounters move into pause, alongside Arsenal and Street Map shortcuts.
+- Boss bars and short notifications occupy dedicated upper lanes. Floating damage and enemy bars avoid touch controls and HUD plates, with a lower mobile density.
+- Portrait, small phones and short landscape screens have distinct spacing. Driving keeps only the steering stick, reverse, brake, exit and essential vehicle readout.
+- Verified in browser at 390×844, 320×568 and 844×390 with scripted touch gestures. Physical-phone Safari/Chrome testing remains a separate device check.
 
 ## New in 4.13
 

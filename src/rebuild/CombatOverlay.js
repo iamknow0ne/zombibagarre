@@ -24,10 +24,10 @@ export class CombatOverlay {
   if(sim.state==='menu')return;
   const ids=new Set(sim.enemies.filter(e=>e.health>0).map(e=>e.id));for(const id of this.bars.keys())if(!ids.has(id))this.bars.delete(id);
   // Shared screen-space occupancy keeps nearby labels apart, including on phones.
-  const occupied=[];this.drawnNumbers=0;this.drawnBars=0;const overlaps=r=>occupied.some(o=>Math.abs(o.x-r.x)<(o.w+r.w)/2+3&&Math.abs(o.y-r.y)<(o.h+r.h)/2+3);
+  const occupied=[...(this.reserved||[])];this.drawnNumbers=0;this.drawnBars=0;const overlaps=r=>occupied.some(o=>Math.abs(o.x-r.x)<(o.w+r.w)/2+3&&Math.abs(o.y-r.y)<(o.h+r.h)/2+3);
   const place=(p,width,height)=>{for(const [dx,dy]of [[0,0],[-28,-12],[28,-12],[0,-38],[-36,-40],[36,-40]]){const r={x:p.x+dx,y:p.y+dy,w:width,h:height};if(r.x-width/2<4||r.x+width/2>w-4||r.y-height/2<16||r.y+height/2>h-24||overlaps(r))continue;occupied.push(r);return r;}return null;};
   if(this.settings.enemyHealthBars!==false){let count=0;for(const e of [...sim.enemies].sort((a,b)=>Math.hypot(a.x-sim.player.x,a.z-sim.player.z)-Math.hypot(b.x-sim.player.x,b.z-sim.player.z))){
-   if(e.health<=0||e.health>=e.maxHealth||count>=32)continue;const state=this.bars.get(e.id);if(!state||this.feed.clock-state.hitAt>4)continue;
+   if(e.health<=0||e.health>=e.maxHealth||count>=(this.mobile?10:32))continue;const state=this.bars.get(e.id);if(!state||this.feed.clock-state.hitAt>4)continue;
    const p=this.project(e.x,this.height(e),e.z,camera);if(!p||p.y<20||p.y>h-20)continue;count++;
    const width=(e.enemyType||e.type)==='boss'?88:(e.enemyType||e.type)==='brute'?47:34,height=(e.enemyType||e.type)==='boss'?6:4,y=p.y;
    if(overlaps({x:p.x,y:y+2,w:width,h:height+4}))continue;this.drawnBars++;
@@ -37,6 +37,7 @@ export class CombatOverlay {
   }}
   if(this.settings.damageNumbers===false)return;
   for(const hit of [...this.feed.hits].sort((a,b)=>Number(b.critical)-Number(a.critical)||b.amount-a.amount)){
+   if(this.mobile&&this.drawnNumbers>=10)break;
    const p=this.project(hit.x,this.height(hit)+.2,hit.z,camera);if(!p)continue;
    const age=this.feed.clock-hit.born,reduced=this.settings.reducedMotion,emphasis=hit.critical&&this.settings.criticalCallouts!==false;
    const size=damageSize(hit.amount,emphasis)*(w<520?.84:1),pulse=reduced?1:1+Math.max(0,1-(this.feed.clock-hit.pulse)/.16)*(emphasis?.22:.10);

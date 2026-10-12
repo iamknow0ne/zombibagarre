@@ -6,6 +6,7 @@ export function installTouchQA(input,getSim){
  const down=(zone,pid,x=.5,y=.5)=>send(zone,'pointerdown',pid,x,y),move=(zone,pid,x,y)=>send(zone,'pointermove',pid,x,y),up=(zone,pid)=>send(zone,'pointerup',pid,.5,.5);
  const click=id=>document.getElementById(id).click();
  const actions={
+ 'busy-hud':()=>{document.querySelectorAll('dialog[open]').forEach(d=>d.close());click('start');const s=getSim(),p=s.player;s.enemies=[];s.toSpawn=0;s.wave=4;s.setLoadout(['carbine','flame']);p.shield=50;p.overdrive=120;p.freeze=120;p.doubleScore=120;s.combo=35;const boss=s.spawnEnemy('boss',p.x+8,p.z-10);boss.speed=0;boss.attack=999;boss.health=boss.maxHealth=100000;s.emit('powerup',{name:'OVERDRIVE',description:'Both weapons empowered. Armour protects you. Find the next street encounter.'});},
  start:()=>click('start'),settings:()=>{if(['playing','extracting'].includes(getSim().state)){click('pause');click('pause-settings');}else click('open-settings');},
  move:async()=>{down('move-zone',71);move('move-zone',71,.85,.5);await wait(800);up('move-zone',71);},
  aim:async()=>{down('aim-zone',72);move('aim-zone',72,.65,.2);await wait(700);up('aim-zone',72);},
