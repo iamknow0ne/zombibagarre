@@ -1,6 +1,6 @@
 import {weaponTier,TIER_MARKS} from './Evolution.js';
 import {ACTION_NAMES,BINDINGS,CONTROL_DEFAULTS,buttonName,glyph,rebind} from './ControllerConfig.js';
-import {WEAPONS,distance} from './config.js';
+import {WEAPONS,weaponStats,distance} from './config.js';
 const $=id=>document.getElementById(id);
 export class ControllerUI{
  constructor(input,settings,haptics,dualsense,onSave,onAuto){this.input=input;this.settings=settings;this.haptics=haptics;this.dualsense=dualsense;this.onSave=onSave;
@@ -38,7 +38,7 @@ export class ControllerUI{
   $('pause').innerHTML=pad?this.prompt('pause','ESC'):'Ⅱ';
   $('control-autoFire').checked=auto;$('auto-action').setAttribute('aria-pressed',String(auto));
   $('weapon-controls').innerHTML=pad?`${this.prompt('prevWeapon','')} / ${this.prompt('nextWeapon','')} SWITCH · ${this.prompt('reload','')} RELOAD`:'<kbd>1–0</kbd> / SCROLL · WEAPONS &nbsp; <kbd>R</kbd> RELOAD';
-  $('equipped-hud').innerHTML=p.equipped.map((key,i)=>`${pad?glyph(this.settings.bindings[i?'leftFire':'rightFire'],input.family):''} ${i?'LEFT':'RIGHT'} · ${WEAPONS[key].name} ${TIER_MARKS[weaponTier(p,key)]} ${WEAPONS[key].melee?'BLADE':p.magazines[i&&p.equipped[0]===key?'offhand':key]}${p.reloads[i&&p.equipped[0]===key?'offhand':key]>0?' ↻':''}`).join('<br>');
+  $('equipped-hud').innerHTML=p.equipped.map((key,i)=>`${pad?glyph(this.settings.bindings[i?'leftFire':'rightFire'],input.family):''} ${i?'LEFT':'RIGHT'} · ${weaponStats(p,key).name} ${TIER_MARKS[weaponTier(p,key)]} ${WEAPONS[key].melee?'BLADE':p.magazines[i&&p.equipped[0]===key?'offhand':key]}${p.reloads[i&&p.equipped[0]===key?'offhand':key]>0?' ↻':''}`).join('<br>');
   const car=p.vehicleId?sim.props.find(v=>v.id===p.vehicleId):sim.props.filter(v=>v.driveable&&v.health>0&&distance(v,p)<5).sort((a,b)=>distance(a,p)-distance(b,p))[0];
   $('vehicle-action').innerHTML=`${p.vehicleId?'EXIT':'ENTER'} VEHICLE ${this.prompt('interact','V')}`;
   const prompt=$('vehicle-world-prompt'),visible=car&&!p.vehicleId&&['playing','extracting'].includes(sim.state);prompt.hidden=!visible;

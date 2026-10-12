@@ -43,7 +43,7 @@ export const ENEMIES = {
 };
 export const WAVE_NAMES = ['THE FIRST SIGNS', 'FAST COMPANY', 'BAD BLOOD', 'HEAVY FOOTSTEPS', 'NO WAY BACK', 'THE LAST BAGARRE'];
 export {UPGRADES} from './Upgrades.js';
-export const weaponStats=(player,key=player.weapon)=>evolutionStats(WEAPONS[key],key,weaponTier(player,key));
+export const weaponStats=(player,key=player.weapon)=>{const w=evolutionStats(WEAPONS[key],key,weaponTier(player,key)),r=player.rpgRelic;if(r?.base===key)return{...w,name:r.name,damage:w.damage*r.damage,chain:(w.chain||0)+(r.chain||0),explosive:(w.explosive||0)*(r.explosive||1)};return w;};
 export const magazineSize = (player, key = player.weapon) => Math.round(weaponStats(player,key).magazine * (1 + player.magazineBonus));
 // Planar x/z geometry. Kept independent of the renderer for deterministic collision tests.
 export const ARENA = { minX:-28,maxX:28,minZ:-21,maxZ:21 };

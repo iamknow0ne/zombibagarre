@@ -1,3 +1,4 @@
+import {initRPG,rpgKill,interactPlace} from './RPG.js';
 import {startCollapse,updateCollapse} from './Collapse.js';
 import {igniteProp,splashWater,updateEnvironment} from './Environment.js';
 import {rollUpgrades,rankOf,perkDamage} from './Upgrades.js';
@@ -14,11 +15,11 @@ import { generateMap, insideMap, segmentInMap } from './Map.js';
 import { WEAPONS, weaponStats, ENEMIES, ARENA, COVER, UPGRADES, seededRandom, clamp, distance, segmentCircle, lineBlocked, pointBlocked, POWERUPS, magazineSize, PROP_HEALTH, segmentBoxTime, TOTAL_WAVES, DISTRICTS } from './config.js';
 
 export class Simulation {
-  constructor({ seed=73,difficulty='standard',meta={},layout=null,mode='campaign',skin='scout' }={}) {
+  constructor({ seed=73,difficulty='standard',meta={},layout=null,mode='campaign',skin='scout',profile=null }={}) {
     this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.streetEvents=makeStreetEvents(this.layout);this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
     this.state = 'menu'; this.enemies = []; this.bullets = []; this.pickups = []; this.hazards = [];this.fires=[];
     this.time = 0; this.wave = 0; this.kills = 0; this.score = 0; this.combo = 0; this.comboTimer = 0;
-    this.player = this.makePlayer('carbine'); this.upgrades = []; this.upgradeOffers=[]; this.rerolls=2; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);
+    this.player = this.makePlayer('carbine'); this.upgrades = []; this.upgradeOffers=[]; this.rerolls=2; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);if(profile)initRPG(this,profile);
   }
   makePlayer(weapon) {
     return { skin:this.skin,vehicleId:null,swing:0,swingCombo:0,swingWeapon:null,x: 0, z: 3, angle: Math.PI, radius: .4, health: 100, maxHealth: 100, speed: 5.2, damage: 1,
@@ -27,7 +28,7 @@ export class Simulation {
       melee: 0, grenades: 3, blast: 1, pickupRange: 1.35, lifeSteal: 0, reloadMultiplier: 1, fireMultiplier: 1, moving: false, resistance:0, regen:0, pierce:0, crit:0, magazineBonus:0, burn:0, frost:0, blastRadius:1, shield:0, overdrive:0, doubleScore:0, freeze:0,equipped:[weapon],weaponTimers:{},reloads:{},reloadDurations:{},shots:{},equippedAt:-99,moveX:0,moveZ:0,meleeAttack:null,meleeBuffer:null,attackHeld:false,throwAnimation:0,offhandRecoil:0,swapBoost:0,lastWeapon:null,lastWeaponTime:-100 };
   }
   emit(type, data = {}) { this.events.push({ ...data, type }); }
-  start(weapon = 'carbine') { this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;this.state = 'playing'; this.nextWave(); }
+  start(weapon = 'carbine') { this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing'; this.nextWave(); }
   pause() { if (['playing', 'extracting'].includes(this.state)) { this.previousState = this.state; this.state = 'paused'; } }
   resume() { if (this.state === 'paused') this.state = this.previousState; }
   nextWave() {
@@ -98,14 +99,14 @@ export class Simulation {
   damagePlayer(amount) {
     const p = this.player; if (p.invulnerable > 0 || !['playing', 'extracting'].includes(this.state)) return;
     if(p.vehicleId){const v=this.props.find(v=>v.id===p.vehicleId);if(v){this.damageProp(v,amount*.65);p.invulnerable=.4;return;}}
-    amount *= 1 - p.resistance; const absorbed = Math.min(p.shield,amount); p.shield -= absorbed; amount -= absorbed;
+    amount *= 1 - Math.min(.8,Math.max(0,p.resistance)); const absorbed = Math.min(p.shield,amount); p.shield -= absorbed; amount -= absorbed;
     p.health = Math.max(0, p.health - amount); p.invulnerable = .75; this.combo = 0;
     this.emit('hurt', { amount, x: p.x, z: p.z });
     if (p.health === 0) { this.state = 'dead'; this.emit('dead'); }
   }
   damageEnemy(e, amount, dx = 0, dz = 0, impact = {}) {
     if (e.health <= 0 || !Number.isFinite(amount) || amount <= 0) return;
-    impact={...impact,tier:impact.tier??weaponTier(this.player,impact.weapon)};
+    impact={...impact,tier:impact.tier??weaponTier(this.player,impact.weapon)};const relic=this.player.rpgRelic;if(relic&&relic.base===impact.weapon&&relic.burn&&!impact.periodic&&!(e.wet>0)){e.burning=Math.max(e.burning||0,relic.burn);e.burnWeapon=impact.weapon;this.emit('ignite',{x:e.x,z:e.z});}
     amount*=perkDamage(this.player,e,impact);const crit=resolveCritical(this.player,impact,impact.weapon&&!impact.periodic&&!impact.execution?this.random():1);amount*=crit.multiplier;
     const dealt=Math.min(e.health,Math.max(0,amount));e.health -= amount; e.flash = .1;const mass=e.type==='boss'?5:e.type==='brute'?2.5:e.type==='armored'?1.8:1;e.knockX=clamp(e.knockX+dx/mass,-12,12);e.knockZ=clamp(e.knockZ+dz/mass,-12,12);if(impact.weapon)this.earnMastery(impact.weapon,dealt*(1+(this.player.masteryBonus||0)));
     if(e.health>0&&e.type!=='boss'&&amount>=18&&['ballistic','explosion','slice'].includes(impact.kind)){
@@ -116,7 +117,7 @@ export class Simulation {
     this.emit('damage',{enemyId:e.id,x:e.x,z:e.z,enemyType:e.type,crawling:!!e.crawling,amount,dealt,health:Math.max(0,e.health),maxHealth:e.maxHealth,weapon:impact.weapon,kind:impact.kind,tier:impact.tier,critical:crit.critical,headshot:!!impact.headshot,finisher:!!impact.finisher,execution:!!impact.execution,periodic:!!impact.periodic,killed:e.health<=0});
     if(amount>=1)this.emit('hit' , { x:e.x,z:e.z,amount,enemyType:e.type,weapon:impact.weapon,tier:impact.tier||0,dx,dz,kind:impact.kind,crawling:!!e.crawling,headshot:!!impact.headshot });
     if (e.health <= 0) {
-      this.kills++; this.waveKills++; this.combo++; this.comboTimer = 3.5;
+      rpgKill(this,e);this.kills++; this.waveKills++; this.combo++; this.comboTimer = 3.5;
       this.score += Math.round(e.score * (1 + Math.min(4, Math.floor(this.combo / 5)) * .25) * (this.player.doubleScore>0?2:1));
       this.player.health = Math.min(this.player.maxHealth, this.player.health+this.player.lifeSteal*(this.player.regen>0?2:1));
       if(e.type==='volatile')this.hazards.push({id:this.nextId++,x:e.x,z:e.z,radius:2.4,timer:.7,duration:.7,friendly:false,damage:24});
@@ -156,7 +157,7 @@ export class Simulation {
     if (input.reload) p.equipped.forEach((key,i)=>this.reload(key,slotKey(p.equipped,key,i)));
     let mx = input.x || 0, mz = input.z || 0, length = Math.hypot(mx, mz);
     if (length > 1) { mx /= length; mz /= length; }
-    if(input.interact)this.interactVehicle();
+    if(input.interact){if(!this.profile||!interactPlace(this))this.interactVehicle();if(this.state==='paused')return;}
     if (input.dash && !p.vehicleId&& p.dashCooldown === 0) {
       p.ambushTime=3;p.shield=Math.max(p.shield,p.dashShield||0);p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.dash = isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax;
       p.dashX = length > .1 ? mx / Math.hypot(mx, mz) : Math.sin(p.angle); p.dashZ = length > .1 ? mz / Math.hypot(mx, mz) : Math.cos(p.angle); this.emit('dash');

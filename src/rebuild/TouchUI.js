@@ -1,4 +1,4 @@
-import {WEAPONS} from './config.js';
+import {WEAPONS,weaponStats} from './config.js';
 import {slotKey} from './Loadout.js';
 import {weaponTier,TIER_MARKS} from './Evolution.js';
 import {touchSettings} from './TouchControls.js';
@@ -11,7 +11,7 @@ export class TouchUI {
  apply(){document.documentElement.style.setProperty('--touch-size',this.settings.touchSize);document.documentElement.style.setProperty('--touch-opacity',this.settings.touchOpacity);}
  update(sim,world,auto){
   const input=this.input,p=sim.player,active=(matchMedia('(pointer:coarse)').matches||innerWidth<=700||input.source==='touch')&&input.source!=='gamepad';document.body.classList.toggle('touch-layout',active);world.touchView=active;world.feedback.mobile=active;world.feedback.reserved=[];if(!active)return;
-  $('equipped-hud').innerHTML=p.equipped.map((key,i)=>{const w=WEAPONS[key],slot=slotKey(p.equipped,key,i);return `<div class="touch-weapon-line"><span>${w.name} <small>${TIER_MARKS[weaponTier(p,key)]}</small></span><b>${w.melee?'BLADE':p.reloads[slot]>0?'↻':p.magazines[slot]}</b></div>`;}).join('');
+  $('equipped-hud').innerHTML=p.equipped.map((key,i)=>{const w=weaponStats(p,key),slot=slotKey(p.equipped,key,i);return `<div class="touch-weapon-line"><span>${w.name} <small>${TIER_MARKS[weaponTier(p,key)]}</small></span><b>${w.melee?'BLADE':p.reloads[slot]>0?'↻':p.magazines[slot]}</b></div>`;}).join('');
   const playing=['playing','extracting'].includes(sim.state),melee=['katana','dual'].includes(p.weapon);
   $('touch-auto').textContent=auto?'AUTO ON':'AUTO OFF';$('touch-auto').setAttribute('aria-pressed',String(auto));
   $('touch-dash').disabled=!playing||p.dashCooldown>0;$('touch-dash').textContent=p.dashCooldown>0?`${p.dashCooldown.toFixed(1)}s`:'DODGE';

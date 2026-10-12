@@ -27,7 +27,7 @@ export function animateWeapons(character,state,t,dt,kit){
  d.weaponRigs??=[];
  for(let hand=0;hand<2;hand++){
   const key=keys[hand],old=d.weaponRigs[hand];
-  if(old?.userData.key!==key||(key&&old?.userData.tier!==weaponTier(state,key))){if(old)kit.remove(old);d.weaponRigs[hand]=key?buildWeapon(key,kit,weaponTier(state,key)):null;if(key)body.add(d.weaponRigs[hand]);}
+  if(old?.userData.key!==key||(key&&(old?.userData.tier!==weaponTier(state,key)||old?.userData.relic!==(state.rpgRelic?.base===key?state.rpgRelic.name:null)))){if(old)kit.remove(old);d.weaponRigs[hand]=key?buildWeapon(key,kit,weaponTier(state,key)):null;if(key){const rig=d.weaponRigs[hand],r=state.rpgRelic?.base===key?state.rpgRelic:null;rig.userData.relic=r?.name||null;if(r){kit.box(rig,r.color,0,.08,.22,.07,.07,.35,{emissive:r.color,emissiveIntensity:.5,metalness:.8});}body.add(rig);}}
  }
  const two=keys.length===2,blade=WEAPONS[state.weapon]?.melee,phase=d.gait||0,walk=d.walk||0;
  let totalRecoil=0;d.gripError=0;

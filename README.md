@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.14 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.15 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,15 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.15 — permanent survivors, fresh expeditions
+
+- Character levels persist up to level 30. Start with three points and gain two per level; allocate Vigor, Might, Agility, Focus and Fortune, or learn four passive skills. Free reallocation lets you try different builds.
+- Equip 36 armour pieces across head, chest and legs, with Common, Rare, Epic and Legendary tiers. Pathfinder favours mobility, Bastion protection and Revenant damage. Armour and four dyes change the actual animated character and dossier portrait.
+- Three city traders: Mara sells armour, Dr. Lenoir sells scout gear and healing, and Nocturne sells revenant gear and offers secret-encounter clues. Five contracts connect supply cases, combat, district exploration and the existing street encounters.
+- Two optional named boss variants guard permanent relics: Ashbringer ignites with katana cuts; Tempest adds electric chains. Completing the street contracts also unlocks Black Star, a stronger, wider-blast launcher. Relics modify existing weapon families and retain their run-local weapon evolutions.
+- Open **Character** on the title screen or **Pause → Character & Journal**. Track contacts and revealed secrets on the atlas, approach on foot, then press V / Triangle / the touch interaction button. Trading pauses combat. The dossier has controller navigation, touch-sized controls and a persistent Back button.
+- Levels, allocated points, learned skills and discovered equipment are saved in this browser. Crowns, accepted/completed quests, world discoveries and wave upgrades reset every expedition. Existing Base Camp scrap upgrades remain separate. There is no cloud save or expedition save/resume.
 
 ## New in 4.14.1
 
