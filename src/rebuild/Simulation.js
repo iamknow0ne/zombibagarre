@@ -1,3 +1,4 @@
+import {rollUpgrades,rankOf,perkDamage} from './Upgrades.js';
 import {resolveCritical} from './Combat.js';
 import {addMastery,weaponTier,WEAPON_FINISHES} from './Evolution.js';
 import {circleContact,boxNormal,reflectVelocity} from './Ballistics.js';
@@ -15,20 +16,20 @@ export class Simulation {
     this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.streetEvents=makeStreetEvents(this.layout);this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
     this.state = 'menu'; this.enemies = []; this.bullets = []; this.pickups = []; this.hazards = [];this.fires=[];
     this.time = 0; this.wave = 0; this.kills = 0; this.score = 0; this.combo = 0; this.comboTimer = 0;
-    this.player = this.makePlayer('carbine'); this.upgrades = []; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);
+    this.player = this.makePlayer('carbine'); this.upgrades = []; this.upgradeOffers=[]; this.rerolls=2; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);
   }
   makePlayer(weapon) {
     return { skin:this.skin,vehicleId:null,swing:0,swingCombo:0,swingWeapon:null,x: 0, z: 3, angle: Math.PI, radius: .4, health: 100, maxHealth: 100, speed: 5.2, damage: 1,
-      weapon, mastery:{},shotCounts:{},swingCount:0, magazines: Object.fromEntries(Object.entries(WEAPONS).map(([k, v]) => [k, v.magazine])), reload: 0, reloadTotal: 0,
+      weapon, upgradeRanks:{}, ambushTime:0, mastery:{},shotCounts:{},swingCount:0, magazines: Object.fromEntries(Object.entries(WEAPONS).map(([k, v]) => [k, v.magazine])), reload: 0, reloadTotal: 0,
       fire: 0, invulnerable: 0, dash: 0, dashCooldown: 0, dashMax: 2.7, dashX: 0, dashZ: -1,
       melee: 0, grenades: 3, blast: 1, pickupRange: 1.35, lifeSteal: 0, reloadMultiplier: 1, fireMultiplier: 1, moving: false, resistance:0, regen:0, pierce:0, crit:0, magazineBonus:0, burn:0, frost:0, blastRadius:1, shield:0, overdrive:0, doubleScore:0, freeze:0,equipped:[weapon],weaponTimers:{},reloads:{},reloadDurations:{},shots:{},equippedAt:-99,moveX:0,moveZ:0,meleeAttack:null,meleeBuffer:null,attackHeld:false,throwAnimation:0,offhandRecoil:0,swapBoost:0,lastWeapon:null,lastWeaponTime:-100 };
   }
   emit(type, data = {}) { this.events.push({ ...data, type }); }
-  start(weapon = 'carbine') { this.player=this.makePlayer(weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;this.state = 'playing'; this.nextWave(); }
+  start(weapon = 'carbine') { this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;this.state = 'playing'; this.nextWave(); }
   pause() { if (['playing', 'extracting'].includes(this.state)) { this.previousState = this.state; this.state = 'paused'; } }
   resume() { if (this.state === 'paused') this.state = this.previousState; }
   nextWave() {
-    this.wave++;this.state='playing';const district=Math.floor((this.wave-1)/4);
+    this.wave++;this.state='playing';const p=this.player;p.shield=Math.max(p.shield,p.waveShield||0);if(this.wave>1)p.grenades+=p.waveGrenades||0;const vehicle=this.props.find(v=>v.id===p.vehicleId);if(vehicle)vehicle.health=Math.min(vehicle.maxHealth,vehicle.health+vehicle.maxHealth*(p.vehicleRepair||0));const district=Math.floor((this.wave-1)/4);
     if(district!==this.district&&!this.layout.city){this.district=district;this.player.x=0;this.player.z=3;this.layout=generateMap(this.seed,district);this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.navigation.clear();this.pickups=[];this.fires=[];this.emit('district',{district});}
     this.toSpawn=this.wave%4===0?18+this.district*5:12+(this.wave-1)*3;
     this.spawnTimer=1;this.waveKills=0;this.waveTotal=this.toSpawn+(this.wave%4===0?1:0);
@@ -102,8 +103,8 @@ export class Simulation {
   damageEnemy(e, amount, dx = 0, dz = 0, impact = {}) {
     if (e.health <= 0 || !Number.isFinite(amount) || amount <= 0) return;
     impact={...impact,tier:impact.tier??weaponTier(this.player,impact.weapon)};
-    const crit=resolveCritical(this.player,impact,impact.weapon&&!impact.periodic&&!impact.execution?this.random():1);amount*=crit.multiplier;
-    const dealt=Math.min(e.health,Math.max(0,amount));e.health -= amount; e.flash = .1;const mass=e.type==='boss'?5:e.type==='brute'?2.5:e.type==='armored'?1.8:1;e.knockX=clamp(e.knockX+dx/mass,-12,12);e.knockZ=clamp(e.knockZ+dz/mass,-12,12);if(impact.weapon)this.earnMastery(impact.weapon,dealt);
+    amount*=perkDamage(this.player,e,impact);const crit=resolveCritical(this.player,impact,impact.weapon&&!impact.periodic&&!impact.execution?this.random():1);amount*=crit.multiplier;
+    const dealt=Math.min(e.health,Math.max(0,amount));e.health -= amount; e.flash = .1;const mass=e.type==='boss'?5:e.type==='brute'?2.5:e.type==='armored'?1.8:1;e.knockX=clamp(e.knockX+dx/mass,-12,12);e.knockZ=clamp(e.knockZ+dz/mass,-12,12);if(impact.weapon)this.earnMastery(impact.weapon,dealt*(1+(this.player.masteryBonus||0)));
     if(e.health>0&&e.type!=='boss'&&amount>=18&&['ballistic','explosion','slice'].includes(impact.kind)){
       const cripple=impact.part==='legs'||(impact.kind==='slice'&&this.random()<.3)||(impact.kind==='explosion'&&amount>55&&this.random()<.65)||(e.health<e.maxHealth*.45&&this.random()<.16);
       if(cripple&&!e.crawling){e.crawling=true;e.speed*=.38;e.damage*=.7;e.radius=Math.min(e.radius,.4);this.emit('dismember',{id:e.id,x:e.x,z:e.z,part:'legs',angle:e.angle});}
@@ -129,21 +130,23 @@ export class Simulation {
   }
   chooseUpgrade(id) {
     if (this.state !== 'upgrade' || !this.choices.some(u => u.id === id)) return false;
-    const u = UPGRADES.find(u => u.id === id); u.apply(this.player);if(id==='workshop')for(const key of new Set(this.player.equipped))this.earnMastery(key,650); this.upgrades.push(id);
+    const u = UPGRADES.find(u => u.id === id),rank=rankOf(this.player,id)+1;if(rank>4)return false;u.apply(this.player,rank);this.player.upgradeRanks[id]=rank;if(id==='workshop')for(const key of new Set(this.player.equipped))this.earnMastery(key,Math.round(650*[1,1.2,1.4,1.7][rank-1]));this.upgrades.push(id);
     this.player.health = Math.min(this.player.maxHealth, this.player.health + 25); this.player.grenades++;
     for (const [key, w] of Object.entries(WEAPONS)) this.player.magazines[key] = magazineSize(this.player,key);
     if(this.player.equipped[0]===this.player.equipped[1])this.player.magazines.offhand=magazineSize(this.player,this.player.equipped[0]);
     this.player.reload=0;this.player.reloads={};this.player.weaponTimers={};this.player.invulnerable = 1.5; this.bullets = []; this.hazards = []; this.nextWave(); return true;
   }
+  offerUpgrades(){this.choices=rollUpgrades(this.player,this.wave,this.random,this.upgradeOffers);this.upgradeOffers=this.choices.map(u=>u.id);this.emit('upgrade');}
+  rerollUpgrades(){if(this.state!=='upgrade'||this.rerolls<=0)return false;this.rerolls--;this.offerUpgrades();return true;}
   update(dt, input = {}) {
     if (!['playing', 'extracting'].includes(this.state)) return;
     dt = clamp(dt, 0, .05); this.time += dt; const p = this.player;
-    for (const key of ['fire', 'invulnerable', 'dashCooldown', 'melee','overdrive','doubleScore','freeze','swapBoost','swing','throwAnimation','offhandRecoil']) p[key] = Math.max(0, p[key] - dt);
+    for (const key of ['ambushTime', 'fire', 'invulnerable', 'dashCooldown', 'melee','overdrive','doubleScore','freeze','swapBoost','swing','throwAnimation','offhandRecoil']) p[key] = Math.max(0, p[key] - dt);
     p.health = Math.min(p.maxHealth,p.health+p.regen*dt*(p.lifeSteal>0?2:1));
     this.comboTimer -= dt; if (this.comboTimer <= 0) this.combo = 0;
     for(const slot of [...Object.keys(WEAPONS),'offhand']){
       const key=slot==='offhand'?p.equipped[0]:slot;p.weaponTimers[slot]=Math.max(0,(p.weaponTimers[slot]||0)-dt);
-      if(p.reloads[slot]>0){p.reloads[slot]=Math.max(0,p.reloads[slot]-dt);if(p.reloads[slot]===0){p.magazines[slot]=magazineSize(p,key);this.emit('loaded',{weapon:key,slot});}}
+      if(p.reloads[slot]>0){p.reloads[slot]=Math.max(0,p.reloads[slot]-dt);if(p.reloads[slot]===0){p.magazines[slot]=magazineSize(p,key);p.health=Math.min(p.maxHealth,p.health+(p.reloadHeal||0));this.emit('loaded',{weapon:key,slot});}}
     }
     p.reload=p.reloads[p.weapon]||0;p.reloadTotal=weaponStats(p).reload*p.reloadMultiplier;
     if (input.weapon) this.switchWeapon(input.weapon);
@@ -152,7 +155,7 @@ export class Simulation {
     if (length > 1) { mx /= length; mz /= length; }
     if(input.interact)this.interactVehicle();
     if (input.dash && !p.vehicleId&& p.dashCooldown === 0) {
-      p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.dash = isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,p.dashMax):p.dashMax;
+      p.ambushTime=3;p.shield=Math.max(p.shield,p.dashShield||0);p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.dash = isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,p.dashMax):p.dashMax;
       p.dashX = length > .1 ? mx / Math.hypot(mx, mz) : Math.sin(p.angle); p.dashZ = length > .1 ? mz / Math.hypot(mx, mz) : Math.cos(p.angle); this.emit('dash');
     }
     const beforeMove={x:p.x,z:p.z};
@@ -216,7 +219,7 @@ export class Simulation {
     if (this.state === 'playing' && this.toSpawn === 0 && this.enemies.length === 0) {
       this.bullets = []; this.hazards = [];
       if (this.wave === TOTAL_WAVES) { this.state = 'extracting'; this.emit('extraction'); }
-      else { this.state = 'upgrade'; this.choices=UPGRADES.filter(u=>!(u.id==='workshop'&&p.equipped.every(k=>weaponTier(p,k)===3))&&!(u.id==='critical'&&p.crit>=.8)&&!(u.id==='armour'&&p.resistance>=.6)&&!(u.id==='frost'&&p.frost>0)).map(u=>({u,r:this.random()})).sort((a,b)=>a.r-b.r).slice(0,3).map(o=>o.u); this.emit('upgrade'); }
+      else { this.state = 'upgrade';if(this.wave%4===0)this.rerolls=Math.min(5,this.rerolls+1);this.offerUpgrades(); }
     }
     if (this.state === 'extracting') {
       if (distance(p, { x: 0, z: -10 }) < 3) this.extraction += dt; else this.extraction = Math.max(0, this.extraction - dt * .5);
@@ -248,6 +251,7 @@ export class Simulation {
     const inArc=(x,z)=>Math.abs(Math.atan2(Math.sin(Math.atan2(x-p.x,z-p.z)-angle),Math.cos(Math.atan2(x-p.x,z-p.z)-angle)))<(finisher?1.8:1.15);
     let hits=0;
     for(const e of this.enemies)if(e.health>0&&distance(e,p)<range+e.radius&&inArc(e.x,e.z)&&!this.blocked(p,e,.05)){this.damageEnemy(e,damage,Math.sin(angle)*4,Math.cos(angle)*4,{kind:'slice',weapon:key,tier:w.tier,finisher,part:finisher?'legs':key==='dual'?'arm':null});hits++;}
+    if(finisher&&hits>0)p.health=Math.min(p.maxHealth,p.health+(p.finisherHeal||0));
     for(const o of this.props)if(o.health>0){const x=clamp(p.x,o.x-o.w/2,o.x+o.w/2),z=clamp(p.z,o.z-o.d/2,o.z+o.d/2);if(Math.hypot(x-p.x,z-p.z)<range&&inArc(x,z)){this.damageProp(o,damage*(['crate','planter'].includes(o.kind)?2:.3),{x,z,slicing:true});hits++;}}
     if(finisher){p.dashCooldown=Math.max(0,p.dashCooldown-.45);p.invulnerable=Math.max(p.invulnerable,.12);}
     if(finisher&&w.tier===3){for(const e of this.enemies)if(e.health>0&&distance(e,p)>=range+e.radius&&distance(e,p)<range+2.6&&inArc(e.x,e.z)&&!this.blocked(p,e))this.damageEnemy(e,damage*.55,Math.sin(angle)*6,Math.cos(angle)*6,{kind:'slice',weapon:key,tier:3,finisher:true});this.emit('cut-wave',{x:p.x,z:p.z,angle,weapon:key,radius:range+2.6});}
@@ -261,7 +265,7 @@ export class Simulation {
   }
   drive(dt,mx,mz,input){driveVehicle(this,dt,mx,mz,input);}
   collect(type) {
-    const p=this.player;
+    const p=this.player;p.health=Math.min(p.maxHealth,p.health+(p.supplyHeal||0));
     if(type==='health')p.health=Math.min(p.maxHealth,p.health+30);
     if(type==='shield')p.shield=Math.min(120,p.shield+60);
     if(type==='overdrive')p.overdrive=12;

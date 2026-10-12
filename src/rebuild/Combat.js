@@ -3,7 +3,7 @@ export const BASE_CRIT={carbine:.06,shotgun:.05,smg:.04,revolver:.12,marksman:.1
 export function criticalChance(player,key,tier=0){return key in BASE_CRIT?Math.min(.8,BASE_CRIT[key]+(player.crit||0)+Math.max(0,Math.min(3,tier))*.02):0;}
 export function resolveCritical(player,impact,roll){
  const chance=impact.periodic||impact.execution?0:criticalChance(player,impact.weapon,impact.tier);
- return {critical:chance>0&&roll<chance,multiplier:chance>0&&roll<chance?2:1};
+ return {critical:chance>0&&roll<chance,multiplier:chance>0&&roll<chance?2+(player.critPower||0):1};
 }
 export const DAMAGE_STYLES={
  ballistic:{color:'#f5edcf',label:'BULLET'},fire:{color:'#ffab62',label:'BURN'},electric:{color:'#8fe6ff',label:'SHOCK'},

@@ -1,3 +1,4 @@
+import {renderUpgrades} from './rebuild/UpgradeUI.js';
 import {TouchUI} from './rebuild/TouchUI.js';
 import {criticalChance} from './rebuild/Combat.js';
 import {armoryPreviews} from './rebuild/ArmoryPreview.js';
@@ -14,6 +15,7 @@ import {drawAtlas,atlasPoint} from './rebuild/Atlas.js';
 import {insideMap} from './rebuild/Map.js';
 import './rebuild/style.css';
 import './rebuild/touch.css';
+import './rebuild/upgrades.css';
 import { Simulation } from './rebuild/Simulation.js';
 import { World } from './rebuild/World.js';
 import { Input } from './rebuild/Input.js';
@@ -22,7 +24,7 @@ import { WEAPONS, weaponStats, WAVE_NAMES, distance, lineBlocked, magazineSize, 
 
 const $=id=>document.getElementById(id);
 function read(key,fallback){try{const value=JSON.parse(localStorage.getItem(key));return value??fallback;}catch{return fallback;}}
-function save(key,value){if(import.meta.env.DEV&&['controllerQA','touchQA'].some(k=>new URLSearchParams(location.search).has(k))&&key==='zb-quarantine-record')return;try{localStorage.setItem(key,JSON.stringify(value));}catch{/* Private browsing may not permit persistence. The game still works. */}}
+function save(key,value){if(import.meta.env.DEV&&['controllerQA','touchQA','upgradeQA'].some(k=>new URLSearchParams(location.search).has(k))&&key==='zb-quarantine-record')return;try{localStorage.setItem(key,JSON.stringify(value));}catch{/* Private browsing may not permit persistence. The game still works. */}}
 const defaults={volume:45,quality:matchMedia('(pointer:coarse)').matches?'balanced':'high',difficulty:'standard',gore:true,damageNumbers:true,enemyHealthBars:true,criticalCallouts:true,damageColors:true,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
 const stored=read('zb-quarantine-settings',{});const settings={...defaults,...(stored&&typeof stored==='object'?stored:{})};
 if(!['high','balanced','low'].includes(settings.quality))settings.quality=defaults.quality;
@@ -65,7 +67,7 @@ function renderArsenal(){
   const main=$('main-hand'),off=$('off-hand');for(const [key,w]of Object.entries(WEAPONS)){main.add(new Option(w.name+' / '+w.label,key));if(!w.melee)off.add(new Option(w.name+' / '+w.label,key));}off.add(new Option('EMPTY / SINGLE WEAPON',''),0);main.value=selected[0];off.value=selected[1]||'';off.disabled=melee;
   main.onchange=()=>applyArsenal([main.value,...(selected[1]?[selected[1]]:[])]);off.onchange=()=>applyArsenal([selected[0],...(off.value?[off.value]:[])]);
   const combos=weaponSynergies(selected);$('arsenal-synergies').textContent=combos.length?combos.map(s=>`${s.name} — ${s.description}`).join('  /  '):'TRY A PAIR: CINDER + VOLTA · M12 + LONGSHOT · AR-26 + JUDGEMENT · THUMPER + VX-9';
-  $('arsenal-grid').replaceChildren(...Object.entries(WEAPONS).map(([key,w],i)=>{const b=document.createElement('button'),progress=masteryProgress(arsenalReturn==='menu'?null:sim.player,key),finish=WEAPON_FINISHES[key],stats=weaponStats(arsenalReturn==='menu'?{}:sim.player,key);b.className='arsenal-choice';b.id=`weapon-choice-${key}`;const isSelected=selected.includes(key);b.setAttribute('aria-pressed',String(isSelected));b.innerHTML=`<span class="arsenal-key">${isSelected?`EQUIPPED${selected.filter(k=>k===key).length===2?' ×2':''}`:String(i+1).padStart(2,'0')}</span>${portraits.has(`${key}:${progress.tier}`)?`<img class="weapon-portrait" src="${portraits.get(`${key}:${progress.tier}`)}" alt="${w.name}, ${TIER_NAMES[progress.tier]} model" width="400" height="180">`:`<span class="weapon-symbol ${key}" aria-hidden="true"></span>`}<small>${w.label} / ${TIER_MARKS[progress.tier]} ${TIER_NAMES[progress.tier]}</small><b>${progress.tier===3?finish.signature:w.name}</b><p>${w.description}</p><span class="evolution-track" aria-hidden="true"><i style="width:${progress.progress*100}%"></i></span><span class="evolution-note">${progress.next?`${Math.ceil(progress.next-progress.xp)} DAMAGE TO ${TIER_MARKS[progress.tier+1]} · ${finish.mods[progress.tier]}`:finish.feature}</span><span class="arsenal-spec">${w.melee?'THREE-HIT COMBO <i> / </i> NO AMMO':`${stats.magazine} ROUNDS <i> / </i> ${stats.reload.toFixed(1)}s RELOAD`}<br>${Math.round(criticalChance(arsenalReturn==='menu'?{}:sim.player,key,stats.tier)*100)}% CRIT · ×2 DAMAGE</span>`;b.onclick=()=>{
+  $('arsenal-grid').replaceChildren(...Object.entries(WEAPONS).map(([key,w],i)=>{const b=document.createElement('button'),progress=masteryProgress(arsenalReturn==='menu'?null:sim.player,key),finish=WEAPON_FINISHES[key],stats=weaponStats(arsenalReturn==='menu'?{}:sim.player,key);b.className='arsenal-choice';b.id=`weapon-choice-${key}`;const isSelected=selected.includes(key);b.setAttribute('aria-pressed',String(isSelected));b.innerHTML=`<span class="arsenal-key">${isSelected?`EQUIPPED${selected.filter(k=>k===key).length===2?' ×2':''}`:String(i+1).padStart(2,'0')}</span>${portraits.has(`${key}:${progress.tier}`)?`<img class="weapon-portrait" src="${portraits.get(`${key}:${progress.tier}`)}" alt="${w.name}, ${TIER_NAMES[progress.tier]} model" width="400" height="180">`:`<span class="weapon-symbol ${key}" aria-hidden="true"></span>`}<small>${w.label} / ${TIER_MARKS[progress.tier]} ${TIER_NAMES[progress.tier]}</small><b>${progress.tier===3?finish.signature:w.name}</b><p>${w.description}</p><span class="evolution-track" aria-hidden="true"><i style="width:${progress.progress*100}%"></i></span><span class="evolution-note">${progress.next?`${Math.ceil(progress.next-progress.xp)} DAMAGE TO ${TIER_MARKS[progress.tier+1]} · ${finish.mods[progress.tier]}`:finish.feature}</span><span class="arsenal-spec">${w.melee?'THREE-HIT COMBO <i> / </i> NO AMMO':`${stats.magazine} ROUNDS <i> / </i> ${stats.reload.toFixed(1)}s RELOAD`}<br>${Math.round(criticalChance(arsenalReturn==='menu'?{}:sim.player,key,stats.tier)*100)}% CRIT · ×${(2+(arsenalReturn==='menu'?0:sim.player.critPower||0)).toFixed(2)} DAMAGE</span>`;b.onclick=()=>{
     applyArsenal(toggleLoadout(selected,key));
   };return b;}));
   if(focusId)$(focusId)?.focus();
@@ -98,8 +100,7 @@ function processEvents(){for(const e of sim.events){if(e.type==='district'){rebu
   if(e.type==='powerup')toast(`${e.name} · ${e.description.toUpperCase()}`);
   if(e.type==='extraction'){announce('THE STREETS ARE CLEAR','GET TO EXTRACTION');toast('NORTH CURB · HOLD THE GREEN CIRCLE FOR 4 SECONDS');}
   if(e.type==='upgrade'){
-    $('upgrade-kicker').textContent=`WAVE ${String(sim.wave).padStart(2,'0')} CLEARED / CHOOSE ONE UPGRADE`;
-    $('upgrade-choices').replaceChildren(...sim.choices.map((u,i)=>{const b=document.createElement('button');b.className='upgrade-choice';b.innerHTML=`<span class="upgrade-number">0${i+1}</span><small>${u.tag}</small><b>${u.title}</b><p>${u.description}</p><span class="choose">TAKE UPGRADE ↗</span>`;b.onclick=()=>{if(sim.chooseUpgrade(u.id)){$('upgrade-dialog').close();input.clear();$('game').focus();}};return b;}));$('build-synergies').textContent=[...weaponSynergies(sim.player.equipped),...synergies(sim.player)].map(s=>s.name).join('  /  ')||'BUILD SYNERGIES: FIRE + FROST · CRITICAL + PIERCING · REGEN + KILL HEALING';showDialog('upgrade-dialog');
+    renderUpgrades(sim,id=>{if(sim.chooseUpgrade(id)){$('upgrade-dialog').close();input.clear();$('game').focus();}},()=>sim.rerollUpgrades());$('build-synergies').textContent=[...weaponSynergies(sim.player.equipped),...synergies(sim.player)].map(s=>s.name).join('  /  ')||'BUILD SYNERGIES: FIRE + FROST · CRITICAL + PIERCING · REGEN + KILL HEALING';showDialog('upgrade-dialog');
   }
   if(e.type==='dead'||e.type==='victory')finish();
 }sim.events=[];}
@@ -165,7 +166,8 @@ try{
   $('game').addEventListener('webglcontextlost',e=>{e.preventDefault();focusLost();$('error-detail').textContent='The graphics connection was interrupted. Reload to start a fresh run.';$('error').hidden=false;});
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('controllerQA')){const {installControllerQA}=await import('../dev/controller-qa.js');installControllerQA(input,()=>sim);}
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('touchQA')){const {installTouchQA}=await import('../dev/touch-qa.js');installTouchQA(input,()=>sim);}
+  if(import.meta.env.DEV&&new URLSearchParams(location.search).has('upgradeQA')){const {installUpgradeQA}=await import('../dev/upgrade-qa.js');installUpgradeQA(input,()=>sim);}
   recordUI();world.applySettings(settings);world.update(sim,0,true);await loadingStage(88,'Warming lights, materials and controls');if(world.renderer.compileAsync)await world.renderer.compileAsync(world.scene,world.camera);last=performance.now();requestAnimationFrame(loop);
   // Read-only diagnostics for local QA. No gameplay mutation surface is exposed.
-  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.11.0'})});
+  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.12.0'})});
 }catch(error){console.error(error);$('error-detail').textContent='WebGL is needed to render Saint-Roch. Enable hardware acceleration or try a browser with WebGL support.';$('error').hidden=false;}

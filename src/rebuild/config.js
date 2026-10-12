@@ -42,25 +42,7 @@ export const ENEMIES = {
   boss: { health: 1950, speed: 1.2, damage: 30, radius: 1.1, score: 2500 },
 };
 export const WAVE_NAMES = ['THE FIRST SIGNS', 'FAST COMPANY', 'BAD BLOOD', 'HEAVY FOOTSTEPS', 'NO WAY BACK', 'THE LAST BAGARRE'];
-export const UPGRADES = [
-  { id: 'damage', title: 'Hollow points', tag: 'FIREPOWER', description: '+25% weapon damage.', apply: p => p.damage += .25 },
-  { id: 'speed', title: 'Light on your feet', tag: 'MOBILITY', description: '+15% movement speed. Dodge recovers 15% faster.', apply: p => { p.speed *= 1.15; p.dashMax *= .85; } },
-  { id: 'health', title: 'Second skin', tag: 'SURVIVAL', description: '+30 maximum health. Fully recover.', apply: p => { p.maxHealth += 30; p.health = p.maxHealth; } },
-  { id: 'reload', title: 'Sleight of hand', tag: 'HANDLING', description: 'Reload 25% faster. Fire 12% faster.', apply: p => { p.reloadMultiplier *= .75; p.fireMultiplier *= .88; } },
-  { id: 'magnet', title: 'Field medic', tag: 'RECOVERY', description: 'Pick up supplies from further away. Heal 2 HP per kill.', apply: p => { p.pickupRange += 1.8; p.lifeSteal += 2; } },
-  { id: 'ordnance', title: 'More bang', tag: 'ORDNANCE', description: '+2 grenades. Explosions deal 40% more damage.', apply: p => { p.grenades += 2; p.blast *= 1.4; } },
-];
-UPGRADES.push(
-  {id:'workshop',title:'Field armorer',tag:'EVOLUTION',description:'+650 mastery to each equipped weapon type. Reach new tiers to transform its hardware and attacks.',apply:()=>{}},
-  {id:'armour',title:'Ballistic weave',tag:'DEFENCE',description:'Take 15% less damage. Stacks up to 60%.',apply:p=>p.resistance=Math.min(.6,p.resistance+.15)},
-  {id:'regeneration',title:'Keep breathing',tag:'RECOVERY',description:'Recover 1 health every second.',apply:p=>p.regen+=1},
-  {id:'piercing',title:'Through and through',tag:'BALLISTICS',description:'Every projectile pierces one extra enemy.',apply:p=>p.pierce+=1},
-  {id:'critical',title:'Deadeye',tag:'PRECISION',description:'+20 points of critical chance. Double damage; 80% maximum chance.',apply:p=>p.crit=Math.min(.8,p.crit+.2)},
-  {id:'magazine',title:'Extended magazines',tag:'CAPACITY',description:'+30% magazine capacity for every weapon.',apply:p=>p.magazineBonus+=.3},
-  {id:'incendiary',title:'Dragon’s breath',tag:'INCENDIARY',description:'Every shot burns enemies for 2 seconds.',apply:p=>p.burn+=2},
-  {id:'frost',title:'Cold shoulder',tag:'CONTROL',description:'Shots slow enemies by 45% for 2 seconds.',apply:p=>p.frost=2},
-  {id:'blast',title:'Wide destruction',tag:'AREA CONTROL',description:'+30% explosion and melee radius.',apply:p=>p.blastRadius*=1.3},
-);
+export {UPGRADES} from './Upgrades.js';
 export const weaponStats=(player,key=player.weapon)=>evolutionStats(WEAPONS[key],key,weaponTier(player,key));
 export const magazineSize = (player, key = player.weapon) => Math.round(weaponStats(player,key).magazine * (1 + player.magazineBonus));
 // Planar x/z geometry. Kept independent of the renderer for deterministic collision tests.

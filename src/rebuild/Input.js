@@ -65,7 +65,7 @@ export class Input {
     if(handInput(pad,b).some(Boolean)&&!this.padAim)this.padAim={x:sim.player.x+Math.sin(sim.player.angle)*16,z:sim.player.z+Math.cos(sim.player.angle)*16};
   }
   navigateMenu(root,pad,now){
-    const controls=[...root.querySelectorAll('button:not(:disabled),select:not(:disabled),input:not(:disabled),canvas[tabindex]')].filter(e=>e.getClientRects().length&&!e.closest?.('#controller-qa'));
+    const controls=[...root.querySelectorAll('button:not(:disabled),select:not(:disabled),input:not(:disabled),summary,canvas[tabindex]')].filter(e=>e.getClientRects().length&&!e.closest?.('#controller-qa'));
     let active=document.activeElement,index=controls.indexOf(active);
     if(index<0){active=controls.find(e=>e.classList?.contains('primary'))||controls[0];active?.focus();index=controls.indexOf(active);}
     const vertical=pad.buttons[12]?-1:pad.buttons[13]?1:Math.abs(pad.move.y)>.6?Math.sign(pad.move.y):0;
@@ -77,7 +77,7 @@ export class Input {
       else{const next=controls[directionalControl(controls.map(e=>e.getBoundingClientRect()),index,vertical?0:horizontal,vertical)];next?.focus();next?.scrollIntoView({block:'nearest'});}
       this.menuRepeat=now+(this.menuHeld?170:380);
     }this.menuHeld=!!direction;
-    if(pad.pressed[0]){if(active?.tagName==='SELECT'){active.selectedIndex=(active.selectedIndex+1)%active.options.length;active.dispatchEvent(new Event('change',{bubbles:true}));active.dispatchEvent(new Event('input',{bubbles:true}));}else if(active?.tagName==='BUTTON'||active?.type==='checkbox')active.click();}
+    if(pad.pressed[0]){if(active?.tagName==='SELECT'){active.selectedIndex=(active.selectedIndex+1)%active.options.length;active.dispatchEvent(new Event('change',{bubbles:true}));active.dispatchEvent(new Event('input',{bubbles:true}));}else if(active?.tagName==='BUTTON'||active?.tagName==='SUMMARY'||active?.type==='checkbox')active.click();}
   }
   consume(world,auto,sim=null){
     const k=this.keys;let x=(k.has('KeyD')||k.has('ArrowRight')?1:0)-(k.has('KeyA')||k.has('KeyQ')||k.has('ArrowLeft')?1:0)+this.stick.x;
