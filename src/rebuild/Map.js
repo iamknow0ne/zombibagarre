@@ -48,8 +48,10 @@ export function generateMap(seed = 73, district = 0) {
   for(let i=0;i<boundary.length;i++){
     const a=boundary[i],b=boundary[(i+1)%boundary.length],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz),normal={x:dz/len,z:-dx/len};
     if(normal.z>.35||len<7||(a.z+b.z)/2>depth*.6)continue;
-    const count=Math.max(1,Math.floor(len/10)),w=Math.min(11,len/count-.8);
-    for(let j=0;j<count;j++){const t=(j+.5)/count;facades.push({x:a.x+dx*t+normal.x*4.2,z:a.z+dz*t+normal.z*4.2,w,h:7+random()*6,angle:Math.atan2(-normal.x,-normal.z),color:pick([0xaaa58d,0x9b8f78,0x87938b,0xb3a38b]),shop:pick(shops),trim:pick([0x315f52,0x763f31,0x344d58,0x41544f])});}
+    let cursor=.8+random()*1.4;
+    while(cursor<len-6){const w=Math.min(6.5+random()*6.5,len-cursor-.6);if(w<5.5)break;const t=(cursor+w/2)/len,setback=4.3+random()*1.3;
+      facades.push({x:a.x+dx*t+normal.x*setback,z:a.z+dz*t+normal.z*setback,w,h:4.8+Math.floor(random()*5)*2.45,angle:Math.atan2(-normal.x,-normal.z),color:pick([0xaaa58d,0x9b8f78,0x87938b,0xb3a38b]),shop:pick(shops),trim:pick([0x315f52,0x763f31,0x344d58,0x41544f])});cursor+=w+.7+random()*2.2;
+    }
   }
   const spawnPoints=[];
   for(let x=-width+2;x<width-1;x+=2)for(let z=-depth+2;z<depth-1;z+=2)if(insideMap({boundary},x,z,1.5)&&!insideMap({boundary},x,z,4)&&!pointBlocked(x,z,1.3,cover))spawnPoints.push({x,z});

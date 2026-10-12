@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {seededRandom,segmentBoxTime} from './config.js';
+import {seededRandom,segmentBoxTime,pointBlocked} from './config.js';
 
 import {buildingStyle} from './City.js';
 
@@ -22,13 +22,19 @@ export function dressBuilding(world,g,b,kit){
 
  const roofAccessories=new T.Group();roofAccessories.userData.keepGroup=true;g.add(roofAccessories);g.userData.roofAccessories=roofAccessories;
  // Roof fixtures remain attached to the structure through collapse.
- if(style==='hotel'||style==='tenement'){
+ if((style==='hotel'||style==='tenement')&&(!b.roof||['hip','gable'].includes(b.roof))){
   world.roofMaterials??={};
   if(!world.roofMaterials[style]){const tiles=texture(256,256,c=>{const rr=seededRandom(719);c.fillStyle=style==='hotel'?'#607884':'#94765d';c.fillRect(0,0,256,256);for(let y=0;y<256;y+=16)for(let x=-16;x<256;x+=32){const off=(y/16%2)*16;c.fillStyle=`rgba(18,30,34,${.08+rr()*.13})`;c.fillRect(x+off,y,31,15);c.strokeStyle='rgba(23,37,40,.35)';c.lineWidth=1;c.strokeRect(x+off,y,32,16);c.fillStyle='rgba(220,222,199,.13)';c.fillRect(x+off,y,30,1);}});tiles.wrapS=tiles.wrapT=T.RepeatWrapping;tiles.repeat.set(4,3);world.roofMaterials[style]=new T.MeshStandardMaterial({map:tiles,bumpMap:tiles,bumpScale:.08,roughness:.76});}
-  const roof=new T.Mesh(new T.CylinderGeometry(.72,1,1,4,1,false,Math.PI/4),world.roofMaterials[style]);
-  roof.scale.set(b.w*.69,2.7,b.d*.69);roof.position.y=b.h+1.3;g.add(roof);g.userData.decoratedRoof=roof;roof.userData.breakablePart=true;g.userData.sections.push(roof);
+  let roof;
+  if(b.roof==='gable'){
+   roof=new T.Group();roof.userData.keepGroup=true;const rise=Math.min(2.8,b.w*.24),slope=Math.atan2(rise,b.w/2),length=Math.hypot(b.w/2,rise);
+   for(const side of [-1,1]){const panel=box(roof,0x607884,side*b.w/4,b.h+rise/2,0,length+.15,.16,b.d+.35);panel.material=world.roofMaterials[style];panel.rotation.z=-side*slope;}
+   const capGeo=new T.BufferGeometry();capGeo.setAttribute('position',new T.Float32BufferAttribute([-b.w/2,0,0,b.w/2,0,0,0,rise,0],3));capGeo.computeVertexNormals();
+   for(const side of [-1,1]){const cap=new T.Mesh(capGeo,mat(b.color,{side:T.DoubleSide}));cap.position.set(0,b.h,side*b.d/2);roof.add(cap);}
+  }else{roof=new T.Mesh(new T.CylinderGeometry(.72,1,1,4,1,false,Math.PI/4),world.roofMaterials[style]);roof.scale.set(b.w*.69,2.7,b.d*.69);roof.position.y=b.h+1.3;}
+  g.add(roof);g.userData.decoratedRoof=roof;roof.userData.breakablePart=true;g.userData.sections.push(roof);
   for(const x of [-b.w*.3,b.w*.25]){box(roofAccessories,0x9b8065,x,b.h+2.5,-b.d*.19,.8,2.1,1);box(roofAccessories,0xb6a58c,x,b.h+3.55,-b.d*.19,1,.15,1.2);}
-  for(let x=-b.w*.32;x<b.w*.4;x+=3.5){box(roofAccessories,trim,x,b.h+1,b.d*.34,1.6,1.6,1.1);box(roofAccessories,0x2b414d,x,b.h+1,b.d*.34+.57,.85,1,.03);box(roofAccessories,0x465b67,x,b.h+1.9,b.d*.34,1.9,.2,1.4);}
+  if(b.roof!=='gable')for(let x=-b.w*.32;x<b.w*.4;x+=3.5){box(roofAccessories,trim,x,b.h+1,b.d*.34,1.6,1.6,1.1);box(roofAccessories,0x2b414d,x,b.h+1,b.d*.34+.57,.85,1,.03);box(roofAccessories,0x465b67,x,b.h+1.9,b.d*.34,1.9,.2,1.4);}
  }else if(style==='civic'){
   const tower=box(roofAccessories,0xb7ad95,0,b.h+1.5,0,4,3,4);tower.userData.breakablePart=true;g.userData.sections.push(tower);
   cylinder(roofAccessories,0x466564,0,b.h+3.7,0,3,1.5,0,4);
@@ -36,12 +42,22 @@ export function dressBuilding(world,g,b,kit){
   for(const x of [-b.w*.32,b.w*.32])cylinder(roofAccessories,trim,x,1.8,b.d/2+.25,.3,3.6,.3,12);
  }else{
   for(let i=0;i<3;i++){const x=-b.w*.3+i*b.w*.3;box(roofAccessories,0x6e7e7b,x,b.h+.65,0,2.8,1,2);for(let k=0;k<6;k++)box(roofAccessories,iron,x-.95+k*.38,b.h+1.16,0,.12,.03,1.6);cylinder(roofAccessories,0x596967,x,b.h+.7,-b.d*.3,.25,1.5);}
-  if(style==='warehouse'){for(const x of [-4,4]){box(roofAccessories,iron,x,b.h+2,4,.2,4,.2);box(roofAccessories,iron,x,b.h+2,-4,.2,4,.2);}cylinder(roofAccessories,0x8b6250,0,b.h+3.4,0,3.6,3.2,3.6,16);cylinder(roofAccessories,0x364b4d,0,b.h+5.1,0,3.85,.3,3.85,16);}
+  if(style==='warehouse'&&b.primary!==false&&Math.min(b.w,b.d)>10){for(const x of [-4,4]){box(roofAccessories,iron,x,b.h+2,4,.2,4,.2);box(roofAccessories,iron,x,b.h+2,-4,.2,4,.2);}cylinder(roofAccessories,0x8b6250,0,b.h+3.4,0,3.6,3.2,3.6,16);cylinder(roofAccessories,0x364b4d,0,b.h+5.1,0,3.85,.3,3.85,16);}
+ }
+ if((style==='foundry'||style==='warehouse')&&b.roof==='gable'){
+  const roof=new T.Group();roof.userData.keepGroup=true;const rise=Math.min(2.4,b.w*.2),slope=Math.atan2(rise,b.w/2),length=Math.hypot(b.w/2,rise);
+  for(const side of [-1,1]){const panel=box(roof,0x566b6a,side*b.w/4,b.h+rise/2,0,length+.15,.16,b.d+.3);panel.rotation.z=-side*slope;}
+  g.add(roof);g.userData.decoratedRoof=roof;roof.userData.breakablePart=true;g.userData.sections.push(roof);
+ }
+ if(['flat','terrace'].includes(b.roof)){
+  for(const side of [-1,1]){box(roofAccessories,trim,side*b.w/2,b.h+.4,0,.18,.65,b.d);box(roofAccessories,trim,0,b.h+.4,side*b.d/2,b.w,.65,.18);}
+  if(b.roof==='terrace'){box(roofAccessories,b.color,-b.w*.12,b.h+1,0,b.w*.46,1.8,b.d*.42);box(roofAccessories,0x465c62,-b.w*.12,b.h+1.94,0,b.w*.48,.15,b.d*.44);box(roofAccessories,0x3b555c,-b.w*.12,b.h+1,b.d*.215,b.w*.29,.95,.03);}
  }
  // Window trims, shutters, balconies and occasional boarded openings.
  for(let side=0;side<4;side++){
   const width=side<2?b.w:b.d,face=new T.Group();face.position.set(side<2?0:(side===2?1:-1)*(b.w/2+.23),0,side<2?(side===0?1:-1)*(b.d/2+.23):0);face.rotation.y=[0,Math.PI,Math.PI/2,-Math.PI/2][side];g.add(face);
-  for(let y=4.1;y<b.h;y+=2.8)for(let x=-width/2+1.3;x<width/2;x+=2.7){
+  const bays=Math.max(2,Math.floor(width/2.7)),bay=width/bays;
+  for(let y=4.1;y<b.h;y+=2.8)for(let i=0;i<bays;i++){const x=-width/2+bay*(i+.5);
    box(face,trim,x,y-.73,.035,1.35,.14,.22);box(face,trim,x,y+.73,.035,1.35,.1,.12);
    box(face,iron,x,y,.045,.055,1.4,.04);
    if(style==='tenement'){for(const s of [-1,1])box(face,[0x4d675d,0x786451,0x5e7380][Math.floor(r()*3)],x+s*.76,y,.03,.32,1.4,.1);}
@@ -56,13 +72,13 @@ export function dressBuilding(world,g,b,kit){
    const pipe=cylinder(face,0x986f48,0,b.h-.8,.5,.16,width);pipe.rotation.z=Math.PI/2;
   }
   // Tall shop windows and striped canvas awnings give a readable street level.
-  for(const x of [-b.w*.29,b.w*.29]){
-   box(face,trim,x,1.3,.03,3.2,.15,.18);box(face,iron,x,1.25,.09,.06,2.4,.1);
-   if(style!=='foundry'&&style!=='warehouse')for(let i=0;i<8;i++){const awning=box(face,i%2?0xd0bfa0:style==='hotel'?0x8d473c:0x46685b,x-1.4+i*.4,2.75,.62,.4,.08,1.2);awning.rotation.x=.15;box(face,i%2?0xc8b799:0x48665a,x-1.4+i*.4,2.56,1.2,.4,.26,.05);}
+  for(const x of [-width*.27,width*.27]){
+   box(face,trim,x,1.3,.03,Math.min(3.2,width*.38),.15,.18);box(face,iron,x,1.25,.09,.06,2.4,.1);
+   if(style!=='foundry'&&style!=='warehouse')for(let i=0;i<6;i++){const awning=box(face,i%2?0xd0bfa0:style==='hotel'?0x8d473c:0x46685b,x-width*.18+i*width*.06,2.75,.62,width*.06,.08,1.2);awning.rotation.x=.15;box(face,i%2?0xc8b799:0x48665a,x-width*.18+i*width*.06,2.56,1.2,width*.06,.26,.05);}
   }
   box(face,0x314849,0,1.2,.12,1.3,2.4,.09);box(face,0xa79468,.42,1.2,.19,.05,.25,.04);
-  sign(face,style==='civic'?'MAIRIE / SAINT-ROCH':style==='warehouse'?'COMPAGNIE DES DOCKS':style==='foundry'?'FONDERIE / SECTEUR 07':b.shop,0,3.15,.14,b.w*.65,.55,style==='hotel'?'#713f36':'#293f43','#dbceb0');
-  sign(face,'17 / RUE DES CENDRES',b.w*.36,2.6,.13,2.4,.42,'#28434e','#d4d1b8');
+  sign(face,style==='civic'?'MAIRIE / SAINT-ROCH':style==='warehouse'?'COMPAGNIE DES DOCKS':style==='foundry'?'FONDERIE / SECTEUR 07':b.shop,0,Math.min(3.15,b.h-.45),.14,width*.65,.55,style==='hotel'?'#713f36':'#293f43','#dbceb0');
+  sign(face,'17 / RUE DES CENDRES',width*.32,2.6,.13,Math.min(2.4,width*.3),.42,'#28434e','#d4d1b8');
  }
  // A few lit windows, with a shared warm material, break the identical grid.
  for(const pane of g.userData.glass)if(pane.position.y>2&&r()<.19)pane.material=mat(0xc8a46b,{emissive:0xe6a45c,emissiveIntensity:.36,roughness:.6});
@@ -97,11 +113,13 @@ export function dressStreets(world,kit){
   cylinder(g,0x384848,x-2,.022,z+3,.45,.025,.45,16);for(let i=0;i<5;i++)box(g,0x263d40,x-2.3+i*.15,.039,z+3,.06,.015,.6);
  }
  for(const b of world.layout.buildings){
+  if(b.primary===false)continue;
   const x=b.x-b.w/2-1,z=b.z+b.d/2;
+  if(pointBlocked(x,z,.45,world.layout.buildings))continue;
   // Street furniture is confined to sidewalk margins rather than drive lanes.
   cylinder(g,0x435e55,x,.48,z,.31,.95);cylinder(g,0x2e4140,x,.97,z,.34,.08);
   for(let i=0;i<3;i++){const paper=box(g,0xafa889,x+1+r(),.16,z-r()*2,.22,.015,.32);paper.rotation.y=r()*6;}
-  if(b.style==='hotel'||b.style==='civic'){cylinder(g,0x8b7b63,b.x+4,.88,b.z+b.d/2+1.45,.65,.12);cylinder(g,0x3b4e4c,b.x+4,.46,b.z+b.d/2+1.45,.08,.8);for(const s of [-1,1])box(g,0x546a59,b.x+4+s*.9,.5,b.z+b.d/2+1.45,.5,.1,.5);}
+  if((b.style==='hotel'||b.style==='civic')&&!pointBlocked(b.x+b.w*.22,b.z+b.d/2+1.45,1.2,world.layout.buildings)){cylinder(g,0x8b7b63,b.x+b.w*.22,.88,b.z+b.d/2+1.45,.65,.12);cylinder(g,0x3b4e4c,b.x+b.w*.22,.46,b.z+b.d/2+1.45,.08,.8);for(const s of [-1,1])box(g,0x546a59,b.x+b.w*.22+s*.9,.5,b.z+b.d/2+1.45,.5,.1,.5);}
  }
  // Irregular rainwater patches and faded tyre marks, shared materials.
  const wet=new T.MeshStandardMaterial({color:0x658889,roughness:.13,metalness:.65,transparent:true,opacity:.35,depthWrite:false});

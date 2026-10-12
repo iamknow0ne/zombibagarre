@@ -1,3 +1,4 @@
+import {generateParcel} from './CityParcels.js';
 import {seededRandom, pointBlocked} from './config.js';
 
 export function buildingStyle(x,z,factory){
@@ -23,20 +24,24 @@ export function generateCity(seed=73){
   {x:0,z:96,name:'TERRES ROUGES',type:'badlands',color:'#cea377'},
   {x:96,z:96,name:'MARAIS MORT',type:'marsh',color:'#78a295'}
  ];
- const colours=[0x9c9882,0xa59178,0x7c8b86,0x917969,0xb0a68c];
+ let parcelIndex=0;
  for(let ix=0;ix<6;ix++)for(let iz=0;iz<6;iz++){
   const x=-80+ix*32,z=-80+iz*32;if(ix===4)continue; // The canal occupies this column.
   const park=(ix<2&&iz>3)||(ix<2&&iz<2);
   if(park){for(let i=0;i<4;i++)cover.push({x:x+(i%2?1:-1)*(6+r()*4),z:z+(i<2?-1:1)*(6+r()*4),w:2,d:2,kind:'planter'});continue;}
-  const factory=ix===5&&iz<3,w=18+r()*3,d=18+r()*3;
-  buildings.push({id:`building-${buildings.length}`,x,z,w,d,h:factory?7:6+Math.floor(r()*4)*2.6,color:colours[Math.floor(r()*colours.length)],material:factory?'metal':'brick',factory,style:buildingStyle(x,z,factory),shop:['PHARMACIE','LE DERNIER VERRE','ÉPICERIE','HÔTEL','ATELIER','CAFÉ'][Math.floor(r()*6)]});
-  if(r()>.4)cover.push({x:x-w/2-2.5,z:z-4,w:.9,d:.9,kind:'barrel'});
-  cover.push({x:x+w/2+2,z:z+5,w:1.5,d:2,kind:'crate'});
+  const factory=ix===5&&iz<3;
+  const parts=generateParcel(seed,x,z,parcelIndex++,{factory,dock:x>55,civic:x===16&&z===16});buildings.push(...parts);
+  // Sample service-side props against every wing. Never seal a narrow alley.
+  for(let attempt=0,placed=0;attempt<20&&placed<2&&!['courtyard','paired'].includes(parts[0].shape);attempt++){
+   const o={x:x+(r()-.5)*21,z:z+(r()-.5)*21,w:placed?.9:1.5,d:placed?.9:2,kind:placed?'barrel':'crate'};
+   if(pointBlocked(o.x,o.z,3.4,parts)||pointBlocked(o.x,o.z,4.5,cover))continue;
+   cover.push(o);placed++;
+  }
  }
  // Keep several approachable vehicles near the start; all parked cars can be used.
- const cars=[{x:3,z:6},{x:-6,z:26},{x:30,z:-6},{x:-32,z:4}];
- for(let i=0;i<22;i++){const x=roads[Math.floor(r()*roads.length)]+4,z=roads[Math.floor(r()*roads.length)]+12;if(Math.abs(x-48)<10)continue;if(!cars.some(c=>Math.hypot(c.x-x,c.z-z)<7))cars.push({x,z});}
- for(const [i,c]of cars.entries())cover.push({...c,w:2,d:4.3,kind:'car',driveable:true,rotation:Math.PI/2,color:[0x67867a,0xa65e44,0x486581,0xc0aa79][i%4],vehicleName:['RAVEN SEDAN','COURIER VAN','PATROL WAGON','RALLY COUPE'][i%4]});
+ const cars=[{x:3,z:6},{x:-3,z:26},{x:30,z:-6},{x:-32,z:4}];
+ for(let i=0;i<22;i++){const x=roads[Math.floor(r()*roads.length)]+3,z=roads[Math.floor(r()*roads.length)]+12;if(Math.abs(x-48)<10)continue;if(!cars.some(c=>Math.hypot(c.x-x,c.z-z)<7))cars.push({x,z});}
+ for(const [i,c]of cars.entries())if(!pointBlocked(c.x,c.z,3.4,cover))cover.push({...c,w:2,d:4.3,kind:'car',driveable:true,rotation:Math.PI/2,color:[0x67867a,0xa65e44,0x486581,0xc0aa79][i%4],vehicleName:['RAVEN SEDAN','COURIER VAN','PATROL WAGON','RALLY COUPE'][i%4]});
  const spawnPoints=[];
  for(const x of roads)for(let z=-106;z<=106;z+=6)if(!pointBlocked(x,z,2,cover)&&!pointBlocked(x,z,2,buildings))spawnPoints.push({x,z});
  for(const z of roads)for(let x=-106;x<=106;x+=6)if(!(x>40&&x<56&&!bridges.some(b=>Math.abs(z-b.z)<5))&&!pointBlocked(x,z,2,cover)&&!pointBlocked(x,z,2,buildings))spawnPoints.push({x,z});

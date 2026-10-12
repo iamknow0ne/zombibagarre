@@ -172,8 +172,9 @@ export class World {
     for(let side=0;side<4;side++){
       const front=side%2===0,width=front?b.w:b.d,depth=front?b.d:b.w,signSide=side<2?1:-1;
       const face=new T.Group();face.rotation.y=front?0:Math.PI/2;face.position.set(front?0:signSide*depth/2,0,front?signSide*depth/2:0);g.add(face);
-      for(let y=1.3;y<b.h;y+=2.8)for(let x=-width/2+1.3;x<width/2;x+=2.7){
-        const section=box(face,b.color,x,y,0,2.65,2.65,.26);section.material=wallMaterial;section.userData.breakablePart=true;g.userData.sections.push(section);
+      const bays=Math.max(2,Math.floor(width/2.7)),bay=width/bays;
+      for(let y=1.3;y<b.h;y+=2.8)for(let i=0;i<bays;i++){const x=-width/2+bay*(i+.5);
+        const section=box(face,b.color,x,y,0,bay-.04,2.65,.26);section.material=wallMaterial;section.userData.breakablePart=true;g.userData.sections.push(section);
         if(y>2){const pane=box(face,b.factory?0xc1955b:0x48626b,x,y,.18*signSide,1.05,1.35,.035);pane.userData.glass=true;g.userData.glass.push(pane);}
       }
     }
@@ -183,7 +184,7 @@ export class World {
     for(let y=3;y<b.h;y+=2.8)box(g,0xb0aa94,0,y,b.d/2+.18,b.w,.12,.25);
     const canopy=box(g,0x4a685b,0,2.05,b.d/2+.65,b.w*.72,.14,1.1);canopy.rotation.x=.12;
     sign(g,b.shop,0,2.5,b.d/2+.22,b.w*.68,.75,b.factory?'#805e3c':'#395950');
-    for(const z of [-1,1]){const pane=box(g,0x20373e,z*2,1.15,b.d/2+.24,2.6,2,.04);pane.userData.glass=true;g.userData.glass.push(pane);}
+    for(const z of [-1,1]){const pane=box(g,0x20373e,z*b.w*.23,1.15,b.d/2+.24,Math.min(2.6,b.w*.3),2,.04);pane.userData.glass=true;g.userData.glass.push(pane);}
     dressBuilding(this,g,b,{box,cylinder,sphere,sign,mat,texture});
     this.batchStatic(g.userData.roofAccessories,g.userData.roofAccessories);
     this.rebuildBuildingShell(g);
@@ -293,7 +294,8 @@ export class World {
   rebuildBuildingShell(g){
     if(g.userData.shell)this.removeDynamic(g.userData.shell);
     const shell=new T.Group(),batches=new Map();g.updateWorldMatrix(true,true);const inverse=g.matrixWorld.clone().invert();
-    for(const m of [...g.userData.sections,...g.userData.glass]){m.layers.set(1);let ancestor=m.parent,hidden=false;while(ancestor&&ancestor!==g){if(!ancestor.visible)hidden=true;ancestor=ancestor.parent;}if(!m.visible||hidden)continue;const material=m.userData.solidMaterial||m.material,key=material.uuid;let batch=batches.get(key);if(!batch){batch={material,geos:[]};batches.set(key,batch);}const geo=m.geometry.clone();geo.applyMatrix4(inverse.clone().multiply(m.matrixWorld));batch.geos.push(geo);}
+    const pieces=[];for(const part of [...g.userData.sections,...g.userData.glass])part.traverse(m=>{if(m.isMesh)pieces.push(m);});
+    for(const m of pieces){m.layers.set(1);let ancestor=m.parent,hidden=false;while(ancestor&&ancestor!==g){if(!ancestor.visible)hidden=true;ancestor=ancestor.parent;}if(!m.visible||hidden)continue;const material=m.userData.solidMaterial||m.material,key=`${material.uuid}:${!!m.geometry.index}:${Object.keys(m.geometry.attributes).sort().join(',')}`;let batch=batches.get(key);if(!batch){batch={material,geos:[]};batches.set(key,batch);}const geo=m.geometry.clone();geo.applyMatrix4(inverse.clone().multiply(m.matrixWorld));batch.geos.push(geo);}
     for(const {material,geos}of batches.values()){const mesh=new T.Mesh(mergeGeometries(geos),material);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.shellPart=true;shell.add(mesh);geos.forEach(g=>g.dispose());}g.add(shell);g.userData.shell=shell;const faded=g.userData.faded;g.userData.faded=undefined;this.fadeBuilding(g,!!faded);
   }
   destroy(){

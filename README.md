@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.5 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.6 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -15,7 +15,7 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 
 ## What is in this version
 
-- Open City is the default: one persistent 232×232 street network with 22 destructible buildings, parks, an industrial waterfront, four bridges, discoverable supply landmarks and parked vehicles. The seed changes building proportions, materials, cover and parking. The street grid remains fixed. Destruction persists between waves.
+- Open City is the default: one persistent 232×232 street network with 22 building plots containing independently destructible wings, parks, an industrial waterfront, four bridges, discoverable supply landmarks and parked vehicles. The seed changes plot footprints, heights, rooflines, setbacks, materials, cover and parking. The street grid remains fixed. Destruction persists between waves.
 - Seeded procedural district maps in Biome Campaign: four nonrectangular outlines, varying dimensions, cover placement, fuel clusters and boundary-aligned buildings vary each run. **New Map** previews a different route. The same run seed produces the same eight district layouts. These are bounded combat arenas, not infinite terrain.
 - Ten weapons: carbine, shotgun, SMG, heavy revolver, piercing rifle, flamethrower, grenade launcher, electric projector, katana and dual swords. Pair any two firearms, including matching guns, with independent magazines and reloads. Selecting either blade replaces both guns.
 - Four damage synergies plus matching-gun akimbo timing, fourteen selectable perks, four perk combinations and eight supply pickups. Scrap buys four kinds of permanent upgrades, each with five ranks, at base camp.
@@ -27,6 +27,13 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.6
+
+- Seeded building plots mix detached buildings, paired buildings with alleys, L-shaped corners, open courtyards and stepped wings; plans rotate and shift within each block.
+- One to seven storeys, varied widths and depths, flat roofs, pitched roofs, terraces and lower annexes break up the skyline. Factory and waterfront buildings retain their district character.
+- Windows, awnings and signs fit the generated facade widths. Collision and destruction follow each actual wing, leaving alleys and courtyards usable. Prop and parking clearance protect these routes.
+- Biome campaign facades also vary in width, height, setback and spacing. The city street grid remains connected and fixed.
 
 ## New in 4.5
 
