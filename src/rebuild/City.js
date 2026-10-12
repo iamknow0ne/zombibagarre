@@ -1,3 +1,4 @@
+import {VEHICLES,vehiclePlan} from './Vehicles.js';
 import {generateParcel} from './CityParcels.js';
 import {seededRandom, pointBlocked} from './config.js';
 
@@ -41,7 +42,8 @@ export function generateCity(seed=73){
  // Keep several approachable vehicles near the start; all parked cars can be used.
  const cars=[{x:3,z:6},{x:-3,z:26},{x:30,z:-6},{x:-32,z:4}];
  for(let i=0;i<22;i++){const x=roads[Math.floor(r()*roads.length)]+3,z=roads[Math.floor(r()*roads.length)]+12;if(Math.abs(x-48)<10)continue;if(!cars.some(c=>Math.hypot(c.x-x,c.z-z)<7))cars.push({x,z});}
- for(const [i,c]of cars.entries())if(!pointBlocked(c.x,c.z,3.4,cover))cover.push({...c,w:2,d:4.3,kind:'car',driveable:true,rotation:Math.PI/2,color:[0x67867a,0xa65e44,0x486581,0xc0aa79][i%4],vehicleName:['RAVEN SEDAN','COURIER VAN','PATROL WAGON','RALLY COUPE'][i%4]});
+ const fleet=Object.keys(VEHICLES);
+ for(const [i,c]of cars.entries())if(!pointBlocked(c.x,c.z,3.7,cover))cover.push(vehiclePlan(fleet[i%fleet.length],c.x,c.z));
  const spawnPoints=[];
  for(const x of roads)for(let z=-106;z<=106;z+=6)if(!pointBlocked(x,z,2,cover)&&!pointBlocked(x,z,2,buildings))spawnPoints.push({x,z});
  for(const z of roads)for(let x=-106;x<=106;x+=6)if(!(x>40&&x<56&&!bridges.some(b=>Math.abs(z-b.z)<5))&&!pointBlocked(x,z,2,cover)&&!pointBlocked(x,z,2,buildings))spawnPoints.push({x,z});

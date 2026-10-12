@@ -40,3 +40,17 @@ test('weapon grips remain within arm reach through all weapon cycles and dual-wi
 test('inverse kinematics puts the actual wrist on its target',()=>{
  const m=dummyRig(),arm=m.userData.arms[1],target=new T.Vector3(.3,1.2,.5);solveArm(arm,target,new T.Quaternion(),1);m.updateMatrixWorld(true);const wrist=arm.userData.wrist.getWorldPosition(new T.Vector3());assert.ok(wrist.distanceTo(target)<1e-6);
 });
+
+test('switching from either blade to guns removes blade rigs and trails even with no animation time',async()=>{
+ const {updateBladeTrails}=await import('../src/rebuild/WeaponRig.js');
+ for(const blade of ['katana','dual'])for(const guns of [['carbine'],['smg','flame'],['shotgun','shotgun']]){
+  const s=game(),m=dummyRig();s.setLoadout([blade]);s.player.swingWeapon=blade;s.player.swingDuration=.6;s.player.swing=.4;animateWeapons(m,s.player,1,1/60,kit);updateBladeTrails(m,s.player,1/60);m.position.x=.1;updateBladeTrails(m,s.player,1/60);assert.ok(m.userData.bladeTrails.some(t=>t?.points.length));
+  s.setLoadout(guns);animateWeapons(m,s.player,1,0,kit);updateBladeTrails(m,s.player,0);assert.deepEqual(m.userData.weaponRigs.filter(Boolean).map(g=>g.userData.key),guns);assert.ok(m.userData.bladeTrails.every(t=>!t||(!t.mesh.visible&&!t.points.length&&t.mesh.geometry.drawRange.count===0)));const stale=[];m.traverse(o=>{if(WEAPONS[o.userData.key]?.melee)stale.push(o);});assert.equal(stale.length,0);
+ }
+});
+
+test('fresh firearms never create sword rigs, including a stale mixed loadout',()=>{
+ for(const weapon of Object.keys(WEAPONS).filter(k=>!WEAPONS[k].melee)){
+  const s=game(),m=dummyRig();s.setLoadout([weapon]);s.player.equipped.push('katana');animateWeapons(m,s.player,0,0,kit);assert.deepEqual(m.userData.weaponRigs.filter(Boolean).map(g=>g.userData.key),[weapon]);
+ }
+});

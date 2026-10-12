@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.6 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.7 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,13 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.7
+
+- Eight distinct vehicles: sedan, sports coupe, patrol interceptor, delivery van, pickup, ambulance, armoured carrier and dune buggy. Each has its own dimensions, acceleration, top speed, grip and durability.
+- Speed-dependent steering, analog pedals, service braking into reverse, handbrake slides, full-body collisions and safer exits. Turning wheels, brake lights, suspension movement, engine pitch and collision feedback follow the vehicle.
+- Racing and assisted driving styles plus steering sensitivity in Settings. A driving dashboard shows speed, gear, hull and current controls. Touch steering brakes when released, with separate brake/reverse buttons.
+- Firearm loadouts cannot render stale blade attachments. Switching out of melee clears blade trails immediately, including while paused. Reload any older open game tab to load this version.
 
 ## New in 4.6
 
@@ -70,7 +77,7 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 | Reload equipped guns | R |
 | Change lead weapon | 1–8 ranged; 9 katana; 0 dual swords; wheel cycles the right-hand weapon |
 | Enter / exit vehicle | V or vehicle button |
-| Drive / brake | Movement keys / hold Space |
+| Drive / brake | W/S accelerate, brake and reverse; A/D steer; Space handbrake |
 | City atlas / waypoint | M; click a street or landmark |
 | Configure two guns or one blade | B / Arsenal |
 | Pause | P / Escape |
@@ -85,7 +92,7 @@ Connect by USB or Bluetooth, focus the game and press a button. Settings include
 | Right weapon / left weapon | R3 / L2 (L2/R2 preset available) |
 | Grenade / dodge | L1 / Cross |
 | Reload / enter or exit car | Square / Triangle |
-| Vehicle brake | Circle |
+| Drive | R2 accelerate, L2 brake/reverse, left stick steer, Circle handbrake |
 | Cycle right weapon | R1 / D-pad Left |
 | Toggle auto fire / arsenal | L3 / D-pad Up |
 | Map / pause | Create or touchpad click / Options |
@@ -96,12 +103,14 @@ Manual controller attacks fire only the chosen hand and override auto fire while
 
 Weapon-specific vibration uses the browser's supported actuator; unsupported devices continue without feedback. **Settings → DualSense extras → Connect DualSense** optionally opens the WebHID device chooser in compatible desktop browsers. Direct output supports standard DualSense and Edge IDs, USB and Bluetooth report framing, per-weapon trigger resistance and a health lightbar. Trigger effects apply only to attacks assigned to L2/R2. They reset on pause, blur, disconnect and disable. This path is experimental: protocol/queue tests pass, but trigger feel and Bluetooth/USB hardware output have not been physically validated. Standard Gamepad vibration is not PS5 audio haptics; speaker, microphone and gyro are not used. The device chooser requires a mouse/touch gesture; gameplay and menus do not require WebHID.
 
+While driving, combat buttons become driving controls. Settings offers racing steering or point-to-drive assistance; assisted keyboard reverse uses Shift. Stop before exiting with V / Triangle. On touch, release the stick to brake or hold the separate Reverse button.
+
 On touchscreens, the left stick moves and the right stick aims/fires, including when auto fire is off. Dodge, grenade, melee, swap, reload, map and vehicle controls remain available. The 390×844 layout and pointer-drag control path have been checked; physical phone hardware has not been validated. Settings, records, scrap and upgrades use browser-local storage; runs are not saved mid-campaign.
 
 ## Verification
 
 ```sh
-npm test                  # 62 tests, including 320 generated district layouts
+npm test                  # combat, rendering, controls, driving and generated maps
 npm run test:campaign     # deterministic full-campaign bot, all difficulties
 npm run test:campaign -- standard
 npm run test:campaign -- standard city  # extended city simulation

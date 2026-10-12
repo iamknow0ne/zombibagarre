@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {WEAPON_MOTION,recoilAt,reloadPose,meleePose,smooth} from './WeaponMotion.js';
 import {WEAPONS} from './config.js';
-import {slotKey} from './Loadout.js';
+import {slotKey,normalizeLoadout} from './Loadout.js';
 const down=new T.Vector3(0,-1,0),upperLength=.34,lowerLength=.32;
 
 export function buildWeapon(key,kit){
@@ -60,7 +60,7 @@ export function solveArm(arm,target,orientation,side){
 }
 
 export function animateWeapons(character,state,t,dt,kit){
- const d=character.userData,body=d.body,keys=WEAPONS[state.weapon]?.melee?(state.weapon==='dual'?['dual','dual']:['katana']):state.equipped;
+ const d=character.userData,body=d.body,keys=WEAPONS[state.weapon]?.melee?(state.weapon==='dual'?['dual','dual']:['katana']):normalizeLoadout([state.weapon,...(state.equipped||[]).slice(1)]);
  d.weaponRigs??=[];
  for(let hand=0;hand<2;hand++){
   const key=keys[hand],old=d.weaponRigs[hand];
@@ -125,6 +125,8 @@ export function updateBladeTrails(character,state,dt,reducedMotion=false){
    const mesh=new T.Mesh(geo,new T.ShaderMaterial({uniforms:{tint:{value:new T.Color(0xd5e6df)}},vertexShader:'attribute float fade; varying float opacity; void main(){opacity=fade;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'uniform vec3 tint; varying float opacity; void main(){gl_FragColor=vec4(tint,opacity*.32);}',side:T.DoubleSide,transparent:true,depthWrite:false}));mesh.frustumCulled=false;mesh.matrixAutoUpdate=false;character.add(mesh);trail=d.bladeTrails[hand]={mesh,points:[]};
   }
   if(!trail)continue;
+  // A switch can happen while paused: never rely on elapsed time to hide old steel.
+  if(!blade||state.vehicleId){trail.points=[];trail.mesh.geometry.setDrawRange(0,0);trail.mesh.visible=false;continue;}
   trail.points.forEach(p=>p.life-=dt);trail.points=trail.points.filter(p=>p.life>0);
   const progress=state.swing>0?1-state.swing/state.swingDuration:0;
   if(dt>0&&blade&&state.swing>0&&progress>.18&&progress<.62){

@@ -9,6 +9,11 @@ export function installControllerQA(input,getSim){
  'QA Start':async()=>{document.getElementById('start').focus();await press(0);},
  'QA Left fire':async()=>{pad.axes[2]=.8;await press(input.settings.bindings.leftFire,650);pad.axes[2]=0;},
  'QA Right fire':async()=>{pad.axes[2]=.8;await press(input.settings.bindings.rightFire,650);pad.axes[2]=0;},
+ 'QA Enter vehicle':()=>press(input.settings.bindings.interact),
+ 'QA Accelerate':()=>press(7,1800),
+ 'QA Handbrake':()=>press(1,1400),
+ 'QA Reverse':()=>press(6,1000),
+ 'QA Steering':async()=>{pad.axes[0]=.45;await press(7,900);pad.axes[0]=0;},
  'QA Auto':()=>press(input.settings.bindings.auto),
  'QA Map cursor':async()=>{await press(input.settings.bindings.map);pad.axes[2]=.7;pad.axes[3]=.3;await wait(700);pad.axes[2]=pad.axes[3]=0;await press(0);},
  'QA Map center':()=>press(11),
@@ -24,5 +29,5 @@ export function installControllerQA(input,getSim){
  'QA Touch mode':async()=>{connected=false;input.source='touch';},
  };
  for(const [name,fn]of Object.entries(scenarios)){const b=document.createElement('button');b.textContent=name;b.style.cssText='border:1px solid #879990;padding:5px;margin:2px;font:10px monospace';b.onpointerdown=e=>e.preventDefault();b.onclick=async()=>{if(busy)return;busy=true;await wait(300);try{await fn();}finally{busy=false;}};panel.append(b);}panel.append(report);document.body.append(panel);
- setInterval(()=>{const root=[...document.querySelectorAll('dialog[open]')].at(-1)||document.body;if(panel.parentElement!==root)root.append(panel);const s=getSim();if(s.state==='playing')s.player.invulnerable=2;report.textContent='VIRTUAL PAD / INVULNERABLE TEST / NOT HARDWARE PROOF · '+JSON.stringify({state:s.state,auto:input.settings.autoFire,magazines:s.player.equipped.map((k,i)=>s.player.magazines[i&&s.player.equipped[0]===k?'offhand':k]),source:input.source,guard:input.padGuard,focus:document.activeElement?.id,waypoint:s.player.waypoint});},200);
+ setInterval(()=>{const root=[...document.querySelectorAll('dialog[open]')].at(-1)||document.body;if(panel.parentElement!==root)root.append(panel);const s=getSim();if(s.state==='playing')s.player.invulnerable=2;report.textContent='VIRTUAL PAD / INVULNERABLE TEST / NOT HARDWARE PROOF · '+JSON.stringify({state:s.state,auto:input.settings.autoFire,magazines:s.player.equipped.map((k,i)=>s.player.magazines[i&&s.player.equipped[0]===k?'offhand':k]),vehicle:s.props.filter(v=>v.id===s.player.vehicleId).map(v=>({type:v.vehicleType,speed:+v.speed.toFixed(2),angle:+v.angle.toFixed(2),x:+v.x.toFixed(2),z:+v.z.toFixed(2),health:v.health})),source:input.source,guard:input.padGuard,focus:document.activeElement?.id,waypoint:s.player.waypoint});},200);
 }

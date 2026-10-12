@@ -35,3 +35,12 @@
 @media(max-height:500px) and (pointer:coarse){#aim-joystick{bottom:105px;right:25px;width:88px;height:88px}#aim-joystick>div{top:28px;left:28px}#aim-joystick>span{top:89px}}
 @media(pointer:coarse), (max-width:700px){.touch-weapons{bottom:345px}.using-gamepad .touch-weapons{display:none}}
 @media(max-height:500px) and (pointer:coarse){.touch-weapons{right:130px;bottom:105px}}
+/* Driving uses the same field-instrument typography and amber focus as combat. */
+.driving .hud-bottom,.driving #aim-joystick,.driving .touch-weapons{display:none!important}
+.driving-hud{position:absolute;bottom:28px;left:32px;padding:14px 18px;background:var(--coal);border-left:3px solid var(--orange);font:11px var(--mono);max-width:540px;pointer-events:auto}
+.driving-hud>span{color:var(--muted);letter-spacing:1.3px}.driving-hud>div:not(.drive-touch){display:flex;gap:12px;align-items:baseline;margin-top:6px}.driving-hud strong{font:42px var(--display);font-variant-numeric:tabular-nums}.driving-hud b{color:var(--orange);font-size:24px}.driving-hud small{font-size:9px}.driving-hud p{margin:10px 0 0;font-size:10px;line-height:1.8}.drive-touch{display:none;gap:8px;margin-top:10px}.drive-touch button{min-width:72px;min-height:48px;border:1px solid var(--line);touch-action:none;font:11px var(--mono);background:var(--panel)}.drive-touch button:active{background:var(--orange);color:var(--coal)}
+@media(pointer:coarse){.driving-hud{left:auto;right:16px;bottom:20px;max-width:260px}.drive-touch{display:flex}.driving-hud p{max-width:210px}}
+@media(max-width:600px){.driving-hud{left:auto;right:12px;bottom:20px;width:210px;padding:10px 12px}.driving-hud strong{font-size:32px}.driving-hud>span{font-size:10px}.driving-hud>div:not(.drive-touch){gap:8px}.drive-touch{display:flex}.driving .vehicle-readout{max-width:calc(100vw - 155px)}.driving #vehicle-status{display:none}.driving-hud p{font-size:9px}}
+.using-gamepad .drive-touch{display:none}
+
+.driving #vehicle-status{display:none}

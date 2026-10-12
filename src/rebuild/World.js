@@ -1,3 +1,4 @@
+import {buildVehicle,animateVehicle} from './VehicleVisuals.js';
 import {animateWeapons,updateBladeTrails} from './WeaponRig.js';
 import {CIVILIAN_COATS,characterVariant,detailCharacter} from './CharacterDetails.js';
 import {dressBuilding,dressStreets,obscuresSurvivor} from './CityDetails.js';
@@ -418,17 +419,7 @@ export class World {
     for(const xx of [-w/2+.5,w/2-.5]){cylinder(g,0x55665d,xx,h/2,front+.2,.045,h);}
     const poster=sign(g,'RESTEZ CHEZ VOUS',w*.32,1.55,front+.44,1,.65,'#c3b491','#603f35');
   }
-  car(o,van=false){
-    const g=new T.Group();g.position.set(o.x,0,o.z);g.rotation.y=o.rotation||0;g.userData.wheels=[];this.static.add(g);
-    box(g,o.color,0,.65,0,4.1,.62,1.85);box(g,o.color,-.25,1.16,0,van?2.8:2.1,.75,1.66);
-    box(g,0x2b4349,-.22,1.27,0,2.12,.47,1.7);box(g,o.color,-.25,1.58,0,2.28,.13,1.76);
-    for(const x of [-1.35,1.25])for(const z of [-.94,.94]){const wheel=cylinder(g,0x202c30,x,.43,z,.4,.22,.4,12);wheel.rotation.x=Math.PI/2;const hub=cylinder(g,0x6b7776,x,.43,z*1.13,.18,.03,.18,8);hub.rotation.x=Math.PI/2;g.userData.wheels.push(wheel,hub);}
-    for(const x of [-.9,.4])for(const z of [-.9,.9])box(g,o.color,x,1.24,z,.08,.55,.08);
-    box(g,0x394a49,2.08,.56,0,.12,.23,1.82);box(g,0x788983,-2.08,.55,0,.12,.2,1.82);
-    for(const z of [-.62,.62]){box(g,0xdfc28b,2.08,.81,z,.06,.23,.43,{emissive:0xdfa95f,emissiveIntensity:.5});box(g,0x9e4a37,-2.08,.8,z,.06,.2,.3);}
-    if(van){box(g,0x495c62,0,1.75,0,.7,.18,.5);box(g,0xde9b48,.2,1.9,0,.25,.2,.35,{emissive:0xde9b48,emissiveIntensity:1});}
-    contact(g,0,0,5,2.8,.65);
-  }
+  car(o,van=false){return buildVehicle(this.static,{...o,vehicleType:o.vehicleType||(van?'van':'sedan')},{box,cylinder,contact,batch:(a,b)=>this.batchStatic(a,b)});}
   barrier(o){const g=new T.Group();g.position.set(o.x,0,o.z);g.rotation.y=o.rotation||0;this.static.add(g);box(g,0x979780,0,.45,0,4,.9,1.1);box(g,0xbeb399,0,.95,0,4,.16,.66);for(let i=-1.5;i<1.7;i+=.65){const m=box(g,0x3b4542,i,.56,.56,.24,.7,.015);m.rotation.z=-.35;}contact(g,0,0,5,2,.35);}
   tree(x,z,tall=false){const g=this.static;box(g,0x7b8270,x,.3,z,2,.6,2);box(g,0x455448,x,.63,z,1.8,.06,1.8);cylinder(g,0x605945,x,1.65,z,.17,2.2,.11);for(let i=0;i<6;i++){const a=i*2.4;sphere(g,[0x526c53,0x687b56,0x748561][i%3],x+Math.sin(a)*.58,2.7+this.random()*.9+(tall?.8:0),z+Math.cos(a)*.6,.9,1.1,.85);}contact(g,x,z,4,4,.3);}
   lamp(x,z){const g=this.static;cylinder(g,0x384b4c,x,2.8,z,.07,5.6,.055);cylinder(g,0x344244,x,.23,z,.2,.45);box(g,0x3a4c4c,x+.5,5.55,z,1.1,.12,.12);box(g,0xdec494,x+.96,5.48,z,.48,.14,.4,{emissive:0xffc57b,emissiveIntensity:1.6});const glowTex=texture(128,128,(c)=>{const gradient=c.createRadialGradient(64,64,2,64,64,64);gradient.addColorStop(0,'rgba(255,190,87,.32)');gradient.addColorStop(.45,'rgba(255,161,60,.13)');gradient.addColorStop(1,'rgba(255,156,50,0)');c.fillStyle=gradient;c.fillRect(0,0,128,128);});plane(g,new T.MeshBasicMaterial({map:glowTex,transparent:true,depthWrite:false,blending:T.AdditiveBlending}),x+.7,.035,z,9,8,true);if(this.layout.city){this.cityLampPositions??=[];this.cityLampPositions.push({x:x+.96,z});}else{const l=new T.PointLight(0xffb65c,70,12,2);l.position.set(x+.96,4.8,z);this.scene.add(l);}contact(g,x,z,1,1,.4);}
@@ -483,7 +474,8 @@ export class World {
   }
   onEvent(e){
     if(e.type==='splash')this.splash(e.x,e.z,e.power);
-    if(e.type==='vehicle-hit')debris(this,{x:e.x,z:e.z,material:'metal',count:12,power:4});
+    if(e.type==='vehicle-hit'){debris(this,{x:e.x,z:e.z,material:'metal',count:12,power:4});this.shake=Math.max(this.shake,Math.min(.3,e.power*.012));}
+    if(e.type==='vehicle-skid')this.smoke(e.x,e.z,1,.1,0x7c8075);
     if(e.type==='slice'){if(e.hits)this.shake=Math.max(this.shake,e.combo===2?.12:.045);}
     if(e.type==='shoot'){
       if(e.weapon==='flame')this.flame(e.x+Math.sin(e.angle)*.6,e.z+Math.cos(e.angle)*.6,3,1.1,e.angle);
@@ -507,14 +499,15 @@ export class World {
   }
   update(sim,dt,menu=false){
     this.fireClock.value+=dt;const t=sim.time,p=sim.player,motionDt=['paused','upgrade','dead','victory'].includes(sim.state)?0:dt;
-    const desired=this.inspectionTarget?new T.Vector3(this.inspectionTarget.x,0,this.inspectionTarget.z):menu?new T.Vector3(2,0,-7):new T.Vector3(p.x,0,p.z-1);
+    const driving=sim.props.find(v=>v.id===p.vehicleId),lead=driving?{x:(driving.vx||0)*.25,z:(driving.vz||0)*.25}:{x:0,z:0};
+    const desired=this.inspectionTarget?new T.Vector3(this.inspectionTarget.x,0,this.inspectionTarget.z):menu?new T.Vector3(2,0,-7):new T.Vector3(p.x+lead.x,0,p.z-1+lead.z);
     if(this.layout.city){const lamps=[...(this.cityLampPositions||[])].sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z));this.cityLights.forEach((l,i)=>{const a=lamps[i];if(a){l.position.set(a.x,4.8,a.z);l.intensity=70;}});this.sun.position.set(p.x-18,32,p.z+5);this.sun.target.position.set(p.x,0,p.z);this.sun.target.updateMatrixWorld();this.ash.position.x=p.x;this.ash.position.z=p.z;for(const g of this.buildingMeshes.values())if(!g.userData.collapsed){const dx=g.userData.center.x-p.x,dz=g.userData.center.z-p.z;g.visible=Math.hypot(dx,dz)<(this.overview?400:70);this.fadeBuilding(g,!menu&&!this.overview&&obscuresSurvivor(g.userData.plan,p));}}
     this.focus.lerp(desired,1-Math.exp(-dt*4));
     const height=this.portrait?(typeof this.portrait==='number'?this.portrait:10):this.inspectionTarget?46:this.overview?(this.layout.city?310:85):menu?39:p.vehicleId?42:this.aspect<1?37:30;
     this.camera.far=this.overview&&this.layout.city?500:160;this.camera.near=.1;this.camera.left=-height*this.aspect/2;this.camera.right=height*this.aspect/2;this.camera.top=height/2;this.camera.bottom=-height/2;this.camera.updateProjectionMatrix();
     this.shake=Math.max(0,this.shake-dt*1.8);const s=this.settings.reducedMotion?0:this.shake;
     const cameraDistance=this.overview&&this.layout.city?5:1;this.scene.fog.density=cameraDistance===5?.002:.009;this.camera.position.set(this.focus.x+26*cameraDistance+(this.random()-.5)*s,this.focus.y+35*cameraDistance,this.focus.z+32*cameraDistance);this.camera.lookAt(this.focus);
-    if(this.player.userData.skin!==p.skin){this.removeDynamic(this.player);this.player=this.character('player',null,p.skin);this.scene.add(this.player);}
+    if(this.player.userData.skin!==p.skin){this.removeDynamic(this.player);this.player=this.character('player',null,p.skin);this.player.position.set(p.x,0,p.z);this.player.rotation.y=p.angle;this.scene.add(this.player);}
     this.player.position.lerp(new T.Vector3(p.x,0,p.z),1-Math.exp(-dt*22));this.player.rotation.y+=Math.atan2(Math.sin(p.angle-this.player.rotation.y),Math.cos(p.angle-this.player.rotation.y))*(1-Math.exp(-dt*20));this.animateCharacter(this.player,t,p.moving,p.dash>0,motionDt,p);
     animateWeapons(this.player,p,t,motionDt,{box,sphere,cylinder,batch:(a,b)=>this.batchStatic(a,b),remove:m=>this.removeDynamic(m)});
     updateBladeTrails(this.player,p,motionDt,!!this.settings.reducedMotion);
@@ -544,7 +537,7 @@ export class World {
     },(g,job)=>{g.visible=Math.hypot(p.x-job.x,p.z-job.z)<65;const ring=g.userData.jobRing;ring.material.color.setHex(job.state==='complete'?0x8eaf94:0xe0b674);ring.material.opacity=job.state==='complete'?.2:.6;});
     this.syncMap(this.rings,sim.hazards,h=>{const m=this.ring(h.radius,h.friendly?0xf2c179:0xee684c,.1);m.userData.disposable=true;this.scene.add(m);return m;},(m,h)=>{m.position.set(h.x,.06,h.z);m.material.opacity=.4+.5*(1-h.timer/h.duration);m.scale.setScalar(.85+.15*(1-h.timer/h.duration));});
     for(const c of this.collapses){c.age+=dt;const a=clamp(c.age/1.25,0,1);c.g.position.y=c.baseY-c.height*a*a;c.g.rotation.z=Math.sin(c.seed*6)*a*.07;if(a===1){c.g.visible=false;c.g.userData.collapsed=true;}}this.collapses=this.collapses.filter(c=>c.age<1.25);
-    for(const v of sim.props)if(v.driveable&&v.health>0){const root=this.propMeshes.get(v.id),plan=this.layout.cover[Number(v.id.split('-')[1])];if(root&&plan){root.visible=Math.hypot(v.x-p.x,v.z-p.z)<70;root.position.set(v.x-plan.x,0,v.z-plan.z);const car=root.children[0];if(car){car.rotation.y=(v.angle||0)-Math.PI/2;for(const wheel of car.userData.wheels||[])wheel.rotateY((v.speed||0)*dt*2.5);car.rotation.z=Math.sin(t*18)*Math.min(.018,(v.speed||0)*.002);}if(v.speed>5&&this.random()<dt*2)this.smoke(v.x-Math.sin(v.angle)*2,v.z-Math.cos(v.angle)*2,1,.1);}}
+    for(const v of sim.props)if(v.driveable&&v.health>0){const root=this.propMeshes.get(v.id),plan=this.layout.cover[Number(v.id.split('-')[1])];if(root&&plan){root.visible=Math.hypot(v.x-p.x,v.z-p.z)<70;root.position.set(v.x-plan.x,0,v.z-plan.z);const car=root.children[0];if(car)animateVehicle(car,{...v,occupied:p.vehicleId===v.id},motionDt,t);if(v.speed>5&&this.random()<dt*2)this.smoke(v.x-Math.sin(v.angle)*2,v.z-Math.cos(v.angle)*2,1,.1);}}
     for(const corpse of this.corpses){
       corpse.age+=dt;if(corpse.settled)continue;const m=corpse.mesh,t=corpse.age,duration=(corpse.death==='electrocuted'?1.1:.7)*corpse.fallSpeed,progress=clamp(t/duration,0,1),ease=progress*progress*(3-2*progress);
       m.position.x+=corpse.dx*dt*(1-progress);m.position.z+=corpse.dz*dt*(1-progress);m.position.y=.22*ease+(corpse.death==='exploded'?Math.sin(progress*Math.PI)*.9:0);

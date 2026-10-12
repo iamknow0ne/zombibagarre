@@ -1,3 +1,5 @@
+import {driveVehicle} from './Driving.js';
+import {vehicleSpec} from './Vehicles.js';
 import {meleeTiming} from './WeaponMotion.js';
 import {makeStreetEvents,updateStreetEvents} from './StreetEvents.js';
 import {normalizeLoadout,toggleLoadout,slotKey,isMelee} from './Loadout.js';
@@ -10,7 +12,7 @@ export class Simulation {
     this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.streetEvents=makeStreetEvents(this.layout);this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
     this.state = 'menu'; this.enemies = []; this.bullets = []; this.pickups = []; this.hazards = [];this.fires=[];
     this.time = 0; this.wave = 0; this.kills = 0; this.score = 0; this.combo = 0; this.comboTimer = 0;
-    this.player = this.makePlayer('carbine'); this.upgrades = []; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:PROP_HEALTH[o.kind],maxHealth:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);
+    this.player = this.makePlayer('carbine'); this.upgrades = []; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);
   }
   makePlayer(weapon) {
     return { skin:this.skin,vehicleId:null,swing:0,swingCombo:0,swingWeapon:null,x: 0, z: 3, angle: Math.PI, radius: .4, health: 100, maxHealth: 100, speed: 5.2, damage: 1,
@@ -24,7 +26,7 @@ export class Simulation {
   resume() { if (this.state === 'paused') this.state = this.previousState; }
   nextWave() {
     this.wave++;this.state='playing';const district=Math.floor((this.wave-1)/4);
-    if(district!==this.district&&!this.layout.city){this.district=district;this.player.x=0;this.player.z=3;this.layout=generateMap(this.seed,district);this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:PROP_HEALTH[o.kind],maxHealth:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.navigation.clear();this.pickups=[];this.fires=[];this.emit('district',{district});}
+    if(district!==this.district&&!this.layout.city){this.district=district;this.player.x=0;this.player.z=3;this.layout=generateMap(this.seed,district);this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.navigation.clear();this.pickups=[];this.fires=[];this.emit('district',{district});}
     this.toSpawn=this.wave%4===0?18+this.district*5:12+(this.wave-1)*3;
     this.spawnTimer=1;this.waveKills=0;this.waveTotal=this.toSpawn+(this.wave%4===0?1:0);
     if(this.layout.city)this.district=district;
@@ -245,24 +247,11 @@ export class Simulation {
   }
   interactVehicle(){
     const p=this.player;
-    if(p.vehicleId){const v=this.props.find(v=>v.id===p.vehicleId);if(!v)return false;for(let i=0;i<12;i++){const a=v.angle+i*Math.PI/6,x=v.x+Math.sin(a)*3.4,z=v.z+Math.cos(a)*3.4;if(insideMap(this.layout,x,z,.5)&&!pointBlocked(x,z,.5,this.obstacles)){p.vehicleId=null;p.radius=.4;p.x=x;p.z=z;v.speed=0;this.emit('vehicle',{message:'ON FOOT'});return true;}}this.emit('vehicle',{message:'EXIT BLOCKED · MOVE TO CLEAR GROUND'});return false;}
+    if(p.vehicleId){const v=this.props.find(v=>v.id===p.vehicleId);if(!v)return false;if(Math.abs(v.speed||0)>1.5){this.emit('vehicle',{message:'BRAKE TO EXIT'});return false;}for(let i=0;i<12;i++){const a=v.angle+Math.PI/2+i*Math.PI/6,x=v.x+Math.sin(a)*3.4,z=v.z+Math.cos(a)*3.4;if(insideMap(this.layout,x,z,.5)&&!pointBlocked(x,z,.5,this.obstacles)){p.vehicleId=null;p.radius=.4;p.x=x;p.z=z;v.speed=0;v.vx=v.vz=0;this.emit('vehicle',{message:'ON FOOT'});return true;}}this.emit('vehicle',{message:'EXIT BLOCKED · MOVE TO CLEAR GROUND'});return false;}
     const v=this.props.filter(v=>v.driveable&&v.health>0&&distance(v,p)<5).sort((a,b)=>distance(a,p)-distance(b,p))[0];if(!v)return false;
-    p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.vehicleId=v.id;p.radius=1.25;v.angle=v.angle??0;v.speed=0;p.x=v.x;p.z=v.z;this.emit('vehicle',{message:`${v.vehicleName} · WASD DRIVE · SPACE BRAKE · V EXIT`});return true;
+    p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.vehicleId=v.id;p.radius=1.25;v.angle=v.angle??0;v.speed=0;v.vx=v.vz=0;v.reverseHold=0;p.x=v.x;p.z=v.z;this.emit('vehicle',{message:`${v.vehicleName} · DRIVING CONTROLS ON HUD`});return true;
   }
-  drive(dt,mx,mz,input){
-    const p=this.player,v=this.props.find(v=>v.id===p.vehicleId);if(!v||v.health<=0){p.vehicleId=null;p.radius=.4;return;}
-    const moving=Math.hypot(mx,mz)>.1;
-    if(moving){const target=Math.atan2(mx,mz),turn=Math.atan2(Math.sin(target-v.angle),Math.cos(target-v.angle));v.angle+=clamp(turn,-dt*2.8,dt*2.8);}
-    v.speed=(v.speed||0)+(moving&&!input.brake?12:-18)*dt;v.speed=clamp(v.speed,0,input.brake?4:20);p.angle=v.angle;
-    const dx=Math.sin(v.angle)*v.speed*dt,dz=Math.cos(v.angle)*v.speed*dt,old={x:p.x,z:p.z};
-    if(waterAt(this.layout,p.x+dx+Math.sin(v.angle)*1.5,p.z+dz+Math.cos(v.angle)*1.5)){this.emit('splash',{x:p.x+dx,z:p.z+dz,power:7});v.sunk=true;this.damageProp(v,v.health+1);p.x=v.lastDry?.x??old.x;p.z=v.lastDry?.z??old.z;p.vehicleId=null;p.radius=.4;v.sunk=true;this.emit('vehicle',{message:'VEHICLE SUBMERGED'});return;}
-    this.move(p,dx,dz);v.x=p.x;v.z=p.z;v.w=2+Math.abs(Math.sin(v.angle))*2.3;v.d=2+Math.abs(Math.cos(v.angle))*2.3;
-    if(!v.navPosition||distance(v,v.navPosition)>2){this.navigation.clear();v.navPosition={x:v.x,z:v.z};}
-    if(insideMap(this.layout,p.x,p.z,4))v.lastDry={x:p.x,z:p.z};
-    if(moving&&v.speed>4&&Math.hypot(p.x-old.x,p.z-old.z)<Math.hypot(dx,dz)*.45){this.damageProp(v,v.speed*1.3);this.emit('vehicle-hit',{x:v.x,z:v.z,power:v.speed});v.speed*=.25;}
-    for(const e of this.enemies)if(e.health>0&&Math.abs(e.x-v.x)<v.w/2+e.radius+.35&&Math.abs(e.z-v.z)<v.d/2+e.radius+.45&&this.time>(e.ramAfter||0)&&v.speed>3){e.ramAfter=this.time+.5;this.damageEnemy(e,v.speed*14,Math.sin(v.angle)*v.speed,Math.cos(v.angle)*v.speed,{kind:'explosion'});v.speed*=.92;}
-    p.moving=v.speed>1;
-  }
+  drive(dt,mx,mz,input){driveVehicle(this,dt,mx,mz,input);}
   collect(type) {
     const p=this.player;
     if(type==='health')p.health=Math.min(p.maxHealth,p.health+30);
