@@ -92,22 +92,22 @@ export function dressBuilding(world,g,b,kit){
 
 export function dressStreets(world,kit){
  const {box,cylinder,sphere,sign,mat,plane,texture}=kit,g=world.static,r=seededRandom(world.layout.mapSeed^0x589abd);
- // Shared tiled sidewalk surface; the street grid remains mechanically open.
+ // Sidewalk islands follow the generated parcels; roads remain open.
  const tiles=texture(256,256,c=>{c.fillStyle='#929487';c.fillRect(0,0,256,256);for(let y=0;y<256;y+=32)for(let x=0;x<256;x+=64){const off=(y/32%2)*32;c.strokeStyle='#6e776f';c.lineWidth=2;c.strokeRect(x-off,y,64,32);c.fillStyle=`rgba(44,52,47,${r()*.08})`;c.fillRect(x-off+2,y+2,60,28);}});tiles.wrapS=tiles.wrapT=T.RepeatWrapping;tiles.repeat.set(5,5);const paving=new T.MeshStandardMaterial({map:tiles,roughness:.88});
  const grass=texture(256,256,c=>{c.fillStyle='#798161';c.fillRect(0,0,256,256);for(let i=0;i<7000;i++){c.fillStyle=i%3?'rgba(31,54,30,.11)':'rgba(206,201,133,.2)';c.fillRect(r()*256,r()*256,.6+r()*2,1+r()*5);}});grass.wrapS=grass.wrapT=T.RepeatWrapping;grass.repeat.set(7,7);const lawn=new T.MeshStandardMaterial({map:grass,roughness:1});
- for(let x=-80;x<=80;x+=32)for(let z=-80;z<=80;z+=32){if(x===48)continue;const park=x<-32&&(z<-32||z>32);if(!park)plane(g,paving,x,.141,z,23.6,23.6,true);else{
+ for(const {x,z,park,w,d} of world.layout.parcels){if(!park)plane(g,paving,x,.141,z,w-.4,d-.4,true);else{
   plane(g,lawn,x,.142,z,23.6,23.6,true);box(g,0xa89b79,x,.15,z,2,.025,23.6);box(g,0xa89b79,x,.15,z,23.6,.025,2);
   // Distinct park furniture: rose beds, a circular fountain or a glass pavilion.
-  const kind=Math.abs(x+z)%3;
+  const kind=Math.floor(r()*3);
   if(kind===0){cylinder(g,0xa9a18a,x,.32,z,3.6,.5,3.6,32);cylinder(g,0x467879,x,.59,z,3.25,.03,3.25,32);cylinder(g,0xa99e80,x,1.1,z,.45,1.2,.35,12);cylinder(g,0xa99e80,x,1.65,z,1.3,.15,1.3,24);}
   else if(kind===1){for(const a of [-4,4])for(const b of [-3,3]){box(g,0x45615b,x+a,1.8,z+b,.1,3.6,.1);}box(g,0x729d94,x,3.6,z,8.3,.15,6.3,{metalness:.35,roughness:.3});for(let a=-4;a<=4;a+=1)box(g,0x47675e,x+a,2,z+3,.07,3.5,.07);}
   else for(let i=0;i<5;i++){box(g,0x625947,x-5+i*2.2,.27,z,1.4,.45,7);for(let k=0;k<6;k++)sphere(g,[0x976454,0xb99c69,0x768b5b][i%3],x-5+i*2.2,.65,z-3+k*1.1,.5,.45,.4);}
   for(const side of [-1,1]){box(g,0x8b7b5c,x+side*7,.6,z,2.2,.12,.6);box(g,0x8b7b5c,x+side*7,.96,z-.32,2.2,.6,.1);}
  }
  }
- for(const x of world.layout.roads)for(const z of world.layout.roads){
-  if(Math.abs(x-48)<12)continue;
-  if((x+z)%64===0)for(const side of [-1,1])for(let i=-2;i<=2;i++)box(g,0xbebda7,x+i*.85,.026,z+side*6,.5,.02,2.4);
+ for(const [index,{x,z}] of world.layout.nodes.entries()){
+  if(world.layout.water.some(w=>Math.abs(x-w.x)<w.w/2+8&&Math.abs(z-w.z)<w.d/2+8))continue;
+  if(index%4===0)for(const side of [-1,1])for(let i=-2;i<=2;i++)box(g,0xbebda7,x+i*.85,.026,z+side*6,.5,.02,2.4);
   const direction=new T.Group();direction.position.set(x+5.6,0,z+5.7);g.add(direction);cylinder(direction,0x3e5557,0,1.9,0,.055,3.8);sign(direction,x<0?'LES SERRES ←':'PORT / CANAL →',0,3.4,0,2.8,.45,'#355758','#ddd3ab');
   // Manholes and kerbside drainage.
   cylinder(g,0x384848,x-2,.022,z+3,.45,.025,.45,16);for(let i=0;i<5;i++)box(g,0x263d40,x-2.3+i*.15,.039,z+3,.06,.015,.6);
@@ -123,5 +123,5 @@ export function dressStreets(world,kit){
  }
  // Irregular rainwater patches and faded tyre marks, shared materials.
  const wet=new T.MeshStandardMaterial({color:0x658889,roughness:.13,metalness:.65,transparent:true,opacity:.35,depthWrite:false});
- for(let i=0;i<95;i++){const x=world.layout.roads[i%7]+(r()-.5)*5,z=-108+r()*216;if(x>39&&x<57)continue;const vertices=[];for(let k=0;k<12;k++){const a=k/12*Math.PI*2,rad=.7+r()*.8;vertices.push(new T.Vector2(Math.cos(a)*rad*2,Math.sin(a)*rad));}const shape=new T.Shape(vertices),mesh=new T.Mesh(new T.ShapeGeometry(shape),wet);mesh.rotation.x=-Math.PI/2;mesh.position.set(x,.02,z);g.add(mesh);}
+ for(let i=0;i<95;i++){const p=world.layout.streetPoints[Math.floor(r()*world.layout.streetPoints.length)],x=p.x+(r()-.5)*4,z=p.z+(r()-.5)*4;if(world.layout.water.some(w=>Math.abs(x-w.x)<w.w/2&&Math.abs(z-w.z)<w.d/2))continue;const vertices=[];for(let k=0;k<12;k++){const a=k/12*Math.PI*2,rad=.7+r()*.8;vertices.push(new T.Vector2(Math.cos(a)*rad*2,Math.sin(a)*rad));}const shape=new T.Shape(vertices),mesh=new T.Mesh(new T.ShapeGeometry(shape),wet);mesh.rotation.x=-Math.PI/2;mesh.position.set(x,.02,z);g.add(mesh);}
 }

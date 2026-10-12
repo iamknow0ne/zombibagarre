@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {generateCity} from '../src/rebuild/City.js';
 import {generateParcel,PARCEL_SHAPES} from '../src/rebuild/CityParcels.js';
 import {generateMap,isConnected} from '../src/rebuild/Map.js';
+import {roadOverlaps} from '../src/rebuild/CityTopology.js';
 import {pointBlocked} from '../src/rebuild/config.js';
 const overlaps=(a,b)=>Math.abs(a.x-b.x)<(a.w+b.w)/2-1e-6&&Math.abs(a.z-b.z)<(a.d+b.d)/2-1e-6;
 test('seeded parcels vary footprint, height, roof and setback without overlapping wings or roads',()=>{
@@ -19,7 +20,7 @@ test('seeded parcels vary footprint, height, roof and setback without overlappin
    for(const other of buildings)if(other!==b)assert.equal(overlaps(b,other),false,`${seed}: ${b.id} overlaps ${other.id}`);
   }
   for(const prop of city.cover)for(const b of buildings)assert.equal(overlaps(prop,b),false);
-  for(const road of city.roads)for(let v=-106;v<=106;v+=2){assert.equal(pointBlocked(road,v,1.3,buildings),false);assert.equal(pointBlocked(v,road,1.3,buildings),false);}
+  for(const b of buildings)assert.equal(roadOverlaps(b,city.roads,1.3),false,`seed ${seed}: building in road`);
  }
  assert.deepEqual(generateCity(-1),generateCity(-1));assert.notDeepEqual(generateCity(1).buildings,generateCity(2).buildings);
 });

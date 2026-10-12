@@ -9,9 +9,9 @@ const city=()=>{const s=new Simulation({seed:140,mode:'city'});s.start('katana')
 const step=(s,n,input)=>{for(let i=0;i<n;i++)s.update(1/60,{auto:false,...input});};
 test('open city generation has connected streets, safe spawn, canal crossings and persistent buildings',()=>{
  assert.deepEqual(generateCity(31),generateCity(31));assert.notDeepEqual(generateCity(31).buildings,generateCity(32).buildings);
- for(let seed=0;seed<4;seed++){const m=generateCity(seed);assert.ok(m.buildings.length>=20);assert.ok(m.cover.filter(p=>p.driveable).length>=10);assert.ok(m.bounds.maxX-m.bounds.minX>200);assert.ok(isConnected(m.buildings,1.1,m));assert.ok(!pointBlocked(0,3,1,m.buildings));}
+ for(let seed=0;seed<4;seed++){const m=generateCity(seed);assert.ok(m.buildings.length>=20);assert.ok(m.cover.filter(p=>p.driveable).length>=10);assert.ok(Math.max(m.bounds.maxX-m.bounds.minX,m.bounds.maxZ-m.bounds.minZ)>250);assert.ok(isConnected(m.buildings,1.1,m));assert.ok(!pointBlocked(0,3,1,m.buildings));}
  const s=city(),layout=s.layout,b=s.props.find(p=>p.kind==='building');s.damageProp(b,300);const hp=b.health;s.wave=4;s.nextWave();assert.equal(s.layout,layout);assert.equal(s.props.find(p=>p.id===b.id).health,hp);assert.equal(s.district,1);
- assert.equal(waterAt(layout,48,0),true);assert.equal(insideMap(layout,48,0),false);assert.equal(insideMap(layout,48,32,1.3),true);assert.equal(segmentInMap(layout,{x:35,z:32},{x:65,z:32},1.3),true);assert.equal(segmentInMap(layout,{x:35,z:0},{x:65,z:0},.4),false);
+ const wet=layout.waterObstacles[0],bridge=layout.bridges[0];assert.ok(wet&&bridge);assert.equal(waterAt(layout,wet.x,wet.z),true);assert.equal(insideMap(layout,wet.x,wet.z),false);assert.equal(insideMap(layout,bridge.x,bridge.z,1.3),true);assert.equal(segmentInMap(layout,{x:bridge.x-bridge.w/2-1,z:bridge.z},{x:bridge.x+bridge.w/2+1,z:bridge.z},1.3),true);assert.equal(segmentInMap(layout,{x:wet.x-wet.w/2-1,z:wet.z},{x:wet.x+wet.w/2+1,z:wet.z},.4),false);
 });
 test('vehicles enter, accelerate, brake, ram and exit onto safe ground',()=>{
  const s=city();assert.equal(s.interactVehicle(),true);const v=s.props.find(p=>p.id===s.player.vehicleId),origin={x:v.x,z:v.z};
@@ -20,12 +20,12 @@ test('vehicles enter, accelerate, brake, ram and exit onto safe ground',()=>{
 });
 test('vehicles cannot drive through a building and water immersion ejects the survivor',()=>{
  const wallRun=city();wallRun.interactVehicle();const car=wallRun.props.find(p=>p.id===wallRun.player.vehicleId),wall=wallRun.props.find(p=>p.kind==='building');wallRun.player.x=car.x=wall.x;wallRun.player.z=car.z=wall.z-wall.d/2-5;car.angle=0;car.speed=18;step(wallRun,90,{x:0,z:1});assert.ok(wallRun.player.z<wall.z-wall.d/2);assert.ok(car.health<car.maxHealth);
- const s=city();s.interactVehicle();const v=s.props.find(p=>p.id===s.player.vehicleId);s.player.x=v.x=36;s.player.z=v.z=0;v.angle=Math.PI/2;v.speed=18;
+ const s=city();s.interactVehicle();const v=s.props.find(p=>p.id===s.player.vehicleId);const wet=s.layout.waterObstacles[0];s.player.x=v.x=wet.x-wet.w/2-3;s.player.z=v.z=wet.z;v.angle=Math.PI/2;v.speed=18;
  step(s,80,{x:1,z:0});assert.equal(s.player.vehicleId,null);assert.ok(v.sunk);assert.equal(v.health<=0,true);assert.ok(insideMap(s.layout,s.player.x,s.player.z,.4));assert.ok(s.events.some(e=>e.type==='splash'));
 });
 test('water shots and explosions produce splashes without igniting the canal',()=>{
- const s=city();s.player.x=39;s.player.z=7;s.switchWeapon('carbine');step(s,30,{firing:true,aim:{x:48,z:7}});assert.ok(s.events.some(e=>e.type==='splash'));
- s.blast(48,7,4.3,180);assert.ok(s.events.some(e=>e.type==='explosion'&&e.water));s.addFire(48,7);assert.equal(s.fires.length,0);
+ const s=city(),wet=s.layout.waterObstacles[0];s.props=[];s.obstacles=[];s.player.x=wet.x-wet.w/2-3;s.player.z=wet.z;s.switchWeapon('carbine');step(s,30,{firing:true,aim:{x:wet.x,z:wet.z}});assert.ok(s.events.some(e=>e.type==='splash'));
+ s.blast(wet.x,wet.z,4.3,180);assert.ok(s.events.some(e=>e.type==='explosion'&&e.water));s.addFire(wet.x,wet.z);assert.equal(s.fires.length,0);
 });
 test('swords have directional combos, sever limbs, damage timber and require no ammunition',()=>{
  const s=city();s.props=[];s.obstacles=[];s.player.x=0;s.player.z=0;const front=s.spawnEnemy('brute',0,2),back=s.spawnEnemy('brute',0,-2);front.speed=back.speed=0;

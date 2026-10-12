@@ -152,20 +152,22 @@ export class World {
   buildCity(){
     const g=this.static,b=this.layout.bounds,r=this.random;
     const asphalt=asphaltTex(0);asphalt.wrapS=asphalt.wrapT=T.RepeatWrapping;asphalt.repeat.set(.065,.065);
-    const ground=new T.Shape(this.layout.boundary.map(p=>new T.Vector2(p.x,-p.z)));for(const w of this.layout.water){const hole=new T.Path();hole.moveTo(w.x-w.w/2,-w.z-w.d/2);hole.lineTo(w.x+w.w/2,-w.z-w.d/2);hole.lineTo(w.x+w.w/2,-w.z+w.d/2);hole.lineTo(w.x-w.w/2,-w.z+w.d/2);hole.closePath();ground.holes.push(hole);}const geo=new T.ShapeGeometry(ground);geo.rotateX(-Math.PI/2);const floor=new T.Mesh(geo,new T.MeshStandardMaterial({map:asphalt,roughness:.93}));floor.position.y=-.04;floor.receiveShadow=true;g.add(floor);
-    for(const x of this.layout.roads){
-      for(let z=-110;z<111;z+=5){if(waterAt(this.layout,x,z))continue;box(g,0xb5b59d,x,.018,z,.11,.012,2);if(!waterAt(this.layout,z,x))box(g,0xb5b59d,z,.018,x,2,.012,.11);}
+    const ground=new T.Shape(this.layout.boundary.map(p=>new T.Vector2(p.x,-p.z)));for(const w of this.layout.water){const hole=new T.Path();hole.moveTo(w.x-w.w/2,-w.z-w.d/2);hole.lineTo(w.x+w.w/2,-w.z-w.d/2);hole.lineTo(w.x+w.w/2,-w.z+w.d/2);hole.lineTo(w.x-w.w/2,-w.z+w.d/2);hole.closePath();ground.holes.push(hole);}const geo=new T.ShapeGeometry(ground);geo.rotateX(-Math.PI/2);const floor=new T.Mesh(geo,new T.MeshStandardMaterial({map:asphalt,color:0x939c7f,roughness:.98}));floor.position.y=-.04;floor.receiveShadow=true;g.add(floor);
+    for(const road of this.layout.roads){
+      const dx=road.b.x-road.a.x,dz=road.b.z-road.a.z,len=Math.hypot(dx,dz),angle=Math.atan2(dx,dz),cx=(road.a.x+road.b.x)/2,cz=(road.a.z+road.b.z)/2;
+      const strip=box(g,0x39484b,cx,-.008,cz,road.width,.045,len);strip.rotation.y=angle;strip.receiveShadow=true;
+      for(const p of[road.a,road.b])cylinder(g,0x39484b,p.x,-.008,p.z,road.width/2,.045,road.width/2,20);
+      for(let d=3;d<len-2;d+=6){const x=road.a.x+dx*d/len,z=road.a.z+dz*d/len;if(waterAt(this.layout,x,z))continue;const dash=box(g,0xb5b59d,x,.025,z,.11,.012,2);dash.rotation.y=angle;}
     }
-    for(let x=-80;x<100;x+=32)for(let z=-80;z<100;z+=32){if(x===48)continue;
-      const park=(x<-32&&(z<-32||z>32));const ground=box(g,park?0x63714c:0x7c8278,x,.04,z,24,.18,24);ground.receiveShadow=true;
-      for(const side of [-1,1]){box(g,0xa0a58e,x+side*12,.16,z,.25,.26,24);box(g,0xa0a58e,x,.16,z+side*12,24,.26,.25);}
-
-      if((x+z)%64===0){this.lamp(x-12,z-12);}
+    for(const {x,z,park,w,d} of this.layout.parcels){
+      const paving=box(g,park?0x63714c:0x7c8278,x,.04,z,w,.18,d);paving.receiveShadow=true;
+      for(const side of [-1,1]){box(g,0xa0a58e,x+side*w/2,.16,z,.25,.26,d);box(g,0xa0a58e,x,.16,z+side*d/2,w,.26,.25);}
+      if(this.random()<.5)this.lamp(x-w/2,z-d/2);
     }
     dressStreets(this,{box,cylinder,sphere,sign,mat,plane,texture});
     for(const b of this.layout.buildings)this.cityBuilding(b);
     for(const rect of this.layout.water)this.waterSurface(rect);
-    for(const bridge of this.layout.bridges){box(g,0x777f78,bridge.x,.05,bridge.z,bridge.w,.5,bridge.d);for(const side of [-1,1]){box(g,0xa8ac98,bridge.x,.55,bridge.z+side*bridge.d/2,bridge.w,.15,.2);for(let x=-8;x<9;x+=2)box(g,0x4d605f,bridge.x+x,.3,bridge.z+side*bridge.d/2,.12,.7,.12);}}
+    for(const bridge of this.layout.bridges){box(g,0x777f78,bridge.x,-.08,bridge.z,bridge.w,.16,bridge.d);for(const side of [-1,1]){box(g,0xa8ac98,bridge.x,.55,bridge.z+side*bridge.d/2,bridge.w,.15,.2);for(let x=-bridge.w/2;x<=bridge.w/2;x+=2)box(g,0x4d605f,bridge.x+x,.3,bridge.z+side*bridge.d/2,.12,.7,.12);}}
     for(const place of this.layout.landmarks){const marker=sign(g,place.name,place.x+7,.025,place.z+5,10,1.2,'#3b4c4d','#d5c5a2');marker.rotation.x=-Math.PI/2;}
   }
   cityBuilding(b){
@@ -507,12 +509,12 @@ export class World {
     this.fireClock.value+=dt;const t=sim.time,p=sim.player,motionDt=['paused','upgrade','dead','victory'].includes(sim.state)?0:dt;
     const driving=sim.props.find(v=>v.id===p.vehicleId),lead=driving?{x:(driving.vx||0)*.25,z:(driving.vz||0)*.25}:{x:0,z:0};
     const desired=this.inspectionTarget?new T.Vector3(this.inspectionTarget.x,0,this.inspectionTarget.z):menu?new T.Vector3(2,0,-7):new T.Vector3(p.x+lead.x,0,p.z-1+lead.z);
-    if(this.layout.city){const lamps=[...(this.cityLampPositions||[])].sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z));this.cityLights.forEach((l,i)=>{const a=lamps[i];if(a){l.position.set(a.x,4.8,a.z);l.intensity=70;}});this.sun.position.set(p.x-18,32,p.z+5);this.sun.target.position.set(p.x,0,p.z);this.sun.target.updateMatrixWorld();this.ash.position.x=p.x;this.ash.position.z=p.z;for(const g of this.buildingMeshes.values())if(!g.userData.collapsed){const dx=g.userData.center.x-p.x,dz=g.userData.center.z-p.z;g.visible=Math.hypot(dx,dz)<(this.overview?400:70);this.fadeBuilding(g,!menu&&!this.overview&&obscuresSurvivor(g.userData.plan,p));}}
+    if(this.layout.city){const lamps=[...(this.cityLampPositions||[])].sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z));this.cityLights.forEach((l,i)=>{const a=lamps[i];if(a){l.position.set(a.x,4.8,a.z);l.intensity=70;}});this.sun.position.set(p.x-18,32,p.z+5);this.sun.target.position.set(p.x,0,p.z);this.sun.target.updateMatrixWorld();this.ash.position.x=p.x;this.ash.position.z=p.z;for(const g of this.buildingMeshes.values())if(!g.userData.collapsed){const dx=g.userData.center.x-p.x,dz=g.userData.center.z-p.z;g.visible=Math.hypot(dx,dz)<(this.overview?800:70);this.fadeBuilding(g,!menu&&!this.overview&&obscuresSurvivor(g.userData.plan,p));}}
     this.focus.lerp(desired,1-Math.exp(-dt*4));
-    const height=this.portrait?(typeof this.portrait==='number'?this.portrait:10):this.inspectionTarget?46:this.overview?(this.layout.city?310:85):menu?39:p.vehicleId?42:this.aspect<1?37:30;
-    this.camera.far=this.overview&&this.layout.city?500:160;this.camera.near=.1;this.camera.left=-height*this.aspect/2;this.camera.right=height*this.aspect/2;this.camera.top=height/2;this.camera.bottom=-height/2;this.camera.updateProjectionMatrix();
+    const height=this.portrait?(typeof this.portrait==='number'?this.portrait:10):this.inspectionTarget?46:this.overview?(this.layout.city?Math.max(this.layout.bounds.maxX-this.layout.bounds.minX,this.layout.bounds.maxZ-this.layout.bounds.minZ)*1.12:85):menu?39:p.vehicleId?42:this.aspect<1?37:30;
+    this.camera.far=this.overview&&this.layout.city?900:160;this.camera.near=.1;this.camera.left=-height*this.aspect/2;this.camera.right=height*this.aspect/2;this.camera.top=height/2;this.camera.bottom=-height/2;this.camera.updateProjectionMatrix();
     this.shake=Math.max(0,this.shake-dt*1.8);const s=this.settings.reducedMotion?0:this.shake;
-    const cameraDistance=this.overview&&this.layout.city?5:1;this.scene.fog.density=cameraDistance===5?.002:.009;this.camera.position.set(this.focus.x+26*cameraDistance+(this.random()-.5)*s,this.focus.y+35*cameraDistance,this.focus.z+32*cameraDistance);this.camera.lookAt(this.focus);
+    const cameraDistance=this.overview&&this.layout.city?8:1;this.scene.fog.density=cameraDistance===8?.0009:.009;this.camera.position.set(this.focus.x+26*cameraDistance+(this.random()-.5)*s,this.focus.y+35*cameraDistance,this.focus.z+32*cameraDistance);this.camera.lookAt(this.focus);
     if(this.player.userData.skin!==p.skin){this.removeDynamic(this.player);this.player=this.character('player',null,p.skin);this.player.position.set(p.x,0,p.z);this.player.rotation.y=p.angle;this.scene.add(this.player);}
     this.player.position.lerp(new T.Vector3(p.x,0,p.z),1-Math.exp(-dt*22));this.player.rotation.y+=Math.atan2(Math.sin(p.angle-this.player.rotation.y),Math.cos(p.angle-this.player.rotation.y))*(1-Math.exp(-dt*20));this.animateCharacter(this.player,t,p.moving,p.dash>0,motionDt,p);
     animateWeapons(this.player,p,t,motionDt,{box,sphere,cylinder,batch:(a,b)=>this.batchStatic(a,b),remove:m=>this.removeDynamic(m)});

@@ -1,3 +1,4 @@
+import {boundarySegmentClear} from './CityTopology.js';
 import {waterAt} from './City.js';
 import { ARENA, seededRandom, pointBlocked, lineBlocked } from './config.js';
 
@@ -69,8 +70,8 @@ export function insideMap(layout,x,z,radius=0){
   }return inside;
 }
 export function segmentInMap(layout,a,b,radius=0){
-  // City boundaries are convex; only canal segments can interrupt an interior route.
-  if(layout.city&&layout.waterObstacles)return insideMap(layout,a.x,a.z,radius)&&insideMap(layout,b.x,b.z,radius)&&!lineBlocked(a,b,radius,layout.waterObstacles);
+  // Check the whole route against concave coastlines and canal gaps.
+  if(layout.city&&layout.waterObstacles)return insideMap(layout,a.x,a.z,radius)&&insideMap(layout,b.x,b.z,radius)&&boundarySegmentClear(layout.boundary,a,b,radius)&&!lineBlocked(a,b,radius,layout.waterObstacles);
   const steps=Math.max(1,Math.ceil(Math.hypot(a.x-b.x,a.z-b.z)*2));
   for(let i=0;i<=steps;i++){const t=i/steps;if(!insideMap(layout,a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t,radius))return false;}return true;
 }
