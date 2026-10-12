@@ -85,6 +85,14 @@ export class InputManager {
         return this.isKeyPressed('Space') || this.isKeyPressed('ShiftLeft') || this.isKeyPressed('ShiftRight');
     }
 
+    isPausePressed() {
+        return this.isKeyPressed('Escape') || this.isKeyPressed('KeyP');
+    }
+
+    isEnterVehiclePressed() {
+        return this.isKeyPressed('KeyE');
+    }
+
     update() {
         // Can be used for input buffering or combo detection
     }

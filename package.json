@@ -1,12 +1,14 @@
 {
-  "name": "zombie-bagarre-3d",
-  "version": "3.0.0",
-  "description": "Zombie Bagarre - Three.js 3D Edition",
+  "name": "zombie-bagarre",
+  "version": "4.2.0",
+  "description": "Zombie Bagarre: Quarantine \u2014 2.5D survival action",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test tests/*.test.js",
+    "test:campaign": "node scripts/campaign-check.mjs"
   },
   "dependencies": {
     "three": "^0.169.0"

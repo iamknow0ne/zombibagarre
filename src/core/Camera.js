@@ -16,16 +16,31 @@ export class CameraController {
         // Follow properties
         this.targetPosition = new THREE.Vector3();
         this.smoothFactor = 5;
+
+        // Camera bounds (arena size)
+        this.bounds = {
+            minX: -200,
+            maxX: 200,
+            minZ: -200,
+            maxZ: 200
+        };
     }
 
     follow(target, deltaTime) {
         if (!target) return;
 
         // Calculate target camera position (isometric view)
+        let targetX = target.position.x;
+        let targetZ = target.position.z;
+
+        // Clamp to bounds
+        targetX = Math.max(this.bounds.minX, Math.min(this.bounds.maxX, targetX));
+        targetZ = Math.max(this.bounds.minZ, Math.min(this.bounds.maxZ, targetZ));
+
         this.targetPosition.set(
-            target.position.x,
+            targetX,
             target.position.y + 60,
-            target.position.z + 60
+            targetZ + 60
         );
 
         // Smooth follow

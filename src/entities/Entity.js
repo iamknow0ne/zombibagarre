@@ -40,18 +40,41 @@ export class Entity {
         this.alive = false;
         if (this.mesh) {
             this.scene.remove(this.mesh);
+            this.disposeMesh(this.mesh);
+        }
+    }
 
-            // Dispose geometry and materials
-            if (this.mesh.geometry) {
-                this.mesh.geometry.dispose();
-            }
-            if (this.mesh.material) {
-                if (Array.isArray(this.mesh.material)) {
-                    this.mesh.material.forEach(mat => mat.dispose());
-                } else {
-                    this.mesh.material.dispose();
-                }
+    disposeMesh(mesh) {
+        // Recursively dispose of mesh and all children
+        if (mesh.geometry) {
+            mesh.geometry.dispose();
+        }
+
+        if (mesh.material) {
+            if (Array.isArray(mesh.material)) {
+                mesh.material.forEach(mat => this.disposeMaterial(mat));
+            } else {
+                this.disposeMaterial(mesh.material);
             }
         }
+
+        // Dispose children (for Groups)
+        if (mesh.children && mesh.children.length > 0) {
+            for (let i = mesh.children.length - 1; i >= 0; i--) {
+                this.disposeMesh(mesh.children[i]);
+            }
+        }
+    }
+
+    disposeMaterial(material) {
+        // Dispose textures
+        if (material.map) material.map.dispose();
+        if (material.lightMap) material.lightMap.dispose();
+        if (material.bumpMap) material.bumpMap.dispose();
+        if (material.normalMap) material.normalMap.dispose();
+        if (material.specularMap) material.specularMap.dispose();
+        if (material.envMap) material.envMap.dispose();
+
+        material.dispose();
     }
 }

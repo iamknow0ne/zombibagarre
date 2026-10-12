@@ -1,107 +1,67 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>Zombie Bagarre 3D</title>
-    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧟</text></svg>">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#162327" />
+  <meta name="description" content="Zombie Bagarre: Quarantine. A 2.5D survival game. Eight biomes. Thirty-two waves. One last way out." />
+  <title>Zombie Bagarre — Quarantine</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23162327'/%3E%3Cpath d='M16 14h33L25 43h23v9H14v-9l23-20H16z' fill='%23ed713b'/%3E%3C/svg%3E" />
 </head>
 <body>
-    <!-- Canvas -->
-    <canvas id="gameCanvas"></canvas>
-
-    <!-- Loading Screen -->
-    <div id="loading" class="screen">
-        <div class="screen-content">
-            <h1 class="glitch" data-text="ZOMBIE BAGARRE">ZOMBIE BAGARRE</h1>
-            <p class="subtitle">3D EDITION</p>
-            <div class="loading-bar">
-                <div class="loading-fill"></div>
-            </div>
-            <p class="loading-text">Loading...</p>
-        </div>
-    </div>
-
-    <!-- Main Menu -->
-    <div id="menu" class="screen" style="display: none;">
-        <div class="screen-content">
-            <h1 class="glitch" data-text="ZOMBIE BAGARRE">ZOMBIE BAGARRE</h1>
-            <p class="subtitle">3D EDITION</p>
-            <button id="startBtn" class="btn primary">START GAME</button>
-            <div class="credits">
-                <p>Made with ❤️ by VibeCoding</p>
-                <p class="version">v3.0.0 - Three.js Edition</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- HUD -->
-    <div id="hud" style="display: none;">
-        <!-- Top Left: Health & XP -->
-        <div class="hud-top-left">
-            <div class="stat-bar health-bar">
-                <div class="stat-label">HEALTH</div>
-                <div class="bar-container">
-                    <div id="healthFill" class="bar-fill health-fill"></div>
-                </div>
-                <div id="healthText" class="stat-text">200 / 200</div>
-            </div>
-            <div class="stat-bar exp-bar">
-                <div class="stat-label">EXPERIENCE</div>
-                <div class="bar-container">
-                    <div id="expFill" class="bar-fill exp-fill"></div>
-                </div>
-                <div id="levelText" class="stat-text">Level 1</div>
-            </div>
-        </div>
-
-        <!-- Top Right: Wave & Money -->
-        <div class="hud-top-right">
-            <div class="hud-stat">
-                <span class="stat-label">WAVE</span>
-                <span id="waveText" class="stat-value">1</span>
-            </div>
-            <div class="hud-stat">
-                <span class="stat-label">MONEY</span>
-                <span id="moneyText" class="stat-value">$150</span>
-            </div>
-        </div>
-
-        <!-- Controls Help (Bottom Center) -->
-        <div class="hud-bottom-center">
-            <div class="controls-hint">
-                <span>WASD: Move</span>
-                <span>SPACE: Dash</span>
-                <span>Auto-fire enabled</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Level Up Screen -->
-    <div id="levelUpScreen" class="screen overlay" style="display: none;">
-        <div class="screen-content">
-            <h2 class="glow">LEVEL UP!</h2>
-            <p class="level-text">Level <span id="newLevel">2</span></p>
-            <button id="continueBtn" class="btn primary">CONTINUE</button>
-        </div>
-    </div>
-
-    <!-- Game Over Screen -->
-    <div id="gameOverScreen" class="screen overlay" style="display: none;">
-        <div class="screen-content">
-            <h2 class="game-over-text">GAME OVER</h2>
-            <div class="stats">
-                <p>Score: <span id="finalScore">0</span></p>
-                <p>Wave: <span id="finalWave">0</span></p>
-                <p>Level: <span id="finalLevel">0</span></p>
-            </div>
-            <button id="restartBtn" class="btn primary">RESTART</button>
-        </div>
-    </div>
-
-    <script type="module" src="/src/main.js"></script>
+  <noscript><style>.loading-screen{display:none!important}</style>This game needs JavaScript and WebGL. Enable JavaScript to enter Saint-Roch.</noscript>
+  <section id="loading" class="loading-screen" role="status" aria-live="polite" style="position:fixed;inset:0;z-index:999;background:#162327;color:#ede5cf">
+    <div class="loading-top"><b>ZB / QUARANTINE</b><span>FIELD TRANSMISSION 04.2</span></div>
+    <div class="loading-content"><p class="label">SAINT-ROCH · AFTER DARK</p><h1>ONE MORE<br><em>NIGHT.</em></h1>
+      <svg class="loading-city" viewBox="0 0 620 120" aria-hidden="true"><path d="M0 112H620M20 112V48H90V112M105 112V24H170V112M190 112V58H260V112M290 112V12H380V112M405 112V43H475V112M500 112V30H595V112M32 64H78M32 82H78M118 42H156M118 61H156M118 80H156M304 31H366M304 52H366M304 73H366M419 61H460M419 82H460M515 48H580M515 68H580M515 88H580"/></svg>
+      <div class="loading-line"><span id="loading-stage">Connecting to Saint-Roch</span><b><span id="loading-percent">00</span><small> / 100</small></b></div>
+      <progress id="loading-progress" max="100" value="0" aria-label="Preparing the game"></progress>
+      <p class="loading-tip">Travel light. Pair two guns, or take the blade and keep moving.</p><button id="loading-retry" hidden>RETRY CONNECTION ↗</button>
+    </div><div class="loading-bottom"><span>WASD + MOUSE / DUALSENSE</span><span>NO INSTALLATION. NO WAY BACK.</span></div>
+  </section>
+  <div id="controller-status" class="controller-status" aria-live="polite">CONTROLLER · CONNECT, THEN PRESS A BUTTON</div>
+  <canvas id="game" aria-label="Zombie Bagarre 2.5D game world" tabindex="-1"></canvas>
+  <div class="vignette" aria-hidden="true"></div><div id="damage-flash" aria-hidden="true"></div>
+  <main id="menu" class="menu">
+    <header class="masthead"><a class="wordmark" href="./" aria-label="Zombie Bagarre home"><span class="brand-mark">ZB</span> ZOMBIE BAGARRE</a><span class="edition">QUARANTINE <i></i> VOL. 04</span></header>
+    <section class="menu-copy">
+      <div class="eyebrow"><span></span> A LITTLE TOWN. A LOT OF TROUBLE.</div>
+      <h1><span>ZOMBIE</span><strong>BAGARRE<span class="title-dot">.</span></strong></h1>
+      <div class="chapter"><span>QUARANTINE</span><b>2.5D SURVIVAL ACTION</b></div>
+      <p class="intro">The streets are gone. The fight isn’t.<br>Make it through the night. Make every shot count.</p>
+      <div class="loadout"><div class="loadout-label"><div class="label" id="loadout-label">01 / CHOOSE YOUR STARTING WEAPON</div><button id="open-arsenal">ALL 10 WEAPONS ↗</button></div><div class="weapon-options" role="group" aria-label="Starting weapon">
+        <button data-loadout="carbine" class="selected" aria-pressed="true"><span class="weapon-symbol rifle" aria-hidden="true"></span><b>AR-26</b><small>BALANCED</small></button>
+        <button data-loadout="shotgun" aria-pressed="false"><span class="weapon-symbol shotgun" aria-hidden="true"></span><b>M12</b><small>HEAVY HITTER</small></button>
+        <button data-loadout="smg" aria-pressed="false"><span class="weapon-symbol smg" aria-hidden="true"></span><b>VX-9</b><small>RAPID FIRE</small></button>
+      </div></div>
+      <div class="run-options"><label>OPERATION<select id="run-mode"><option value="city">OPEN CITY · FREE ROAM</option><option value="campaign">BIOME CAMPAIGN · 32 WAVES</option></select></label><label>SURVIVOR<select id="skin-select"><option value="scout">THE SCOUT</option><option value="medic">THE MEDIC</option><option value="biker">THE RIDER</option><option value="ronin">THE RONIN</option></select></label></div><button id="start" class="primary deploy"><span>ENTER THE QUARANTINE</span><span aria-hidden="true">↗</span></button>
+      <div class="menu-links"><button id="open-guide">FIELD GUIDE <span>↗</span></button><button id="open-settings">SETTINGS <span>↗</span></button><button id="open-camp">BASE CAMP <span id="scrap-total">0 SCRAP</span></button></div>
+      <div class="record"><span>PERSONAL BEST</span><b id="best-score">—</b><span id="record-detail">YOUR STORY STARTS HERE</span></div>
+    </section>
+    <aside class="location"><div class="location-line"></div><span>OPERATION 01</span><h2>SAINT-ROCH</h2><p><span id="map-seed">GENERATING ROUTE</span></p><button id="new-map" class="text-button">NEW MAP ↻</button><div class="mission-rule">8 BIOMES <i></i> 32 WAVES <i></i> NO SECOND CHANCES</div></aside>
+    <footer class="menu-footer"><span><i class="status-dot"></i> LOCAL SOLO CAMPAIGN</span><button id="new-map-mobile">NEW MAP ↻</button><span>MOVE. RELOAD. SURVIVE.</span><span>BUILD 4.2</span></footer>
+  </main>
+  <section id="hud" hidden aria-label="Game status">
+    <div class="hud-top"><div class="survivor"><div class="hud-label">SURVIVOR <span id="health-number">100 / 100</span></div><div class="health-track"><div id="health-fill"></div></div><div class="hud-small" id="district-hud">SAINT-ROCH / DISTRICT 1 OF 8</div></div>
+      <div class="wave-status"><div class="hud-label" id="wave-label">WAVE 01 / 32</div><div id="objective">CLEAR THE STREETS</div><div class="wave-track"><div id="wave-fill"></div></div></div>
+      <div class="score-block"><span class="hud-label">SCORE</span><b id="score">000000</b><button id="pause" class="icon-button" aria-label="Pause game">Ⅱ</button></div></div>
+    <div id="boss-hud" hidden><div><span id="boss-name">THE WARDEN</span> <span id="boss-percent"></span></div><div class="boss-track"><i id="boss-fill"></i></div></div>
+    <div id="announcement" class="announcement" aria-live="polite"><span id="announcement-kicker"></span><strong id="announcement-title"></strong></div>
+    <div id="active-powers" class="active-powers" aria-label="Active power-ups"></div><div id="combo" class="combo" hidden></div><div id="toast" class="toast" role="status"></div>
+    <div class="hud-bottom"><div class="weapon-hud"><span class="weapon-symbol rifle" id="hud-gun" aria-hidden="true"></span><div><div class="hud-label" id="weapon-name">AR-26 / CARBINE</div><strong id="ammo">24 <small>/ 24</small></strong><div id="equipped-hud" class="equipped-hud"></div><div id="reload-label">AUTO TARGETING</div></div><div class="reload-track"><i id="reload-fill"></i></div></div>
+      <div class="abilities"><button id="dash-action" aria-label="Dodge"><kbd>SPACE</kbd><span>DODGE</span><small id="dash-state">READY</small></button><button id="melee-action" aria-label="Melee strike"><kbd>F</kbd><span>MELEE</span><small id="melee-state">READY</small></button><button id="grenade-action" aria-label="Throw grenade"><kbd>E</kbd><span>GRENADE</span><small id="grenade-state">× 3</small></button></div>
+      <div class="hud-controls"><button id="arsenal-action">ARSENAL <b>B</b></button><button id="auto-action" aria-pressed="true">AUTO FIRE <b>ON</b></button><span><kbd>1–0</kbd> / SCROLL · WEAPONS &nbsp; <kbd>R</kbd> RELOAD</span></div></div>
+    <button id="map-action" class="mini-atlas" aria-label="Open city map"><canvas id="minimap" width="180" height="180"></canvas><span>STREET MAP <b>M</b></span></button><div class="vehicle-readout"><button id="vehicle-action">ENTER VEHICLE <b>V</b></button><span id="vehicle-status"></span></div><div id="joystick" aria-label="Movement joystick"><div id="joystick-knob"></div></div>
+    <div class="touch-weapons"><button id="touch-switch" aria-label="Switch weapon">SWAP</button><button id="touch-reload" aria-label="Reload weapon">RELOAD</button></div>
+  </section>
+  <dialog id="map-dialog"><form method="dialog"><button class="close" aria-label="Close city map">×</button></form><div class="label">QUARANTINE / STREET ATLAS</div><h2>The whole town is yours.</h2><p id="atlas-help">Click a street to mark a destination. Blue: canal · green: vehicles · red: hostiles.</p><canvas id="city-atlas" width="680" height="680" aria-label="City street map"></canvas><div id="atlas-places"></div><button id="map-done" class="primary">BACK TO THE STREETS</button></dialog><dialog id="guide-dialog"><form method="dialog"><button class="close" aria-label="Close field guide">×</button></form><div class="label">SURVIVOR’S HANDBOOK / 01</div><h2>Stay on your feet.</h2><p>Open City keeps one connected town with streets, parks, a canal and bridges. Drive with WASD, brake with Space, enter or exit with V. Press M for the map. Discover landmarks for supplies. Choose Biome Campaign for the eight-region route. Every run generates a new map: streets, cover, fuel clusters and buildings. Fight across eight biomes and thirty-two waves. Choose a perk after each wave. Defeat eight bosses, then hold the extraction beacon for four seconds. Earn scrap even when you die and spend it on permanent upgrades at base camp.</p><div class="guide-grid"><div><kbd>W A S D</kbd><kbd>Z Q S D</kbd><kbd>↑ ↓ ← →</kbd><b>Move through the streets</b><p>Or right-click a destination. Routes vary in outline and size. Use cover and watch the cliffs.</p></div><div><kbd>MOUSE</kbd><b>Aim & hold to fire</b><p>Auto fire aims at the nearest visible enemy. Toggle it with the HUD button or <kbd>T</kbd>.</p></div><div><kbd>SPACE</kbd><b>Dodge through danger</b><p>A short burst of invulnerability. Watch its cooldown.</p></div><div><kbd>F</kbd><kbd>E</kbd><b>Melee & grenades</b><p>Equip Ronin or Gemini for slicing combos. F swings your equipped blade. Blades replace both guns and grant faster movement, quicker dodges and combo recovery. Grenades land at your cursor, or your target on touch. Blast facades repeatedly to break them apart.</p></div><div><kbd>1 – 0</kbd><kbd>B</kbd><kbd>R</kbd><b>Switch & reload</b><p>Equip up to two firearms firing together. Ten types, including katana and twin swords. Reserve ammunition is unlimited. Precision weapons can explode heads; heavy hits can sever limbs and leave crawlers.</p></div><div><kbd>ESC</kbd><kbd>P</kbd><b>Take a breath</b><p>Pause anytime. The game also pauses when you switch away.</p></div></div><p class="guide-note">DUALSENSE · Left stick moves, right stick aims, R2 attacks, L1 throws a grenade, Cross or Circle dodges, Square reloads, Triangle enters or exits vehicles, L2 brakes, R1 cycles guns, L3 toggles auto fire, R3 opens the arsenal, Share opens the map, Options pauses. In menus use the D-pad, Cross to select, Circle to close, and left/right to change an option. Press a controller button while the game is focused to connect.</p><p class="guide-note">ON TOUCHSCREENS · Drag the left stick to move. Use the action buttons on the right. Auto fire handles your aim. Pick up marked supplies for armour, overdrive, freeze, double score and more. Shoot crates for supplies. Red barrels and vehicles explode—keep your distance.</p><button class="primary" id="guide-done">GOT IT</button></dialog>
+  <dialog id="settings-dialog"><form method="dialog"><button class="close" aria-label="Close settings">×</button></form><div class="label">FIELD EQUIPMENT / 02</div><h2>Make it your fight.</h2><label class="setting-row"><span>Difficulty<small>Applies to your next run</small></span><select id="difficulty"><option value="relaxed">Survivor · relaxed</option><option value="standard">Standard</option><option value="nightmare">Nightmare</option></select></label><label class="setting-row"><span>Graphics<small>Resolution and shadows</small></span><select id="quality"><option value="high">High</option><option value="balanced">Balanced</option><option value="low">Performance</option></select></label><label class="setting-row"><span>Sound<small>Weapons, impacts and atmosphere</small></span><input id="volume" type="range" min="0" max="100" value="45" aria-label="Sound volume" /></label><label class="setting-row"><span>Gore & blood<small>Blood marks and dismemberment</small></span><input type="checkbox" id="gore" checked /></label><label class="setting-row"><span>Reduced motion<small>Disable camera shake and drifting particles</small></span><input type="checkbox" id="reduced-motion" /></label><button class="primary" id="settings-done">BACK TO THE STREETS</button></dialog>
+  <dialog id="arsenal-dialog"><form method="dialog"><button class="close" aria-label="Close arsenal">×</button></form><div class="label">FIELD ARMOURY / 10 WEAPONS</div><h2>Choose your kind of trouble.</h2><p>Choose one melee weapon for ninja movement, or pair two firearms. Matching guns are allowed. Each gun has its own magazine and reload.</p><div class="label" id="arsenal-count"></div><div id="arsenal-slots" class="arsenal-slots"></div><div id="arsenal-grid"></div><p id="arsenal-synergies" class="synergy-note"></p><button id="arsenal-done" class="primary">LOADOUT READY ↗</button></dialog>
+  <dialog id="camp-dialog"><form method="dialog"><button class="close" aria-label="Close base camp">×</button></form><div class="label">BETWEEN RUNS / PERMANENT PROGRESSION</div><h2>Come back stronger.</h2><p>Recover scrap through eliminations and district progress. These upgrades stay with you, even after death.</p><div class="label" id="camp-balance"></div><div id="camp-upgrades"></div><button id="camp-done" class="primary">BACK TO LOADOUT ↗</button></dialog>
+  <dialog id="pause-dialog"><div class="label">TAKE A BREATH</div><h2>The dead can wait.</h2><p>Your run is paused.</p><button id="resume" class="primary">BACK TO THE FIGHT <span>↗</span></button><button id="pause-settings" class="secondary">SETTINGS</button><button id="quit" class="text-button">END RUN & RETURN TO MENU</button></dialog>
+  <dialog id="upgrade-dialog"><div class="label" id="upgrade-kicker">WAVE CLEARED</div><h2>Live. Learn. Reload.</h2><p>Pick your edge. +25 health, +1 grenade and full magazines are on the house.</p><div id="upgrade-choices"></div><p id="build-synergies" class="synergy-note"></p></dialog>
+  <dialog id="result-dialog"><div class="label" id="result-kicker"></div><h2 id="result-title"></h2><p id="result-copy"></p><p id="result-reward" class="synergy-note"></p><div class="result-stats"><div><span>SCORE</span><b id="result-score"></b></div><div><span>ELIMINATIONS</span><b id="result-kills"></b></div><div><span>TIME SURVIVED</span><b id="result-time"></b></div></div><button id="retry" class="primary">ONE MORE BAGARRE <span>↗</span></button><button id="result-menu" class="text-button">RETURN TO MENU</button></dialog>
+  <div id="error" hidden role="alert"><h1>The game couldn’t start.</h1><p id="error-detail"></p><button onclick="location.reload()">TRY AGAIN</button></div>
+  <script type="module" src="/src/boot.js"></script>
 </body>
 </html>

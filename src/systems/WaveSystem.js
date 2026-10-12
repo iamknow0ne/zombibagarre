@@ -23,18 +23,16 @@ export class WaveSystem {
         console.log(`🌊 Wave ${this.game.wave} starting!`);
         this.game.events.emit('wave-start', { wave: this.game.wave });
 
-        // Calculate wave size with logarithmic scaling
-        const baseSize = 8;
-        const linearGrowth = Math.floor(this.game.wave * 1.5);
-        const logarithmicGrowth = Math.floor(Math.log(this.game.wave + 1) * 10);
-        const calculatedSize = baseSize + linearGrowth + logarithmicGrowth;
+        // Use difficulty system for zombie count
+        this.zombiesInWave = this.game.difficulty.getZombieCount(this.game.wave);
 
-        this.zombiesInWave = Math.min(40, calculatedSize);
         this.zombiesSpawned = 0;
         this.zombiesKilled = 0;
 
-        // Elite spawn chance increases with waves
-        this.eliteSpawnChance = Math.min(0.5, 0.1 + (this.game.wave * 0.02));
+        // Update spawn interval based on difficulty
+        this.spawnInterval = this.game.difficulty.getSpawnInterval(this.game.wave);
+
+        console.log(`📊 Wave ${this.game.wave}: ${this.zombiesInWave} zombies, spawn every ${this.spawnInterval}ms`);
 
         // Boss wave every 5 waves
         if (this.game.wave % 5 === 0) {
@@ -60,7 +58,15 @@ export class WaveSystem {
             this.lastSpawn += deltaTime * 1000;
 
             if (this.lastSpawn >= this.spawnInterval) {
-                this.spawnZombie();
+                // Massive horde mode: spawn multiple zombies at once on later waves
+                const batchSize = this.game.wave > 15 ? 5 :
+                                 this.game.wave > 10 ? 3 :
+                                 this.game.wave > 5 ? 2 : 1;
+
+                for (let i = 0; i < batchSize && this.zombiesSpawned < this.zombiesInWave; i++) {
+                    this.spawnZombie();
+                }
+
                 this.lastSpawn = 0;
             }
         }
@@ -69,14 +75,43 @@ export class WaveSystem {
     spawnZombie() {
         const spawnPos = this.getRandomSpawnPosition();
 
-        // Determine zombie type
-        const isElite = Math.random() < this.eliteSpawnChance;
-        const type = isElite ? 'elite' : 'normal';
+        // Determine zombie type with progressive variety
+        const roll = Math.random();
+        let type = 'normal';
 
-        const zombie = new Zombie(this.game.sceneManager.scene, spawnPos, type, this.game);
-        this.game.addEnemy(zombie);
+        // Use difficulty system for elite chance
+        const eliteChance = this.game.difficulty.getCurrent().eliteSpawnChance;
 
-        this.zombiesSpawned++;
+        // Higher waves unlock more zombie types
+        if (this.game.wave >= 10 && roll < 0.05) {
+            type = 'invisible'; // 5% stealth zombies wave 10+
+        } else if (this.game.wave >= 8 && roll < 0.1) {
+            type = 'berserker'; // 5% berserkers wave 8+
+        } else if (this.game.wave >= 6 && roll < 0.15) {
+            type = 'armored'; // 5% armored wave 6+
+        } else if (this.game.wave >= 5 && roll < 0.2) {
+            type = 'spitter'; // 5% spitters wave 5+
+        } else if (this.game.wave >= 4 && roll < 0.25) {
+            type = 'toxic'; // 5% toxic wave 4+
+        } else if (this.game.wave >= 3 && roll < 0.3) {
+            type = 'exploder'; // 5% exploders wave 3+
+        } else if (this.game.wave >= 2 && roll < 0.35) {
+            type = 'tank'; // 5% tanks wave 2+
+        } else if (roll < eliteChance) {
+            type = 'elite'; // Progressive elite chance from difficulty
+        } else if (roll < 0.4 + (this.game.wave * 0.02)) {
+            type = 'fast'; // Fast zombies get more common
+        }
+
+        // Use zombie pool instead of creating new
+        const zombie = this.game.zombiePool.spawn(spawnPos, type, this.game.wave);
+
+        if (zombie) {
+            // Pool handles adding to active list, Game.js updates enemies array
+            this.zombiesSpawned++;
+        } else {
+            console.warn('⚠️ Failed to spawn zombie - pool exhausted');
+        }
     }
 
     spawnBoss() {
@@ -88,8 +123,19 @@ export class WaveSystem {
             -50 // Spawn far away from player
         );
 
-        const boss = new Zombie(this.game.sceneManager.scene, spawnPos, 'boss', this.game);
-        this.game.addEnemy(boss);
+        // Use zombie pool for boss
+        const boss = this.game.zombiePool.spawn(spawnPos, 'boss', this.game.wave);
+
+        if (!boss) {
+            console.error('❌ Failed to spawn boss!');
+            return;
+        }
+
+        // Store boss reference and show health bar
+        this.game.currentBoss = boss;
+        if (window.showBossHealthBar) {
+            window.showBossHealthBar(boss);
+        }
 
         this.zombiesSpawned++;
 

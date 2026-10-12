@@ -21,3 +21,10 @@ Thumbs.db
 # Cache
 .cache/
 node_modules/
+
+# Reproducible build output and private local configuration
+dist/
+.env
+.env.*
+!.env.example
+coverage/

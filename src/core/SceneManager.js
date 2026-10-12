@@ -1,109 +1,175 @@
 import * as THREE from 'three';
+import { BiomeSystem } from '../terrain/BiomeSystem.js';
+import { ProceduralTerrain } from '../terrain/ProceduralTerrain.js';
+import { ObstacleSystem } from '../systems/ObstacleSystem.js';
+import { UrbanApocalypseMap } from '../terrain/UrbanApocalypseMap.js';
 
 export class SceneManager {
-    constructor() {
+    constructor(options = {}) {
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x0a0a15);
 
-        this.setupLighting();
-        this.setupEnvironment();
-        this.setupFog();
+        // AAA Mode: Urban Apocalypse with HDR lighting
+        this.useAAAGraphics = options.useAAAGraphics ?? true; // Enable AAA by default
+        this.renderer = options.renderer;
+
+        if (this.useAAAGraphics) {
+            console.log('🌟 AAA GRAPHICS MODE ENABLED');
+            this.setupAAAEnvironment();
+        } else {
+            // Initialize biome system (legacy)
+            this.biomeSystem = new BiomeSystem(this.scene);
+            this.biomeSystem.selectRandomBiome();
+
+            // Apply biome visuals to scene
+            this.biomeSystem.applyBiomeToScene(this);
+
+            console.log('🎬 Scene initialized with biome:', this.biomeSystem.getCurrentBiome().name);
+            console.log('🔍 Scene background:', this.scene.background);
+            console.log('🔍 Scene fog:', this.scene.fog);
+
+            this.setupLighting();
+            this.setupEnvironment();
+        }
 
         this.time = 0;
     }
 
+    async setupAAAEnvironment() {
+        console.log('🏗️ Setting up AAA Urban Apocalypse environment...');
+
+        // Create urban apocalypse map with HDR lighting
+        this.urbanMap = new UrbanApocalypseMap(this.scene, this.renderer);
+        await this.urbanMap.init();
+
+        // === AAA THREE-POINT LIGHTING SYSTEM ===
+
+        // Key Light - Main directional light (sun) with optimized shadows
+        const keyLight = new THREE.DirectionalLight(0xffeedd, 2.5);
+        keyLight.position.set(50, 100, 50);
+        keyLight.castShadow = true;
+
+        // Low shadow settings for maximum performance
+        keyLight.shadow.mapSize.width = 1024;
+        keyLight.shadow.mapSize.height = 1024;
+        keyLight.shadow.camera.near = 0.5;
+        keyLight.shadow.camera.far = 500;
+        keyLight.shadow.camera.left = -150;
+        keyLight.shadow.camera.right = 150;
+        keyLight.shadow.camera.top = 150;
+        keyLight.shadow.camera.bottom = -150;
+        keyLight.shadow.bias = -0.0001;
+        keyLight.shadow.normalBias = 0.02;
+
+        this.scene.add(keyLight);
+
+        // Ambient light for base illumination
+        const ambientLight = new THREE.AmbientLight(0x7a6a5a, 1.0);
+        this.scene.add(ambientLight);
+
+        // Hemisphere light for natural lighting (cheaper than multiple directional lights)
+        const hemisphereLight = new THREE.HemisphereLight(
+            0x88aaff, // Sky color
+            0x554433, // Ground color
+            0.5
+        );
+        this.scene.add(hemisphereLight);
+
+        console.log('✅ AAA environment loaded');
+    }
+
     setupLighting() {
-        // Ambient light for base visibility
-        const ambient = new THREE.AmbientLight(0x404060, 0.4);
-        this.scene.add(ambient);
-
-        // Main directional light (moonlight)
-        this.dirLight = new THREE.DirectionalLight(0x6677ff, 0.8);
-        this.dirLight.position.set(50, 100, 50);
-        this.dirLight.castShadow = true;
-
-        // Shadow configuration
-        this.dirLight.shadow.camera.near = 1;
-        this.dirLight.shadow.camera.far = 500;
-        this.dirLight.shadow.camera.left = -100;
-        this.dirLight.shadow.camera.right = 100;
-        this.dirLight.shadow.camera.top = 100;
-        this.dirLight.shadow.camera.bottom = -100;
-        this.dirLight.shadow.mapSize.width = 2048;
-        this.dirLight.shadow.mapSize.height = 2048;
-        this.dirLight.shadow.bias = -0.0001;
-
-        this.scene.add(this.dirLight);
-
-        // Hemisphere light for atmospheric effect
-        const hemiLight = new THREE.HemisphereLight(0x8080ff, 0x404040, 0.5);
-        this.scene.add(hemiLight);
-
-        // Subtle fill light
-        const fillLight = new THREE.DirectionalLight(0xff6644, 0.2);
-        fillLight.position.set(-50, 20, -50);
-        this.scene.add(fillLight);
+        // Apply biome-specific lighting (legacy mode)
+        this.biomeSystem.updateLighting(this);
     }
 
     setupEnvironment() {
-        // Ground plane
-        const groundGeometry = new THREE.PlaneGeometry(500, 500, 50, 50);
-        const groundMaterial = new THREE.MeshStandardMaterial({
-            color: 0x1a1a2e,
-            roughness: 0.9,
-            metalness: 0.1
-        });
+        // Create procedural terrain with biome-specific visuals
+        this.terrain = new ProceduralTerrain(this.scene, this.biomeSystem, 400);
+        this.terrain.generate();
 
-        this.ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        this.ground.rotation.x = -Math.PI / 2;
-        this.ground.receiveShadow = true;
-        this.scene.add(this.ground);
-
-        // Add grid for better depth perception
-        const gridHelper = new THREE.GridHelper(500, 50, 0x444466, 0x222233);
-        gridHelper.material.opacity = 0.3;
-        gridHelper.material.transparent = true;
-        this.scene.add(gridHelper);
+        // Create obstacle system (cars, trees, buildings)
+        this.obstacleSystem = new ObstacleSystem(this.scene);
+        this.obstacleSystem.generateObstacles(240); // Map size
 
         // Add some atmosphere with particles
         this.createAtmosphericParticles();
+
+        console.log('🌍 Environment setup complete');
     }
 
     createAtmosphericParticles() {
-        const particleCount = 500;
+        // Dust/ash particles for apocalyptic atmosphere
+        const particleCount = 300; // Optimized particle count
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
+        const sizes = new Float32Array(particleCount);
+        const velocities = new Float32Array(particleCount * 3);
 
-        for (let i = 0; i < particleCount * 3; i += 3) {
-            positions[i] = (Math.random() - 0.5) * 400;
-            positions[i + 1] = Math.random() * 100;
-            positions[i + 2] = (Math.random() - 0.5) * 400;
+        for (let i = 0; i < particleCount; i++) {
+            const i3 = i * 3;
+
+            // Spread particles across the scene
+            positions[i3] = (Math.random() - 0.5) * 500;
+            positions[i3 + 1] = Math.random() * 120 + 5; // Keep above ground
+            positions[i3 + 2] = (Math.random() - 0.5) * 500;
+
+            // Random sizes for depth variation
+            sizes[i] = Math.random() * 1.5 + 0.3;
+
+            // Gentle drift velocities
+            velocities[i3] = (Math.random() - 0.5) * 0.5;
+            velocities[i3 + 1] = (Math.random() - 0.8) * 0.3; // Slight downward drift
+            velocities[i3 + 2] = (Math.random() - 0.5) * 0.5;
         }
 
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+        this.particleVelocities = velocities;
 
         const material = new THREE.PointsMaterial({
-            color: 0xffffff,
-            size: 0.5,
+            color: 0xddccbb,
+            size: 1.0,
             transparent: true,
-            opacity: 0.3,
-            blending: THREE.AdditiveBlending
+            opacity: 0.4,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true, // Particles get smaller with distance
+            depthWrite: false
         });
 
         this.atmosphericParticles = new THREE.Points(geometry, material);
         this.scene.add(this.atmosphericParticles);
     }
 
-    setupFog() {
-        this.scene.fog = new THREE.FogExp2(0x0a0a15, 0.008);
-    }
 
     update(deltaTime) {
         this.time += deltaTime;
 
-        // Gently rotate atmospheric particles
-        if (this.atmosphericParticles) {
-            this.atmosphericParticles.rotation.y += deltaTime * 0.01;
+        // Animate atmospheric particles with drift
+        if (this.atmosphericParticles && this.particleVelocities) {
+            const positions = this.atmosphericParticles.geometry.attributes.position.array;
+            const velocities = this.particleVelocities;
+
+            for (let i = 0; i < positions.length; i += 3) {
+                // Apply velocity
+                positions[i] += velocities[i] * deltaTime;
+                positions[i + 1] += velocities[i + 1] * deltaTime;
+                positions[i + 2] += velocities[i + 2] * deltaTime;
+
+                // Wrap particles that drift too far
+                if (positions[i] > 250) positions[i] = -250;
+                if (positions[i] < -250) positions[i] = 250;
+                if (positions[i + 1] < 5) positions[i + 1] = 120; // Reset to top when they fall
+                if (positions[i + 1] > 125) positions[i + 1] = 5;
+                if (positions[i + 2] > 250) positions[i + 2] = -250;
+                if (positions[i + 2] < -250) positions[i + 2] = 250;
+            }
+
+            this.atmosphericParticles.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // Update terrain effects (fires, emergency lights)
+        if (this.terrain) {
+            this.terrain.update(deltaTime);
         }
     }
 

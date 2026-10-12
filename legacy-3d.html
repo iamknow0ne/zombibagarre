@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Zombie Bagarre 3D</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧟</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Splashscreen -->
+    <div id="loading" class="screen splashscreen">
+        <div class="splashscreen-background">
+            <!-- Zombie silhouettes in background -->
+            <div class="zombie-silhouette zombie-1">🧟</div>
+            <div class="zombie-silhouette zombie-2">🧟‍♂️</div>
+            <div class="zombie-silhouette zombie-3">🧟‍♀️</div>
+        </div>
+
+        <div class="splashscreen-content">
+            <!-- Logo with blood drip -->
+            <div class="logo-container">
+                <h1 class="glitch splash-logo" data-text="ZOMBIE BAGARRE">ZOMBIE BAGARRE</h1>
+
+                <!-- Blood drips -->
+                <svg class="blood-drips" viewBox="0 0 800 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <filter id="goo">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+                            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+                            <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
+                        </filter>
+                    </defs>
+                    <!-- Blood drip animations -->
+                    <circle class="blood-drop blood-drop-1" cx="120" cy="0" r="8" fill="#8b0000" filter="url(#goo)" />
+                    <circle class="blood-drop blood-drop-2" cx="280" cy="0" r="6" fill="#8b0000" filter="url(#goo)" />
+                    <circle class="blood-drop blood-drop-3" cx="450" cy="0" r="10" fill="#8b0000" filter="url(#goo)" />
+                    <circle class="blood-drop blood-drop-4" cx="600" cy="0" r="7" fill="#8b0000" filter="url(#goo)" />
+                    <circle class="blood-drop blood-drop-5" cx="720" cy="0" r="9" fill="#8b0000" filter="url(#goo)" />
+                </svg>
+            </div>
+
+            <p class="subtitle splash-subtitle">3D EDITION</p>
+
+            <!-- Enhanced loading bar -->
+            <div class="loading-bar-container">
+                <div class="loading-bar">
+                    <div class="loading-fill"></div>
+                    <div class="loading-shine"></div>
+                </div>
+                <p class="loading-text">Loading<span class="loading-dots">...</span></p>
+            </div>
+
+            <!-- Tagline -->
+            <p class="splash-tagline">SURVIVE THE HORDE</p>
+        </div>
+    </div>
+
+    <!-- Main Menu -->
+    <div id="menu" class="screen" style="display: none;">
+        <div class="screen-content">
+            <h1 class="glitch" data-text="ZOMBIE BAGARRE">ZOMBIE BAGARRE</h1>
+            <p class="subtitle">3D EDITION</p>
+            <button id="startBtn" class="btn primary">START GAME</button>
+            <button id="settingsBtn" class="btn">SETTINGS</button>
+            <div class="credits">
+                <p>Made with ❤️ by VibeCoding</p>
+                <p class="version">v3.0.0 - Three.js Edition</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Character Selection Screen -->
+    <div id="characterSelect" class="screen" style="display: none;">
+        <div class="screen-content" style="max-width: 1200px;">
+            <h2 class="glow" style="margin-bottom: 40px;">CHOOSE YOUR CLASS</h2>
+
+            <div class="character-grid">
+                <!-- Soldier -->
+                <div class="character-card" data-character="soldier">
+                    <div class="character-icon">🎖️</div>
+                    <h3 class="character-name">SOLDIER</h3>
+                    <p class="character-subtitle">Balanced Fighter</p>
+
+                    <div class="character-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Health:</span>
+                            <div class="stat-bar-mini">
+                                <div class="stat-fill" style="width: 67%;"></div>
+                            </div>
+                            <span class="stat-value">200</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Speed:</span>
+                            <div class="stat-bar-mini">
+                                <div class="stat-fill" style="width: 50%;"></div>
+                            </div>
+                            <span class="stat-value">5</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Damage:</span>
+                            <div class="stat-bar-mini">
+                                <div class="stat-fill" style="width: 50%;"></div>
+                            </div>
+                            <span class="stat-value">1.0x</span>
+                        </div>
+                    </div>
+
+                    <div class="character-perks">
+                        <p><strong>Perks:</strong></p>
+                        <ul>
+                            <li>⚡ Dash cooldown -20%</li>
+                            <li>🎯 Starting weapon: Pistol</li>
+                            <li>💪 Well-rounded stats</li>
+                        </ul>
+                    </div>
+
+                    <button class="btn select-character-btn">SELECT</button>
+                </div>
+
+                <!-- Tank -->
+                <div class="character-card" data-character="tank">
+                    <div class="character-icon">🛡️</div>
+                    <h3 class="character-name">TANK</h3>
+                    <p class="character-subtitle">Heavy Defender</p>
+
+                    <div class="character-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Health:</span>
+                            <div class="stat-bar-mini">
+                                <div class="stat-fill" style="width: 100%;"></div>
+                            </div>
+                            <span class="stat-value">300</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Speed:</span>
+                            <div class="stat-bar-mini">
+                                <div class="stat-fill" style="width: 40%;"></div>
+                            </div>
+                            <span class="stat-value">4</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Damage:</span>
+                            <div class="stat-bar-mini">
+                                <div class="stat-fill" style="width: 60%;"></div>
+                            </div>
+                            <span class="stat-value">1.2x</span>
+                        </div>
+                    </div>
+
+                    <div class="character-perks">
+                        <p><strong>Perks:</strong></p>
+                        <ul>
+                            <li>🛡️ +30% damage resistance</li>
+                            <li>💥 Starting weapon: Shotgun</li>
+                            <li>❤️ Maximum survivability</li>
+                        </ul>
+                    </div>
+
+                    <button class="btn select-character-btn">SELECT</button>
+                </div>
+
+                <!-- Runner -->
+                <div class="character-card" data-character="runner">
+                    <div class="character-icon">💨</div>
+                    <h3 class="character-name">RUNNER</h3>
+                    <p class="character-subtitle">Speed Demon</p>
+
+                    <div class="character-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Health:</span>
+                            <div class="stat-bar-mini">
+                                <div class="stat-fill" style="width: 50%;"></div>
+                            </div>
+                            <span class="stat-value">150</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Speed:</span>
+                            <div class="stat-bar-mini">
+                                <div class="stat-fill" style="width: 100%;"></div>
+                            </div>
+                            <span class="stat-value">7</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Damage:</span>
+                            <div class="stat-bar-mini">
+                                <div class="stat-fill" style="width: 40%;"></div>
+                            </div>
+                            <span class="stat-value">0.8x</span>
+                        </div>
+                    </div>
+
+                    <div class="character-perks">
+                        <p><strong>Perks:</strong></p>
+                        <ul>
+                            <li>💨 +50% movement speed</li>
+                            <li>🔫 Starting weapon: SMG</li>
+                            <li>⚡ High mobility & evasion</li>
+                        </ul>
+                    </div>
+
+                    <button class="btn select-character-btn">SELECT</button>
+                </div>
+            </div>
+
+            <button id="backToMenu" class="btn" style="margin-top: 30px;">BACK TO MENU</button>
+        </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud" style="display: none;">
+        <!-- Top Left: Health & XP -->
+        <div class="hud-top-left">
+            <div class="stat-bar health-bar">
+                <div class="stat-label">HEALTH</div>
+                <div class="bar-container">
+                    <div id="healthFill" class="bar-fill health-fill"></div>
+                </div>
+                <div id="healthText" class="stat-text">200 / 200</div>
+            </div>
+            <div class="stat-bar exp-bar">
+                <div class="stat-label">EXPERIENCE</div>
+                <div class="bar-container">
+                    <div id="expFill" class="bar-fill exp-fill"></div>
+                </div>
+                <div id="levelText" class="stat-text">Level 1</div>
+            </div>
+        </div>
+
+        <!-- Top Right: Wave & Money -->
+        <div class="hud-top-right">
+            <div class="hud-stat">
+                <span class="stat-label">WAVE</span>
+                <span id="waveText" class="stat-value">1</span>
+            </div>
+            <div class="hud-stat">
+                <span class="stat-label">KILLS</span>
+                <span id="killsText" class="stat-value">0</span>
+            </div>
+            <div class="hud-stat">
+                <span class="stat-label">MONEY</span>
+                <span id="moneyText" class="stat-value">$150</span>
+            </div>
+            <button id="openShop" class="btn" style="margin-top: 10px; font-size: 14px; pointer-events: auto;">
+                🛒 SHOP
+            </button>
+        </div>
+
+        <!-- Active Powerups (Bottom Left) -->
+        <div class="hud-bottom-left">
+            <div id="activePowerupsDisplay" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Powerups will be added here dynamically -->
+            </div>
+        </div>
+
+        <!-- Controls Help (Bottom Center) -->
+        <div class="hud-bottom-center">
+            <div class="controls-hint">
+                <span>WASD: Move</span>
+                <span>SPACE: Dash</span>
+                <span>1-0: Switch Weapon</span>
+                <span id="weaponText" style="color: #00ffff; font-weight: bold;">PISTOL</span>
+            </div>
+        </div>
+
+        <!-- Boss Warning (Center) -->
+        <div id="bossWarning" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 200;">
+            <h1 class="game-over-text" style="font-size: 96px;">⚠️ BOSS WAVE ⚠️</h1>
+        </div>
+
+        <!-- Souls-Like Boss Health Bar (Bottom Center) -->
+        <div id="bossHealthBar" style="display: none; position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 150; width: 600px;">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <h2 id="bossName" style="font-size: 32px; color: #ff0000; text-shadow: 0 0 20px #ff0000, 0 0 10px #000; font-weight: 900; letter-spacing: 3px; margin: 0;">BOSS NAME</h2>
+            </div>
+            <div style="background: rgba(0, 0, 0, 0.9); border: 3px solid #ff0000; box-shadow: 0 0 30px rgba(255, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.8); padding: 8px; border-radius: 8px;">
+                <div style="position: relative; height: 30px; background: #1a0000; overflow: hidden; border-radius: 4px;">
+                    <div id="bossHealthFill" style="position: absolute; left: 0; top: 0; height: 100%; width: 100%; background: linear-gradient(90deg, #ff0000, #ff6600); box-shadow: inset 0 0 15px rgba(255, 255, 0, 0.5); transition: width 0.3s ease-out;"></div>
+                    <div style="position: absolute; width: 100%; height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(0,0,0,0.2) 10px, rgba(0,0,0,0.2) 11px);"></div>
+                </div>
+                <div id="bossHealthText" style="text-align: center; color: #fff; font-size: 14px; margin-top: 5px; text-shadow: 0 0 5px #000; font-weight: bold;">0 / 0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Up Screen -->
+    <div id="levelUpScreen" class="screen overlay" style="display: none;">
+        <div class="screen-content" style="max-width: 900px;">
+            <h2 class="glow">LEVEL UP!</h2>
+            <p class="level-text" style="margin-bottom: 30px;">Level <span id="newLevel">2</span></p>
+
+            <h3 style="color: #00ffff; margin-bottom: 20px;">Choose a Perk:</h3>
+            <div id="skillChoices" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <!-- Skills will be populated here -->
+            </div>
+
+            <button id="continueBtn" class="btn primary" style="display: none;">CONTINUE</button>
+        </div>
+    </div>
+
+    <!-- Boss Victory Screen -->
+    <div id="bossVictoryScreen" class="screen overlay" style="display: none;">
+        <div class="victory-container">
+            <!-- Epic logo reveal -->
+            <div class="victory-logo-container">
+                <div class="victory-rays"></div>
+                <h1 class="victory-logo">ZOMBIE BAGARRE</h1>
+                <p class="victory-subtitle">3D EDITION</p>
+            </div>
+
+            <h2 class="victory-title">BOSS DEFEATED!</h2>
+
+            <div class="victory-stats">
+                <div class="victory-stat">
+                    <span class="stat-icon">👹</span>
+                    <span class="stat-name">Boss Slain</span>
+                    <span id="bossName" class="stat-value">ZOMBIE BOSS</span>
+                </div>
+                <div class="victory-stat">
+                    <span class="stat-icon">⏱️</span>
+                    <span class="stat-name">Fight Duration</span>
+                    <span id="bossFightTime" class="stat-value">0:00</span>
+                </div>
+                <div class="victory-stat">
+                    <span class="stat-icon">💰</span>
+                    <span class="stat-name">Reward</span>
+                    <span id="bossReward" class="stat-value">$500</span>
+                </div>
+            </div>
+
+            <button id="continueBossVictory" class="btn primary victory-btn">CONTINUE</button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="screen overlay" style="display: none;">
+        <div class="screen-content">
+            <h2 class="game-over-text">GAME OVER</h2>
+            <div class="stats">
+                <p>Score: <span id="finalScore">0</span></p>
+                <p>Wave: <span id="finalWave">0</span></p>
+                <p>Level: <span id="finalLevel">0</span></p>
+            </div>
+            <button id="restartBtn" class="btn primary">RESTART</button>
+        </div>
+    </div>
+
+    <!-- Pause Menu -->
+    <div id="pauseMenu" class="screen overlay" style="display: none;">
+        <div class="screen-content">
+            <h2 class="glow">PAUSED</h2>
+            <button id="resumeBtn" class="btn primary">RESUME</button>
+            <button id="quitBtn" class="btn">QUIT TO MENU</button>
+        </div>
+    </div>
+
+    <!-- Stats/Build Recap Screen (TAB key) -->
+    <div id="statsScreen" class="screen overlay" style="display: none;">
+        <div class="screen-content" style="max-width: 800px;">
+            <h2 class="glow">📊 BUILD STATS</h2>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                <!-- Left Column: Combat Stats -->
+                <div style="text-align: left;">
+                    <h3 style="color: #ff6600; margin-bottom: 15px;">⚔️ Combat</h3>
+                    <div class="stat-line"><span>Damage:</span> <span id="statDamage">0</span></div>
+                    <div class="stat-line"><span>Fire Rate:</span> <span id="statFireRate">0ms</span></div>
+                    <div class="stat-line"><span>Crit Chance:</span> <span id="statCritChance">0%</span></div>
+                    <div class="stat-line"><span>Crit Multiplier:</span> <span id="statCritMult">0x</span></div>
+                    <div class="stat-line"><span>Current Weapon:</span> <span id="statWeapon">Pistol</span></div>
+                </div>
+
+                <!-- Right Column: Survival Stats -->
+                <div style="text-align: left;">
+                    <h3 style="color: #00ff00; margin-bottom: 15px;">🛡️ Survival</h3>
+                    <div class="stat-line"><span>Health:</span> <span id="statHealth">0/0</span></div>
+                    <div class="stat-line"><span>Speed:</span> <span id="statSpeed">0</span></div>
+                    <div class="stat-line"><span>Dash Cooldown:</span> <span id="statDash">0ms</span></div>
+                </div>
+            </div>
+
+            <!-- Active Perks -->
+            <div style="margin-top: 30px; text-align: left;">
+                <h3 style="color: #ffaa00; margin-bottom: 15px;">✨ Active Perks</h3>
+                <div id="activePerksList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Active Buffs -->
+            <div style="margin-top: 20px; text-align: left;">
+                <h3 style="color: #00ffff; margin-bottom: 15px;">💎 Active Buffs</h3>
+                <div id="activeBuffsList" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <p style="margin-top: 30px; color: #888; font-size: 14px;">Press TAB to close</p>
+        </div>
+    </div>
+
+    <!-- Shop/Upgrade Menu -->
+    <div id="shopMenu" class="screen overlay" style="display: none;">
+        <div class="screen-content" style="max-width: 1000px;">
+            <h2 class="glow">UPGRADES</h2>
+            <p style="color: #ffdd00; margin-bottom: 20px;">💰 Gold: <span id="shopMoney">0</span></p>
+
+            <!-- Build Recap Section -->
+            <div class="build-recap-container">
+                <h3 class="build-recap-title">📋 YOUR BUILD</h3>
+
+                <div class="build-recap-grid">
+                    <!-- Weapons Column -->
+                    <div class="build-recap-section">
+                        <h4 class="recap-section-title">🔫 WEAPONS</h4>
+                        <div id="recapWeapons" class="recap-content">
+                            <div class="recap-item">Pistol</div>
+                        </div>
+                    </div>
+
+                    <!-- Upgrades Column -->
+                    <div class="build-recap-section">
+                        <h4 class="recap-section-title">⬆️ UPGRADES</h4>
+                        <div id="recapUpgrades" class="recap-content">
+                            <div class="recap-item">
+                                <span class="recap-stat">Damage</span>
+                                <span class="recap-value">Lv.1</span>
+                            </div>
+                            <div class="recap-item">
+                                <span class="recap-stat">Fire Rate</span>
+                                <span class="recap-value">Lv.1</span>
+                            </div>
+                            <div class="recap-item">
+                                <span class="recap-stat">Max Health</span>
+                                <span class="recap-value">Lv.1</span>
+                            </div>
+                            <div class="recap-item">
+                                <span class="recap-stat">Speed</span>
+                                <span class="recap-value">Lv.1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills/Perks Column -->
+                    <div class="build-recap-section">
+                        <h4 class="recap-section-title">✨ SKILLS</h4>
+                        <div id="recapSkills" class="recap-content">
+                            <div class="recap-empty">No skills unlocked</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                <!-- Damage Upgrade -->
+                <div class="upgrade-card">
+                    <h3 style="color: #ff6600;">🔥 DAMAGE</h3>
+                    <p class="upgrade-level">Level: <span id="damageLevel">1</span></p>
+                    <p class="upgrade-desc">+10 damage per level</p>
+                    <button id="upgradeDamage" class="btn" style="font-size: 14px;">
+                        Upgrade - <span id="damageCost">100</span> 💰
+                    </button>
+                </div>
+
+                <!-- Fire Rate Upgrade -->
+                <div class="upgrade-card">
+                    <h3 style="color: #ffff00;">⚡ FIRE RATE</h3>
+                    <p class="upgrade-level">Level: <span id="fireRateLevel">1</span></p>
+                    <p class="upgrade-desc">-10% fire delay</p>
+                    <button id="upgradeFireRate" class="btn" style="font-size: 14px;">
+                        Upgrade - <span id="fireRateCost">100</span> 💰
+                    </button>
+                </div>
+
+                <!-- Max Health Upgrade -->
+                <div class="upgrade-card">
+                    <h3 style="color: #ff0000;">❤️ MAX HEALTH</h3>
+                    <p class="upgrade-level">Level: <span id="healthLevel">1</span></p>
+                    <p class="upgrade-desc">+50 max HP</p>
+                    <button id="upgradeHealth" class="btn" style="font-size: 14px;">
+                        Upgrade - <span id="healthCost">150</span> 💰
+                    </button>
+                </div>
+
+                <!-- Speed Upgrade -->
+                <div class="upgrade-card">
+                    <h3 style="color: #00ffff;">💨 SPEED</h3>
+                    <p class="upgrade-level">Level: <span id="speedLevel">1</span></p>
+                    <p class="upgrade-desc">+10% movement</p>
+                    <button id="upgradeSpeed" class="btn" style="font-size: 14px;">
+                        Upgrade - <span id="speedCost">100</span> 💰
+                    </button>
+                </div>
+            </div>
+
+            <button id="closeShop" class="btn primary">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- Settings Menu -->
+    <div id="settingsMenu" class="screen overlay" style="display: none;">
+        <div class="screen-content" style="max-width: 600px;">
+            <h2 class="glow">SETTINGS</h2>
+
+            <div style="text-align: left; margin: 30px 0;">
+                <!-- Difficulty Selector -->
+                <div style="margin-bottom: 25px;">
+                    <label style="color: #ff6600; font-size: 20px; display: block; margin-bottom: 15px; font-weight: bold;">
+                        ⚔️ Difficulty Level
+                    </label>
+                    <div class="difficulty-selector">
+                        <div class="difficulty-option" data-difficulty="easy">
+                            <div class="difficulty-label">EASY</div>
+                            <div class="difficulty-desc">Relaxed - Fewer zombies, weaker enemies</div>
+                        </div>
+                        <div class="difficulty-option selected" data-difficulty="normal">
+                            <div class="difficulty-label">NORMAL</div>
+                            <div class="difficulty-desc">Balanced - Standard experience</div>
+                        </div>
+                        <div class="difficulty-option" data-difficulty="hard">
+                            <div class="difficulty-label">HARD</div>
+                            <div class="difficulty-desc">Hardcore - Massive hordes, brutal enemies</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graphics Quality -->
+                <div style="margin-bottom: 25px;">
+                    <label style="color: #00ffff; font-size: 18px; display: block; margin-bottom: 10px;">Graphics Quality</label>
+                    <select id="qualitySelect" class="btn" style="width: 100%; font-size: 16px;">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+
+                <!-- Effects Volume -->
+                <div style="margin-bottom: 25px;">
+                    <label style="color: #00ffff; font-size: 18px; display: block; margin-bottom: 10px;">
+                        Effects Volume: <span id="effectsVolumeValue">50%</span>
+                    </label>
+                    <input type="range" id="effectsVolume" min="0" max="100" value="50"
+                           style="width: 100%; accent-color: #00ffff;">
+                </div>
+
+                <!-- Music Volume -->
+                <div style="margin-bottom: 25px;">
+                    <label style="color: #00ffff; font-size: 18px; display: block; margin-bottom: 10px;">
+                        Music Volume: <span id="musicVolumeValue">30%</span>
+                    </label>
+                    <input type="range" id="musicVolume" min="0" max="100" value="30"
+                           style="width: 100%; accent-color: #00ffff;">
+                </div>
+
+                <!-- Fullscreen Toggle -->
+                <div style="margin-bottom: 25px;">
+                    <button id="toggleFullscreen" class="btn" style="width: 100%; font-size: 16px;">
+                        Toggle Fullscreen
+                    </button>
+                </div>
+            </div>
+
+            <button id="closeSettings" class="btn primary">BACK</button>
+        </div>
+    </div>
+
+    <script type="module" src="/src/legacy-main.js"></script>
+</body>
+</html>
