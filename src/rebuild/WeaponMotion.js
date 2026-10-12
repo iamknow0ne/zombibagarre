@@ -24,7 +24,7 @@ export function meleeTiming(key,combo=0,multiplier=1){
 }
 // Smooth key poses: guard -> anticipation -> contact -> follow through -> guard.
 // No full-body spin or instantaneous reset at the end of a combo.
-export function meleePose(key,combo,progress){
+export function meleePose(key,combo,progress,variant=0){
  const f=clamp01(progress),side=combo===1?-1:1,finisher=combo===2;
  const keys=[
   [0,0,0,0], [.2,-side*.58,finisher?.32:.12,-.08],
@@ -32,9 +32,29 @@ export function meleePose(key,combo,progress){
  ];
  let a=keys[0],b=keys[1];for(let i=1;i<keys.length;i++){if(f<=keys[i][0]){a=keys[i-1];b=keys[i];break;}}
  const u=smooth((f-a[0])/(b[0]-a[0])),lerp=i=>a[i]+(b[i]-a[i])*u;
- return {twist:lerp(1),height:lerp(2),reach:lerp(3),side,finisher,active:f>=.2&&f<=.62};
+ const arc=[1,.86,1.12,.92][variant%4],height=[0,.12,-.09,.2][variant%4]*Math.sin(f*Math.PI)**2;
+ return {twist:lerp(1)*arc,height:lerp(2)+height,reach:lerp(3)*(variant===3?1.1:1),side,finisher,active:f>=.2&&f<=.62};
 }
 export function reloadPose(progress){
  const f=clamp01(progress);
  return {lower:smooth(f/.16)*(1-smooth((f-.82)/.18)),reach:smooth((f-.12)/.15)*(1-smooth((f-.58)/.22)),magazine:smooth((f-.18)/.16)*(1-smooth((f-.52)/.16)),rack:Math.sin(Math.PI*clamp01((f-.72)/.16))};
+}
+
+// Four weighted follow-throughs per weapon: centred, inward, outward and braced.
+// Variation is indexed by the shot, so no per-frame jitter or gameplay RNG changes.
+export function shotPose(key,age,variant=0){
+ const p=WEAPON_MOTION[key]||WEAPON_MOTION.carbine,r=recoilAt(key,age),v=variant%4,sign=[0,1,-1,.35][v],weight=p.weight;
+ return{yaw:sign*r*p.lift*.18,roll:sign*r*p.lift*.3,pitch:r*p.lift*[0,-.09,.12,-.18][v],rise:r*p.kick*[0,.08,-.05,.12][v]/(1+weight)};
+}
+export function weaponReloadPose(key,progress){
+ const r=reloadPose(progress),f=clamp01(progress),pulse=Math.sin(Math.PI*f)**2;
+ const out={...r,side:0,tilt:0,spin:0};
+ if(key==='shotgun'){out.magazine=r.magazine*.3;out.side=-pulse*.08;out.tilt=pulse*.8;}
+ if(key==='revolver'){out.magazine=0;out.side=-r.lower*.12;out.spin=smooth((f-.2)/.5)*Math.PI*2;}
+ if(key==='marksman'){out.rack=Math.sin(Math.PI*clamp01((f-.62)/.3));out.tilt=-r.magazine*.2;}
+ if(key==='smg'){out.tilt=r.magazine*.3;out.lower*=.8;}
+ if(key==='flame'){out.spin=pulse*.8;out.magazine*=.6;out.side=r.magazine*.07;}
+ if(key==='launcher'){out.tilt=r.magazine*.65;out.spin=pulse*Math.PI/3;out.magazine*=.65;}
+ if(key==='arc'){out.magazine*=.7;out.spin=pulse*.4;out.rack*=.6;}
+ return out;
 }

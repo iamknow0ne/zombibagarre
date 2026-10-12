@@ -1,3 +1,4 @@
+import {evolutionStats,weaponTier} from './Evolution.js';
 export const WEAPONS = {
   carbine: { name: 'AR-26', label: 'ASSAULT CARBINE', damage: 25, interval: .17, magazine: 24, reload: 1.45, range: 20, pellets: 1, spread: .018, speed: 48 },
   shotgun: { name: 'M12', label: 'BREACH SHOTGUN', damage: 18, interval: .72, magazine: 7, reload: 1.85, range: 13, pellets: 6, spread: .23, speed: 42 },
@@ -50,6 +51,7 @@ export const UPGRADES = [
   { id: 'ordnance', title: 'More bang', tag: 'ORDNANCE', description: '+2 grenades. Explosions deal 40% more damage.', apply: p => { p.grenades += 2; p.blast *= 1.4; } },
 ];
 UPGRADES.push(
+  {id:'workshop',title:'Field armorer',tag:'EVOLUTION',description:'+650 mastery to each equipped weapon type. Reach new tiers to transform its hardware and attacks.',apply:()=>{}},
   {id:'armour',title:'Ballistic weave',tag:'DEFENCE',description:'Take 15% less damage. Stacks up to 60%.',apply:p=>p.resistance=Math.min(.6,p.resistance+.15)},
   {id:'regeneration',title:'Keep breathing',tag:'RECOVERY',description:'Recover 1 health every second.',apply:p=>p.regen+=1},
   {id:'piercing',title:'Through and through',tag:'BALLISTICS',description:'Every projectile pierces one extra enemy.',apply:p=>p.pierce+=1},
@@ -59,7 +61,8 @@ UPGRADES.push(
   {id:'frost',title:'Cold shoulder',tag:'CONTROL',description:'Shots slow enemies by 45% for 2 seconds.',apply:p=>p.frost=2},
   {id:'blast',title:'Wide destruction',tag:'AREA CONTROL',description:'+30% explosion and melee radius.',apply:p=>p.blastRadius*=1.3},
 );
-export const magazineSize = (player, key = player.weapon) => Math.round(WEAPONS[key].magazine * (1 + player.magazineBonus));
+export const weaponStats=(player,key=player.weapon)=>evolutionStats(WEAPONS[key],key,weaponTier(player,key));
+export const magazineSize = (player, key = player.weapon) => Math.round(weaponStats(player,key).magazine * (1 + player.magazineBonus));
 // Planar x/z geometry. Kept independent of the renderer for deterministic collision tests.
 export const ARENA = { minX:-28,maxX:28,minZ:-21,maxZ:21 };
 export const COVER = [

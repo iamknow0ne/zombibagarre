@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.7 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.8 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -18,7 +18,7 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Open City is the default: one persistent 232×232 street network with 22 building plots containing independently destructible wings, parks, an industrial waterfront, four bridges, discoverable supply landmarks and parked vehicles. The seed changes plot footprints, heights, rooflines, setbacks, materials, cover and parking. The street grid remains fixed. Destruction persists between waves.
 - Seeded procedural district maps in Biome Campaign: four nonrectangular outlines, varying dimensions, cover placement, fuel clusters and boundary-aligned buildings vary each run. **New Map** previews a different route. The same run seed produces the same eight district layouts. These are bounded combat arenas, not infinite terrain.
 - Ten weapons: carbine, shotgun, SMG, heavy revolver, piercing rifle, flamethrower, grenade launcher, electric projector, katana and dual swords. Pair any two firearms, including matching guns, with independent magazines and reloads. Selecting either blade replaces both guns.
-- Four damage synergies plus matching-gun akimbo timing, fourteen selectable perks, four perk combinations and eight supply pickups. Scrap buys four kinds of permanent upgrades, each with five ranks, at base camp.
+- Four damage synergies plus matching-gun akimbo timing, fifteen selectable perks, four perk combinations and eight supply pickups. Scrap buys four kinds of permanent upgrades, each with five ranks, at base camp.
 - Burning enemies spread fire to nearby enemies and destructible trees/props. Electricity chains and marks charged targets. Frost slows enemies and gives visible ice feedback.
 - Progressive building damage: bullet and blast scars, shattered panes, three stages of missing wall sections, then final collapse. Explosions damage the nearest wall face, so grenades work against the sides of large buildings.
 - Four survivor outfits with distinct palettes and headgear; continuous joint animation blends footsteps, knees, elbows, idle breathing, aiming and sword swings.
@@ -27,6 +27,16 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.8
+
+- Rebuilt all ten weapon models with distinct receivers, barrels, grips, mechanical parts and material finishes. Four evolution appearances per weapon add visible hardware, culminating in named Signature weapons. The armoury shows portraits rendered from the actual models.
+- Four procedural firing or cutting variations per weapon, plus weapon-specific reload poses, moving pumps/bolts/cylinders, timed casing ejection and hand-following grips. These are blended procedural animations, not motion-capture clips.
+- Earn run-local weapon mastery from actual damage to enemies: **Field → Modified at 1,000 → Elite at 3,500 → Signature at 8,000** total damage. Mastery survives weapon switches and resets on a new run. Matching guns share mastery while keeping separate magazines. Field Armorer grants 650 mastery to each distinct equipped weapon type.
+- Signature effects include incendiary shotgun pellets, ricocheting SMG rounds, explosive fourth revolver shots, penetrating rifle airbursts, blue-core flame jets/fire pools, launcher subcharges, longer electrical cascades and blade finisher waves. Other tiers improve damage, handling, capacity and weapon-specific stats.
+- Blood now adheres to actual walls, intact windows, props, vehicle bodywork and raised pavement, with irregular splashes, smaller droplets and vertical runs. Stains move with their surface, disappear with destroyed geometry, and darken as they dry. Gore settings clear existing blood and remains.
+- Softer directional muzzle flashes, distinct tracers, branching electricity, flame jets, material-aware impact shards/sparks and scaled explosions. Debris tumbles, bounces, loses energy and splashes in water.
+- Bullets hit the nearest contact along their path, including thin cover at close range. Penetration loses damage, heavy enemies resist knockback, and launcher rounds follow gravity before bursting. Secondary explosions are finite and visual effects stay capped.
 
 ## New in 4.7
 
