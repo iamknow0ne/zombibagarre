@@ -19,8 +19,25 @@ export function vehicleOverlaps(v,o,x=v.x,z=v.z,angle=v.angle||0,padding=.04){
  return Math.abs(dx)<a*Math.abs(cs)+b*Math.abs(sn)+ow&&Math.abs(dz)<a*Math.abs(sn)+b*Math.abs(cs)+od&&Math.abs(dx*cs-dz*sn)<a+ow*Math.abs(cs)+od*Math.abs(sn)&&Math.abs(dx*sn+dz*cs)<b+ow*Math.abs(sn)+od*Math.abs(cs);
 }
 export function vehicleCorners(v,x=v.x,z=v.z,angle=v.angle||0){const s=vehicleSpec(v),sn=Math.sin(angle),cs=Math.cos(angle);return[-1,1].flatMap(a=>[-1,1].map(b=>({x:x+a*s.width/2*cs+b*s.length/2*sn,z:z-a*s.width/2*sn+b*s.length/2*cs})));}
-export function assistedDrive(v,x,z,handbrake=false){const strength=Math.min(1,Math.hypot(x,z)),target=Math.atan2(x,z),delta=Math.atan2(Math.sin(target-v.angle),Math.cos(target-v.angle));return{throttle:strength>.08?strength:0,brake:0,steer:strength>.08?clamp(delta*1.7,-1,1):0,handbrake:handbrake||strength<=.08};}
+export function assistedDrive(v,x,z,handbrake=false){const strength=Math.min(1,Math.hypot(x,z)),target=Math.atan2(x,z),delta=Math.atan2(Math.sin(target-v.angle),Math.cos(target-v.angle));return{assisted:true,heading:strength>.08?target:null,throttle:strength>.08?strength:0,brake:0,steer:strength>.08?clamp(delta*1.7,-1,1):0,handbrake:handbrake||strength<=.08};}
+// Arcade point-to-drive: turn even at rest, shed speed before a tight corner,
+// and remove sideways drift. Collision resolution remains in Driving.js.
+function stepAssistedVehicle(v,control,dt){
+ const s=vehicleSpec(v),old=v.speed||0,braking=!!control.handbrake,reverse=(control.brake||0)>.05;
+ const delta=Number.isFinite(control.heading)?Math.atan2(Math.sin(control.heading-(v.angle||0)),Math.cos(control.heading-(v.angle||0))):0;
+ const turnRate=clamp(2.8/Math.sqrt(s.mass),2.2,3.2);
+ const turn=braking?0:clamp(delta*(1-Math.exp(-dt*9)),-turnRate*dt,turnRate*dt),angle=(v.angle||0)+turn;
+ const alignment=Math.max(.12,Math.cos(Math.min(Math.PI/2,Math.abs(delta)))**2);
+ const target=braking?0:reverse?-s.reverse*clamp(control.brake,0,1)*alignment:Math.min(18,s.speed*.85)*clamp(control.throttle||0,0,1)*alignment;
+ const slowing=old*target<0||Math.abs(target)<Math.abs(old),rate=slowing?Math.max(28,s.brake*1.6):Math.max(10,s.accel);
+ const speed=old+clamp(target-old,-rate*dt,rate*dt);
+ v.speed=Math.abs(speed)<.015?0:speed;v.vx=Math.sin(angle)*v.speed;v.vz=Math.cos(angle)*v.speed;
+ v.steering=(v.steering||0)+(clamp(delta,-1,1)*s.steer-(v.steering||0))*(1-Math.exp(-dt*12));
+ v.braking=braking||slowing;v.handbrake=braking;v.reverseHold=0;v.acceleration=(v.speed-old)/dt;v.yaw=turn/dt;v.slip=0;
+ return{angle,dx:v.vx*dt,dz:v.vz*dt};
+}
 export function stepVehicle(v,control,dt,sensitivity=1){
+ if(control.assisted)return stepAssistedVehicle(v,control,dt);
  const s=vehicleSpec(v),old=v.speed||0,throttle=clamp(control.throttle||0,0,1),brake=clamp(control.brake||0,0,1),handbrake=!!control.handbrake;
  let speed=old;
  if(handbrake){speed=Math.sign(speed)*Math.max(0,Math.abs(speed)-s.brake*.9*dt);v.reverseHold=0;}

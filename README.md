@@ -28,6 +28,12 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
 
+## New in 4.14.1
+
+- Restored easy point-to-drive handling: cars turn toward the stick even from rest, slow automatically for tight corners and stop promptly when released. No sideways drift in easy mode.
+- Touch always uses easy handling. It is also the default for new keyboard/controller settings; existing saved driving preferences are preserved, and steering/pedals remain available in Settings → Driving.
+- All eight vehicle profiles retain their collision bodies, health, reversing and ramming behaviour.
+
 ## New in 4.14
 
 - Mobile combat uses a compact health/wave/ammo header and separate thumb controls. The minimap becomes a map button; detailed score, evolution, buffs and encounters move into pause, alongside Arsenal and Street Map shortcuts.

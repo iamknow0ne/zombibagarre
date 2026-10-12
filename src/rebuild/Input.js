@@ -94,9 +94,9 @@ export class Input {
       this.destination=this.moveRequest=null;out.destination=null;out.firing=false;out.fireHands=[false,false];out.grenade=out.dash=out.melee=out.reload=false;out.weapon=null;
       const assisted=this.source==='touch'||this.settings?.drivingStyle==='assisted';
       out.drive=assisted?assistedDrive(vehicle,out.x,out.z,!!this.touchBrake||out.brake):{throttle:pad?(pad.triggers?.[1]??+!!pad.buttons[7]):+(k.has('KeyW')||k.has('KeyZ')||k.has('ArrowUp')),brake:pad?(pad.triggers?.[0]??+!!pad.buttons[6]):+(k.has('KeyS')||k.has('ArrowDown')),steer:pad?pad.move.x:x,handbrake:out.brake};
-      if(assisted&&pad?.triggers?.[0]>.05)out.drive={...out.drive,throttle:0,brake:pad.triggers[0],handbrake:out.brake};
-      if(assisted&&(k.has('ShiftLeft')||k.has('ShiftRight')))out.drive={...out.drive,throttle:0,brake:1,handbrake:out.brake};
-      if(this.touchReverse)out.drive={throttle:0,brake:1,steer:this.stick.x,handbrake:!!this.touchBrake};
+      if(assisted&&pad?.triggers?.[0]>.05)out.drive={...assistedDrive(vehicle,-out.x,-out.z),throttle:0,brake:pad.triggers[0],handbrake:out.brake};
+      if(assisted&&(k.has('ShiftLeft')||k.has('ShiftRight')))out.drive={...assistedDrive(vehicle,-out.x,-out.z),throttle:0,brake:1,handbrake:out.brake};
+      if(this.touchReverse)out.drive={...assistedDrive(vehicle,-out.x,-out.z),throttle:0,brake:1,handbrake:!!this.touchBrake};
       out.steerSensitivity=this.settings?.steerSensitivity||1;
     }return out;
   }

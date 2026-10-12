@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Simulation} from '../src/rebuild/Simulation.js';
-import {VEHICLES,vehiclePlan,vehicleSpec,vehicleOverlaps,stepVehicle} from '../src/rebuild/Vehicles.js';
+import {VEHICLES,vehiclePlan,vehicleSpec,vehicleOverlaps,assistedDrive,stepVehicle} from '../src/rebuild/Vehicles.js';
 import {generateCity} from '../src/rebuild/City.js';
 import {Input} from '../src/rebuild/Input.js';
 import {controlSettings} from '../src/rebuild/ControllerConfig.js';
@@ -35,10 +35,33 @@ test('moving exit is blocked, stopped exit is safe and reverse ramming works',()
  const r=drive(),enemy=r.spawnEnemy('walker',0,-5);enemy.speed=0;tick(r,140,{brake:1});assert.ok(enemy.health<=0);
 });
 test('input gives vehicles analog pedals and steering while suppressing combat, touch has brake and reverse',()=>{
- const s=drive(),i=Object.create(Input.prototype);Object.assign(i,{settings:controlSettings(),source:'gamepad',keys:new Set(),once:{grenade:true,dash:true},stick:{x:0,y:0},pointer:{active:false},padGuard:false,pad:sampleGamepad({mapping:'standard',axes:[.6,0,0,0],buttons:Array.from({length:18},(_,j)=>({pressed:j===7,value:j===7?.45:0}))})});
+ const s=drive(),i=Object.create(Input.prototype);Object.assign(i,{settings:controlSettings({drivingStyle:'racing'}),source:'gamepad',keys:new Set(),once:{grenade:true,dash:true},stick:{x:0,y:0},pointer:{active:false},padGuard:false,pad:sampleGamepad({mapping:'standard',axes:[.6,0,0,0],buttons:Array.from({length:18},(_,j)=>({pressed:j===7,value:j===7?.45:0}))})});
  let out=i.consume({},true,s);assert.equal(out.drive.throttle,.45);assert.ok(out.drive.steer>0);assert.equal(out.grenade,false);assert.deepEqual(out.fireHands,[false,false]);
  i.source='keyboard';i.keys.add('KeyW');i.keys.add('KeyA');out=i.consume({},true,s);assert.equal(out.drive.throttle,1);assert.equal(out.drive.steer,-1);
  i.keys.clear();i.source='touch';i.stick={x:.4,y:-.4};out=i.consume({},true,s);assert.ok(out.drive.throttle>0);i.touchBrake=true;out=i.consume({},true,s);assert.equal(out.drive.handbrake,true);i.touchBrake=false;i.touchReverse=true;out=i.consume({},true,s);assert.equal(out.drive.brake,1);assert.equal(out.drive.throttle,0);i.clear();assert.equal(i.touchReverse,false);out=i.consume({},true,s);assert.equal(out.drive.handbrake,true);
  i.source='keyboard';i.settings.drivingStyle='assisted';i.keys.add('ShiftLeft');out=i.consume({},true,s);assert.equal(out.drive.brake,1);assert.equal(out.drive.handbrake,false);i.keys.clear();
  i.source='gamepad';i.padGuard=false;i.pad.move={x:0,y:0};i.pad.triggers=[.65,0];out=i.consume({},true,s);assert.equal(out.drive.brake,.65);assert.equal(out.drive.handbrake,false);
+});
+
+test('easy driving turns from rest, follows the requested heading, and releases to a short stop for every vehicle',()=>{
+ for(const type of Object.keys(VEHICLES)){
+  const v={vehicleType:type,angle:0,speed:0,x:0,z:0};
+  const step=(x,z)=>{const m=stepVehicle(v,assistedDrive(v,x,z),1/60);v.angle=m.angle;v.x+=m.dx;v.z+=m.dz;};
+  step(1,0);assert.ok(v.angle>0,`${type} can turn from rest`);
+  for(let i=0;i<180;i++)step(1,0);assert.ok(Math.abs(v.angle-Math.PI/2)<.01);assert.ok(v.x>10&&Math.abs(v.z)<2,`${type} follows the stick without a wide loop`);
+  assert.ok(v.speed<=18);const before={x:v.x,z:v.z};for(let i=0;i<45;i++)step(0,0);
+  assert.equal(v.speed,0);assert.equal(v.vx,0);assert.equal(v.vz,0);assert.ok(Math.hypot(v.x-before.x,v.z-before.z)<6);
+ }
+});
+test('easy driving slows for U turns and reverse follows screen direction without sideways drift',()=>{
+ const v={vehicleType:'sedan',angle:0,speed:16,vx:0,vz:16};
+ for(let i=0;i<30;i++){const m=stepVehicle(v,assistedDrive(v,0,-1),1/60);v.angle=m.angle;}assert.ok(v.speed<5);
+ for(let i=0;i<150;i++){const m=stepVehicle(v,{...assistedDrive(v,-1,0),throttle:0,brake:1,handbrake:false},1/60);v.angle=m.angle;}
+ assert.ok(v.speed<0&&v.vx>0);assert.ok(Math.abs(v.vz)<.05);assert.equal(v.slip,0);
+});
+test('easy driving retains swept collisions and can reverse away from a wall',()=>{
+ const wall={kind:'barrier',x:0,z:12,w:20,d:.3},s=drive('coupe',[wall]),v=s.props[0];
+ for(let i=0;i<180;i++)tick(s,1,assistedDrive(v,0,1));assert.ok(!vehicleOverlaps(v,wall));assert.ok(v.z<10);
+ const before=v.z;for(let i=0;i<90;i++)tick(s,1,{...assistedDrive(v,0,0),brake:1,throttle:0,handbrake:false});assert.ok(v.z<before-2);assert.ok(!vehicleOverlaps(v,wall));
+ assert.equal(controlSettings().drivingStyle,'assisted');assert.equal(controlSettings({drivingStyle:'racing'}).drivingStyle,'racing');
 });
