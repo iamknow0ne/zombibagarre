@@ -29,9 +29,9 @@ test('water shots and explosions produce splashes without igniting the canal',()
 });
 test('swords have directional combos, sever limbs, damage timber and require no ammunition',()=>{
  const s=city();s.props=[];s.obstacles=[];s.player.x=0;s.player.z=0;const front=s.spawnEnemy('brute',0,2),back=s.spawnEnemy('brute',0,-2);front.speed=back.speed=0;
- s.slice('katana',{x:0,z:3});assert.ok(front.health<front.maxHealth);assert.equal(back.health,back.maxHealth);const first=front.health;
- s.time+=.7;s.slice('katana',{x:0,z:3});s.time+=.7;s.slice('katana',{x:0,z:3});assert.equal(s.player.swingCombo,2);assert.ok(front.health<first);assert.equal(s.player.magazines.katana,1);assert.ok(s.events.some(e=>e.type==='kill'&&e.death==='sliced'));
- const box={id:'test',x:0,z:2,w:1,d:1,kind:'crate',health:100,maxHealth:100};s.props=[box];s.obstacles=s.props;s.time+=1;s.slice('dual',{x:0,z:3});assert.ok(box.health<=0);
+ s.switchWeapon('katana');s.slice('katana',{x:0,z:3});assert.equal(front.health,front.maxHealth);step(s,14);assert.ok(front.health<front.maxHealth);assert.equal(back.health,back.maxHealth);const first=front.health;
+ step(s,28);s.slice('katana',{x:0,z:3});step(s,42);s.slice('katana',{x:0,z:3});step(s,17);assert.equal(s.player.swingCombo,2);assert.ok(front.health<first);assert.equal(s.player.magazines.katana,1);assert.ok(s.events.some(e=>e.type==='kill'&&e.death==='sliced'));
+ const box={id:'test',x:0,z:2,w:1,d:1,kind:'crate',health:100,maxHealth:100};s.props=[box];s.obstacles=s.props;step(s,60);s.switchWeapon('dual');s.slice('dual',{x:0,z:3});step(s,7);assert.ok(box.health<=0);
 });
 test('repeated deaths select varied poses and debris profiles distinguish materials',()=>{
  const s=city(),variants=new Set();for(let i=0;i<60;i++){const e=s.spawnEnemy('walker',0,0);s.damageEnemy(e,999,1,0,{kind:'ballistic'});variants.add(s.events.findLast(e=>e.type==='kill').variant);}assert.equal(variants.size,6);assert.notDeepEqual(deathMotion(0),deathMotion(3));assert.ok(DEBRIS.wood.stretch>DEBRIS.brick.stretch);assert.ok(DEBRIS.metal.metalness>.5);assert.ok(DEBRIS.glass.max<DEBRIS.concrete.max);

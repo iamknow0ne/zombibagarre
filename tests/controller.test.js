@@ -15,7 +15,7 @@ test('left and right guns fire independently, including two identical guns, over
 });
 test('keyboard fire still fires both hands; controller blade attacks work from either hand button',()=>{
  const s=isolated();s.setLoadout(['carbine','arc']);tick(s,30,{firing:true,aim:{x:8,z:3}});assert.ok(s.player.magazines.carbine<24&&s.player.magazines.arc<20);
- for(const hand of [0,1]){const blade=isolated();blade.setLoadout(['katana']);tick(blade,5,{fireHands:[hand===0,hand===1],aim:{x:3,z:8}});assert.ok(blade.events.some(e=>e.type==='slice'));}
+ for(const hand of [0,1]){const blade=isolated();blade.setLoadout(['katana']);tick(blade,5,{fireHands:[hand===0,hand===1],aim:{x:3,z:8}});assert.ok(blade.events.some(e=>e.type==='swing'));for(let i=0;i<15;i++)blade.update(1/60,{auto:false});assert.ok(blade.events.some(e=>e.type==='slice'));}
 });
 test('bindings swap conflicts, validate persistence and identify controller glyph families',()=>{
  assert.deepEqual(handInput({buttons:Array.from({length:17},(_,i)=>i===6)}),[false,true]);assert.equal(BINDINGS.rightFire,11);

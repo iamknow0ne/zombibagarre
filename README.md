@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.4 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.5 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -28,7 +28,15 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
 
-## New in 4.4
+## New in 4.5
+
+- Articulated grips keep both hands on each weapon, with distinct firearm models, recoil, moving actions, magazines, muzzle flashes and spent casings.
+- Distance-driven footsteps, strafing and backpedalling, plus shoulder movement and a settled firing stance.
+- Katana and twin-sword anticipation, contact and recovery; damage lands at contact. Hold to combo, tap late to buffer the next stroke, or dodge to cancel. Blade trails follow the actual steel.
+- Distinct firearm sound envelopes and stronger melee finisher feedback. Gamepad, keyboard/mouse and touch share the same combat timing.
+- Local `/dev/weapon-qa.html` tests close-up poses, reloads and eight-second movement/attack sequences without touching saved progress.
+
+## Controller pass (4.4)
 
 - Independent hand attacks, fully remappable controller combat controls and controller-aware prompts.
 - Controller navigation through menus, settings, loadouts, upgrades and the atlas; free map crosshair, zoom/pan, marker removal and layer filters.

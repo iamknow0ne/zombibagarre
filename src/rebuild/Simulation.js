@@ -1,3 +1,4 @@
+import {meleeTiming} from './WeaponMotion.js';
 import {makeStreetEvents,updateStreetEvents} from './StreetEvents.js';
 import {normalizeLoadout,toggleLoadout,slotKey,isMelee} from './Loadout.js';
 import {generateCity,waterAt} from './City.js';
@@ -15,7 +16,7 @@ export class Simulation {
     return { skin:this.skin,vehicleId:null,swing:0,swingCombo:0,swingWeapon:null,x: 0, z: 3, angle: Math.PI, radius: .4, health: 100, maxHealth: 100, speed: 5.2, damage: 1,
       weapon, magazines: Object.fromEntries(Object.entries(WEAPONS).map(([k, v]) => [k, v.magazine])), reload: 0, reloadTotal: 0,
       fire: 0, invulnerable: 0, dash: 0, dashCooldown: 0, dashMax: 2.7, dashX: 0, dashZ: -1,
-      melee: 0, grenades: 3, blast: 1, pickupRange: 1.35, lifeSteal: 0, reloadMultiplier: 1, fireMultiplier: 1, moving: false, resistance:0, regen:0, pierce:0, crit:0, magazineBonus:0, burn:0, frost:0, blastRadius:1, shield:0, overdrive:0, doubleScore:0, freeze:0,equipped:[weapon],weaponTimers:{},reloads:{},throwAnimation:0,offhandRecoil:0,swapBoost:0,lastWeapon:null,lastWeaponTime:-100 };
+      melee: 0, grenades: 3, blast: 1, pickupRange: 1.35, lifeSteal: 0, reloadMultiplier: 1, fireMultiplier: 1, moving: false, resistance:0, regen:0, pierce:0, crit:0, magazineBonus:0, burn:0, frost:0, blastRadius:1, shield:0, overdrive:0, doubleScore:0, freeze:0,equipped:[weapon],weaponTimers:{},reloads:{},reloadDurations:{},shots:{},equippedAt:-99,moveX:0,moveZ:0,meleeAttack:null,meleeBuffer:null,attackHeld:false,throwAnimation:0,offhandRecoil:0,swapBoost:0,lastWeapon:null,lastWeaponTime:-100 };
   }
   emit(type, data = {}) { this.events.push({ ...data, type }); }
   start(weapon = 'carbine') { this.player=this.makePlayer(weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;this.state = 'playing'; this.nextWave(); }
@@ -79,12 +80,12 @@ export class Simulation {
     const hadTwin=p.equipped.length===2&&p.equipped[0]===p.equipped[1]&&p.equipped[0]===next[0];p.equipped=next;
     p.weapon=next[0];
     if(next.length===2&&next[0]===next[1]&&!hadTwin){p.magazines.offhand=magazineSize(p,next[1]);p.reloads.offhand=0;p.weaponTimers.offhand=WEAPONS[next[1]].interval*.5;}
-    if(changed){p.swing=0;p.swingWeapon=null;p.swingCombo=0;p.lastSwing=-99;p.dashCooldown=Math.min(p.dashCooldown,isMelee(p)?1.1:p.dashMax);this.emit('switch');}
+    if(changed){p.equippedAt=this.time;p.meleeAttack=null;p.meleeBuffer=null;p.shots={};p.swing=0;p.swingWeapon=null;p.swingCombo=0;p.lastSwing=-99;p.dashCooldown=Math.min(p.dashCooldown,isMelee(p)?1.1:p.dashMax);this.emit('switch');}
     p.reload=p.reloads[p.weapon]||0;return changed;
   }
   equipWeapon(key){if(!WEAPONS[key])return false;return this.setLoadout(toggleLoadout(this.player.equipped,key));}
-  switchWeapon(key){if(!WEAPONS[key])return;const p=this.player;if(p.equipped.includes(key)&&key!==p.equipped[0])this.setLoadout([key,p.equipped[0]]);if(!p.equipped.includes(key)){this.setLoadout(WEAPONS[key].melee||isMelee(p)?[key]:[key,...p.equipped.slice(1)]);}p.weapon=key;p.swing=0;p.swingWeapon=null;p.reload=p.reloads[key]||0;p.fire=p.weaponTimers[key]||0;this.emit('switch');}
-  reload(key=this.player.weapon,slot=key){const p=this.player,w=WEAPONS[key];if(w.melee)return;if(!p.reloads[slot]&&p.magazines[slot]<magazineSize(p,key)){p.reloads[slot]=w.reload*p.reloadMultiplier;if(slot===p.weapon){p.reload=p.reloadTotal=p.reloads[slot];}this.emit('reload');}}
+  switchWeapon(key){if(!WEAPONS[key])return;const p=this.player;if(p.equipped.includes(key)&&key!==p.equipped[0])this.setLoadout([key,p.equipped[0]]);if(!p.equipped.includes(key)){this.setLoadout(WEAPONS[key].melee||isMelee(p)?[key]:[key,...p.equipped.slice(1)]);}p.weapon=key;p.swing=0;p.swingWeapon=null;p.meleeAttack=null;p.meleeBuffer=null;p.reload=p.reloads[key]||0;p.fire=p.weaponTimers[key]||0;this.emit('switch');}
+  reload(key=this.player.weapon,slot=key){const p=this.player,w=WEAPONS[key];if(w.melee)return;if(!p.reloads[slot]&&p.magazines[slot]<magazineSize(p,key)){p.reloads[slot]=w.reload*p.reloadMultiplier;p.reloadDurations[slot]=p.reloads[slot];if(slot===p.weapon){p.reload=p.reloadTotal=p.reloads[slot];}this.emit('reload',{weapon:key,slot});}}
   damagePlayer(amount) {
     const p = this.player; if (p.invulnerable > 0 || !['playing', 'extracting'].includes(this.state)) return;
     if(p.vehicleId){const v=this.props.find(v=>v.id===p.vehicleId);if(v){this.damageProp(v,amount*.65);p.invulnerable=.4;return;}}
@@ -133,7 +134,7 @@ export class Simulation {
     this.comboTimer -= dt; if (this.comboTimer <= 0) this.combo = 0;
     for(const slot of [...Object.keys(WEAPONS),'offhand']){
       const key=slot==='offhand'?p.equipped[0]:slot;p.weaponTimers[slot]=Math.max(0,(p.weaponTimers[slot]||0)-dt);
-      if(p.reloads[slot]>0){p.reloads[slot]=Math.max(0,p.reloads[slot]-dt);if(p.reloads[slot]===0){p.magazines[slot]=magazineSize(p,key);this.emit('loaded');}}
+      if(p.reloads[slot]>0){p.reloads[slot]=Math.max(0,p.reloads[slot]-dt);if(p.reloads[slot]===0){p.magazines[slot]=magazineSize(p,key);this.emit('loaded',{weapon:key,slot});}}
     }
     p.reload=p.reloads[p.weapon]||0;p.reloadTotal=WEAPONS[p.weapon].reload*p.reloadMultiplier;
     if (input.weapon) this.switchWeapon(input.weapon);
@@ -142,13 +143,15 @@ export class Simulation {
     if (length > 1) { mx /= length; mz /= length; }
     if(input.interact)this.interactVehicle();
     if (input.dash && !p.vehicleId&& p.dashCooldown === 0) {
-      p.dash = isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,p.dashMax):p.dashMax;
+      p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.dash = isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,p.dashMax):p.dashMax;
       p.dashX = length > .1 ? mx / Math.hypot(mx, mz) : Math.sin(p.angle); p.dashZ = length > .1 ? mz / Math.hypot(mx, mz) : Math.cos(p.angle); this.emit('dash');
     }
+    const beforeMove={x:p.x,z:p.z};
     p.moving = length > .1;
     if(p.vehicleId)this.drive(dt,mx,mz,input);
     else if (p.dash > 0) { p.dash -= dt; this.move(p, p.dashX * 22 * dt, p.dashZ * 22 * dt); }
     else{const stanceSpeed=isMelee(p)?1.22:1;this.move(p, mx * p.speed * stanceSpeed * dt, mz * p.speed * stanceSpeed * dt);}
+    p.moveX=dt?(p.x-beforeMove.x)/dt:0;p.moveZ=dt?(p.z-beforeMove.z)/dt:0;p.moving=Math.hypot(p.moveX,p.moveZ)>.08;
     const w = WEAPONS[p.weapon];
     const target = this.enemies.filter(e => e.health > 0 && distance(p, e) < w.range && !this.blocked(p, e)).sort((a, b) => distance(p, a) - distance(p, b))[0];
     let aim = input.aim;
@@ -156,18 +159,28 @@ export class Simulation {
     if (input.auto !== false && !manual) aim = target;
     if (aim&&!p.vehicleId) p.angle = Math.atan2(aim.x - p.x, aim.z - p.z);
     else if (length > .1&&!p.vehicleId) p.angle = Math.atan2(mx, mz);
+    if(p.meleeAttack){
+      const attack=p.meleeAttack,age=this.time-attack.started;
+      if(age<attack.timing.cutEnd)p.angle=attack.angle;
+      if(!attack.hit&&age>=attack.timing.contact){attack.hit=true;this.resolveSlice(attack);}
+      if(age>=attack.timing.duration)p.meleeAttack=null;
+    }
+    const attackHeld=!!(input.melee||input.firing||input.fireHands?.some(Boolean));
+    if(w.melee&&attackHeld&&!p.attackHeld&&p.weaponTimers[p.weapon]>0&&p.weaponTimers[p.weapon]<=.18){p.meleeBuffer={until:this.time+.2,aim:input.aim||aim};}
+    p.attackHeld=attackHeld;
+    if(w.melee&&p.meleeBuffer){const buffered=p.meleeBuffer;if(this.time>buffered.until||p.vehicleId)p.meleeBuffer=null;else if(!p.weaponTimers[p.weapon]&&p.dash<=0){p.meleeBuffer=null;this.slice(p.weapon,buffered.aim);}}
     for(const [i,key] of (p.vehicleId?[]:p.equipped).entries()){
       const slot=slotKey(p.equipped,key,i),gun=WEAPONS[key];const gunTarget=key===p.weapon?target:this.enemies.filter(e=>e.health>0&&distance(p,e)<gun.range&&!this.blocked(p,e)).sort((a,b)=>distance(p,a)-distance(p,b))[0];
       const firing=input.fireHands?!!input.fireHands[i]||(gun.melee&&input.fireHands.some(Boolean)):input.firing;
       const gunAim=firing?input.aim:!manual&&input.auto!==false?gunTarget:null;
-      if(gunAim&&((!manual&&input.auto!==false&&gunTarget)||firing)&&!p.weaponTimers[slot]&&!p.reloads[slot]&&p.dash<=0){
+      if(gunAim&&((!manual&&input.auto!==false&&gunTarget)||firing)&&!p.weaponTimers[slot]&&!p.reloads[slot]&&p.dash<=0&&p.throwAnimation<=.12){
         if(!gun.melee&&p.magazines[slot]<=0)this.reload(key,slot);else this.fireWeapon(key,gunAim,slot,i);
       }
     }
     p.fire=p.weaponTimers[p.weapon]||0;p.reload=p.reloads[p.weapon]||0;
     if(input.melee&&!p.vehicleId&&p.melee<=0){const blade=p.equipped.find(k=>WEAPONS[k].melee);if(blade){if(!p.weaponTimers[blade])this.slice(blade,input.aim||aim);p.melee=.2;}}
     if (input.grenade && p.grenades > 0) {
-      p.grenades--; const a = input.aim || aim || { x: p.x + Math.sin(p.angle) * 6, z: p.z + Math.cos(p.angle) * 6 };
+      p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.grenades--; const a = input.aim || aim || { x: p.x + Math.sin(p.angle) * 6, z: p.z + Math.cos(p.angle) * 6 };
       const d = distance(a, p), scale = Math.min(1, 10 / (d || 1));
       this.hazards.push({ id: this.nextId++, x: p.x + (a.x - p.x) * scale, z: p.z + (a.z - p.z) * scale, radius: 4.3*p.blastRadius, timer: .95, duration: .95, flight:.65, originX:p.x,originZ:p.z, thrown:true, friendly: true, damage: 180 * p.blast });p.throwAnimation=.5; this.emit('throw',{x:p.x,z:p.z});
     }
@@ -203,7 +216,7 @@ export class Simulation {
   }
   fireWeapon(key,aim,slot=key,hand=0){
     if(WEAPONS[key].melee){this.slice(key,aim);return;}
-    const p=this.player,w=WEAPONS[key],angle=Math.atan2(aim.x-p.x,aim.z-p.z);p.magazines[slot]--;p.weaponTimers[slot]=w.interval*p.fireMultiplier*(p.overdrive>0?.5:1);
+    const p=this.player,w=WEAPONS[key],angle=Math.atan2(aim.x-p.x,aim.z-p.z);p.shots[slot]={time:this.time,weapon:key,hand};p.magazines[slot]--;p.weaponTimers[slot]=w.interval*p.fireMultiplier*(p.overdrive>0?.5:1);
     if(hand)p.offhandRecoil=.12;const offset=(p.equipped.length>1?(hand?-.35:.35):.2);const originX=p.x+Math.cos(angle)*offset,originZ=p.z-Math.sin(angle)*offset;
     if(w.chain)this.arcAttack(aim,w);else for(let i=0;i<w.pellets;i++){
       const a=angle+(this.random()-.5)*w.spread*2,headshot=!['flame','launcher','arc'].includes(key)&&this.random()<(key==='marksman'?.32:key==='revolver'?.22:.07);
@@ -212,20 +225,29 @@ export class Simulation {
     this.emit('shoot',{x:originX,z:originZ,angle,weapon:key,hand});
   }
   slice(key,aim){
-    const p=this.player,w=WEAPONS[key];p.angle=aim?Math.atan2(aim.x-p.x,aim.z-p.z):p.angle;
-    p.swingCombo=this.time-(p.lastSwing??-99)<1.5?(p.swingCombo+1)%3:0;p.lastSwing=this.time;p.swing=.38;p.swingWeapon=key;p.weaponTimers[key]=w.interval*p.fireMultiplier;
-    const finisher=p.swingCombo===2,synergy=false,range=w.range*p.blastRadius*(finisher?1.2:1),damage=w.damage*p.damage*(finisher?1.6:1)*(synergy?1.3:1);
-    const inArc=(x,z)=>Math.abs(Math.atan2(Math.sin(Math.atan2(x-p.x,z-p.z)-p.angle),Math.cos(Math.atan2(x-p.x,z-p.z)-p.angle)))<(finisher?1.8:1.15);
-    for(const e of this.enemies)if(e.health>0&&distance(e,p)<range+e.radius&&inArc(e.x,e.z)&&!this.blocked(p,e,.05))this.damageEnemy(e,damage,Math.sin(p.angle)*4,Math.cos(p.angle)*4,{kind:'slice',part:finisher?'legs':key==='dual'?'arm':null});
-    for(const o of this.props)if(o.health>0){const x=clamp(p.x,o.x-o.w/2,o.x+o.w/2),z=clamp(p.z,o.z-o.d/2,o.z+o.d/2);if(Math.hypot(x-p.x,z-p.z)<range&&inArc(x,z))this.damageProp(o,damage*(['crate','planter'].includes(o.kind)?2:.3),{x,z,slicing:true});}
+    const p=this.player;if(!WEAPONS[key]?.melee||p.meleeAttack||p.vehicleId||p.dash>0||p.throwAnimation>0)return false;
+    p.angle=aim?Math.atan2(aim.x-p.x,aim.z-p.z):p.angle;
+    p.swingCombo=this.time-(p.lastSwing??-99)<1.3?(p.swingCombo+1)%3:0;p.lastSwing=this.time;
+    const timing=meleeTiming(key,p.swingCombo,p.fireMultiplier);
+    p.swingDuration=timing.duration;p.swing=timing.duration;p.swingWeapon=key;p.weaponTimers[key]=timing.duration;
+    p.meleeAttack={weapon:key,combo:p.swingCombo,angle:p.angle,started:this.time,timing,hit:false};
+    this.emit('swing',{weapon:key,combo:p.swingCombo});return true;
+  }
+  resolveSlice(attack){
+    const p=this.player,key=attack.weapon,w=WEAPONS[key],finisher=attack.combo===2;
+    const range=w.range*p.blastRadius*(finisher?1.2:1),damage=w.damage*p.damage*(finisher?1.6:1),angle=attack.angle;
+    const inArc=(x,z)=>Math.abs(Math.atan2(Math.sin(Math.atan2(x-p.x,z-p.z)-angle),Math.cos(Math.atan2(x-p.x,z-p.z)-angle)))<(finisher?1.8:1.15);
+    let hits=0;
+    for(const e of this.enemies)if(e.health>0&&distance(e,p)<range+e.radius&&inArc(e.x,e.z)&&!this.blocked(p,e,.05)){this.damageEnemy(e,damage,Math.sin(angle)*4,Math.cos(angle)*4,{kind:'slice',part:finisher?'legs':key==='dual'?'arm':null});hits++;}
+    for(const o of this.props)if(o.health>0){const x=clamp(p.x,o.x-o.w/2,o.x+o.w/2),z=clamp(p.z,o.z-o.d/2,o.z+o.d/2);if(Math.hypot(x-p.x,z-p.z)<range&&inArc(x,z)){this.damageProp(o,damage*(['crate','planter'].includes(o.kind)?2:.3),{x,z,slicing:true});hits++;}}
     if(finisher){p.dashCooldown=Math.max(0,p.dashCooldown-.45);p.invulnerable=Math.max(p.invulnerable,.12);}
-    this.emit('slice',{x:p.x,z:p.z,angle:p.angle,weapon:key,combo:p.swingCombo,radius:range});
+    this.emit('slice',{x:p.x,z:p.z,angle,weapon:key,combo:attack.combo,radius:range,hits});
   }
   interactVehicle(){
     const p=this.player;
     if(p.vehicleId){const v=this.props.find(v=>v.id===p.vehicleId);if(!v)return false;for(let i=0;i<12;i++){const a=v.angle+i*Math.PI/6,x=v.x+Math.sin(a)*3.4,z=v.z+Math.cos(a)*3.4;if(insideMap(this.layout,x,z,.5)&&!pointBlocked(x,z,.5,this.obstacles)){p.vehicleId=null;p.radius=.4;p.x=x;p.z=z;v.speed=0;this.emit('vehicle',{message:'ON FOOT'});return true;}}this.emit('vehicle',{message:'EXIT BLOCKED · MOVE TO CLEAR GROUND'});return false;}
     const v=this.props.filter(v=>v.driveable&&v.health>0&&distance(v,p)<5).sort((a,b)=>distance(a,p)-distance(b,p))[0];if(!v)return false;
-    p.vehicleId=v.id;p.radius=1.25;v.angle=v.angle??0;v.speed=0;p.x=v.x;p.z=v.z;this.emit('vehicle',{message:`${v.vehicleName} · WASD DRIVE · SPACE BRAKE · V EXIT`});return true;
+    p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.vehicleId=v.id;p.radius=1.25;v.angle=v.angle??0;v.speed=0;p.x=v.x;p.z=v.z;this.emit('vehicle',{message:`${v.vehicleName} · WASD DRIVE · SPACE BRAKE · V EXIT`});return true;
   }
   drive(dt,mx,mz,input){
     const p=this.player,v=this.props.find(v=>v.id===p.vehicleId);if(!v||v.health<=0){p.vehicleId=null;p.radius=.4;return;}

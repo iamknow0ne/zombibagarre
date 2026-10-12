@@ -31,7 +31,7 @@ test('dodge and post-hit invulnerability prevent stacked contact damage',()=>{
  const s=isolated();s.update(1/60,{dash:true,auto:false});s.damagePlayer(20);assert.equal(s.player.health,100);step(s,60);s.damagePlayer(20);s.damagePlayer(20);assert.equal(s.player.health,80);step(s,60);s.damagePlayer(20);assert.equal(s.player.health,60);
 });
 test('blade melee knocks back, firearms cannot melee, and thrown grenades have a fuse',()=>{
- const s=isolated(),e=s.spawnEnemy('brute',1,3);s.update(1/60,{melee:true,auto:false});assert.equal(e.health,e.maxHealth);s.switchWeapon('katana');s.update(1/60,{melee:true,aim:e,auto:false});assert.ok(e.health<e.maxHealth);assert.ok(e.knockX>0);assert.ok(s.player.melee>0);
+ const s=isolated(),e=s.spawnEnemy('brute',1,3);s.update(1/60,{melee:true,auto:false});assert.equal(e.health,e.maxHealth);s.switchWeapon('katana');s.update(1/60,{melee:true,aim:e,auto:false});assert.equal(e.health,e.maxHealth);assert.ok(s.player.melee>0);step(s,13);assert.ok(e.health<e.maxHealth);assert.ok(e.knockX>0);
  const old=e.health;s.update(1/60,{grenade:true,aim:{x:1,z:3},auto:false});assert.equal(s.player.grenades,2);assert.equal(e.health,old);assert.equal(s.hazards[0].thrown,true);step(s,60);assert.ok(e.health<old);
  s.player.grenades=0;s.update(1/60,{grenade:true,auto:false});assert.equal(s.player.grenades,0);
 });

@@ -1,7 +1,7 @@
 export function feedbackPattern(event){
  const shot={carbine:[.18,.55,65],smg:[.08,.4,40],shotgun:[.85,.5,160],revolver:[.55,.65,110],marksman:[.7,.4,140],launcher:[1,.65,210],flame:[.14,.22,90],arc:[.12,.85,80]};
  let spec=event.type==='shoot'?shot[event.weapon]||[.25,.4,70]:({hurt:[.85,.45,210],explosion:[1,.65,260],dash:[.1,.45,90],slice:[.3,.7,100],throw:[.2,.3,110],loaded:[.12,.3,65],powerup:[.2,.5,140],vehicle:[.3,.2,120]})[event.type];
- if(!spec)return null;return{strongMagnitude:spec[0],weakMagnitude:spec[1],duration:spec[2],startDelay:0};
+ if(event.type==='slice')spec=event.hits?(event.combo===2?[.6,.85,135]:[.3,.6,75]):[.06,.18,40];if(!spec)return null;return{strongMagnitude:spec[0],weakMagnitude:spec[1],duration:spec[2],startDelay:0};
 }
 export class Haptics{
  constructor(input,settings){this.input=input;this.settings=settings;this.last=-1000;this.priorityUntil=0;this.status='Connect a controller to check vibration.';}

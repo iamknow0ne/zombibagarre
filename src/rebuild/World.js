@@ -1,3 +1,4 @@
+import {animateWeapons,updateBladeTrails} from './WeaponRig.js';
 import {CIVILIAN_COATS,characterVariant,detailCharacter} from './CharacterDetails.js';
 import {dressBuilding,dressStreets,obscuresSurvivor} from './CityDetails.js';
 import {waterAt} from './City.js';
@@ -452,9 +453,7 @@ export class World {
       if(bossKind==='cinder'){box(body,0x332e29,0,1.2,.27,.49,.5,.15);box(body,0xffa453,0,1.2,.355,.27,.32,.025,{emissive:0xff8a32,emissiveIntensity:2});for(const x of [-.45,.45]){cylinder(body,0x554a3e,x,1.75,-.14,.12,.6);sphere(body,0x997a4b,x,1.38,0,.24,.2,.3);}box(body,0x6e5740,0,1.96,0,.45,.15,.43);}
     }
     const legs=[];for(const x of [-.16,.16]){const leg=new T.Group();leg.position.set(x,.77,0);body.add(leg);box(leg,player?0x34494c:0x3e504b,0,-.16,0,.21,.34,.23);const knee=new T.Group();knee.position.y=-.33;leg.add(knee);box(knee,0x394943,0,-.12,0,.2,.25,.22);box(knee,0x283b3c,0,-.28,.075,.24,.18,.37);leg.userData.knee=knee;legs.push(leg);}
-    const arms=[];for(const side of [-1,1]){const arm=new T.Group();arm.position.set(side*.37,1.35,0);body.add(arm);cylinder(arm,coat,0,-.13,.02,.105,.27,.12,8);const elbow=new T.Group();elbow.position.set(0,-.27,.04);arm.add(elbow);cylinder(elbow,coat,0,-.12,.05,.085,.25,.105,8);sphere(elbow,skin,0,-.26,.08,.1,.12,.11);arm.userData.elbow=elbow;arms.push(arm);}
-    group.userData.swords=[];if(player)for(const [i,arm]of arms.entries()){const sword=new T.Group();sword.position.set(0,-.25,.1);arm.userData.elbow.add(sword);box(sword,0xced9d5,0,0,.8,.045,.08,1.4,{metalness:.85,roughness:.22});box(sword,0xb3a16d,0,0,.14,.28,.08,.08);box(sword,0x403a35,0,0,0,.09,.1,.24);sword.visible=false;group.userData.swords.push(sword);}
-    if(player){const sideguns=[];for(const side of [-1,1]){const aux=new T.Group();box(aux,0x485f60,side*.6,1.34,.15,.14,.16,.58);box(aux,0xcfae67,side*.6,1.43,.05,.1,.025,.15);body.add(aux);sideguns.push(aux);}group.userData.sideguns=sideguns;const gun=new T.Group();gun.position.set(.32,1.13,.3);box(gun,0x24373c,0,0,.25,.13,.15,.65);box(gun,0x506267,0,.08,.12,.14,.06,.3);box(gun,0x26383d,0,-.16,.14,.08,.24,.14);cylinder(gun,0x293d42,0,0,.65,.04,.2).rotation.x=Math.PI/2;body.add(gun);group.userData.gun=gun;}
+    const arms=[];for(const side of [-1,1]){const arm=new T.Group();arm.position.set(side*.37,1.35,0);body.add(arm);const upper=player?.34:.27,lower=player?.32:.26;cylinder(arm,coat,0,-upper/2,0,.105,upper,.12,8);const elbow=new T.Group();elbow.position.set(0,-upper,player?0:.04);arm.add(elbow);cylinder(elbow,coat,0,-lower/2,0,.085,lower,.105,8);const wrist=new T.Group();wrist.position.set(0,-lower,player?0:.08);elbow.add(wrist);sphere(wrist,skin,0,0,0,.08,.095,.095);if(player){box(wrist,0x344641,0,-.018,-.018,.15,.09,.11);}arm.userData.elbow=elbow;arm.userData.wrist=wrist;arms.push(arm);}
     if(!player){const frost=this.ring(.7,0x91d9ef,.065);frost.visible=false;group.add(frost);group.userData.frost=frost;}contact(group,0,0,1.4,1,.55);group.userData.legs=legs;group.userData.arms=arms;group.userData.type=type;group.userData.bossKind=bossKind;detailCharacter(group,{player,skin,variant,coat},{box,sphere,cylinder,batch:(a,b)=>this.batchStatic(a,b)});return group;
   }
   ring(radius,color,width=.06){const m=new T.Mesh(new T.RingGeometry(radius-width,radius,48),new T.MeshBasicMaterial({color,transparent:true,opacity:.8,side:T.DoubleSide,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.y=.04;return m;}
@@ -483,10 +482,11 @@ export class World {
   onEvent(e){
     if(e.type==='splash')this.splash(e.x,e.z,e.power);
     if(e.type==='vehicle-hit')debris(this,{x:e.x,z:e.z,material:'metal',count:12,power:4});
-    if(e.type==='slice')this.sliceTrail(e);
+    if(e.type==='slice'){if(e.hits)this.shake=Math.max(this.shake,e.combo===2?.12:.045);}
     if(e.type==='shoot'){
       if(e.weapon==='flame')this.flame(e.x+Math.sin(e.angle)*.6,e.z+Math.cos(e.angle)*.6,3,1.1,e.angle);
       else if(e.weapon!=='arc')this.effect(e.x+Math.sin(e.angle)*.8,e.z+Math.cos(e.angle)*.8,0xffd285,4,2);
+      if(!['flame','arc'].includes(e.weapon)){const casing=cylinder(this.scene,0xb69a62,e.x,1.25,e.z,.025,e.weapon==='shotgun'?.14:.1,.023,6);casing.rotation.z=1.1;this.effects.push({mesh:casing,kind:'casing',life:2,max:2,vx:Math.cos(e.angle)*(1.4+this.random()),vz:-Math.sin(e.angle)*(1.4+this.random()),vy:2+this.random(),spin:14,bounce:.38,drag:.15});}
       this.shake=Math.max(this.shake,e.weapon==='shotgun'||e.weapon==='launcher'?.16:.025);this.muzzleLight.position.set(e.x+Math.sin(e.angle),1.4,e.z+Math.cos(e.angle));this.muzzleLight.intensity=e.weapon==='flame'?10:18;
     }
     if(e.type==='hit'){if(this.settings.gore){this.effect(e.x,e.z,0xa22d22,9,5,'blood');if(this.random()<.18)this.decal(e.x,e.z,.18);}else this.effect(e.x,e.z,0xb4ad87,3,2);}
@@ -504,19 +504,18 @@ export class World {
     if(e.type==='spark')this.effect(e.x,e.z,0xddbe84,5,3);
   }
   update(sim,dt,menu=false){
-    this.fireClock.value+=dt;const t=sim.time,p=sim.player;
+    this.fireClock.value+=dt;const t=sim.time,p=sim.player,motionDt=['paused','upgrade','dead','victory'].includes(sim.state)?0:dt;
     const desired=this.inspectionTarget?new T.Vector3(this.inspectionTarget.x,0,this.inspectionTarget.z):menu?new T.Vector3(2,0,-7):new T.Vector3(p.x,0,p.z-1);
     if(this.layout.city){const lamps=[...(this.cityLampPositions||[])].sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z));this.cityLights.forEach((l,i)=>{const a=lamps[i];if(a){l.position.set(a.x,4.8,a.z);l.intensity=70;}});this.sun.position.set(p.x-18,32,p.z+5);this.sun.target.position.set(p.x,0,p.z);this.sun.target.updateMatrixWorld();this.ash.position.x=p.x;this.ash.position.z=p.z;for(const g of this.buildingMeshes.values())if(!g.userData.collapsed){const dx=g.userData.center.x-p.x,dz=g.userData.center.z-p.z;g.visible=Math.hypot(dx,dz)<(this.overview?400:70);this.fadeBuilding(g,!menu&&!this.overview&&obscuresSurvivor(g.userData.plan,p));}}
     this.focus.lerp(desired,1-Math.exp(-dt*4));
-    const height=this.portrait?10:this.inspectionTarget?46:this.overview?(this.layout.city?310:85):menu?39:p.vehicleId?42:this.aspect<1?37:30;
+    const height=this.portrait?(typeof this.portrait==='number'?this.portrait:10):this.inspectionTarget?46:this.overview?(this.layout.city?310:85):menu?39:p.vehicleId?42:this.aspect<1?37:30;
     this.camera.far=this.overview&&this.layout.city?500:160;this.camera.near=.1;this.camera.left=-height*this.aspect/2;this.camera.right=height*this.aspect/2;this.camera.top=height/2;this.camera.bottom=-height/2;this.camera.updateProjectionMatrix();
     this.shake=Math.max(0,this.shake-dt*1.8);const s=this.settings.reducedMotion?0:this.shake;
     const cameraDistance=this.overview&&this.layout.city?5:1;this.scene.fog.density=cameraDistance===5?.002:.009;this.camera.position.set(this.focus.x+26*cameraDistance+(this.random()-.5)*s,this.focus.y+35*cameraDistance,this.focus.z+32*cameraDistance);this.camera.lookAt(this.focus);
-    this.player.userData.sideguns.forEach((g,i)=>{g.visible=!WEAPONS[p.weapon].melee&&i===0&&p.equipped.length===2;g.position.z=p.offhandRecoil>0?-.1:0;});
-    this.player.userData.gun.scale.set(p.weapon==='launcher'?1.7:p.weapon==='flame'?1.4:1,1,p.weapon==='marksman'?1.8:p.weapon==='revolver'?.6:1);
     if(this.player.userData.skin!==p.skin){this.removeDynamic(this.player);this.player=this.character('player',null,p.skin);this.scene.add(this.player);}
-    this.player.position.lerp(new T.Vector3(p.x,0,p.z),1-Math.exp(-dt*22));this.player.rotation.y+=Math.atan2(Math.sin(p.angle-this.player.rotation.y),Math.cos(p.angle-this.player.rotation.y))*(1-Math.exp(-dt*20));this.animateCharacter(this.player,t,p.moving,p.dash>0,dt,p);
-    this.player.userData.gun.visible=!WEAPONS[p.weapon].melee&&!p.swing;this.player.userData.swords.forEach((s,i)=>s.visible=WEAPONS[p.weapon].melee&&(i===0||p.weapon==='dual'));
+    this.player.position.lerp(new T.Vector3(p.x,0,p.z),1-Math.exp(-dt*22));this.player.rotation.y+=Math.atan2(Math.sin(p.angle-this.player.rotation.y),Math.cos(p.angle-this.player.rotation.y))*(1-Math.exp(-dt*20));this.animateCharacter(this.player,t,p.moving,p.dash>0,motionDt,p);
+    animateWeapons(this.player,p,t,motionDt,{box,sphere,cylinder,batch:(a,b)=>this.batchStatic(a,b),remove:m=>this.removeDynamic(m)});
+    updateBladeTrails(this.player,p,motionDt,!!this.settings.reducedMotion);
     this.player.visible=!p.vehicleId&&(sim.state!=='dead'||Math.sin(t*20)>-.5);
     this.playerRing.position.set(p.x,.045,p.z);this.playerRing.material.opacity=p.invulnerable>0?.4+.3*Math.sin(t*30):.8;
     const chargingBoss=sim.enemies.find(e=>e.type==='boss'&&e.windup>0);this.bossTell.visible=!!chargingBoss;if(chargingBoss){this.bossTell.position.set(chargingBoss.x,.06,chargingBoss.z);this.bossTell.scale.setScalar(1+(1-chargingBoss.windup)*.7);}
@@ -557,7 +556,6 @@ export class World {
     for(const e of this.effects){
       e.life-=dt;
       if(e.ring){e.mesh.scale.addScalar(dt*2);e.mesh.material.opacity=Math.max(0,e.life/e.max)*(e.ripple?.4:1);}
-      else if(e.kind==='slice'){e.mesh.material.opacity=Math.max(0,e.life/e.max)*.6;e.mesh.rotation.y+=dt*e.spin;}
       else if(e.kind==='lightning'){e.mesh.traverse(o=>{if(o.material)o.material.opacity=Math.max(0,e.life/e.max);});}
       else if(e.kind==='fire'){e.mesh.position.x+=e.vx*dt;e.mesh.position.y+=e.vy*dt;e.mesh.position.z+=e.vz*dt;e.vx*=Math.exp(-dt*2);e.vz*=Math.exp(-dt*2);e.mesh.scale.x+=dt*(e.large?4:.6);e.mesh.scale.y+=dt*(e.large?3:1);e.mesh.material.opacity=Math.min(.88,e.life/e.max);e.mesh.material.rotation=Math.sin(this.fireClock.value*3+e.vy)*.07;if(this.random()<dt*.8)this.effect(e.mesh.position.x,e.mesh.position.z,0xe69a35,1,2,'ember',e.mesh.position.y);}
       else if(e.kind==='smoke'){e.mesh.position.x+=e.vx*dt;e.mesh.position.y+=e.vy*dt;e.mesh.position.z+=e.vz*dt;e.mesh.scale.addScalar(dt*1.15);e.mesh.material.opacity=.72*Math.min(1,(e.max-e.life)*3)*Math.max(0,e.life/e.max);}
@@ -587,21 +585,14 @@ export class World {
       else{m.material=m.userData.solidMaterial;m.castShadow=m.userData.solidShadow;}
     });
   }
-  sliceTrail(e){
-    const points=[];for(let i=0;i<=22;i++){const a=e.angle-1.15+i/22*2.3;points.push(new T.Vector2(Math.sin(a)*e.radius,Math.cos(a)*e.radius));}
-    const shape=new T.Shape();shape.moveTo(points[0].x,points[0].y);points.forEach(p=>shape.lineTo(p.x,p.y));for(let i=points.length-1;i>=0;i--)shape.lineTo(points[i].x*.86,points[i].y*.86);
-    const geo=new T.ShapeGeometry(shape);geo.rotateX(Math.PI/2);const m=new T.Mesh(geo,new T.MeshBasicMaterial({color:e.combo===2?0xf4bb7b:0xc6e2df,side:T.DoubleSide,transparent:true,opacity:.65,depthWrite:false}));m.position.set(e.x,1.05,e.z);this.scene.add(m);this.effects.push({mesh:m,kind:'slice',life:.22,max:.22,spin:e.weapon==='dual'?-2:2});
-  }
   animateCharacter(m,t,moving,dash,dt=1/60,state={}){
-    const d=m.userData,player=d.type==='player',speed=d.type==='runner'?13:player?10:6.5,phase=t*speed,blend=1-Math.exp(-dt*14);d.walk=(d.walk||0)+((moving?1:0)-(d.walk||0))*blend;
-    const stride=Math.sin(phase)*d.walk*.62;
-    d.legs.forEach((leg,i)=>{leg.rotation.x=(i?-1:1)*stride;leg.userData.knee.rotation.x=Math.max(0,Math.sin(phase+(i?Math.PI:0)))*d.walk*.9;});
+    const d=m.userData,player=d.type==='player',speed=d.type==='runner'?13:player?10:6.5,velocity=Math.hypot(state.moveX||0,state.moveZ||0);if(player)d.gait=(d.gait||0)+dt*velocity*2.05;const phase=player?d.gait:t*speed,blend=1-Math.exp(-dt*14);d.walk=(d.walk||0)+((moving?1:0)-(d.walk||0))*blend;
+    const stride=Math.sin(phase)*d.walk*.62,forward=player&&velocity>.1?((state.moveX||0)*Math.sin(state.angle)+(state.moveZ||0)*Math.cos(state.angle))/velocity:1,strafe=player&&velocity>.1?((state.moveX||0)*Math.cos(state.angle)-(state.moveZ||0)*Math.sin(state.angle))/velocity:0;
+    d.legs.forEach((leg,i)=>{leg.rotation.x=(i?-1:1)*stride*forward;leg.rotation.z=(i?1:-1)*stride*strafe*.65;leg.userData.knee.rotation.x=Math.max(0,Math.sin(phase+(i?Math.PI:0)))*d.walk*.9;});
     d.body.position.y=Math.abs(Math.sin(phase))*d.walk*.055+Math.sin(t*2)*.018;d.body.rotation.y=Math.sin(phase)*d.walk*.065;d.body.rotation.z=Math.sin(phase*.5)*d.walk*.035;d.body.rotation.x=dash?.55:0;
     d.arms.forEach((arm,i)=>{arm.rotation.x=player?-.6: -.35+(i?1:-1)*stride*.4;arm.rotation.z=i?.1:-.1;arm.userData.elbow.rotation.x=player?-.85:-.35+Math.sin(phase+i)*.15;});
     if(state.windup>0){const strike=Math.sin((1-state.windup)*Math.PI);d.arms.forEach(a=>{a.rotation.x=-1.2*strike;a.userData.elbow.rotation.x=-.8;});d.body.rotation.y=strike*.25;}
     if(player&&WEAPONS[state.weapon]?.melee){d.body.rotation.x=dash?.75:.12;d.arms.forEach((a,i)=>{a.rotation.x=-.45;a.rotation.z=i?.35:-.35;});}
-    if(player&&state.throwAnimation>0){const f=1-state.throwAnimation/.5;d.arms[1].rotation.x=-2.6+f*2.5;d.arms[1].userData.elbow.rotation.x=-.35;}
-    if(player&&state.reload>0){d.arms[0].rotation.x=-.95;d.arms[0].rotation.z=.5+Math.sin(t*14)*.15;d.body.rotation.y=-.12;}
-    if(player&&state.swing>0){const f=1-state.swing/.38,cut=Math.sin(f*Math.PI),side=state.swingCombo%2?1:-1;d.body.rotation.y=state.swingCombo===2?side*f*Math.PI*2:side*(-.5+f*1.1);d.arms.forEach((a,i)=>{a.rotation.x=-1.2-cut*.4;a.rotation.z=side*(f*2.6-1.3)*(i?-.7:1);a.userData.elbow.rotation.x=-.4+cut*.4;});}
+    if(player){d.body.rotation.x+=d.walk*.06;d.body.rotation.z-=strafe*d.walk*.055;}
   }
 }
