@@ -1,3 +1,4 @@
+import {bindTouchMap} from './TouchMap.js';
 import {drawAtlas,atlasPoint} from './Atlas.js';
 import {insideMap} from './Map.js';
 import {pointBlocked} from './config.js';
@@ -5,15 +6,16 @@ import {glyph} from './ControllerConfig.js';
 export function moveMapCursor(cursor,stick,dt){return {x:Math.max(.02,Math.min(.98,cursor.x+stick.x*dt*.65)),y:Math.max(.02,Math.min(.98,cursor.y+stick.y*dt*.65))};}
 export class ControllerMap{
  constructor(getSim,input){this.getSim=getSim;this.input=input;this.canvas=document.getElementById('city-atlas');this.dialog=document.getElementById('map-dialog');this.view={zoom:1};this.cursor={x:.5,y:.5};
-  this.canvas.tabIndex=0;this.canvas.setAttribute('aria-label','City street map. Right stick moves cursor. Cross places marker.');
-  this.canvas.onclick=e=>this.mark(atlasPoint(this.canvas,getSim().layout,e,this.view));
+  this.canvas.tabIndex=0;this.canvas.setAttribute('aria-label','City street map. Drag to pan, pinch to zoom, tap to mark. Right stick moves cursor; Cross places marker.');
+  this.canvas.onclick=e=>{if(e.pointerType!=='touch'&&performance.now()>(this.ignoreTouchClickUntil||0))this.mark(atlasPoint(this.canvas,getSim().layout,e,this.view));};
+  this.canvas.addEventListener('touch-map-tap',e=>this.mark(atlasPoint(this.canvas,getSim().layout,e.detail,this.view)));bindTouchMap(this);
   this.canvas.addEventListener('keydown',e=>{const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(d){e.preventDefault();this.cursor=moveMapCursor(this.cursor,{x:d[0],y:d[1]},.045);this.draw();}if(e.key==='Enter'){e.preventDefault();this.markCursor();}});
   document.getElementById('map-clear').onclick=()=>this.clear();document.getElementById('map-center').onclick=()=>this.center();
   document.getElementById('map-zoom-in').onclick=()=>this.zoom(.5);document.getElementById('map-zoom-out').onclick=()=>this.zoom(-.5);
   for(const key of ['enemies','vehicles','encounters','landmarks'])document.getElementById('map-show-'+key).onchange=e=>{this.view[key]=e.target.checked;this.draw();};
  }
  open(){this.view.x=0;this.view.z=0;this.view.zoom=1;this.cursor={x:.5,y:.5};this.draw();if(this.input.source==='gamepad')this.canvas.focus();}
- draw(){drawAtlas(this.canvas,this.getSim(),true,this.view);const ctx=this.canvas.getContext('2d'),x=this.cursor.x*this.canvas.width,y=this.cursor.y*this.canvas.height;ctx.strokeStyle='#fff1cd';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.moveTo(x-17,y);ctx.lineTo(x-5,y);ctx.moveTo(x+5,y);ctx.lineTo(x+17,y);ctx.moveTo(x,y-17);ctx.lineTo(x,y-5);ctx.moveTo(x,y+5);ctx.lineTo(x,y+17);ctx.stroke();}
+ draw(){if(this.input.source==='touch')document.getElementById('map-pad-help').textContent=`DRAG TO PAN · PINCH TO ZOOM · TAP TO MARK · ${this.view.zoom.toFixed(1)}×`;drawAtlas(this.canvas,this.getSim(),true,this.view);const ctx=this.canvas.getContext('2d'),x=this.cursor.x*this.canvas.width,y=this.cursor.y*this.canvas.height;ctx.strokeStyle='#fff1cd';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.moveTo(x-17,y);ctx.lineTo(x-5,y);ctx.moveTo(x+5,y);ctx.lineTo(x+17,y);ctx.moveTo(x,y-17);ctx.lineTo(x,y-5);ctx.moveTo(x,y+5);ctx.lineTo(x,y+17);ctx.stroke();}
  zoom(delta){this.view.zoom=Math.max(1,Math.min(4,this.view.zoom+delta));this.draw();}
  center(){const p=this.getSim().player;this.view.x=p.x;this.view.z=p.z;this.cursor={x:.5,y:.5};this.draw();}
  clear(){this.getSim().player.waypoint=null;document.getElementById('atlas-help').textContent='MARKER CLEARED';this.draw();}

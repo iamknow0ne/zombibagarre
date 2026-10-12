@@ -198,3 +198,22 @@ Validation:
 - Production build passed with the existing Three.js chunk-size advisory. Development QA is excluded from the production artifact.
 
 Review: AI Slop 1/10; Distinctiveness 8/10. No web font downloads, gradients, decorative panels or new navigation were introduced. Outlined digits, text labels, independently configurable colors/emphasis, native labelled checkboxes, touch-size setting rows, keyboard/controller focus and reduced motion preserve accessibility. Remaining limitation: the presentation is stylized and critical/headshot chances are probabilistic, not anatomical aim simulation.
+
+
+## 4.11 mobile control rebuild
+
+Design intent: retain the coal/bone/amber field-equipment interface and mono control labels, with two aligned thumb zones. Floating sticks originate at the actual touch point without an edge jump; fixed placement is optional. Large 48px action targets sit above each zone, with dodge/grenade on the right so the left thumb can keep moving. The compact HUD retains health, objective, ammunition, mastery and map. Portrait uses a closer camera; landscape moves supporting controls away from the central fight. Safe-area offsets protect notched screens. Tiny portrait screens suppress secondary readouts and show upgrades as a vertical list.
+
+Each stick owns its pointer independently. Radial dead zones preserve proportional movement; releasing aim does not cancel movement. Cancellation, capture loss, resize, tab hiding and blur clear held controls. Touch aiming uses the same camera transform as movement and optionally assists living, unobstructed enemies close to the chosen direction. Aim and attack work with both firearms or the equipped blade; the latest aim direction remains usable for a grenade after releasing the stick. Automatic targeting remains a separate toggle. Vehicle touch input uses assisted direction steering and release-to-brake, with larger brake/reverse controls.
+
+Touch settings persist floating/fixed placement, size, opacity and aim assist. New coarse-pointer clients default to Balanced graphics; existing graphics preferences are respected. Settings/dialogs scroll independently of gameplay. City-map pointer gestures pan, pinch around their midpoint and place a marker only on a tap; native follow-up clicks are suppressed. Existing keyboard/controller inputs remain available, and touch overlays yield to an active gamepad.
+
+Validation:
+- All 110 automated checks passed, including radial input, multi-pointer ownership, cancellation/rotation, fixed/floating origins, aim assist and cover, paired-fire input, grenade aim, map gesture math and tap/drag/pinch event handling. Existing controller, vehicle, combat, weapon and map checks passed.
+- Browser QA used the actual game in 390×844 portrait, 844×390 landscape and 320×568 small-phone frames. Two scripted thumbs moved the player from (0,3) to (3.26,-1.59) while firing; the carbine magazine fell from 24 to 12. Releasing each pointer independently and rotating during a held gesture cleared input. An aimed grenade reduced stock from 6 to 5.
+- Touch driving moved a sedan from (3,6) to approximately (-7.56,12.90), stopped on release and retained full hull. Map pan/pinch reached 1.9× without an accidental waypoint. Changed touch preferences survived reload; test preferences were restored afterward. Browser review corrected a landscape stick-centering issue and a short-phone upgrade layout that required horizontal scrolling.
+- These are responsive rendering and scripted DOM pointer checks, not physical iPhone/Android ergonomics or device performance certification. The development-only touch adapter is invulnerable and does not write run records; it is excluded from production.
+
+Production build passed with the existing Three.js bundle-size advisory. A clean browser tab loaded build 4.11 and entered combat without console errors.
+
+Review: AI Slop 1/10; Distinctiveness 8/10. The new layout uses existing game typography and colors, direct action labels and restrained controller outlines. No decorative animation or external assets were added. Physical phone testing remains necessary to assess hand comfort and device-specific browser behavior.

@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.10 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.11 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,13 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.11
+
+- Rebuilt mobile controls around two independent thumb zones: left moves, right aims and attacks. Floating sticks start under your thumbs; fixed placement is available in Settings. Dodge, grenade, reload and weapon switching use larger buttons with live cooldown/ammunition feedback.
+- Touch aim assist follows nearby visible enemies in your aim direction. AUTO toggles automatic targeting; the arsenal supports choosing both guns or a blade. Driving uses the left stick with release-to-brake and large reverse/brake controls.
+- Drag the city map to pan, pinch to zoom and tap to mark. Gestures no longer place unwanted markers. Rotation, interruptions and cancelled touches clear held controls safely.
+- Settings save touch placement, size, opacity and aim assist. Portrait, landscape and small-phone HUDs leave more room for the action, respect screen safe areas and use a closer on-foot camera. First-time touchscreen players start with Balanced graphics.
 
 ## New in 4.10
 

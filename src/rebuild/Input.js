@@ -1,3 +1,4 @@
+import {TouchControls,touchAimTarget} from './TouchControls.js';
 import {assistedDrive} from './Vehicles.js';
 import {sampleGamepad,worldStick} from './Gamepad.js';
 import {BINDINGS,CONTROL_DEFAULTS,controllerFamily,handInput,stepRange,directionalControl} from './ControllerConfig.js';
@@ -14,20 +15,15 @@ export class Input {
     window.addEventListener('keyup',e=>this.keys.delete(e.code));
     window.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')this.source='touch';});
     window.addEventListener('blur',()=>this.clear());
-    canvas.addEventListener('pointermove',e=>{if(e.pointerType!=='touch')this.source='keyboard';this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
+    canvas.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;this.source='keyboard';this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
     canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return;this.source='keyboard';this.firing=e.button===0;canvas.setPointerCapture(e.pointerId);if(e.button===2)this.moveRequest={x:e.clientX/innerWidth,y:e.clientY/innerHeight};this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
     canvas.addEventListener('pointerup',()=>{this.firing=false;});canvas.addEventListener('pointercancel',()=>{this.firing=false;});canvas.addEventListener('contextmenu',e=>e.preventDefault());
     canvas.addEventListener('wheel',e=>{e.preventDefault();onAction(e.deltaY>0?'nextWeapon':'prevWeapon');},{passive:false});
-    for(const [id,key]of [['drive-brake','touchBrake'],['drive-reverse','touchReverse']]){const button=document.getElementById(id);button?.addEventListener('pointerdown',e=>{e.preventDefault();this.source='touch';this[key]=true;button.setPointerCapture(e.pointerId);});for(const event of ['pointerup','pointercancel','lostpointercapture'])button?.addEventListener(event,()=>this[key]=false);}
-    const aimJoy=document.getElementById('aim-joystick');let aimId=null;
-    const aimMove=e=>{const r=aimJoy.getBoundingClientRect(),x=(e.clientX-r.left-r.width/2)/(r.width*.35),y=(e.clientY-r.top-r.height/2)/(r.height*.35),length=Math.max(1,Math.hypot(x,y));this.touchAim={x:x/length,y:y/length};this.touchFiring=true;this.source='touch';aimJoy.firstElementChild.style.transform=`translate(${this.touchAim.x*28}px,${this.touchAim.y*28}px)`;};
-    aimJoy.addEventListener('pointerdown',e=>{aimId=e.pointerId;aimJoy.setPointerCapture(aimId);aimMove(e);});aimJoy.addEventListener('pointermove',e=>{if(e.pointerId===aimId)aimMove(e);});this.resetAim=()=>{aimId=null;this.touchFiring=false;aimJoy.firstElementChild.style.transform='';};aimJoy.addEventListener('pointerup',this.resetAim);aimJoy.addEventListener('pointercancel',this.resetAim);
-    const joy=document.querySelector('#joystick'),knob=document.querySelector('#joystick-knob');let id=null;
-    const move=e=>{this.source='touch';const r=joy.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,d=Math.hypot(dx,dy)||1,max=r.width*.35;this.stick={x:dx/Math.max(d,max),y:dy/Math.max(d,max)};knob.style.transform=`translate(${this.stick.x*max}px,${this.stick.y*max}px)`;};
-    joy.addEventListener('pointerdown',e=>{id=e.pointerId;joy.setPointerCapture(id);move(e);});joy.addEventListener('pointermove',e=>{if(e.pointerId===id)move(e);});
-    const release=()=>{id=null;this.stick={x:0,y:0};knob.style.transform='';};joy.addEventListener('pointerup',release);joy.addEventListener('pointercancel',release);this.resetStick=release;
+    this.touchHoldIds={};
+    for(const [id,key]of [['drive-brake','touchBrake'],['drive-reverse','touchReverse']]){const button=document.getElementById(id);button?.addEventListener('pointerdown',e=>{if(this.touchHoldIds[key]!==undefined)return;e.preventDefault();this.source='touch';this.touchHoldIds[key]=e.pointerId;this[key]=true;try{button.setPointerCapture(e.pointerId);}catch{/* The browser may have cancelled the pointer. */}});for(const event of ['pointerup','pointercancel','lostpointercapture'])button?.addEventListener(event,e=>{if(this.touchHoldIds[key]===e.pointerId){delete this.touchHoldIds[key];this[key]=false;}});}
+    this.touchControls=new TouchControls(this);
   }
-  clear(){this.touchBrake=this.touchReverse=false;this.padGuard=true;this.padAim=null;this.keys.clear();this.once={};this.firing=false;this.destination=null;this.moveRequest=null;this.stick={x:0,y:0};this.resetStick?.();this.resetAim?.();this.touchAim=null;this.onStopFeedback?.();}
+  clear(){this.touchControls?.clear();this.touchWorldAim=null;this.touchFiring=false;this.touchHoldIds={};this.touchBrake=this.touchReverse=false;this.padGuard=true;this.padAim=null;this.keys.clear();this.once={};this.firing=false;this.destination=null;this.moveRequest=null;this.stick={x:0,y:0};this.resetStick?.();this.resetAim?.();this.touchAim=null;this.onStopFeedback?.();}
   pollGamepad(sim,now=performance.now()){
     const dt=Math.min(.05,Math.max(0,(now-(this.padTime??now))/1000));this.padTime=now;
     if(document.hidden||!document.hasFocus()){if(!this.padInactive)this.clear();this.padInactive=true;this.padButtons=[];return;}this.padInactive=false;
@@ -90,7 +86,8 @@ export class Input {
     if(this.moveRequest){this.destination=world.aim(this.moveRequest.x,this.moveRequest.y);this.moveRequest=null;}
     if(Math.hypot(x,y)>.1)this.destination=null;
     const hands=pad?handInput(pad,this.settings?.bindings||BINDINGS):undefined,aiming=pad&&Math.hypot(pad.aim.x,pad.aim.y)>.1;
-    const touchDirection=this.source==='touch'&&this.touchAim?worldStick(this.touchAim):null;const touchTarget=touchDirection?{x:world.player.position.x+touchDirection.x*16,z:world.player.position.z+touchDirection.z*16}:null;
+    const touchSim=sim||(world.player?{player:world.player.position,enemies:[],blocked:()=>false}:null);
+    const touchTarget=this.source==='touch'&&this.touchAim&&touchSim?touchAimTarget(this.touchAim,touchSim,this.settings?.touchAimAssist!==false):null;this.touchWorldAim=touchTarget;
     const out={brake:k.has('Space')||!!pad?.buttons[1],destination:this.destination,...this.once,x:x*.776+y*.63,z:-x*.63+y*.776,auto:aiming?false:auto,aim:pad&&(hands.some(Boolean)||this.once.grenade||aiming)?this.padAim:touchTarget||(this.pointer.active?world.aim(this.pointer.x,this.pointer.y):null),firing:this.firing||!!this.touchFiring,fireHands:hands};this.once={};
     const vehicle=sim?.props.find(v=>v.id===sim.player.vehicleId);
     if(vehicle){
