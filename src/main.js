@@ -1,3 +1,4 @@
+import {streetStatus} from './rebuild/StreetEvents.js';
 import {loadingStage} from './rebuild/Loading.js';
 import {normalizeLoadout,toggleLoadout,slotKey} from './rebuild/Loadout.js';
 import {drawAtlas,atlasPoint} from './rebuild/Atlas.js';
@@ -71,11 +72,11 @@ function finish(){
   $('result-copy').textContent=won?'Eight biomes. Eight fallen monsters. You made it through the quarantine.':'The streets keep their secrets. You know them a little better now.';
   $('result-score').textContent=sim.score.toLocaleString('en-US');$('result-kills').textContent=sim.kills;$('result-time').textContent=formatTime(sim.time);showDialog('result-dialog');
 }
-function openMap(){if(!['playing','extracting','menu'].includes(sim.state))return;mapReturn=sim.state;if(sim.state!=='menu')sim.pause();drawAtlas($('city-atlas'),sim,true);$('atlas-places').replaceChildren(...(sim.layout.landmarks||[]).map(place=>{const b=document.createElement('button');b.textContent=`${sim.visited.has(place.name)?'✓ ':''}${place.name}`;b.onclick=()=>{sim.player.waypoint={x:place.x,z:place.z};drawAtlas($('city-atlas'),sim,true);$('atlas-help').textContent=`DESTINATION: ${place.name} · FOLLOW THE GOLD LINE`};return b;}));showDialog('map-dialog');}
+function openMap(){if(!['playing','extracting','menu'].includes(sim.state))return;mapReturn=sim.state;if(sim.state!=='menu')sim.pause();drawAtlas($('city-atlas'),sim,true);$('atlas-places').replaceChildren(...[...(sim.layout.landmarks||[]),...(sim.streetEvents||[]).map(j=>({...j,name:`${j.state==='complete'?'✓ ':''}${j.name}`}))].map(place=>{const b=document.createElement('button');b.textContent=`${sim.visited.has(place.name)?'✓ ':''}${place.name}`;b.onclick=()=>{sim.player.waypoint={x:place.x,z:place.z};drawAtlas($('city-atlas'),sim,true);$('atlas-help').textContent=`DESTINATION: ${place.name} · FOLLOW THE GOLD LINE`};return b;}));showDialog('map-dialog');}
 function formatTime(t){return `${Math.floor(t/60).toString().padStart(2,'0')}:${Math.floor(t%60).toString().padStart(2,'0')}`;}
 function processEvents(){for(const e of sim.events){if(e.type==='district'){rebuildMap();sim.setBuildings(world.buildingTargets);announce(`DISTRICT ${e.district+1} / ${DISTRICTS.length}`,DISTRICTS[e.district].name);}world.onEvent(e);audio.event(e);
   if(e.type==='wave')announce(`${sim.layout.city?'CITY THREAT':DISTRICTS[sim.district].name} · WAVE ${String(e.wave).padStart(2,'0')} / ${TOTAL_WAVES}`,e.wave%4===0?DISTRICTS[sim.district].boss:WAVE_NAMES[(e.wave-1)%WAVE_NAMES.length]);
-  if(e.type==='vehicle')toast(e.message);if(e.type==='discovery')toast(`${e.name} DISCOVERED · +2 GRENADES · +25 HEALTH`);
+  if(e.type==='street-job'||e.type==='street-complete')toast(`${e.name} · ${e.message}`);if(e.type==='vehicle')toast(e.message);if(e.type==='discovery')toast(`${e.name} DISCOVERED · +2 GRENADES · +25 HEALTH`);
   if(e.type==='combo')toast(`${e.name} · ${e.description.toUpperCase()}`);
   if(e.type==='boss-attack')toast(`${e.name} · ${e.attack==='warden'?'CHARGE / GROUND SLAM':e.attack==='dredger'?'SHRAPNEL BARRAGE':e.attack==='bloom'?'THE BROOD AWAKENS':'FURNACE ERUPTION'}`);
   if(e.type==='hurt'){$('damage-flash').style.opacity=settings.reducedMotion?.15:.55;}
@@ -88,6 +89,7 @@ function processEvents(){for(const e of sim.events){if(e.type==='district'){rebu
   if(e.type==='dead'||e.type==='victory')finish();
 }sim.events=[];}
 function hud(){const p=sim.player,w=WEAPONS[p.weapon];
+  $('street-job').hidden=!sim.layout.city;const job=streetStatus(sim);$('street-job-name').textContent=job.title;$('street-job-detail').textContent=job.detail;
   $('health-number').textContent=`${Math.ceil(p.health)} / ${p.maxHealth}`;$('health-fill').style.width=`${p.health/p.maxHealth*100}%`;$('health-fill').style.background=p.health/p.maxHealth<.3?'var(--danger)':'var(--green)';
   $('wave-label').textContent=`WAVE ${String(sim.wave).padStart(2,'0')} / ${TOTAL_WAVES}`;
   $('objective').textContent=sim.state==='extracting'?`EXTRACTION ${Math.floor(sim.extraction/4*100)}%`:`${Math.max(0,(sim.toSpawn||0)+sim.enemies.length)} HOSTILES REMAINING`;
@@ -141,5 +143,5 @@ try{
   $('game').addEventListener('webglcontextlost',e=>{e.preventDefault();focusLost();$('error-detail').textContent='The graphics connection was interrupted. Reload to start a fresh run.';$('error').hidden=false;});
   recordUI();world.applySettings(settings);world.update(sim,0,true);await loadingStage(88,'Warming lights, materials and controls');if(world.renderer.compileAsync)await world.renderer.compileAsync(world.scene,world.camera);last=performance.now();requestAnimationFrame(loop);
   // Read-only diagnostics for local QA. No gameplay mutation surface is exposed.
-  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.2.0'})});
+  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.3.0'})});
 }catch(error){console.error(error);$('error-detail').textContent='WebGL is needed to render Saint-Roch. Enable hardware acceleration or try a browser with WebGL support.';$('error').hidden=false;}

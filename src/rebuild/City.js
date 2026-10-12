@@ -1,5 +1,12 @@
 import {seededRandom, pointBlocked} from './config.js';
 
+export function buildingStyle(x,z,factory){
+ if(factory)return 'foundry';
+ if(x>55)return 'warehouse';
+ if(x===16&&z===16)return 'civic';
+ if(x===-16&&z===-16)return 'hotel';
+ return ((x+80)/32+(z+80)/32)%3===0?'hotel':'tenement';
+}
 // A single connected street network: districts are places, not successive rooms.
 export function generateCity(seed=73){
  const r=seededRandom(seed^0x7134ab),bounds={minX:-116,maxX:116,minZ:-116,maxZ:116};
@@ -20,9 +27,9 @@ export function generateCity(seed=73){
  for(let ix=0;ix<6;ix++)for(let iz=0;iz<6;iz++){
   const x=-80+ix*32,z=-80+iz*32;if(ix===4)continue; // The canal occupies this column.
   const park=(ix<2&&iz>3)||(ix<2&&iz<2);
-  if(park){for(let i=0;i<4;i++)cover.push({x:x+(r()-.5)*20,z:z+(r()-.5)*20,w:2,d:2,kind:'planter'});continue;}
+  if(park){for(let i=0;i<4;i++)cover.push({x:x+(i%2?1:-1)*(6+r()*4),z:z+(i<2?-1:1)*(6+r()*4),w:2,d:2,kind:'planter'});continue;}
   const factory=ix===5&&iz<3,w=18+r()*3,d=18+r()*3;
-  buildings.push({id:`building-${buildings.length}`,x,z,w,d,h:factory?7:6+Math.floor(r()*4)*2.6,color:colours[Math.floor(r()*colours.length)],material:factory?'metal':'brick',factory,shop:['PHARMACIE','LE DERNIER VERRE','ÉPICERIE','HÔTEL','ATELIER','CAFÉ'][Math.floor(r()*6)]});
+  buildings.push({id:`building-${buildings.length}`,x,z,w,d,h:factory?7:6+Math.floor(r()*4)*2.6,color:colours[Math.floor(r()*colours.length)],material:factory?'metal':'brick',factory,style:buildingStyle(x,z,factory),shop:['PHARMACIE','LE DERNIER VERRE','ÉPICERIE','HÔTEL','ATELIER','CAFÉ'][Math.floor(r()*6)]});
   if(r()>.4)cover.push({x:x-w/2-2.5,z:z-4,w:.9,d:.9,kind:'barrel'});
   cover.push({x:x+w/2+2,z:z+5,w:1.5,d:2,kind:'crate'});
  }

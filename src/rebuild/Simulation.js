@@ -1,3 +1,4 @@
+import {makeStreetEvents,updateStreetEvents} from './StreetEvents.js';
 import {normalizeLoadout,toggleLoadout,slotKey,isMelee} from './Loadout.js';
 import {generateCity,waterAt} from './City.js';
 import { generateMap, insideMap, segmentInMap } from './Map.js';
@@ -5,7 +6,7 @@ import { WEAPONS, ENEMIES, ARENA, COVER, UPGRADES, seededRandom, clamp, distance
 
 export class Simulation {
   constructor({ seed=73,difficulty='standard',meta={},layout=null,mode='campaign',skin='scout' }={}) {
-    this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
+    this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.streetEvents=makeStreetEvents(this.layout);this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
     this.state = 'menu'; this.enemies = []; this.bullets = []; this.pickups = []; this.hazards = [];this.fires=[];
     this.time = 0; this.wave = 0; this.kills = 0; this.score = 0; this.combo = 0; this.comboTimer = 0;
     this.player = this.makePlayer('carbine'); this.upgrades = []; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:PROP_HEALTH[o.kind],maxHealth:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);
@@ -106,7 +107,7 @@ export class Simulation {
       this.score += Math.round(e.score * (1 + Math.min(4, Math.floor(this.combo / 5)) * .25) * (this.player.doubleScore>0?2:1));
       this.player.health = Math.min(this.player.maxHealth, this.player.health+this.player.lifeSteal*(this.player.regen>0?2:1));
       if(e.type==='volatile')this.hazards.push({id:this.nextId++,x:e.x,z:e.z,radius:2.4,timer:.7,duration:.7,friendly:false,damage:24});
-      this.emit('kill', { x:e.x,z:e.z,enemyType:e.type,angle:e.angle,slicePart:impact.part||['head','arm','legs'][Math.floor(this.random()*3)],variant:Math.floor(this.random()*6),fallSpeed:.65+this.random()*.8,twist:(this.random()-.5)*1.5,violent:amount>70,death:impact.kind==='slice'?'sliced':impact.headshot?'headshot':impact.kind==='explosion'?'exploded':impact.kind==='fire'||e.burning>0?'burned':impact.kind==='electric'?'electrocuted':'shot',crawling:!!e.crawling,missingArm:!!e.missingArm,dx,dz });
+      this.emit('kill', { x:e.x,z:e.z,enemyType:e.type,enemyId:e.id,bossKind:e.bossKind,angle:e.angle,slicePart:impact.part||['head','arm','legs'][Math.floor(this.random()*3)],variant:Math.floor(this.random()*6),fallSpeed:.65+this.random()*.8,twist:(this.random()-.5)*1.5,violent:amount>70,death:impact.kind==='slice'?'sliced':impact.headshot?'headshot':impact.kind==='explosion'?'exploded':impact.kind==='fire'||e.burning>0?'burned':impact.kind==='electric'?'electrocuted':'shot',crawling:!!e.crawling,missingArm:!!e.missingArm,dx,dz });
       if (this.kills % 4 === 0 || e.type === 'brute') { const types=Object.keys(POWERUPS); const type=this.player.health<45?'health':types[Math.floor(this.random()*types.length)];this.pickups.push({ id: this.nextId++, x:e.x,z:e.z,life:40,type }); }
     }
   }
@@ -172,7 +173,7 @@ export class Simulation {
       this.spawnTimer -= dt;
       if (this.spawnTimer <= 0) { this.spawn(); this.spawnTimer = Math.max(.38, 1.1 - this.wave * .1); }
     }
-    if(this.layout.city){for(const e of this.enemies)if(distance(e,p)>75&&e.type!=='boss'){e.health=0;this.toSpawn++;}for(const place of this.layout.landmarks)if(!this.visited.has(place.name)&&distance(place,p)<6){this.visited.add(place.name);p.grenades+=2;p.health=Math.min(p.maxHealth,p.health+25);this.score+=500;this.emit('discovery',{name:place.name});}}
+    if(this.layout.city){for(const e of this.enemies)if(distance(e,p)>75&&e.type!=='boss'&&!e.incidentId){e.health=0;this.toSpawn++;}for(const place of this.layout.landmarks)if(!this.visited.has(place.name)&&distance(place,p)<6){this.visited.add(place.name);p.grenades+=2;p.health=Math.min(p.maxHealth,p.health+25);this.score+=500;this.emit('discovery',{name:place.name});}}
     this.updateFire(dt);
     this.updateEnemies(dt);
     this.updateBullets(dt);
@@ -186,6 +187,7 @@ export class Simulation {
       if ((item.type!=='health'||p.health<p.maxHealth) && distance(p,item)<p.pickupRange) { this.collect(item.type); item.life=0; }
     }
     this.pickups = this.pickups.filter(i => i.life > 0);
+    updateStreetEvents(this,dt);
     this.enemies = this.enemies.filter(e => e.health > 0);
     if (this.state === 'playing' && this.toSpawn === 0 && this.enemies.length === 0) {
       this.bullets = []; this.hazards = [];

@@ -74,3 +74,27 @@ Loading is a field-transmission screen with large condensed type, an original li
 - Visual fixes from review: grenade enlarged for readability at the gameplay camera; blade icons replace the old rifle silhouettes; focus survives arsenal re-rendering; blast glass batching updates in the same event.
 
 Design review (1–5): hierarchy 4, product specificity 4, consistency 4, interaction clarity 4, responsiveness 4. The loading screen uses the established coal/bone/amber system, square controls and operational typography. Progress and menu focus have accessible labels; reduced motion remains available. The art remains stylized procedural low-poly, with repetitive character construction and no claim of photorealistic or AAA production quality.
+
+
+## 4.3 inhabited streets and encounter variety
+
+Design intent: preserve the coal/bone/amber field interface and condensed display type while making the world more recognisable at gameplay distance. Priorities were repeated silhouettes, flat street materials, identical enemies and buildings masking the hero. Use geometry and material detail tied to the setting, rather than full-screen decorative effects. UI additions use an 8/12/16 px rhythm, square edges, operational mono labels and a small left-side radio readout; they do not compete with aiming or wave information.
+
+City buildings now derive one of five architectural styles from their block: tenement, hotel, civic, foundry or warehouse. Rooflines, fixtures, warm windows, shutters, balconies, striped awnings, loading doors, industrial metal panels/pipes, posters and addresses differentiate them. Streets add paving, drainage, crossings, signage and irregular wet patches. Parks have textured lawns, paths and one of three central furniture arrangements. Decorative street furniture remains scenery; existing cover and buildings retain their collision/destruction rules.
+
+Occlusion tests use parallel orthographic sightlines and a shoulder margin down to the feet. Obstructing buildings clip to 0.7 m walls with a translucent footprint instead of stacking transparent floors over the player. Roof decorations are grouped with their parent roof, so destroyed roofs do not leave floating dormers. Five facade styles still use the staged structural destruction system.
+
+Six civilian variants change clothing, headgear and facial details without consuming simulation randomness. Rounded torsos and tapered arms reduce the block shape; clothing and face details are batched separately from animated joints. Kill events carry appearance identity into corpses.
+
+Three city side encounters are placed at reachable, separated street points using the run seed. Each has a distinct guard arrangement and reward. The relay requires eight uncontested seconds nearby on foot after its guards die; the convoy and enforcer require clearing their marked guards. Optional guards count towards the current wave and do not disappear when the player leaves. Completion is permanent for the run. Existing 32-wave progression and eight-biome campaign remain intact.
+
+Validation:
+- 52 automated checks cover the existing combat/campaign/maps, 40 city seeds for encounter placement, pause/contesting/vehicle restrictions, once-only rewards, guard persistence, roof-edge occlusion and textured/shadow-aware batching.
+- The standard 32-wave city bot again reached victory at 1,282.4 simulated seconds with 1,663 kills, 190 health and no enemies. That central-street route does not exercise the optional encounters; those have separate scenario tests.
+- Real browser renders inspected the central streets, foundry, gardens, six character variants, active relay guards and repeated facade damage. Nine facade blasts reached stage 2 with 59 missing sections and 42 broken windows. Test-range screenshots are labelled staged.
+- A five-second high-quality, static-city motion check in the local in-app browser improved from roughly 35 to 42 fps after reducing unnecessary decoration shadows (1,584 to 1,254 draw calls across rendering passes in that scene). This is a short local measurement, not a cross-device or crowded-combat performance guarantee. The Three.js bundle-size advisory remains.
+- The richer assets are still procedural stylised models. The street grid remains fixed, with seeded placements and building parameters; small scenery is not structurally simulated. There is no claim of AAA asset fidelity.
+
+Anti-slop review: AI Slop Score 1/10 (some common interface conventions remain); Distinctiveness 8/10. Signature elements are the French storefront vocabulary, field-transmission interface and readable architectural cutaways. Material and silhouette variety carry the polish. Remaining repetition is strongest in the fixed street grid and base humanoid anatomy.
+
+The final browser pass also checked normal combat through the first upgrade, the three atlas destinations and a selected relay waypoint. At 390×844, wave status and vehicle/encounter labels were separated to avoid the minimap; the temporary viewport was restored after inspection. No real touch hardware certification is implied.

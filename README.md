@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.2 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.3 includes an open city with connected streets, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,15 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.3
+
+- Five city architecture styles: shuttered apartments, balcony hotels, a civic clock tower, industrial sheds and dock warehouses. Tiled roofs, dormers, vents, water tanks, storefront awnings, posters, lit windows and street signs add detail.
+- Paved sidewalks, crossings, drains, irregular wet patches and planted parks with paths, benches, fountains, flower beds or pavilions.
+- Camera-blocking buildings cut away to low walls, keeping the survivor and nearby fighting visible. Rooftop accessories disappear when their roof is destroyed.
+- Six civilian outfit/headgear combinations, facial details, rounded torsos and articulated tapered arms. Corpses retain the living enemy's appearance.
+- Three seeded optional city encounters: clear a supply convoy for ammunition and grenades; secure a radio relay on foot for armour; defeat an enforcer for maximum health. Find the amber squares on the atlas. Each reward is granted once per run, and encounter progress survives wave transitions.
+- Shared sign materials, textured mesh batching and selective shadows keep small decorations from consuming unnecessary rendering work.
 
 ## Controls
 
@@ -66,7 +75,7 @@ Touchscreen controls use a movement stick, action buttons, swap/reload and auto 
 ## Verification
 
 ```sh
-npm test                  # 47 tests, including 320 generated district layouts
+npm test                  # 52 tests, including 320 generated district layouts
 npm run test:campaign     # deterministic full-campaign bot, all difficulties
 npm run test:campaign -- standard
 npm run test:campaign -- standard city  # extended city simulation

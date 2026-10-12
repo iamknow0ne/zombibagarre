@@ -1,3 +1,5 @@
+import {CIVILIAN_COATS,characterVariant,detailCharacter} from './CharacterDetails.js';
+import {dressBuilding,dressStreets,obscuresSurvivor} from './CityDetails.js';
 import {waterAt} from './City.js';
 import {debris,materialFor,deathMotion,fragmentGeometry,grenadePosition} from './Effects.js';
 import { generateMap, insideMap } from './Map.js';
@@ -29,9 +31,11 @@ function plane(parent,material,x,y,z,w,h,ground=false) {
   const m=new T.Mesh(new T.PlaneGeometry(w,h),material);m.position.set(x,y,z);if(ground)m.rotation.x=-Math.PI/2;parent.add(m);return m;
 }
 function texture(w,h,draw) { const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=4;return tex; }
+const signCache=new Map();
 function sign(parent,text,x,y,z,w,h,bg='#203c3d',fg='#e3d4aa') {
-  const tex=texture(768,128,(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.strokeStyle=fg;c.lineWidth=3;c.strokeRect(9,9,W-18,H-18);c.fillStyle=fg;c.textAlign='center';c.textBaseline='middle';c.font=`bold ${text.length>20?38:52}px Georgia`;c.fillText(text,W/2,H/2,W-35);});
-  return plane(parent,new T.MeshStandardMaterial({map:tex,roughness:.9}),x,y,z,w,h);
+  const key=text+bg+fg;let material=signCache.get(key);
+  if(!material){const tex=texture(768,128,(c,W,H)=>{c.fillStyle=bg;c.fillRect(0,0,W,H);c.strokeStyle=fg;c.lineWidth=3;c.strokeRect(9,9,W-18,H-18);c.fillStyle=fg;c.textAlign='center';c.textBaseline='middle';c.font=`bold ${text.length>20?38:52}px Georgia`;c.fillText(text,W/2,H/2,W-35);});material=new T.MeshStandardMaterial({map:tex,roughness:.9});material.userData.shared=true;signCache.set(key,material);}
+  return plane(parent,material,x,y,z,w,h);
 }
 const asphaltTex=(district=0)=>texture(1024,1024,(c,W,H)=>{
   const rng=seededRandom(19);c.fillStyle=['#455257','#4b6168','#667059','#645950','#4c603e','#9ba8af','#b28c61','#526858'][district];c.fillRect(0,0,W,H);
@@ -48,7 +52,7 @@ export class World {
     this.layout=layout;this.district=district;this.biome=DISTRICTS[district];
     this.fireClock={value:0};this.settings=settings;this.random=seededRandom(layout.mapSeed);this.canvas=canvas;
     this.renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?1.5:1.15));
+    this.renderer.localClippingEnabled=true;this.renderer.info.autoReset=false;this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?1.5:1.15));
     this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;
     this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.3;
     this.scene=new T.Scene();this.scene.background=new T.Color(this.biome.sky);this.scene.fog=new T.FogExp2(this.biome.sky,.009);
@@ -57,7 +61,7 @@ export class World {
     const sun=new T.DirectionalLight(this.biome.accent,2.5);sun.position.set(-18,32,5);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-40,right:40,top:35,bottom:-35,near:1,far:100});sun.shadow.bias=-.001;sun.shadow.normalBias=.04;this.scene.add(sun);this.sun=sun;this.scene.add(sun.target);
     const rim=new T.DirectionalLight(0x7ea9b8,1.1);rim.position.set(15,12,-24);this.scene.add(rim);
     shadowTexture=texture(64,64,(c,W,H)=>{const g=c.createRadialGradient(32,32,1,32,32,32);g.addColorStop(0,'rgba(0,0,0,.85)');g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,W,H);});
-    this.static=new T.Group();this.scene.add(this.static);this.characters=new Map();this.projectiles=new Map();this.items=new Map();this.grenades=new Map();this.rings=new Map();this.effects=[];this.corpses=[];this.decals=[];this.wrecks=[];this.propMeshes=new Map();this.buildingMeshes=new Map();this.impacts=[];
+    this.static=new T.Group();this.scene.add(this.static);this.characters=new Map();this.projectiles=new Map();this.items=new Map();this.grenades=new Map();this.streetJobs=new Map();this.rings=new Map();this.effects=[];this.corpses=[];this.decals=[];this.wrecks=[];this.propMeshes=new Map();this.buildingMeshes=new Map();this.impacts=[];
     this.collapses=[];this.waterMeshes=[];this.buildStreet();this.trimToMap();this.collectBuildings();this.batchStatic();for(const [id,g] of this.propMeshes)if(!this.layout.cover[Number(id.split('-')[1])]?.driveable)this.batchStatic(g,g);for(const g of this.buildingMeshes.values())this.batchStatic(g,g);this.buildParticles();this.player=this.character('player');this.scene.add(this.player);
     this.playerRing=this.ring(.68,0xe9d5a0,.06);this.scene.add(this.playerRing);
     this.extractionRing=this.ring(2.9,0xa4e2bd,.08);this.extractionRing.position.set(0,.07,-10);this.extractionRing.visible=false;this.scene.add(this.extractionRing);
@@ -148,9 +152,10 @@ export class World {
     for(let x=-80;x<100;x+=32)for(let z=-80;z<100;z+=32){if(x===48)continue;
       const park=(x<-32&&(z<-32||z>32));const ground=box(g,park?0x63714c:0x7c8278,x,.04,z,24,.18,24);ground.receiveShadow=true;
       for(const side of [-1,1]){box(g,0xa0a58e,x+side*12,.16,z,.25,.26,24);box(g,0xa0a58e,x,.16,z+side*12,24,.26,.25);}
-      if(park)for(let i=0;i<8;i++)this.tree(x+(r()-.5)*19,z+(r()-.5)*19,true);
+
       if((x+z)%64===0){this.lamp(x-12,z-12);}
     }
+    dressStreets(this,{box,cylinder,sphere,sign,mat,plane,texture});
     for(const b of this.layout.buildings)this.cityBuilding(b);
     for(const rect of this.layout.water)this.waterSurface(rect);
     for(const bridge of this.layout.bridges){box(g,0x777f78,bridge.x,.05,bridge.z,bridge.w,.5,bridge.d);for(const side of [-1,1]){box(g,0xa8ac98,bridge.x,.55,bridge.z+side*bridge.d/2,bridge.w,.15,.2);for(let x=-8;x<9;x+=2)box(g,0x4d605f,bridge.x+x,.3,bridge.z+side*bridge.d/2,.12,.7,.12);}}
@@ -171,13 +176,15 @@ export class World {
         if(y>2){const pane=box(face,b.factory?0xc1955b:0x48626b,x,y,.18*signSide,1.05,1.35,.035);pane.userData.glass=true;g.userData.glass.push(pane);}
       }
     }
-    const roof=box(g,0x3b4b52,0,b.h+.15,0,b.w+.3,.32,b.d+.3);roof.userData.breakablePart=true;g.userData.sections.push(roof);
+    const roof=box(g,0x3b4b52,0,b.h+.15,0,b.w+.3,.32,b.d+.3);roof.userData.breakablePart=true;g.userData.roof=roof;g.userData.sections.push(roof);
     box(g,0x65736c,-b.w*.2,b.h+.5,0,3,.7,2);if(b.factory)cylinder(g,0x7e7060,b.w*.25,b.h+2.5,0,.9,5);
     for(const side of [-1,1]){box(g,0xb4ac96,0,b.h-.18,side*(b.d/2+.16),b.w,.18,.35);box(g,0x5c6b60,side*(b.w/2-.3),b.h/2,b.d/2+.24,.09,b.h,.09);}
     for(let y=3;y<b.h;y+=2.8)box(g,0xb0aa94,0,y,b.d/2+.18,b.w,.12,.25);
     const canopy=box(g,0x4a685b,0,2.05,b.d/2+.65,b.w*.72,.14,1.1);canopy.rotation.x=.12;
     sign(g,b.shop,0,2.5,b.d/2+.22,b.w*.68,.75,b.factory?'#805e3c':'#395950');
     for(const z of [-1,1]){const pane=box(g,0x20373e,z*2,1.15,b.d/2+.24,2.6,2,.04);pane.userData.glass=true;g.userData.glass.push(pane);}
+    dressBuilding(this,g,b,{box,cylinder,sphere,sign,mat,texture});
+    this.batchStatic(g.userData.roofAccessories,g.userData.roofAccessories);
     this.rebuildBuildingShell(g);
   }
   waterSurface(rect){
@@ -257,13 +264,14 @@ export class World {
   collectBuildings(){
     this.scene.updateMatrixWorld(true);
     this.buildingTargets=[];
-    for(const[id,g]of this.buildingMeshes){if(g.userData.plan){const b=g.userData.plan;g.userData.center=new T.Vector3(b.x,b.h/2,b.z);g.userData.size=new T.Vector3(b.w,b.h,b.d);this.buildingTargets.push({...b});continue;}const bounds=g.userData.wall?new T.Box3().setFromObject(g.userData.wall).expandByScalar(.7):new T.Box3().setFromObject(g);const center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3());g.userData.center=center;g.userData.size=size;this.buildingTargets.push({id,x:center.x,z:center.z,w:size.x,d:size.z});}
+    for(const[id,g]of this.buildingMeshes){if(g.userData.plan){const b=g.userData.plan;g.userData.center=new T.Vector3(b.x,b.h/2,b.z);g.userData.size=new T.Vector3(b.w,b.h+5.3,b.d);this.buildingTargets.push({...b});continue;}const bounds=g.userData.wall?new T.Box3().setFromObject(g.userData.wall).expandByScalar(.7):new T.Box3().setFromObject(g);const center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3());g.userData.center=center;g.userData.size=size;this.buildingTargets.push({id,x:center.x,z:center.z,w:size.x,d:size.z});}
   }
   damageBuildingStage(e){
     const g=this.buildingMeshes.get(e.id);if(!g)return;g.userData.damageStage=e.stage;
     const pieces=(g.userData.sections||[]).filter(m=>m.visible);pieces.sort((a,b)=>{const av=new T.Vector3(),bv=new T.Vector3();a.getWorldPosition(av);b.getWorldPosition(bv);return Math.hypot(av.x-e.x,av.z-e.z,av.y-2)-Math.hypot(bv.x-e.x,bv.z-e.z,bv.y-2);});
     for(const m of pieces.slice(0,Math.max(0,Math.ceil((g.userData.sections||[]).length*.24*e.stage)-((g.userData.sections||[]).length-pieces.length)))){m.visible=false;const p=new T.Vector3();m.getWorldPosition(p);debris(this,{x:p.x,z:p.z,y:p.y,material:g.userData.material||'brick',count:10,power:4,scale:.8});this.smoke(p.x,p.z,2,p.y);}
     const panes=g.userData.glass.filter(m=>m.visible);for(const pane of panes.slice(0,e.stage*2)){pane.visible=false;const p=new T.Vector3();pane.getWorldPosition(p);this.effect(p.x,p.z,0x98bab9,12,6,'glass',p.y);}
+    if(g.userData.roofAccessories&&(!g.userData.roof.visible||g.userData.decoratedRoof?.visible===false))g.userData.roofAccessories.visible=false;
     if(g.userData.plan)this.rebuildBuildingShell(g);
     this.shake=Math.max(this.shake,.13*e.stage);
   }
@@ -284,7 +292,7 @@ export class World {
   rebuildBuildingShell(g){
     if(g.userData.shell)this.removeDynamic(g.userData.shell);
     const shell=new T.Group(),batches=new Map();g.updateWorldMatrix(true,true);const inverse=g.matrixWorld.clone().invert();
-    for(const m of [...g.userData.sections,...g.userData.glass]){m.layers.set(1);if(!m.visible)continue;const material=m.userData.solidMaterial||m.material,key=material.uuid;let batch=batches.get(key);if(!batch){batch={material,geos:[]};batches.set(key,batch);}const geo=m.geometry.clone();geo.applyMatrix4(inverse.clone().multiply(m.matrixWorld));batch.geos.push(geo);}
+    for(const m of [...g.userData.sections,...g.userData.glass]){m.layers.set(1);let ancestor=m.parent,hidden=false;while(ancestor&&ancestor!==g){if(!ancestor.visible)hidden=true;ancestor=ancestor.parent;}if(!m.visible||hidden)continue;const material=m.userData.solidMaterial||m.material,key=material.uuid;let batch=batches.get(key);if(!batch){batch={material,geos:[]};batches.set(key,batch);}const geo=m.geometry.clone();geo.applyMatrix4(inverse.clone().multiply(m.matrixWorld));batch.geos.push(geo);}
     for(const {material,geos}of batches.values()){const mesh=new T.Mesh(mergeGeometries(geos),material);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.shellPart=true;shell.add(mesh);geos.forEach(g=>g.dispose());}g.add(shell);g.userData.shell=shell;const faded=g.userData.faded;g.userData.faded=undefined;this.fadeBuilding(g,!!faded);
   }
   destroy(){
@@ -313,7 +321,7 @@ export class World {
     this.effect(e.x,e.z,0x98281d,e.part==='head'?35:18,8,'blood',e.part==='head'?1.7:.6);this.decal(e.x,e.z,.5);
   }
   leaveRemains(e){
-    const mesh=this.character(e.enemyType||'walker');mesh.position.set(e.x,0,e.z);mesh.rotation.y=e.angle||0;mesh.userData.frost.visible=false;
+    const mesh=this.character(e.enemyType||'walker',e.bossKind,'scout',e.enemyId);mesh.position.set(e.x,0,e.z);mesh.rotation.y=e.angle||0;mesh.userData.frost.visible=false;
     const gory=this.settings.gore,death=e.death||'shot',slicePart=e.slicePart||'arm';
     if(gory&&(death==='headshot'||death==='exploded'||(death==='sliced'&&slicePart==='head'))){mesh.userData.body.children.filter(o=>o.position.y>1.48).forEach(o=>o.visible=false);this.detachParts({...e,part:death==='headshot'?'head':death==='sliced'?slicePart:'all'});}
     if(gory&&(e.crawling||death==='exploded'||(death==='sliced'&&slicePart==='legs')))mesh.userData.legs.forEach(m=>m.visible=false);
@@ -423,18 +431,18 @@ export class World {
   lamp(x,z){const g=this.static;cylinder(g,0x384b4c,x,2.8,z,.07,5.6,.055);cylinder(g,0x344244,x,.23,z,.2,.45);box(g,0x3a4c4c,x+.5,5.55,z,1.1,.12,.12);box(g,0xdec494,x+.96,5.48,z,.48,.14,.4,{emissive:0xffc57b,emissiveIntensity:1.6});const glowTex=texture(128,128,(c)=>{const gradient=c.createRadialGradient(64,64,2,64,64,64);gradient.addColorStop(0,'rgba(255,190,87,.32)');gradient.addColorStop(.45,'rgba(255,161,60,.13)');gradient.addColorStop(1,'rgba(255,156,50,0)');c.fillStyle=gradient;c.fillRect(0,0,128,128);});plane(g,new T.MeshBasicMaterial({map:glowTex,transparent:true,depthWrite:false,blending:T.AdditiveBlending}),x+.7,.035,z,9,8,true);if(this.layout.city){this.cityLampPositions??=[];this.cityLampPositions.push({x:x+.96,z});}else{const l=new T.PointLight(0xffb65c,70,12,2);l.position.set(x+.96,4.8,z);this.scene.add(l);}contact(g,x,z,1,1,.4);}
   batchStatic(root=this.static,destination=this.scene){
     root.updateWorldMatrix(true,true);destination.updateWorldMatrix(true,false);const inverse=destination.matrixWorld.clone().invert();const batches=new Map(),remove=[];
-    root.traverse(o=>{if(!o.visible||!o.isMesh||o.material.transparent||o.material.map||o.userData.glass||o.userData.breakablePart||o.userData.shellPart)return;if(root===this.static){let ancestor=o.parent;while(ancestor&&ancestor!==root){if(ancestor.userData.breakable)return;ancestor=ancestor.parent;}}let ancestor=o.parent;while(ancestor&&ancestor!==root){if(!ancestor.visible)return;ancestor=ancestor.parent;}const key=`${o.material.uuid}:${!!o.geometry.index}:${Object.keys(o.geometry.attributes).sort().join(',')}`;const a=batches.get(key)||{mat:o.material,geos:[]};const geo=o.geometry.clone();geo.applyMatrix4(inverse.clone().multiply(o.matrixWorld));a.geos.push(geo);batches.set(key,a);remove.push(o);});
+    root.traverse(o=>{if(!o.visible||!o.isMesh||o.material.transparent||o.userData.glass||o.userData.breakablePart||o.userData.shellPart)return;if(root===this.static){let ancestor=o.parent;while(ancestor&&ancestor!==root){if(ancestor.userData.breakable)return;ancestor=ancestor.parent;}}let ancestor=o.parent;while(ancestor&&ancestor!==root){if(!ancestor.visible||ancestor.userData.keepGroup)return;ancestor=ancestor.parent;}const key=`${o.material.uuid}:${!!o.geometry.index}:${Object.keys(o.geometry.attributes).sort().join(',')}:${o.castShadow}`;const a=batches.get(key)||{mat:o.material,shadow:o.castShadow,geos:[]};const geo=o.geometry.clone();geo.applyMatrix4(inverse.clone().multiply(o.matrixWorld));a.geos.push(geo);batches.set(key,a);remove.push(o);});
     for(const o of remove)o.removeFromParent();
-    for(const {mat,geos}of batches.values()){const merged=mergeGeometries(geos);if(merged){const m=new T.Mesh(merged,mat);m.castShadow=m.receiveShadow=true;destination.add(m);}for(const g of geos)g.dispose();}
+    for(const {mat,geos,shadow}of batches.values()){const merged=mergeGeometries(geos);if(merged){const m=new T.Mesh(merged,mat);m.castShadow=shadow;m.receiveShadow=true;destination.add(m);}for(const g of geos)g.dispose();}
   }
-  character(type,bossKind=null,skinId='scout'){
+  character(type,bossKind=null,skinId='scout',appearance=0){
     const costume=SKINS.find(s=>s.id===skinId)||SKINS[0];const group=new T.Group(),body=new T.Group();group.add(body);group.userData.body=body;group.userData.skin=skinId;
-    const player=type==='player',boss=type==='boss',brute=type==='brute';
+    const player=type==='player',boss=type==='boss',brute=type==='brute',variant=characterVariant(appearance);
     const scale=boss?2.15:brute?1.5:type==='runner'?.85:1;group.scale.setScalar(scale);
     const skin=player?costume.skin:type==='spitter'?0x9fba74:0x93a28c;
-    const coat=player?costume.coat:boss?(bossKind==='bloom'?0x698052:bossKind==='dredger'?0x697e77:bossKind==='cinder'?0x6b4233:0x844d39):brute?0x546a68:type==='runner'?0x94574a:type==='spitter'?0x82864d:0x596d68;
-    box(body,coat,0,1.1,0,.56,.66,.36);box(body,0x293c3e,0,.79,0,.55,.16,.36);
-    const head=sphere(body,skin,0,1.65,.025,.23,.27,.22);group.userData.head=head;
+    const coat=player?costume.coat:boss?(bossKind==='bloom'?0x698052:bossKind==='dredger'?0x697e77:bossKind==='cinder'?0x6b4233:0x844d39):brute?0x546a68:type==='runner'?0x94574a:type==='spitter'?0x82864d:CIVILIAN_COATS[variant];
+    sphere(body,coat,0,1.1,0,.3,.36,.22);box(body,0x293c3e,0,.79,0,.55,.16,.36);
+    const head=sphere(body,skin,0,1.65,.025,.205,.25,.2);group.userData.head=head;
     if(player){if(skinId==='scout'){box(body,costume.hat,0,1.84,0,.47,.13,.45);box(body,costume.hat,0,1.8,.2,.45,.06,.25);}else if(skinId==='medic'){sphere(body,costume.hat,-.03,1.86,0,.27,.09,.25);box(body,0xa74437,0,1.25,.265,.19,.06,.025);box(body,0xa74437,0,1.25,.268,.06,.19,.025);}else if(skinId==='biker'){sphere(body,costume.hat,0,1.7,0,.28,.3,.25);box(body,0x26383b,0,1.72,.25,.4,.16,.045,{metalness:.6,roughness:.15});}else{box(body,costume.hat,0,1.78,.05,.48,.075,.43);box(body,costume.hat,.18,1.62,-.25,.065,.35,.06);box(body,costume.hat,-.14,1.66,-.25,.065,.28,.06);box(body,0x987349,0,.9,.03,.6,.12,.48);}box(body,0x3e5152,0,1.21,-.25,.36,.46,.22);for(const x of [-.18,.18])box(body,0x6f6248,x,1.15,.2,.075,.58,.065);box(body,0xe1d6a9,.09,1.13,.255,.17,.21,.04);box(body,0x98704d,-.25,1.55,.08,.12,.14,.28);}
     else{box(body,0x3c4238,0,1.55,.22,.19,.06,.035);for(const x of [-.085,.085])box(body,0xe0aa70,x,1.7,.22,.05,.04,.03,{emissive:0xce754a,emissiveIntensity:.5});if(brute||boss){box(body,0x3d5251,0,1.22,.2,.55,.48,.12);box(body,0x87704d,-.32,1.44,0,.22,.2,.47);}if(type==='armored'){box(body,0x465b5a,0,1.2,.23,.56,.52,.12);box(body,0x536762,0,1.83,0,.48,.16,.46);}if(type==='volatile'){sphere(body,0x987143,0,1.12,.21,.28,.33,.22);box(body,0xd4a35c,0,1.12,.43,.12,.14,.04,{emissive:0xc77231,emissiveIntensity:.6});}if(type==='spitter')sphere(body,0x9caf5a,0,1.13,-.27,.33,.43,.2);}
     if(boss){
@@ -444,17 +452,17 @@ export class World {
       if(bossKind==='cinder'){box(body,0x332e29,0,1.2,.27,.49,.5,.15);box(body,0xffa453,0,1.2,.355,.27,.32,.025,{emissive:0xff8a32,emissiveIntensity:2});for(const x of [-.45,.45]){cylinder(body,0x554a3e,x,1.75,-.14,.12,.6);sphere(body,0x997a4b,x,1.38,0,.24,.2,.3);}box(body,0x6e5740,0,1.96,0,.45,.15,.43);}
     }
     const legs=[];for(const x of [-.16,.16]){const leg=new T.Group();leg.position.set(x,.77,0);body.add(leg);box(leg,player?0x34494c:0x3e504b,0,-.16,0,.21,.34,.23);const knee=new T.Group();knee.position.y=-.33;leg.add(knee);box(knee,0x394943,0,-.12,0,.2,.25,.22);box(knee,0x283b3c,0,-.28,.075,.24,.18,.37);leg.userData.knee=knee;legs.push(leg);}
-    const arms=[];for(const side of [-1,1]){const arm=new T.Group();arm.position.set(side*.37,1.35,0);body.add(arm);box(arm,coat,0,-.13,.02,.2,.27,.24);const elbow=new T.Group();elbow.position.set(0,-.27,.04);arm.add(elbow);box(elbow,coat,0,-.12,.05,.18,.25,.2);sphere(elbow,skin,0,-.26,.08,.1,.12,.11);arm.userData.elbow=elbow;arms.push(arm);}
+    const arms=[];for(const side of [-1,1]){const arm=new T.Group();arm.position.set(side*.37,1.35,0);body.add(arm);cylinder(arm,coat,0,-.13,.02,.105,.27,.12,8);const elbow=new T.Group();elbow.position.set(0,-.27,.04);arm.add(elbow);cylinder(elbow,coat,0,-.12,.05,.085,.25,.105,8);sphere(elbow,skin,0,-.26,.08,.1,.12,.11);arm.userData.elbow=elbow;arms.push(arm);}
     group.userData.swords=[];if(player)for(const [i,arm]of arms.entries()){const sword=new T.Group();sword.position.set(0,-.25,.1);arm.userData.elbow.add(sword);box(sword,0xced9d5,0,0,.8,.045,.08,1.4,{metalness:.85,roughness:.22});box(sword,0xb3a16d,0,0,.14,.28,.08,.08);box(sword,0x403a35,0,0,0,.09,.1,.24);sword.visible=false;group.userData.swords.push(sword);}
     if(player){const sideguns=[];for(const side of [-1,1]){const aux=new T.Group();box(aux,0x485f60,side*.6,1.34,.15,.14,.16,.58);box(aux,0xcfae67,side*.6,1.43,.05,.1,.025,.15);body.add(aux);sideguns.push(aux);}group.userData.sideguns=sideguns;const gun=new T.Group();gun.position.set(.32,1.13,.3);box(gun,0x24373c,0,0,.25,.13,.15,.65);box(gun,0x506267,0,.08,.12,.14,.06,.3);box(gun,0x26383d,0,-.16,.14,.08,.24,.14);cylinder(gun,0x293d42,0,0,.65,.04,.2).rotation.x=Math.PI/2;body.add(gun);group.userData.gun=gun;}
-    if(!player){const frost=this.ring(.7,0x91d9ef,.065);frost.visible=false;group.add(frost);group.userData.frost=frost;}contact(group,0,0,1.4,1,.55);group.userData.legs=legs;group.userData.arms=arms;group.userData.type=type;group.userData.bossKind=bossKind;return group;
+    if(!player){const frost=this.ring(.7,0x91d9ef,.065);frost.visible=false;group.add(frost);group.userData.frost=frost;}contact(group,0,0,1.4,1,.55);group.userData.legs=legs;group.userData.arms=arms;group.userData.type=type;group.userData.bossKind=bossKind;detailCharacter(group,{player,skin,variant,coat},{box,sphere,cylinder,batch:(a,b)=>this.batchStatic(a,b)});return group;
   }
   ring(radius,color,width=.06){const m=new T.Mesh(new T.RingGeometry(radius-width,radius,48),new T.MeshBasicMaterial({color,transparent:true,opacity:.8,side:T.DoubleSide,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.y=.04;return m;}
   buildParticles(){const count=110,positions=new Float32Array(count*3);for(let i=0;i<count;i++){positions[i*3]=this.random()*60-30;positions[i*3+1]=this.random()*12+1;positions[i*3+2]=this.random()*40-20;}const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(positions,3));this.ash=new T.Points(geo,new T.PointsMaterial({color:0xd5c6a0,size:.055,transparent:true,opacity:.4,depthWrite:false}));this.scene.add(this.ash);}
   aim(x,y){this.raycaster.setFromCamera(new T.Vector2(x*2-1,1-y*2),this.camera);const p=new T.Vector3();this.raycaster.ray.intersectPlane(this.groundPlane,p);return{x:p.x,z:p.z};}
   resize(){const w=innerWidth,h=innerHeight;this.renderer.setSize(w,h);this.composer?.setSize(w,h);this.ao?.setSize(Math.max(1,Math.floor(w*.65)),Math.max(1,Math.floor(h*.65)));this.aspect=w/h;}
   applySettings(settings){this.settings=settings;this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?1.5:1.15));this.renderer.shadowMap.enabled=settings.quality!=='low';this.ash.visible=!settings.reducedMotion;if(this.ao)this.ao.enabled=settings.quality==='high';this.composer?.setPixelRatio(this.renderer.getPixelRatio());this.ao?.setSize(Math.max(1,Math.floor(innerWidth*.65)),Math.max(1,Math.floor(innerHeight*.65)));}
-  clearDynamic(){for(const collection of [this.characters,this.projectiles,this.items,this.rings,this.grenades]){for(const m of collection.values())this.removeDynamic(m);collection.clear();}for(const e of this.effects)this.removeDynamic(e.mesh);this.effects=[];for(const c of this.corpses)this.removeDynamic(c.mesh);this.corpses=[];for(const m of this.decals)this.removeDynamic(m);this.decals=[];for(const m of this.wrecks)this.removeDynamic(m);this.wrecks=[];for(const g of this.propMeshes.values())g.visible=true;for(const g of this.buildingMeshes.values()){g.visible=true;for(const pane of g.userData.glass)pane.visible=true;for(const section of g.userData.sections||[])section.visible=true;g.userData.damageStage=0;}for(const m of this.impacts)this.removeDynamic(m);this.impacts=[];}
+  clearDynamic(){for(const collection of [this.characters,this.projectiles,this.items,this.rings,this.grenades,this.streetJobs]){for(const m of collection.values())this.removeDynamic(m);collection.clear();}for(const e of this.effects)this.removeDynamic(e.mesh);this.effects=[];for(const c of this.corpses)this.removeDynamic(c.mesh);this.corpses=[];for(const m of this.decals)this.removeDynamic(m);this.decals=[];for(const m of this.wrecks)this.removeDynamic(m);this.wrecks=[];for(const g of this.propMeshes.values())g.visible=true;for(const g of this.buildingMeshes.values()){g.visible=true;for(const pane of g.userData.glass)pane.visible=true;for(const section of g.userData.sections||[])section.visible=true;g.userData.damageStage=0;if(g.userData.roofAccessories)g.userData.roofAccessories.visible=true;}for(const m of this.impacts)this.removeDynamic(m);this.impacts=[];}
   removeDynamic(mesh){mesh.removeFromParent();mesh.traverse(o=>{
     if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==sphereGeo&&!o.geometry.userData.shared&&!o.isSprite)o.geometry.dispose();
     if(o.material&&!o.material.userData.shared){if(o.material.map&&o.material.map!==shadowTexture&&o.material.map!==this.smokeTex&&o.material.map!==this.fireTex)o.material.map.dispose();o.material.dispose();}
@@ -497,9 +505,9 @@ export class World {
   update(sim,dt,menu=false){
     this.fireClock.value+=dt;const t=sim.time,p=sim.player;
     const desired=this.inspectionTarget?new T.Vector3(this.inspectionTarget.x,0,this.inspectionTarget.z):menu?new T.Vector3(2,0,-7):new T.Vector3(p.x,0,p.z-1);
-    if(this.layout.city){const lamps=[...(this.cityLampPositions||[])].sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z));this.cityLights.forEach((l,i)=>{const a=lamps[i];if(a){l.position.set(a.x,4.8,a.z);l.intensity=70;}});this.sun.position.set(p.x-18,32,p.z+5);this.sun.target.position.set(p.x,0,p.z);this.sun.target.updateMatrixWorld();this.ash.position.x=p.x;this.ash.position.z=p.z;for(const g of this.buildingMeshes.values())if(!g.userData.collapsed){const dx=g.userData.center.x-p.x,dz=g.userData.center.z-p.z;g.visible=Math.hypot(dx,dz)<(this.overview?400:70);const hit=segmentBoxTime(p,{x:p.x+26,z:p.z+32},{x:g.userData.center.x,z:g.userData.center.z,w:g.userData.size.x,d:g.userData.size.z});this.fadeBuilding(g,!menu&&!this.overview&&hit!==null&&1.2+35*hit<g.userData.size.y);}}
+    if(this.layout.city){const lamps=[...(this.cityLampPositions||[])].sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z));this.cityLights.forEach((l,i)=>{const a=lamps[i];if(a){l.position.set(a.x,4.8,a.z);l.intensity=70;}});this.sun.position.set(p.x-18,32,p.z+5);this.sun.target.position.set(p.x,0,p.z);this.sun.target.updateMatrixWorld();this.ash.position.x=p.x;this.ash.position.z=p.z;for(const g of this.buildingMeshes.values())if(!g.userData.collapsed){const dx=g.userData.center.x-p.x,dz=g.userData.center.z-p.z;g.visible=Math.hypot(dx,dz)<(this.overview?400:70);this.fadeBuilding(g,!menu&&!this.overview&&obscuresSurvivor(g.userData.plan,p));}}
     this.focus.lerp(desired,1-Math.exp(-dt*4));
-    const height=this.inspectionTarget?46:this.overview?(this.layout.city?310:85):menu?39:p.vehicleId?42:this.aspect<1?37:30;
+    const height=this.portrait?10:this.inspectionTarget?46:this.overview?(this.layout.city?310:85):menu?39:p.vehicleId?42:this.aspect<1?37:30;
     this.camera.far=this.overview&&this.layout.city?500:160;this.camera.near=.1;this.camera.left=-height*this.aspect/2;this.camera.right=height*this.aspect/2;this.camera.top=height/2;this.camera.bottom=-height/2;this.camera.updateProjectionMatrix();
     this.shake=Math.max(0,this.shake-dt*1.8);const s=this.settings.reducedMotion?0:this.shake;
     const cameraDistance=this.overview&&this.layout.city?5:1;this.scene.fog.density=cameraDistance===5?.002:.009;this.camera.position.set(this.focus.x+26*cameraDistance+(this.random()-.5)*s,this.focus.y+35*cameraDistance,this.focus.z+32*cameraDistance);this.camera.lookAt(this.focus);
@@ -512,7 +520,7 @@ export class World {
     this.playerRing.position.set(p.x,.045,p.z);this.playerRing.material.opacity=p.invulnerable>0?.4+.3*Math.sin(t*30):.8;
     const chargingBoss=sim.enemies.find(e=>e.type==='boss'&&e.windup>0);this.bossTell.visible=!!chargingBoss;if(chargingBoss){this.bossTell.position.set(chargingBoss.x,.06,chargingBoss.z);this.bossTell.scale.setScalar(1+(1-chargingBoss.windup)*.7);}
     this.extractionRing.visible=sim.state==='extracting'||sim.state==='victory';this.extractionRing.rotation.z=t*.4;
-    this.syncMap(this.characters,sim.enemies,e=>{const m=this.character(e.type,e.bossKind);this.scene.add(m);return m;},(m,e)=>{m.position.lerp(new T.Vector3(e.x,0,e.z),1-Math.exp(-dt*24));m.rotation.y+=Math.atan2(Math.sin(e.angle-m.rotation.y),Math.cos(e.angle-m.rotation.y))*(1-Math.exp(-dt*12));this.animateCharacter(m,t+e.phase,e.windup<=0,false,dt,e);m.userData.body.rotation.x=e.crawling?-Math.PI/2:e.windup>0?-.17:0;if(e.crawling)m.position.y=.35;m.userData.legs.forEach(leg=>leg.visible=!e.crawling||!this.settings.gore);m.userData.arms[0].visible=!e.missingArm||!this.settings.gore;if(e.crawling){m.userData.arms.forEach((arm,i)=>arm.rotation.x=-.9+Math.sin(t*6+i*Math.PI)*.45);}if(e.burning>0){if(this.random()<dt*15)this.flame(e.x,e.z,2,.6);if(this.random()<dt*2)this.smoke(e.x,e.z,1);}if(e.electrified>0&&this.random()<dt*14)this.lightning({x:e.x-.35,z:e.z,y:.4,toX:e.x+.35,toZ:e.z+.1,toY:1.7});m.userData.frost.visible=sim.player.freeze>0||(sim.player.frost>0&&e.slow>0);if(m.userData.frost.visible&&this.random()<dt*4)this.effect(e.x,e.z,0xa2d8e3,1,1,'glass');m.scale.setScalar((e.type==='boss'?2.15:e.type==='brute'?1.5:e.type==='runner'?.85:1)*(e.flash>0?1.035:1));});
+    this.syncMap(this.characters,sim.enemies,e=>{const m=this.character(e.type,e.bossKind,'scout',e.id);this.scene.add(m);return m;},(m,e)=>{m.position.lerp(new T.Vector3(e.x,0,e.z),1-Math.exp(-dt*24));m.rotation.y+=Math.atan2(Math.sin(e.angle-m.rotation.y),Math.cos(e.angle-m.rotation.y))*(1-Math.exp(-dt*12));this.animateCharacter(m,t+e.phase,e.windup<=0,false,dt,e);m.userData.body.rotation.x=e.crawling?-Math.PI/2:e.windup>0?-.17:0;if(e.crawling)m.position.y=.35;m.userData.legs.forEach(leg=>leg.visible=!e.crawling||!this.settings.gore);m.userData.arms[0].visible=!e.missingArm||!this.settings.gore;if(e.crawling){m.userData.arms.forEach((arm,i)=>arm.rotation.x=-.9+Math.sin(t*6+i*Math.PI)*.45);}if(e.burning>0){if(this.random()<dt*15)this.flame(e.x,e.z,2,.6);if(this.random()<dt*2)this.smoke(e.x,e.z,1);}if(e.electrified>0&&this.random()<dt*14)this.lightning({x:e.x-.35,z:e.z,y:.4,toX:e.x+.35,toZ:e.z+.1,toY:1.7});m.userData.frost.visible=sim.player.freeze>0||(sim.player.frost>0&&e.slow>0);if(m.userData.frost.visible&&this.random()<dt*4)this.effect(e.x,e.z,0xa2d8e3,1,1,'glass');m.scale.setScalar((e.type==='boss'?2.15:e.type==='brute'?1.5:e.type==='runner'?.85:1)*(e.flash>0?1.035:1)*(e.elite?1.15:1));});
     this.syncMap(this.projectiles,sim.bullets,b=>{
       const flame=b.weapon==='flame',launcher=b.weapon==='launcher';const color=b.enemy?0xa7cb6c:flame?0xf0a34b:launcher?0xbe9768:0xffe4a6;
       const m=new T.Mesh(flame||launcher?sphereGeo:boxGeo,mat(color,{emissive:color,emissiveIntensity:flame?1.3:.6}));m.visible=!flame;m.scale.set(flame?.13:launcher?.16:b.enemy?.15:.032,flame?.13:launcher?.16:b.enemy?.15:.032,flame?.32:launcher?.16:b.enemy?.24:b.weapon==='marksman'?1.2:.6);this.scene.add(m);return m;
@@ -525,6 +533,13 @@ export class World {
       const r=this.ring(.5,color,.07);r.position.y=-.18;r.userData.disposable=true;g.add(r);this.scene.add(g);return g;
     },(m,i)=>{m.position.set(i.x,.3+Math.sin(t*3+i.id)*.045,i.z);m.userData.label.visible=Math.hypot(p.x-i.x,p.z-i.z)<8;});
     this.syncMap(this.grenades,sim.hazards.filter(h=>h.thrown),()=>{const g=new T.Group();sphere(g,0x7f8e52,0,0,0,.22,.27,.22);cylinder(g,0xd1c7a0,0,.25,0,.09,.12);box(g,0x3f4840,0,.32,0,.07,.055,.24);this.scene.add(g);return g;},(g,h)=>{const age=h.duration-h.timer,pos=grenadePosition(h);g.position.set(pos.x,pos.y,pos.z);g.rotation.set(age*13,age*5,age*9);});
+    this.syncMap(this.streetJobs,sim.streetEvents||[],job=>{
+      const g=new T.Group(),radio=job.kind==='relay';box(g,radio?0x587b71:0x76634b,0,.4,0,radio?1.15:1.5,.8,.8);box(g,0xb4a27b,0,.84,0,1.25,.1,.9);
+      if(radio){cylinder(g,0x4b6765,.35,2,0,.035,3.2);box(g,0xbabda3,.35,3.5,0,1.6,.035,.035);box(g,0x2e4444,0,.52,.42,.72,.4,.04);for(let i=0;i<4;i++)box(g,0x9caa86,-.25+i*.15,.5,.45,.025,.2,.015);}
+      else if(job.kind==='cache'){for(const x of [-.5,.5])box(g,0x314948,x,.4,.43,.1,.78,.035);box(g,0xc8b897,0,.4,.45,.35,.3,.025);}
+      else{cylinder(g,0x566869,0,1.6,0,.04,3.2);sign(g,'DANGER / ENFORCER',0,2.6,.04,2.4,.65,'#793f35','#e3c4a0');}
+      const ring=this.ring(job.kind==='relay'?4:1.3,0xe0b674,.035);g.add(ring);g.userData.jobRing=ring;g.position.set(job.x,0,job.z);this.scene.add(g);return g;
+    },(g,job)=>{g.visible=Math.hypot(p.x-job.x,p.z-job.z)<65;const ring=g.userData.jobRing;ring.material.color.setHex(job.state==='complete'?0x8eaf94:0xe0b674);ring.material.opacity=job.state==='complete'?.2:.6;});
     this.syncMap(this.rings,sim.hazards,h=>{const m=this.ring(h.radius,h.friendly?0xf2c179:0xee684c,.1);m.userData.disposable=true;this.scene.add(m);return m;},(m,h)=>{m.position.set(h.x,.06,h.z);m.material.opacity=.4+.5*(1-h.timer/h.duration);m.scale.setScalar(.85+.15*(1-h.timer/h.duration));});
     for(const c of this.collapses){c.age+=dt;const a=clamp(c.age/1.25,0,1);c.g.position.y=c.baseY-c.height*a*a;c.g.rotation.z=Math.sin(c.seed*6)*a*.07;if(a===1){c.g.visible=false;c.g.userData.collapsed=true;}}this.collapses=this.collapses.filter(c=>c.age<1.25);
     for(const v of sim.props)if(v.driveable&&v.health>0){const root=this.propMeshes.get(v.id),plan=this.layout.cover[Number(v.id.split('-')[1])];if(root&&plan){root.visible=Math.hypot(v.x-p.x,v.z-p.z)<70;root.position.set(v.x-plan.x,0,v.z-plan.z);const car=root.children[0];if(car){car.rotation.y=(v.angle||0)-Math.PI/2;for(const wheel of car.userData.wheels||[])wheel.rotateY((v.speed||0)*dt*2.5);car.rotation.z=Math.sin(t*18)*Math.min(.018,(v.speed||0)*.002);}if(v.speed>5&&this.random()<dt*2)this.smoke(v.x-Math.sin(v.angle)*2,v.z-Math.cos(v.angle)*2,1,.1);}}
@@ -560,14 +575,15 @@ export class World {
     for(const fire of sim.fires)if(this.random()<dt*18){this.flame(fire.x+(this.random()-.5)*fire.radius,fire.z+(this.random()-.5)*fire.radius,2,.25);if(this.random()<.25)this.smoke(fire.x,fire.z,1);}
     for(const lamp of this.blastLights){lamp.userData.life=Math.max(0,lamp.userData.life-dt);lamp.intensity=(lamp.userData.power||160)*lamp.userData.life/.55;}
     this.muzzleLight.intensity=Math.max(0,this.muzzleLight.intensity-dt*220);
+    this.renderer.info.reset();
     if(this.ao.enabled){this.ao.ssaoMaterial.uniforms.cameraNear.value=this.camera.near;this.ao.ssaoMaterial.uniforms.cameraFar.value=this.camera.far;this.ao.ssaoMaterial.uniforms.cameraProjectionMatrix.value.copy(this.camera.projectionMatrix);this.ao.ssaoMaterial.uniforms.cameraInverseProjectionMatrix.value.copy(this.camera.projectionMatrixInverse);this.composer.render();}else this.renderer.render(this.scene,this.camera);
   }
   syncMap(map,entities,create,update){const ids=new Set(entities.map(e=>e.id));for(const[id,m]of map)if(!ids.has(id)){this.removeDynamic(m);map.delete(id);}for(const e of entities){if(!map.has(e.id))map.set(e.id,create(e));update(map.get(e.id),e);}}
   fadeBuilding(g,fade){
     if(g.userData.faded===fade)return;g.userData.faded=fade;
-    g.traverse(m=>{if(!m.isMesh||!m.visible)return;if(!m.userData.solidMaterial)m.userData.solidMaterial=m.material;
-      if(fade){if(!m.userData.fadeMaterial){m.userData.fadeMaterial=m.userData.solidMaterial.clone();m.userData.fadeMaterial.transparent=true;m.userData.fadeMaterial.opacity=.22;m.userData.fadeMaterial.depthWrite=false;}m.material=m.userData.fadeMaterial;m.castShadow=false;}
-      else{m.material=m.userData.solidMaterial;m.castShadow=true;}
+    g.traverse(m=>{if(!m.isMesh||!m.visible)return;if(!m.userData.solidMaterial)m.userData.solidMaterial=m.material;if(m.userData.solidShadow===undefined)m.userData.solidShadow=m.castShadow;
+      if(fade){if(!m.userData.fadeMaterial){m.userData.fadeMaterial=m.userData.solidMaterial.clone();m.userData.fadeMaterial.transparent=true;m.userData.fadeMaterial.opacity=.45;m.userData.fadeMaterial.clippingPlanes=[new T.Plane(new T.Vector3(0,-1,0),.7)];m.userData.fadeMaterial.depthWrite=false;}m.material=m.userData.fadeMaterial;m.castShadow=false;}
+      else{m.material=m.userData.solidMaterial;m.castShadow=m.userData.solidShadow;}
     });
   }
   sliceTrail(e){
