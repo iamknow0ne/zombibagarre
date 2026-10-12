@@ -1,11 +1,11 @@
-import {waterAt} from './City.js';
+import {waterAt,waterOutline} from './City.js';
 export function drawAtlas(canvas,sim,large=false,view={}){
  const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,b=sim.layout.bounds,p=sim.player;
  const extent=large?Math.max(b.maxX-b.minX,b.maxZ-b.minZ)+12:82,cx=large?(view.x||0):p.x,cz=large?(view.z||0):p.z,scale=W/extent*(large?(view.zoom||1):1);
  const X=x=>(x-cx)*scale+W/2,Z=z=>(z-cz)*scale+H/2;
  ctx.fillStyle='#1e3033';ctx.fillRect(0,0,W,H);ctx.save();ctx.beginPath();sim.layout.boundary.forEach((a,i)=>i?ctx.lineTo(X(a.x),Z(a.z)):ctx.moveTo(X(a.x),Z(a.z)));ctx.closePath();ctx.fillStyle='#56605a';ctx.fill();ctx.clip();
  if(sim.layout.city){ctx.strokeStyle='#303e40';ctx.lineCap='round';ctx.lineJoin='round';for(const r of sim.layout.roads){ctx.lineWidth=r.width*scale;ctx.beginPath();ctx.moveTo(X(r.a.x),Z(r.a.z));ctx.lineTo(X(r.b.x),Z(r.b.z));ctx.stroke();}}
- for(const w of sim.layout.water||[]){ctx.fillStyle='#487e8b';ctx.fillRect(X(w.x-w.w/2),Z(w.z-w.d/2),w.w*scale,w.d*scale);}for(const v of sim.layout.bridges||[]){ctx.fillStyle='#9e9d84';ctx.fillRect(X(v.x-v.w/2),Z(v.z-v.d/2),v.w*scale,v.d*scale);}
+ for(const w of sim.layout.water||[]){ctx.fillStyle='#487e8b';ctx.beginPath();waterOutline(w).forEach((p,i)=>i?ctx.lineTo(X(p.x),Z(p.z)):ctx.moveTo(X(p.x),Z(p.z)));ctx.closePath();ctx.fill();}for(const v of sim.layout.bridges||[]){ctx.fillStyle='#9e9d84';ctx.fillRect(X(v.x-v.w/2),Z(v.z-v.d/2),v.w*scale,v.d*scale);}
  for(const o of sim.props){if(o.health<=0||(o.driveable&&view.vehicles===false))continue;ctx.fillStyle=o.kind==='building'?'#b8ac8c':o.driveable?'#86c5b7':'#76816a';ctx.fillRect(X(o.x-o.w/2),Z(o.z-o.d/2),Math.max(2,o.w*scale),Math.max(2,o.d*scale));}
  if(large&&view.landmarks!==false)for(const place of sim.layout.landmarks||[]){ctx.fillStyle=sim.visited.has(place.name)?'#8ca483':place.color;ctx.beginPath();ctx.arc(X(place.x),Z(place.z),4,0,Math.PI*2);ctx.fill();ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText(place.name,X(place.x),Z(place.z)-9);}
  for(const job of view.encounters===false?[]:sim.streetEvents||[]){ctx.strokeStyle=job.state==='complete'?'#8ca483':'#edbd73';ctx.lineWidth=2;ctx.strokeRect(X(job.x)-5,Z(job.z)-5,10,10);if(large){ctx.fillStyle=ctx.strokeStyle;ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText(job.name,X(job.x),Z(job.z)+18);}}

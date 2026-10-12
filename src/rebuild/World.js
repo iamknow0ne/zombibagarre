@@ -1,3 +1,4 @@
+import {StructureVisuals} from './StructureVisuals.js';
 import {CombatOverlay} from './CombatOverlay.js';
 import {bloodDecal,bloodSpray,stepBlood,ageBlood} from './BloodFX.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
@@ -7,7 +8,7 @@ import {buildVehicle,animateVehicle} from './VehicleVisuals.js';
 import {animateWeapons,updateBladeTrails} from './WeaponRig.js';
 import {CIVILIAN_COATS,characterVariant,detailCharacter} from './CharacterDetails.js';
 import {dressBuilding,dressStreets,obscuresSurvivor} from './CityDetails.js';
-import {waterAt} from './City.js';
+import {waterAt,waterOutline,waterContains} from './City.js';
 import {debris,materialFor,deathMotion,fragmentGeometry,grenadePosition} from './Effects.js';
 import { generateMap, insideMap } from './Map.js';
 import * as T from 'three';
@@ -70,7 +71,7 @@ export class World {
     const rim=new T.DirectionalLight(0x7ea9b8,1.1);rim.position.set(15,12,-24);this.scene.add(rim);
     shadowTexture=texture(64,64,(c,W,H)=>{const g=c.createRadialGradient(32,32,1,32,32,32);g.addColorStop(0,'rgba(0,0,0,.85)');g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,W,H);});
     this.static=new T.Group();this.scene.add(this.static);this.characters=new Map();this.projectiles=new Map();this.items=new Map();this.grenades=new Map();this.streetJobs=new Map();this.rings=new Map();this.effects=[];this.corpses=[];this.decals=[];this.wrecks=[];this.propMeshes=new Map();this.buildingMeshes=new Map();this.impacts=[];
-    this.collapses=[];this.waterMeshes=[];this.buildStreet();this.trimToMap();this.collectBuildings();this.batchStatic();for(const [id,g] of this.propMeshes)if(!this.layout.cover[Number(id.split('-')[1])]?.driveable)this.batchStatic(g,g);for(const g of this.buildingMeshes.values())this.batchStatic(g,g);this.buildParticles();this.bloodGroundTargets=this.scene.children.filter(o=>o.isMesh&&!o.material.transparent);this.player=this.character('player');this.scene.add(this.player);
+    this.structuralVisuals=new StructureVisuals(this.scene);this.fountainJets=[];this.waterMeshes=[];this.buildStreet();this.trimToMap();this.collectBuildings();this.batchStatic();for(const [id,g] of this.propMeshes)if(!this.layout.cover[Number(id.split('-')[1])]?.driveable)this.batchStatic(g,g);for(const g of this.buildingMeshes.values())this.batchStatic(g,g);this.buildParticles();this.bloodGroundTargets=this.scene.children.filter(o=>o.isMesh&&!o.material.transparent);this.player=this.character('player');this.scene.add(this.player);
     this.playerRing=this.ring(.68,0xe9d5a0,.06);this.scene.add(this.playerRing);
     this.extractionRing=this.ring(2.9,0xa4e2bd,.08);this.extractionRing.position.set(0,.07,-10);this.extractionRing.visible=false;this.scene.add(this.extractionRing);
     this.bossTell=this.ring(1.9,0xef8051,.1);this.scene.add(this.bossTell);this.bossTell.visible=false;
@@ -143,17 +144,18 @@ export class World {
   buildProps(){const g=this.static,rng=this.random;
     for(const [index,o]of this.layout.cover.entries()){
       const old=this.static,group=new T.Group();this.scene.add(group);this.static=group;this.propMeshes.set(`prop-${index}`,group);
-      if(o.kind==='car')this.car(o);else if(o.kind==='barrier')this.barrier(o);else if(o.kind==='planter'){if(this.district>=4)this.wildTree(o.x,o.z);else this.tree(o.x,o.z);}else if(o.kind==='rock'){const rock=sphere(group,this.district===6?0x967553:0x718080,o.x,.85,o.z,1.3,1.3,1.3);rock.rotation.y=rng()*6;contact(group,o.x,o.z,3.5,3.5,.4);}else if(o.kind==='barrel'){
+      if(o.kind==='car')this.car(o);else if(o.kind==='barrier')this.barrier(o);else if(o.kind==='planter'){if(this.district>=4||o.wild)this.wildTree(o.x,o.z);else this.tree(o.x,o.z);}else if(o.kind==='rock'){const rock=sphere(group,this.district===6?0x967553:0x718080,o.x,.85,o.z,1.3,1.3,1.3);rock.rotation.y=rng()*6;contact(group,o.x,o.z,3.5,3.5,.4);}else if(o.kind==='barrel'){
         cylinder(group,0x89462f,o.x,.55,o.z,.43,1.1,.43,16);for(const y of [.15,.85])cylinder(group,0x4b4940,o.x,y,o.z,.455,.075,.455,16);
         cylinder(group,0x694333,o.x,1.12,o.z,.42,.04,.42,16);box(group,0xd5b783,o.x,.6,o.z+.431,.35,.35,.018);box(group,0x703b2c,o.x,.6,o.z+.45,.1,.26,.018);contact(group,o.x,o.z,1.7,1.7,.4);
       }else{box(group,0x736b4f,o.x,.6,o.z,o.w,1.2,o.d);for(const z of [-.9,.9])box(group,0x444838,o.x,.65,o.z+z,o.w+.04,1.3,.13);sign(group,'SUPPLIES',o.x,.75,o.z+o.d/2+.01,o.w*.8,.32,'#948461','#293e3b');}
+      if(o.kind==='planter'){this.foliageMaterials??=new Map();group.traverse(m=>{if(!m.isMesh||m.position.y<2.6||m.geometry.type!=='IcosahedronGeometry')return;const original=m.material;let leaf=this.foliageMaterials.get(original.uuid);if(!leaf){leaf=original.clone();leaf.userData.shared=false;leaf.onBeforeCompile=shader=>{shader.uniforms.windTime=this.fireClock;shader.vertexShader='uniform float windTime;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.x+=sin(position.x*.7+position.z*.4+windTime*1.3)*.06*max(0.,position.y-2.); transformed.z+=cos(position.z*.8+windTime)*.025*max(0.,position.y-2.);');};this.foliageMaterials.set(original.uuid,leaf);}m.material=leaf;});}
       this.static=old;
     }
   }
   buildCity(){
     const g=this.static,b=this.layout.bounds,r=this.random;
     const asphalt=asphaltTex(0);asphalt.wrapS=asphalt.wrapT=T.RepeatWrapping;asphalt.repeat.set(.065,.065);
-    const ground=new T.Shape(this.layout.boundary.map(p=>new T.Vector2(p.x,-p.z)));for(const w of this.layout.water){const hole=new T.Path();hole.moveTo(w.x-w.w/2,-w.z-w.d/2);hole.lineTo(w.x+w.w/2,-w.z-w.d/2);hole.lineTo(w.x+w.w/2,-w.z+w.d/2);hole.lineTo(w.x-w.w/2,-w.z+w.d/2);hole.closePath();ground.holes.push(hole);}const geo=new T.ShapeGeometry(ground);geo.rotateX(-Math.PI/2);const floor=new T.Mesh(geo,new T.MeshStandardMaterial({map:asphalt,color:0x939c7f,roughness:.98}));floor.position.y=-.04;floor.receiveShadow=true;g.add(floor);
+    const ground=new T.Shape(this.layout.boundary.map(p=>new T.Vector2(p.x,-p.z)));for(const w of this.layout.water){const hole=new T.Path(waterOutline(w).map(p=>new T.Vector2(p.x,-p.z)));hole.closePath();ground.holes.push(hole);}const geo=new T.ShapeGeometry(ground);geo.rotateX(-Math.PI/2);const floor=new T.Mesh(geo,new T.MeshStandardMaterial({map:asphalt,color:0x939c7f,roughness:.98}));floor.position.y=-.04;floor.receiveShadow=true;g.add(floor);
     for(const road of this.layout.roads){
       const dx=road.b.x-road.a.x,dz=road.b.z-road.a.z,len=Math.hypot(dx,dz),angle=Math.atan2(dx,dz),cx=(road.a.x+road.b.x)/2,cz=(road.a.z+road.b.z)/2;
       const strip=box(g,0x39484b,cx,-.008,cz,road.width,.045,len);strip.rotation.y=angle;strip.receiveShadow=true;
@@ -161,7 +163,10 @@ export class World {
       for(let d=3;d<len-2;d+=6){const x=road.a.x+dx*d/len,z=road.a.z+dz*d/len;if(waterAt(this.layout,x,z))continue;const dash=box(g,0xb5b59d,x,.025,z,.11,.012,2);dash.rotation.y=angle;}
     }
     for(const {x,z,park,w,d} of this.layout.parcels){
-      const paving=box(g,park?0x63714c:0x7c8278,x,.04,z,w,.18,d);paving.receiveShadow=true;
+      let paving;
+      if(park){const shape=new T.Shape([new T.Vector2(x-w/2,-z-d/2),new T.Vector2(x+w/2,-z-d/2),new T.Vector2(x+w/2,-z+d/2),new T.Vector2(x-w/2,-z+d/2)]);for(const lake of this.layout.water.filter(l=>l.x===x&&l.z===z))shape.holes.push(new T.Path(waterOutline(lake).map(p=>new T.Vector2(p.x,-p.z))));const geo=new T.ShapeGeometry(shape);geo.rotateX(-Math.PI/2);paving=new T.Mesh(geo,mat(0x63714c));paving.position.y=.14;g.add(paving);
+       for(let i=0;i<65;i++){const gx=x+(r()-.5)*(w-1),gz=z+(r()-.5)*(d-1);if(this.layout.water.some(l=>waterContains({...l,w:l.w+1,d:l.d+1},gx,gz)))continue;const grass= new T.Mesh(new T.ConeGeometry(.12+r()*.18,.25+r()*.45,4),mat([0x708357,0x8d9461,0x4d6950][i%3]));grass.position.set(gx,.3,gz);grass.rotation.z=(r()-.5)*.4;g.add(grass);}
+      }else paving=box(g,0x7c8278,x,.04,z,w,.18,d);paving.receiveShadow=true;
       for(const side of [-1,1]){box(g,0xa0a58e,x+side*w/2,.16,z,.25,.26,d);box(g,0xa0a58e,x,.16,z+side*d/2,w,.26,.25);}
       if(this.random()<.5)this.lamp(x-w/2,z-d/2);
     }
@@ -201,9 +206,15 @@ export class World {
   waterSurface(rect){
     const material=new T.MeshStandardMaterial({color:0x315e67,roughness:.24,metalness:.55,transparent:true,opacity:.97});
     material.onBeforeCompile=shader=>{shader.uniforms.waterTime=this.fireClock;shader.vertexShader='uniform float waterTime;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\n objectNormal.x-=cos(position.x*1.9+waterTime*1.8)*.12; objectNormal.z-=cos(position.z*.9-waterTime)*.09;');shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.y += sin(position.x*1.9+waterTime*1.8)*.035+sin(position.z*.9-waterTime)*.04;');};
-    const geo=new T.PlaneGeometry(rect.w,rect.d,12,90);geo.rotateX(-Math.PI/2);const m=new T.Mesh(geo,material);m.position.set(rect.x,-.2,rect.z);m.userData.boundary=true;this.static.add(m);this.waterMeshes.push(m);
-    for(const side of [-1,1]){const bank=box(this.static,0x5a6d67,rect.x+side*(rect.w/2+.2),-.35,rect.z,.5,1,rect.d);bank.userData.boundary=true;}
-    for(let i=0;i<60;i++){const line=plane(this.static,new T.MeshBasicMaterial({color:0xb4d0c5,transparent:true,opacity:.1,depthWrite:false}),rect.x+(this.random()-.5)*(rect.w-1),-.12,rect.z+(this.random()-.5)*rect.d,.2+this.random(),.035,true);line.userData.boundary=true;this.waterMeshes.push(line);}
+    const geo=rect.shape==='ellipse'?new T.CircleGeometry(1,48,0,Math.PI*2):new T.PlaneGeometry(rect.w,rect.d,12,90);if(rect.shape==='ellipse')geo.scale(rect.w/2,rect.d/2,1);geo.rotateX(-Math.PI/2);const m=new T.Mesh(geo,material);m.position.set(rect.x,-.2,rect.z);m.userData.boundary=true;this.static.add(m);this.waterMeshes.push(m);
+    if(rect.shape!=='ellipse')for(const side of [-1,1]){const bank=box(this.static,0x5a6d67,rect.x+side*(rect.w/2+.2),-.35,rect.z,.5,1,rect.d);bank.userData.boundary=true;}
+    if(rect.shape==='ellipse'){
+      const points=waterOutline(rect);for(const [i,p]of points.entries()){const next=points[(i+1)%points.length],dx=next.x-p.x,dz=next.z-p.z;const edge=box(this.static,rect.feature==='fountain'?0xada995:0x777d64,(p.x+next.x)/2,.03,(p.z+next.z)/2,.36,rect.feature==='fountain'?.5:.24,Math.hypot(dx,dz)+.08);edge.rotation.y=Math.atan2(dx,dz);edge.userData.boundary=true;}
+      if(rect.feature==='lake'){for(let i=0;i<34;i++){const a=i/34*Math.PI*2,rx=rect.x+Math.cos(a)*(rect.w/2+.3),rz=rect.z+Math.sin(a)*(rect.d/2+.3);if(i%3===0){const rock=sphere(this.static,0x7d8270,rx,.18,rz,.3+this.random()*.25,.22,.28);rock.rotation.y=a;}else for(let j=0;j<3;j++){const reed=cylinder(this.static,j%2?0x617346:0x7c8050,rx+(this.random()-.5)*.3,.35+this.random()*.15,rz+(this.random()-.5)*.3,.018,.7+this.random()*.4,.012,4);reed.rotation.z=(this.random()-.5)*.3;}}
+       for(let i=0;i<13;i++){const a=this.random()*Math.PI*2,rr=.55+this.random()*.3;const pad=new T.Mesh(new T.CircleGeometry(.17+this.random()*.17,8,.25,Math.PI*1.85),mat(0x718451,{side:T.DoubleSide}));pad.rotation.x=-Math.PI/2;pad.position.set(rect.x+Math.cos(a)*rect.w/2*rr,-.09,rect.z+Math.sin(a)*rect.d/2*rr);this.static.add(pad);}}
+      if(rect.feature==='fountain'){cylinder(this.static,0x929d8b,rect.x,.4,rect.z,.48,1.1,.7,12);for(let i=0;i<6;i++){const a=i/6*Math.PI*2,points=[];for(let j=0;j<=20;j++){const t=j/20;points.push(new T.Vector3(rect.x+Math.cos(a)*t*1.7,.9+Math.sin(t*Math.PI)*1.4-t,rect.z+Math.sin(a)*t*1.7));}const jet=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),20,.028,5,false),new T.MeshStandardMaterial({color:0xd2ebe4,transparent:true,opacity:.65,roughness:.1,metalness:.25}));this.scene.add(jet);this.fountainJets.push({mesh:jet,x:rect.x+Math.cos(a)*1.7,z:rect.z+Math.sin(a)*1.7,phase:a});}}
+    }
+    for(let i=0;i<(rect.shape==='ellipse'?15:60);i++){const px=rect.x+(this.random()-.5)*(rect.w-1),pz=rect.z+(this.random()-.5)*rect.d;if(!waterContains(rect,px,pz))continue;const line=plane(this.static,new T.MeshBasicMaterial({color:0xb4d0c5,transparent:true,opacity:.1,depthWrite:false}),px,-.12,pz,.2+this.random(),.035,true);line.userData.boundary=true;this.waterMeshes.push(line);}
   }
   waterLevel(){return this.layout.city?-.2:-1.85;}
   splash(x,z,power=1){
@@ -280,7 +291,7 @@ export class World {
   damageBuildingStage(e){
     const g=this.buildingMeshes.get(e.id);if(!g)return;g.userData.damageStage=e.stage;
     const pieces=(g.userData.sections||[]).filter(m=>m.visible);pieces.sort((a,b)=>{const av=new T.Vector3(),bv=new T.Vector3();a.getWorldPosition(av);b.getWorldPosition(bv);return Math.hypot(av.x-e.x,av.z-e.z,av.y-2)-Math.hypot(bv.x-e.x,bv.z-e.z,bv.y-2);});
-    for(const m of pieces.slice(0,Math.max(0,Math.ceil((g.userData.sections||[]).length*.24*e.stage)-((g.userData.sections||[]).length-pieces.length)))){m.visible=false;const p=new T.Vector3();m.getWorldPosition(p);debris(this,{x:p.x,z:p.z,y:p.y,material:g.userData.material||'brick',count:10,power:4,scale:.8});this.smoke(p.x,p.z,2,p.y);}
+    for(const m of pieces.slice(0,Math.max(0,Math.ceil((g.userData.sections||[]).length*.24*e.stage)-((g.userData.sections||[]).length-pieces.length)))){m.visible=false;const p=new T.Vector3();m.getWorldPosition(p);debris(this,{x:p.x,z:p.z,y:p.y,material:g.userData.material||'brick',count:4,power:4,scale:.8});if(this.random()<.35)this.smoke(p.x,p.z,1,p.y);}
     const panes=g.userData.glass.filter(m=>m.visible);for(const pane of panes.slice(0,e.stage*2)){pane.visible=false;const p=new T.Vector3();pane.getWorldPosition(p);this.effect(p.x,p.z,0x98bab9,12,6,'glass',p.y);}
     if(g.userData.roofAccessories&&(!g.userData.roof.visible||g.userData.decoratedRoof?.visible===false))g.userData.roofAccessories.visible=false;
     if(g.userData.plan)this.rebuildBuildingShell(g);
@@ -308,6 +319,7 @@ export class World {
     for(const {material,geos}of batches.values()){const mesh=new T.Mesh(mergeGeometries(geos),material);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.shellPart=true;shell.add(mesh);geos.forEach(g=>g.dispose());}g.add(shell);g.userData.shell=shell;const faded=g.userData.faded;g.userData.faded=undefined;this.fadeBuilding(g,!!faded);
   }
   destroy(){
+    this.structuralVisuals.dispose();
     this.feedback.destroy();
     this.reflectionTarget?.dispose();for(const tex of this.bloodTextures?.values()||[])tex.dispose();
     this.scene.traverse(o=>{if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==sphereGeo&&!o.geometry.userData.shared)o.geometry.dispose();if(o.material){for(const m of Array.isArray(o.material)?o.material:[o.material]){if(!m.userData.shared){m.map?.dispose();m.dispose();}}}if(o.isLight)o.shadow?.map?.dispose();});
@@ -342,9 +354,7 @@ export class World {
     if(gory){this.decal(e.x,e.z,death==='exploded'?1.25:.8);if(death!=='burned')bloodSpray(this,{...e,kind:death==='sliced'?'slice':'ballistic'},death==='headshot'?22:14,death==='exploded'?12:6,e.crawling?.35:death==='headshot'?1.65:1.1);}
   }
   destroyProp(e){
-    if(e.kind==='building'){const building=this.buildingMeshes.get(e.id);if(building){const c=building.userData.center,size=building.userData.size;building.userData.collapsing=true;this.collapses.push({g:building,age:0,height:size.y,baseY:building.position.y,seed:this.random()});
-      for(let i=0;i<8;i++){debris(this,{x:c.x+(this.random()-.5)*size.x,z:c.z+(this.random()-.5)*size.z,y:1+this.random()*size.y,material:building.userData.material||'brick',count:7,power:5,scale:1.6});this.smoke(c.x+(this.random()-.5)*size.x,c.z+(this.random()-.5)*size.z,2,1);}
-      const rubble=new T.Group();for(let i=0;i<55;i++){const m=new T.Mesh(fragmentGeometry(building.userData.material||'brick',i),mat(i%3?0x817565:0x605f58));m.position.set(c.x+(this.random()-.5)*size.x,.06+this.random()*.3,c.z+(this.random()-.5)*size.z);m.scale.set(.12+this.random()*.8,.1+this.random()*.4,.1+this.random()*.65);m.castShadow=true;rubble.add(m);m.rotation.set(this.random(),this.random()*6,this.random());}this.scene.add(rubble);this.batchStatic(rubble,rubble);this.wrecks.push(rubble);this.shake=.5;}return;}const group=this.propMeshes.get(e.id);if(group)group.visible=false;if(e.sunk){this.splash(e.x,e.z,6);return;}
+    if(e.kind==='building'){const building=this.buildingMeshes.get(e.id);if(building){building.visible=false;building.userData.collapsed=true;this.shake=.35;}return;}if(e.kind==='rubble'){debris(this,{x:e.x,z:e.z,material:e.material||'concrete',count:12,power:3});return;}const group=this.propMeshes.get(e.id);if(group)group.visible=false;if(e.sunk){this.splash(e.x,e.z,6);return;}
     const colors={car:0x5b6561,barrier:0xa19a80,planter:0x7c8267,crate:0x9a8051,barrel:0x87472f};
     debris(this,{x:e.x,z:e.z,material:materialFor(e.kind),count:e.kind==='car'?34:22,power:e.kind==='car'?8:4,scale:e.kind==='car'?1.2:.8});
     this.smoke(e.x,e.z,e.kind==='car'?8:4);
@@ -464,7 +474,7 @@ export class World {
   aim(x,y){this.raycaster.setFromCamera(new T.Vector2(x*2-1,1-y*2),this.camera);const p=new T.Vector3();this.raycaster.ray.intersectPlane(this.groundPlane,p);return{x:p.x,z:p.z};}
   resize(){const w=innerWidth,h=innerHeight;this.renderer.setSize(w,h);this.composer?.setSize(w,h);this.ao?.setSize(Math.max(1,Math.floor(w*.65)),Math.max(1,Math.floor(h*.65)));this.aspect=w/h;}
   applySettings(settings){this.feedback.applySettings(settings);this.settings=settings;if(!settings.gore){for(const m of this.decals)this.removeDynamic(m);this.decals=[];this.effects=this.effects.filter(e=>{if(['blood','gib'].includes(e.kind)){this.removeDynamic(e.mesh);return false;}return true;});for(const c of this.corpses)this.removeDynamic(c.mesh);this.corpses=[];}this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?1.5:1.15));this.renderer.shadowMap.enabled=settings.quality!=='low';this.ash.visible=!settings.reducedMotion;if(this.ao)this.ao.enabled=settings.quality==='high';this.composer?.setPixelRatio(this.renderer.getPixelRatio());this.ao?.setSize(Math.max(1,Math.floor(innerWidth*.65)),Math.max(1,Math.floor(innerHeight*.65)));}
-  clearDynamic(){this.feedback.clear();for(const collection of [this.characters,this.projectiles,this.items,this.rings,this.grenades,this.streetJobs]){for(const m of collection.values())this.removeDynamic(m);collection.clear();}for(const e of this.effects)this.removeDynamic(e.mesh);this.effects=[];for(const c of this.corpses)this.removeDynamic(c.mesh);this.corpses=[];for(const m of this.decals)this.removeDynamic(m);this.decals=[];for(const m of this.wrecks)this.removeDynamic(m);this.wrecks=[];for(const g of this.propMeshes.values())g.visible=true;for(const g of this.buildingMeshes.values()){g.visible=true;for(const pane of g.userData.glass)pane.visible=true;for(const section of g.userData.sections||[])section.visible=true;g.userData.damageStage=0;if(g.userData.roofAccessories)g.userData.roofAccessories.visible=true;}for(const m of this.impacts)this.removeDynamic(m);this.impacts=[];}
+  clearDynamic(){this.structuralVisuals.update([],{x:0,z:0});this.feedback.clear();for(const collection of [this.characters,this.projectiles,this.items,this.rings,this.grenades,this.streetJobs]){for(const m of collection.values())this.removeDynamic(m);collection.clear();}for(const e of this.effects)this.removeDynamic(e.mesh);this.effects=[];for(const c of this.corpses)this.removeDynamic(c.mesh);this.corpses=[];for(const m of this.decals)this.removeDynamic(m);this.decals=[];for(const m of this.wrecks)this.removeDynamic(m);this.wrecks=[];for(const g of this.propMeshes.values())g.visible=true;for(const g of this.buildingMeshes.values()){g.visible=true;g.userData.collapsed=false;for(const pane of g.userData.glass)pane.visible=true;for(const section of g.userData.sections||[])section.visible=true;g.userData.damageStage=0;if(g.userData.roofAccessories)g.userData.roofAccessories.visible=true;}for(const m of this.impacts)this.removeDynamic(m);this.impacts=[];}
   removeDynamic(mesh){mesh.removeFromParent();mesh.traverse(o=>{
     if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==sphereGeo&&!o.geometry.userData.shared&&!o.isSprite)o.geometry.dispose();
     if(o.material&&!o.material.userData.shared){if(o.material.map&&!o.material.map.userData.shared&&o.material.map!==shadowTexture&&o.material.map!==this.smokeTex&&o.material.map!==this.fireTex)o.material.map.dispose();o.material.dispose();}
@@ -484,6 +494,12 @@ export class World {
   onEvent(e){
     this.feedback.event(e);
     if(e.type==='splash')this.splash(e.x,e.z,e.power);
+    if(e.type==='surface-char'){
+      const g=this.buildingMeshes.get(e.id);if(g&&!g.userData.collapsed){if(!this.charTex)this.charTex=texture(64,64,c=>{const grad=c.createRadialGradient(32,32,5,32,32,31);grad.addColorStop(0,'rgba(12,14,12,.88)');grad.addColorStop(.5,'rgba(16,18,14,.65)');grad.addColorStop(1,'rgba(18,20,16,0)');c.fillStyle=grad;c.fillRect(0,0,64,64);});
+      this.charTex.userData.shared=true;const stain=new T.Mesh(new T.PlaneGeometry(2.3,2.9),new T.MeshBasicMaterial({map:this.charTex,transparent:true,depthWrite:false,side:T.DoubleSide}));stain.position.set(e.x-g.position.x,e.y+.45,e.z-g.position.z);if(e.face<2)stain.position.z+=(e.face===0?-1:1)*.32;else{stain.position.x+=(e.face===2?-1:1)*.32;stain.rotation.y=Math.PI/2;}g.add(stain);this.impacts.push(stain);if(this.impacts.length>160)this.removeDynamic(this.impacts.shift());}
+    }
+    if(e.type==='steam')this.smoke(e.x,e.z,Math.min(5,e.power+1),.3,0xc4d3cf);
+    if(e.type==='structural-impact'){const before=this.effects.length;this.smoke(e.x,e.z,1,Math.max(.15,e.y-.2),0xa59d87);for(const dust of this.effects.slice(before)){dust.mesh.scale.multiplyScalar(1+e.power*.25);dust.vy*=.5;dust.vx*=1.5;}debris(this,{x:e.x,z:e.z,y:e.y,material:e.material,count:Math.ceil(e.power*2),power:e.power+1,scale:.65+e.size*.15});this.shake=Math.max(this.shake,Math.min(.35,e.power*.055));}
     if(e.type==='vehicle-hit'){debris(this,{x:e.x,z:e.z,material:'metal',count:12,power:4});this.shake=Math.max(this.shake,Math.min(.3,e.power*.012));}
     if(e.type==='vehicle-skid')this.smoke(e.x,e.z,1,.1,0x7c8075);
     if(e.type==='slice'){if(e.hits)this.shake=Math.max(this.shake,e.combo===2?.12:.045);}
@@ -496,7 +512,7 @@ export class World {
     if(e.type==='hit'){if(this.settings.gore){bloodSpray(this,e,Math.min(12,4+Math.ceil(Math.sqrt(e.amount))),4+Math.min(6,Math.sqrt(e.amount)*.5),e.crawling?.35:e.headshot?1.65:1.05);}else this.effect(e.x,e.z,0xb4ad87,3,2);}
     if(e.type==='kill')this.leaveRemains(e);if(e.type==='dismember')this.detachParts(e);
     if(e.type==='destroy')this.destroyProp(e);if(e.type==='building-stage')this.damageBuildingStage(e);
-    if(e.type==='prop-hit'&&e.kind==='building')this.buildingImpact(e);
+    if(e.type==='prop-hit'&&e.kind==='building'&&e.health>0&&!e.thermal)this.buildingImpact(e);
     if(e.type==='prop-hit'&&e.kind!=='building'&&!e.weapon)debris(this,{x:e.x,z:e.z,material:materialFor(e.kind),count:5,power:2,scale:.4});
     if(e.type==='arc')this.lightning(e);if(e.type==='ignite')this.flame(e.x,e.z,6);if(e.type==='electrify')this.effect(e.x,e.z,0xa6e9ed,6,3);
     if(e.type==='explosion'||e.type==='slam'){
@@ -544,7 +560,8 @@ export class World {
       const ring=this.ring(job.kind==='relay'?4:1.3,0xe0b674,.035);g.add(ring);g.userData.jobRing=ring;g.position.set(job.x,0,job.z);this.scene.add(g);return g;
     },(g,job)=>{g.visible=Math.hypot(p.x-job.x,p.z-job.z)<65;const ring=g.userData.jobRing;ring.material.color.setHex(job.state==='complete'?0x8eaf94:0xe0b674);ring.material.opacity=job.state==='complete'?.2:.6;});
     this.syncMap(this.rings,sim.hazards,h=>{const m=this.ring(h.radius,h.friendly?0xf2c179:0xee684c,.1);m.userData.disposable=true;this.scene.add(m);return m;},(m,h)=>{m.position.set(h.x,.06,h.z);m.material.opacity=.4+.5*(1-h.timer/h.duration);m.scale.setScalar(.85+.15*(1-h.timer/h.duration));});
-    for(const c of this.collapses){c.age+=dt;const a=clamp(c.age/1.25,0,1);c.g.position.y=c.baseY-c.height*a*a;c.g.rotation.z=Math.sin(c.seed*6)*a*.07;if(a===1){c.g.visible=false;c.g.userData.collapsed=true;}}this.collapses=this.collapses.filter(c=>c.age<1.25);
+    this.structuralVisuals.update(sim.structures||[],p,this.overview);
+    for(const jet of this.fountainJets){jet.mesh.visible=Math.hypot(jet.x-p.x,jet.z-p.z)<65;jet.mesh.material.opacity=.55+Math.sin(t*5+jet.phase)*.12;if(jet.mesh.visible&&this.random()<motionDt*2)this.splash(jet.x,jet.z,.2);}
     for(const v of sim.props)if(v.driveable&&v.health>0){const root=this.propMeshes.get(v.id),plan=this.layout.cover[Number(v.id.split('-')[1])];if(root&&plan){root.visible=Math.hypot(v.x-p.x,v.z-p.z)<70;root.position.set(v.x-plan.x,0,v.z-plan.z);const car=root.children[0];if(car)animateVehicle(car,{...v,occupied:p.vehicleId===v.id},motionDt,t);if(v.speed>5&&this.random()<dt*2)this.smoke(v.x-Math.sin(v.angle)*2,v.z-Math.cos(v.angle)*2,1,.1);}}
     ageBlood(this,motionDt);
     for(const corpse of this.corpses){
@@ -584,7 +601,8 @@ export class World {
     }
     this.effects=this.effects.filter(e=>e.life>0);if(this.effects.length>420){for(const e of this.effects.splice(0,this.effects.length-420))this.removeDynamic(e.mesh);}
     if(!this.settings.reducedMotion){this.ash.rotation.y+=dt*.005;this.ash.position.y=Math.sin(performance.now()*.0002)*.3;}
-    for(const prop of sim.props)if(prop.health>0&&prop.burning>0&&this.random()<dt*12){this.flame(prop.x,prop.z,2,prop.kind==='planter'?1.4:.5);if(this.random()<.25)this.smoke(prop.x,prop.z,1);}
+    for(const prop of sim.props)if(prop.health>0&&prop.kind!=='building'&&prop.burning>0&&this.random()<dt*12){this.flame(prop.x,prop.z,2,prop.kind==='planter'?1.4:.5);if(this.random()<.25)this.smoke(prop.x,prop.z,1);}
+    for(const prop of sim.props)if(prop.health>0&&prop.surfaces&&Math.hypot(prop.x-p.x,prop.z-p.z)<55)for(const c of prop.surfaces)if(c.burning>0&&this.random()<motionDt*5){const fx=c.x+(c.face===2?-.45:c.face===3?.45:0),fz=c.z+(c.face===0?-.45:c.face===1?.45:0);this.flame(fx,fz,1,c.y);if(this.random()<.2)this.smoke(fx,fz,1,c.y+1,0x55534d);}
     for(const fire of sim.fires)if(this.random()<dt*18){this.flame(fire.x+(this.random()-.5)*fire.radius,fire.z+(this.random()-.5)*fire.radius,2,.25);if(this.random()<.25)this.smoke(fire.x,fire.z,1);}
     for(const lamp of this.blastLights){lamp.userData.life=Math.max(0,lamp.userData.life-dt);lamp.intensity=(lamp.userData.power||160)*lamp.userData.life/.55;}
     this.muzzleLight.intensity=Math.max(0,this.muzzleLight.intensity-dt*220);

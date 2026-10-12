@@ -35,7 +35,7 @@ export function generateCity(seed=73){
   if(!rectangleInside(boundary,plot,5)||roadOverlaps(plot,roads,1.8)||roadDistance(plot,roads)>27||Math.hypot(x,z)<27||water.some(w=>overlap(plot,w,4))||parcels.some(p=>overlap(plot,p,4)))continue;
   const index=parcels.length,park=index%8===6,factory=x>bounds.maxX*.38&&z<0,dock=canal&&Math.abs(x-canal.x)<35;
   parcels.push({...plot,park});
-  if(park){for(const dx of[-7,7])for(const dz of[-7,7])cover.push({x:x+dx,z:z+dz,w:2,d:2,kind:'planter'});continue;}
+  if(park){water.push({x,z,w:index%16===6?12:6,d:index%16===6?9:6,shape:'ellipse',feature:index%16===6?'lake':'fountain'});for(const dx of[-7,7])for(const dz of[-7,7])cover.push({x:x+dx,z:z+dz,w:2,d:2,kind:'planter'});continue;}
   const parts=generateParcel(seed,x,z,buildings.filter(b=>b.primary).length,{factory,dock,civic:buildings.length===0});buildings.push(...parts);
   if(!['courtyard','paired'].includes(parts[0].shape))for(let i=0;i<8;i++){const o={x:x+(r()-.5)*19,z:z+(r()-.5)*19,w:.9,d:.9,kind:'barrel'};if(!pointBlocked(o.x,o.z,3.4,parts)&&!pointBlocked(o.x,o.z,4,cover)){cover.push(o);break;}}
  }
@@ -45,6 +45,12 @@ export function generateCity(seed=73){
   if(!rectangleInside(boundary,plot,5)||roadOverlaps(plot,roads,1.8)||roadDistance(plot,roads)>20||Math.hypot(x,z)<23||water.some(w=>overlap(plot,w,4))||parcels.some(p=>overlap(plot,p,4)))continue;
   parcels.push(plot);const index=buildings.filter(b=>b.primary).length;buildings.push(...generateParcel(seed,x,z,index,{compact:true}));placed++;
  }
+ // Native growth occupies park edges and vacant ground, keeping road/spawn corridors clear.
+ for(let i=0;i<700&&cover.filter(o=>o.kind==='planter').length<100;i++){
+  const x=bounds.minX+8+r()*(bounds.maxX-bounds.minX-16),z=bounds.minZ+8+r()*(bounds.maxZ-bounds.minZ-16),o={x,z,w:1.1,d:1.1,kind:'planter',wild:true,scale:.7+r()*.7};
+  if(Math.hypot(x,z)<20||!rectangleInside(boundary,o,4)||roadDistance(o,roads)<4||roadOverlaps(o,roads,3)||pointBlocked(x,z,4,buildings)||pointBlocked(x,z,3,cover)||water.some(w=>overlap(o,w,2)))continue;cover.push(o);
+ }
+ for(const w of water)if(w.shape==='ellipse')for(let i=0;i<12;i++){const dz=(i+.5)/12*w.d-w.d/2,half=w.w/2*Math.sqrt(Math.max(0,1-(dz/(w.d/2))**2));waterObstacles.push({x:w.x,z:w.z+dz,w:half*2,d:w.d/12});}
  const fleet=Object.keys(VEHICLES),cars=[{x:3,z:6,angle:0}],parking=streetPoints;
  for(let i=0;i<350&&cars.length<22;i++){const p=parking[Math.floor(r()*parking.length)],c={x:p.x+Math.cos(p.angle)*(p.width/2-1.4),z:p.z-Math.sin(p.angle)*(p.width/2-1.4),angle:p.angle};const v=vehiclePlan(fleet[cars.length%fleet.length],c.x,c.z,c.angle);
   if(!rectangleInside(boundary,v,3)||water.some(w=>overlap(v,w,3))||Math.hypot(c.x,c.z)<18||pointBlocked(c.x,c.z,4,buildings)||pointBlocked(c.x,c.z,4,cover)||cars.some(a=>Math.hypot(a.x-c.x,a.z-c.z)<10))continue;cars.push(c);
@@ -59,7 +65,10 @@ export function generateCity(seed=73){
 }
 export function waterAt(layout,x,z){
  if(layout.bridges?.some(b=>Math.abs(x-b.x)<b.w/2&&Math.abs(z-b.z)<b.d/2))return false;
- if(layout.water?.some(b=>Math.abs(x-b.x)<b.w/2&&Math.abs(z-b.z)<b.d/2))return true;
+ if(layout.water?.some(b=>waterContains(b,x,z)))return true;
  if(!layout.city&&[1,7].includes(layout.district)&&layout.boundary){let inside=false;const p=layout.boundary;for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i].z>z)!==(p[j].z>z)&&x<(p[j].x-p[i].x)*(z-p[i].z)/(p[j].z-p[i].z)+p[i].x)inside=!inside;return !inside;}
  return false;
 }
+
+export function waterContains(w,x,z){return w.shape==='ellipse'?((x-w.x)/(w.w/2))**2+((z-w.z)/(w.d/2))**2<1:Math.abs(x-w.x)<w.w/2&&Math.abs(z-w.z)<w.d/2;}
+export function waterOutline(w){return w.shape==='ellipse'?Array.from({length:40},(_,i)=>({x:w.x+Math.cos(i/40*Math.PI*2)*w.w/2,z:w.z+Math.sin(i/40*Math.PI*2)*w.d/2})):[{x:w.x-w.w/2,z:w.z-w.d/2},{x:w.x+w.w/2,z:w.z-w.d/2},{x:w.x+w.w/2,z:w.z+w.d/2},{x:w.x-w.w/2,z:w.z+w.d/2}];}
