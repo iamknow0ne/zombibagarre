@@ -86,7 +86,7 @@ export class Simulation {
     const hadTwin=p.equipped.length===2&&p.equipped[0]===p.equipped[1]&&p.equipped[0]===next[0];p.equipped=next;
     p.weapon=next[0];
     if(next.length===2&&next[0]===next[1]&&!hadTwin){p.magazines.offhand=magazineSize(p,next[1]);p.reloads.offhand=0;p.weaponTimers.offhand=WEAPONS[next[1]].interval*.5;}
-    if(changed){p.equippedAt=this.time;p.meleeAttack=null;p.meleeBuffer=null;p.shots={};p.swing=0;p.swingWeapon=null;p.swingCombo=0;p.lastSwing=-99;p.dashCooldown=Math.min(p.dashCooldown,isMelee(p)?1.1:p.dashMax);this.emit('switch');}
+    if(changed){p.equippedAt=this.time;p.meleeAttack=null;p.meleeBuffer=null;p.shots={};p.swing=0;p.swingWeapon=null;p.swingCombo=0;p.lastSwing=-99;p.dashCooldown=Math.min(p.dashCooldown,isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax);this.emit('switch');}
     p.reload=p.reloads[p.weapon]||0;return changed;
   }
   equipWeapon(key){if(!WEAPONS[key])return false;return this.setLoadout(toggleLoadout(this.player.equipped,key));}
@@ -155,7 +155,7 @@ export class Simulation {
     if (length > 1) { mx /= length; mz /= length; }
     if(input.interact)this.interactVehicle();
     if (input.dash && !p.vehicleId&& p.dashCooldown === 0) {
-      p.ambushTime=3;p.shield=Math.max(p.shield,p.dashShield||0);p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.dash = isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,p.dashMax):p.dashMax;
+      p.ambushTime=3;p.shield=Math.max(p.shield,p.dashShield||0);p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.dash = isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax;
       p.dashX = length > .1 ? mx / Math.hypot(mx, mz) : Math.sin(p.angle); p.dashZ = length > .1 ? mz / Math.hypot(mx, mz) : Math.cos(p.angle); this.emit('dash');
     }
     const beforeMove={x:p.x,z:p.z};

@@ -39,6 +39,9 @@ export const UPGRADES=[
  define('student','Quick study','MASTERY','utility','book',r=>`Earn ${pct(.15*boost[r-1])}% more mastery from enemy damage.`,(p,b)=>add(p,'masteryBonus',.15*b)),
  define('engineer','Roadside repair','MOTOR POOL','utility','wheel',r=>`At each new wave, repair your occupied vehicle by ${pct(.1*boost[r-1])}% of its maximum hull.`,(p,b)=>add(p,'vehicleRepair',.1*b),{requires:p=>!!p.vehicleId})
 ];
+const projectileLoadout=p=>p.equipped.some(k=>!['katana','dual','arc','launcher'].includes(k));
+const firearmLoadout=p=>p.equipped.some(k=>!['katana','dual'].includes(k));
+for(const u of UPGRADES){if(['piercing','frost'].includes(u.id))u.requires=projectileLoadout;if(u.id==='magazine')u.requires=firearmLoadout;if(u.id==='incendiary')u.requires=p=>p.equipped.some(k=>!['katana','dual','launcher'].includes(k));if(u.id==='longshot')u.requires=p=>p.equipped.some(k=>!['katana','dual','flame'].includes(k));}
 export const rankOf=(player,id)=>player.upgradeRanks?.[id]||0;
 export function upgradeOffer(u,player){const rank=rankOf(player,u.id)+1;return {...u,rank,tier:UPGRADE_TIERS[rank-1],description:u.describe(rank)};}
 export function rollUpgrades(player,wave,random,previous=[]){

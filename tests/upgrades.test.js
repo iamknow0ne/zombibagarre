@@ -36,3 +36,9 @@ test('reload and pickup healing and mastery bonuses affect actual combat results
 test('blade finisher heals once on enemy contact, never on empty swings or scenery',()=>{
  const s=fresh(),p=s.player;s.setLoadout(['katana']);p.health=40;p.finisherHeal=5;p.angle=0;const attack={weapon:'katana',combo:2,angle:0};s.resolveSlice(attack);assert.equal(p.health,40);s.spawnEnemy('brute',0,4);s.spawnEnemy('brute',.2,4);s.resolveSlice(attack);assert.equal(p.health,45);
 });
+
+test('blade builds avoid firearm-only perks and speed ranks actually shorten blade dodge recovery',()=>{
+ const s=fresh();s.setLoadout(['katana']);for(let seed=0;seed<50;seed++){const offers=rollUpgrades(s.player,12,seededRandom(seed));assert.ok(offers.every(u=>!['piercing','frost','magazine','incendiary','longshot','medicreload'].includes(u.id)));}
+ for(const [weapon,excluded]of [['launcher',['piercing','frost','incendiary']],['arc',['piercing','frost']],['flame',['longshot']]]){const p={...s.player,equipped:[weapon]};for(let seed=0;seed<20;seed++)assert.ok(rollUpgrades(p,12,seededRandom(seed)).every(u=>!excluded.includes(u.id)));}
+ const u=UPGRADES.find(u=>u.id==='speed');u.apply(s.player,1);s.toSpawn=99;s.spawnTimer=99;s.update(.01,{dash:true,auto:false});assert.ok(Math.abs(s.player.dashCooldown-.99)<1e-9);
+});
