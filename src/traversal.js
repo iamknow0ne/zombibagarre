@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {World} from './rebuild/World.js';
+import {placeAnchorLabel} from './rebuild/TraversalLabels.js';
 import {Simulation} from './rebuild/Simulation.js';
 import {Input} from './rebuild/Input.js';
 import {generateMap} from './rebuild/Map.js';
@@ -34,6 +35,9 @@ async function boot(){
    label(`${o.h.toFixed(1)} M`,o.x,o.h+.038,o.z+.2,2.5,.65,true);
   }
  }
+ // Custom course architecture must use the same visibility shader as city buildings.
+ // Bind before adding ground signs, anchors and landing effects.
+ world.cutaway.bind(scene);
  label('SAINT-ROCH / ROOFTOP ACCESS',-4,.035,10,8,1,true);
  label('01  ↑  JUMP',0,.038,5.6,3,.75,true);
  const anchorModels=plan.anchors.map(a=>{box(0x4b605e,a.x,(a.y+plan.boxes.find(b=>b.id===a.supportId).h)/2,a.z,.08,a.y-plan.boxes.find(b=>b.id===a.supportId).h,.08,'metal');const m=new T.Mesh(new T.TorusGeometry(.34,.07,7,24),new T.MeshStandardMaterial({color:0xf8b567,emissive:0x7b4116,emissiveIntensity:.4,roughness:.35,metalness:.55}));m.position.set(a.x,a.y,a.z);scene.add(m);return m;});
@@ -64,7 +68,11 @@ async function boot(){
   if(!settings.reducedMotion)dustParts=Array.from({length:16},(_,i)=>{const a=i/16*Math.PI*2;return{x:p.x,y:p.y+.08,z:p.z,floor:p.y,vx:Math.sin(a)*(1+i%3*.35),vz:Math.cos(a)*(1+i%3*.35),vy:.8+i%4*.3,size:.028+i%3*.014,life:.55};});
   const roof=plan.boxes.find(b=>b.id===e.supportId);if(roof&&!visited.has(roof.id)){visited.add(roof.id);checkpoint={x:roof.x,y:roof.h,z:roof.z};announce(visited.size===4?'ROOFTOP RUN COMPLETE · KEEP EXPLORING':`${roof.label} · CHECKPOINT`);const index=plan.boxes.indexOf(roof);selected=Math.min(index,plan.anchors.length-1);}
  }}}
- function projectTag(el,pos){const q=new T.Vector3(pos.x,pos.y,pos.z).project(world.camera);el.style.left=`${(q.x*.5+.5)*innerWidth}px`;el.style.top=`${(-q.y*.5+.5)*innerHeight}px`;el.hidden=q.z>1||Math.abs(q.x)>1.1||Math.abs(q.y)>1.1;el.style.visibility=el.hidden?'hidden':'visible';}
+ function projectTag(el,pos){
+  const q=new T.Vector3(pos.x,pos.y,pos.z).project(world.camera);let point={x:(q.x*.5+.5)*innerWidth,y:(-q.y*.5+.5)*innerHeight};
+  if(el.id==='anchor-tag'){const p=sim.player,hero=new T.Vector3(p.x,p.y+2.15,p.z).project(world.camera);point=placeAnchorLabel(point,{x:(hero.x*.5+.5)*innerWidth,y:(-hero.y*.5+.5)*innerHeight},innerWidth);}
+  el.style.left=`${point.x}px`;el.style.top=`${point.y}px`;el.hidden=q.z>1||Math.abs(q.x)>1.1||Math.abs(q.y)>1.1;el.style.visibility=el.hidden?'hidden':'visible';
+ }
  function updateHud(now){const p=sim.player,a=plan.anchors[selected],reason=grappleAvailability(p,a,plan.boxes),pad=input.source==='gamepad'&&input.pad,family=input.family;
   $('height').innerHTML=`${p.y.toFixed(1)} <small>m</small>`;$('motion').textContent=p.grapple?'REELING':p.grounded?'GROUNDED':p.vy>0?'RISING':'FALLING';$('progress').textContent=`${visited.size} / 4`;
   const next=plan.boxes.find(b=>!visited.has(b.id));$('objective').textContent=next?`${String(plan.boxes.indexOf(next)+1).padStart(2,'0')} / ${next.id==='step'?'JUMP ONTO THE CARGO':'REACH THE '+next.label.split(' / ')[1]}`:'COURSE COMPLETE';
@@ -91,6 +99,16 @@ async function boot(){
   world.update(sim,motionDt);projectTag($('anchor-tag'),plan.anchors[selected]);projectTag($('hero-tag'),{x:p.x,y:p.y+2.15,z:p.z});
   if(now>hudAt){updateHud(now);hudAt=now+70;}
   $('loading').hidden=true;if(!notifiedReady){window.bagarreDesktop?.ready?.();notifiedReady=true;}requestAnimationFrame(frame);
+ }
+ // Local regression controls exercise the real course meshes at occlusion edges.
+ // No test controls or teleportation are included in the public build.
+ if(import.meta.env.DEV&&new URLSearchParams(location.search).has('visibilityQA')){
+  const panel=document.createElement('div');panel.setAttribute('aria-label','Visibility test positions');Object.assign(panel.style,{position:'fixed',bottom:'100px',left:'12px',zIndex:20,display:'flex',gap:'6px',flexWrap:'wrap',maxWidth:'95vw'});
+  const roof=plan.boxes[1];
+  for(const [name,x,y,z]of [['Behind building',roof.x,0,roof.z-roof.d/2-.6],['Against corner',roof.x-roof.w/2-.5,0,roof.z-roof.d/2-.5],['On rooftop',roof.x,roof.h,roof.z],['Above rooftop',roof.x,roof.h+2,roof.z],['In front',roof.x,0,roof.z+roof.d/2+2]]){
+   const button=document.createElement('button');button.textContent=name;button.onclick=()=>{demo=false;input.clear();initTraversal(sim.player,{x,y,z});sim.player.grounded=name!=='Above rooftop';sim.state='paused';world.player.position.set(x,y,z);world.focus.set(x,y*.8,z);announce(`VISIBILITY TEST / ${name.toUpperCase()}`);};panel.append(button);
+  }
+  document.body.append(panel);
  }
  $('game').focus({preventScroll:true});requestAnimationFrame(frame);
 }
