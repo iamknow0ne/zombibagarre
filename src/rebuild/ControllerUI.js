@@ -1,3 +1,4 @@
+import {ControllerDiagram} from './ControllerDiagram.js';
 import {weaponTier,TIER_MARKS} from './Evolution.js';
 import {ACTION_NAMES,BINDINGS,CONTROL_DEFAULTS,buttonName,glyph,rebind} from './ControllerConfig.js';
 import {WEAPONS,weaponStats,distance} from './config.js';
@@ -15,6 +16,7 @@ export class ControllerUI{
   <button id="test-vibration" class="secondary">TEST VIBRATION</button><p id="vibration-status" class="hardware-status"></p>
   <h3>DualSense extras</h3><label class="setting-row"><span>Adaptive triggers & lightbar<small>Optional direct connection; weapon resistance and health colour</small></span><input id="control-adaptiveTriggers" type="checkbox"></label><p class="control-note">Connect below with a mouse or touch to open the browser device chooser. Trigger resistance applies only to attacks bound to L2 / R2. Speaker, microphone, gyro and audio haptics are not used.</p><div class="controller-presets"><button id="connect-dualsense">CONNECT DUALSENSE</button><button id="disconnect-dualsense">DISCONNECT EXTRAS</button></div><p id="dualsense-status" class="hardware-status"></p><button id="reset-controller" class="text-button">RESET CONTROLLER CONTROLS</button>`;
   $('settings-done').before(section);
+  const diagramHost=document.createElement('div');$('control-promptStyle').closest('label').after(diagramHost);this.diagram=new ControllerDiagram(diagramHost,input,settings);
   for(const key of Object.keys(CONTROL_DEFAULTS).filter(k=>k!=='bindings')){const el=$('control-'+key);el.addEventListener('input',()=>{settings[key]=el.type==='checkbox'?el.checked:el.type==='range'?Number(el.value):el.value;if(key==='autoFire')onAuto(settings.autoFire);if(key==='vibration'&&!settings.vibration)haptics.stop();if(key==='adaptiveTriggers'&&!settings.adaptiveTriggers)dualsense.stop();onSave();this.syncValues();});}
   $('controls-requested').onclick=()=>{settings.bindings={...BINDINGS};this.renderBindings();onSave();};$('controls-triggers').onclick=()=>{settings.bindings={...BINDINGS,rightFire:7};this.renderBindings();onSave();};
   $('reset-controller').onclick=()=>{Object.assign(settings,CONTROL_DEFAULTS,{bindings:{...BINDINGS}});haptics.stop();dualsense.stop();onAuto(settings.autoFire);this.renderBindings();this.syncValues();onSave();};
@@ -23,11 +25,12 @@ export class ControllerUI{
   this.renderBindings();this.syncValues();
   for(const dialog of document.querySelectorAll('dialog')){const hint=document.createElement('div');hint.className='controller-menu-hint';dialog.append(hint);}
  }
- syncValues(){for(const key of Object.keys(CONTROL_DEFAULTS).filter(k=>k!=='bindings')){const el=$('control-'+key);if(el.type==='checkbox')el.checked=!!this.settings[key];else el.value=this.settings[key];const value=$('value-'+key);if(value)value.textContent=key==='vibration'?this.settings[key]+'%':this.settings[key].toFixed(2);}}
- renderBindings(){const focus=document.activeElement?.id,family=this.input.family||'playstation';$('controller-bindings').replaceChildren(...Object.entries(ACTION_NAMES).map(([action,name])=>{const row=document.createElement('label');row.className='setting-row binding-row';row.innerHTML=`<span>${name}</span><select id="bind-${action}" aria-label="${name} button">${Array.from({length:16},(_,i)=>`<option value="${i}">${buttonName(i,family)}</option>`).join('')}</select>`;const select=row.querySelector('select');select.value=this.settings.bindings[action];select.onchange=()=>{this.settings.bindings=rebind(this.settings.bindings,action,Number(select.value));this.renderBindings();this.onSave();};return row;}));if(focus?.startsWith('bind-'))$(focus)?.focus();}
+ syncValues(){for(const key of Object.keys(CONTROL_DEFAULTS).filter(k=>k!=='bindings')){const el=$('control-'+key);if(el.type==='checkbox')el.checked=!!this.settings[key];else el.value=this.settings[key];const value=$('value-'+key);if(value)value.textContent=key==='vibration'?this.settings[key]+'%':this.settings[key].toFixed(2);}this.diagram?.update();}
+ renderBindings(){const focus=document.activeElement?.id,family=this.input.family||'playstation';$('controller-bindings').replaceChildren(...Object.entries(ACTION_NAMES).map(([action,name])=>{const row=document.createElement('label');row.className='setting-row binding-row';row.innerHTML=`<span>${name}</span><select id="bind-${action}" aria-label="${name} button">${Array.from({length:16},(_,i)=>`<option value="${i}">${buttonName(i,family)}</option>`).join('')}</select>`;const select=row.querySelector('select');select.value=this.settings.bindings[action];select.onchange=()=>{this.settings.bindings=rebind(this.settings.bindings,action,Number(select.value));this.renderBindings();this.onSave();};return row;}));if(focus?.startsWith('bind-'))$(focus)?.focus();this.diagram?.update();}
  prompt(action,fallback){return this.input.source==='gamepad'&&this.input.pad?glyph(this.settings.bindings[action],this.input.family):`<kbd>${fallback}</kbd>`;}
  update(sim,world,auto){
   const input=this.input,pad=input.source==='gamepad'&&input.pad,p=sim.player;
+  if($('settings-dialog').open)this.diagram.update();
   document.body.classList.toggle('using-gamepad',!!pad);
   if(this.lastFamily!==input.family){this.lastFamily=input.family;this.renderBindings();}
   $('controller-device').textContent=input.pad?`${input.family==='playstation'?'PLAYSTATION':input.family==='xbox'?'XBOX':'GAMEPAD'} · ${input.pad.id}`:'Press a button on your connected controller.';

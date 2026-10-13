@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.25 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.26 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,12 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters with four bespoke articulated rigs, building-scale variants, two phases and a paired fight. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets, generated environment atlases and synthesized audio; artwork is served with the game, without third-party asset or font requests.
+
+## New in 4.26 — Visual controller reference
+
+- Settings → Controller & combat now shows a front-view controller drawing and a readable action legend. PlayStation, Xbox and generic layouts follow the connected controller or selected symbol preference; Xbox uses its offset stick layout.
+- On foot, Driving, Menus and Map views show the correct contextual controls. Combat rebinding and presets update the legend immediately; driving switches between easy steering and pedal controls. Fixed menu/map controls remain accurate after combat remapping.
+- Pressed buttons and moving sticks highlight on the drawing and legend. The layout scales down on mobile with a single-column action list. This does not change gameplay bindings or require additional hardware permissions.
 
 ## New in 4.25 — City art and Pixel Diorama
 
