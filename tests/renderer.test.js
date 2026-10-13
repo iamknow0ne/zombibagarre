@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
+import {BuildingCutaway} from '../src/rebuild/BuildingCutaway.js';
 import {World} from '../src/rebuild/World.js';
 
 test('batching preserves mixed indexed and unindexed burned character parts',()=>{
@@ -19,9 +20,10 @@ test('batching preserves mixed indexed and unindexed burned character parts',()=
 test('city facade batching removes destroyed panels while retaining intact walls and glass',()=>{
  const world=Object.create(World.prototype),g=new T.Group(),wall=new T.MeshStandardMaterial(),glass=new T.MeshStandardMaterial({color:0x557788});wall.userData.shared=glass.userData.shared=true;
  const a=new T.Mesh(new T.BoxGeometry(2,2,.2),wall),b=a.clone(),pane=new T.Mesh(new T.BoxGeometry(1,1,.05),glass);a.position.x=-2;b.position.x=2;pane.position.z=.2;g.add(a,b,pane);g.position.set(30,0,20);g.userData.sections=[a,b];g.userData.glass=[pane];
- world.rebuildBuildingShell(g);assert.equal(g.userData.shell.children.length,2);assert.equal(g.userData.shell.children[0].geometry.attributes.position.count,48);assert.equal(a.layers.mask,2);
+ world.cutaway=new BuildingCutaway();world.rebuildBuildingShell(g);assert.equal(g.userData.shell.children.length,2);assert.equal(g.userData.shell.children[0].geometry.attributes.position.count,48);assert.equal(a.layers.mask,2);
  const first=g.userData.shell;b.visible=false;pane.visible=false;world.rebuildBuildingShell(g);assert.equal(first.parent,null);assert.equal(g.userData.shell.children.length,1);assert.equal(g.userData.shell.children[0].geometry.attributes.position.count,24);assert.equal(a.visible,true);const bounds=new T.Box3().setFromObject(g.userData.shell);assert.ok(bounds.max.x<30);
- world.fadeBuilding(g,true);assert.equal(g.userData.shell.children[0].material.clippingPlanes[0].constant,.7);assert.equal(g.userData.shell.children[0].material.opacity,.45);world.rebuildBuildingShell(g);assert.equal(g.userData.shell.children[0].material.opacity,.45);world.fadeBuilding(g,false);assert.equal(g.userData.shell.children[0].material,wall);
+ const material=g.userData.shell.children[0].material;assert.equal(material.cutawayUniforms,world.cutaway.uniforms);assert.equal(material.opacity,1);assert.equal(material.depthWrite,true);assert.equal(material.clippingPlanes,null);world.rebuildBuildingShell(g);assert.equal(g.userData.shell.children[0].material,material);assert.equal(g.userData.shell.children[0].castShadow,true);
+
  const roofGroup=new T.Group();g.add(roofGroup);roofGroup.add(a);roofGroup.visible=false;world.rebuildBuildingShell(g);assert.equal(g.userData.shell.children.length,0);
 });
 

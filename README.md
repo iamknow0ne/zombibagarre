@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.26 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.27 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -28,6 +28,12 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Seven enemy types and eight boss encounters with four bespoke articulated rigs, building-scale variants, two phases and a paired fight. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets, generated environment atlases and synthesized audio; artwork is served with the game, without third-party asset or font requests.
 
+## New in 4.27 — Local building cutaways
+
+- Walls and roofs reveal the hero through a small, feathered aperture instead of instantly removing the whole building above ankle height. The opening follows the actual camera and hero elevation; surfaces behind the hero remain solid.
+- The rest of the building retains its textures, windows, opacity, depth and full shadow. Dressing, blood and bullet scars share the opening; damaged façades retain it after rebuilding.
+- Classic ambient occlusion and Pixel Diorama use matching cutaways, including low quality and mobile-sized views. This is a visibility effect: collision and destruction rules are unchanged.
+
 ## New in 4.26 — Visual controller reference
 
 - Settings → Controller & combat now shows a front-view controller drawing and a readable action legend. PlayStation, Xbox and generic layouts follow the connected controller or selected symbol preference; Xbox uses its offset stick layout.
@@ -37,7 +43,7 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 ## New in 4.25 — City art and Pixel Diorama
 
 - Settings → Visual style switches between Classic and experimental Pixel Diorama at any time. Generated limestone, brick, slate and cobblestone textures combine with pixel rendering and dynamic lighting. Menus and combat text stay sharp; characters retain their animated 3D equipment and rigs.
-- A shared sprite layer adds window flowers, ivy, pots, grass and small street clutter, with gentle wind and bounded instanced draws. Building-mounted dressing disappears when its owner collapses or fades out of the player's way.
+- A shared sprite layer adds window flowers, ivy, pots, grass and small street clutter, with gentle wind and bounded instanced draws. Building-mounted dressing follows the local visibility cutaway and disappears when its owner collapses.
 - Geometric road intersections now become real junctions. Crosswalks follow each approach, junction centres stay free of lane dashes, and the arbitrary starting cross is gone. Starter vehicles park on generated streets. All four town forms remain seeded and varied.
 - [Research and traversal proposal](docs/CITY-ART-4.25.md) and [generated asset prompts](docs/art/CITY-ASSETS.md). Jumping, rooftops and grappling are proposed follow-up systems, not controls enabled in this release.
 

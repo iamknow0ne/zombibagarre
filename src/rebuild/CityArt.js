@@ -1,3 +1,4 @@
+import {applyCutaway} from './BuildingCutaway.js';
 import * as T from 'three';
 import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
 import {seededRandom,pointBlocked} from './config.js';
@@ -27,20 +28,20 @@ export class CityArt{
   if(world.layout.city)asset('saint-roch-sprites-v1.png').then(t=>{if(this.alive){this.buildSprites(t);world.requestRender=true;}}).catch(()=>{if(this.alive)this.failed=true;});
  }
  setStyle(style){if(this.style===style&&(style!=='pixel'||this.atlas))return;this.style=style;this.applyMaterials();if(style==='pixel'&&!this.atlas)asset('saint-roch-materials-v1.png').then(t=>{if(this.alive){this.atlas=t;this.applyMaterials();this.world.requestRender=true;}}).catch(()=>{if(this.alive)this.failed=true;});}
- applyMaterials(){const w=this.world,pixel=this.style==='pixel'&&this.atlas,materials=new Set(w.surfaces.materials.values());w.scene.traverse(o=>{if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);for(const key of ['solidMaterial','fadeMaterial'])if(o.userData[key])materials.add(o.userData[key]);});
+ applyMaterials(){const w=this.world,pixel=this.style==='pixel'&&this.atlas,materials=new Set(w.surfaces.materials.values());w.scene.traverse(o=>{if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});
   for(const m of materials){const kind=m.userData.surfaceKind,cell=cells[kind];if(!cell)continue;const enabled=!!pixel;if(m.userData.pixelArt===enabled)continue;m.userData.pixelArt=enabled;
    m.map=enabled?this.atlas:w.surfaces.textures(kind).albedo;m.color.setHex(enabled?(kind==='paving'?0xb6b3a4:kind==='brick'?0xc4b19c:0xd6d2bc):m.userData.surfaceColor);m.bumpScale=enabled?.018:(m.userData.surfaceBump||.03);
-   m.onBeforeCompile=shader=>{if(!enabled)return;const scale=kind==='brick'?.55:kind==='paving'?.65:.65;const code=T.ShaderChunk.map_fragment.replace('vMapUv',`((floor(fract(vMapUv*${scale})*128.)+.5)/128.*vec2(.498)+vec2(${cell[0]+.001},${cell[1]+.001}))`);shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',code);};m.customProgramCacheKey=()=>`city-art-${kind}-${enabled}`;m.needsUpdate=true;
+   m.onBeforeCompile=shader=>{if(!enabled)return;const scale=kind==='brick'?.55:kind==='paving'?.65:.65;const code=T.ShaderChunk.map_fragment.replace('vMapUv',`((floor(fract(vMapUv*${scale})*128.)+.5)/128.*vec2(.498)+vec2(${cell[0]+.001},${cell[1]+.001}))`);shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',code);};m.customProgramCacheKey=()=>`city-art-${kind}-${enabled}`;if(m.cutawayUniforms)applyCutaway(m,m.cutawayUniforms);m.needsUpdate=true;
   }
  }
  buildSprites(atlas){this.lastUpdate=-1;const w=this.world;for(let tile=0;tile<8;tile++){
    const items=this.plan.filter(p=>p.tile===tile);if(!items.length)continue;const map=atlas.clone();map.repeat.set(.25,.5);map.offset.set((tile%4)*.25,tile<4?.5:0);map.needsUpdate=true;map.userData.shared=false;
-   const material=new T.MeshStandardMaterial({map,alphaTest:.35,transparent:false,side:T.DoubleSide,roughness:1,color:0xffffff});material.onBeforeCompile=shader=>{shader.uniforms.cityWind=this.clock;shader.vertexShader='uniform float cityWind;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.x+=sin(cityWind*1.3+instanceMatrix[3].x*.7)*.025*uv.y;');};material.customProgramCacheKey=()=> 'city-foliage-wind-v1';
+   const material=new T.MeshStandardMaterial({map,alphaTest:.35,transparent:false,side:T.DoubleSide,roughness:1,color:0xffffff});material.onBeforeCompile=shader=>{shader.uniforms.cityWind=this.clock;shader.vertexShader='uniform float cityWind;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.x+=sin(cityWind*1.3+instanceMatrix[3].x*.7)*.025*uv.y;');};material.customProgramCacheKey=()=> 'city-foliage-wind-v1';if([2,3,4,5].includes(tile))applyCutaway(material,w.cutaway.uniforms);
    const geo=new T.PlaneGeometry(1,1);geo.translate(0,.5,0);const mesh=new T.InstancedMesh(geo,material,items.length);mesh.frustumCulled=false;mesh.receiveShadow=true;w.scene.add(mesh);this.groups.push({mesh,items});
   }this.wallRotation=new T.Quaternion();this.matrix=new T.Matrix4();this.position=new T.Vector3();this.scale=new T.Vector3();
  }
  update(dt,player,camera,time){this.clock.value+=this.world.settings.reducedMotion?0:dt;if(time-this.lastUpdate<.1&&this.lastUpdate>=0)return;this.lastUpdate=time;
-  for(const {mesh,items}of this.groups){items.forEach((p,i)=>{const owner=p.owner&&this.world.buildingMeshes.get(p.owner),visible=Math.hypot(p.x-player.x,p.z-player.z)<62&&(!owner||(!owner.userData.collapsed&&!owner.userData.faded));this.position.set(p.x,p.y-p.h*.09,p.z);this.scale.set(visible?p.h*.5:0,visible?p.h:0,1);this.matrix.compose(this.position,p.owner&&[2,3].includes(p.tile)?this.wallRotation:camera.quaternion,this.scale);mesh.setMatrixAt(i,this.matrix);});mesh.instanceMatrix.needsUpdate=true;}
+  for(const {mesh,items}of this.groups){items.forEach((p,i)=>{const owner=p.owner&&this.world.buildingMeshes.get(p.owner),visible=Math.hypot(p.x-player.x,p.z-player.z)<62&&(!owner||(!owner.userData.collapsed));this.position.set(p.x,p.y-p.h*.09,p.z);this.scale.set(visible?p.h*.5:0,visible?p.h:0,1);this.matrix.compose(this.position,p.owner&&[2,3].includes(p.tile)?this.wallRotation:camera.quaternion,this.scale);mesh.setMatrixAt(i,this.matrix);});mesh.instanceMatrix.needsUpdate=true;}
  }
  dispose(){this.alive=false;for(const {mesh}of this.groups){mesh.removeFromParent();mesh.geometry.dispose();mesh.dispose();mesh.material.map.dispose();mesh.material.dispose();}this.groups=[];}
 }

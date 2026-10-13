@@ -1,3 +1,4 @@
+import {applyCutaway} from './BuildingCutaway.js';
 import * as T from 'three';
 import {DecalGeometry} from 'three/addons/geometries/DecalGeometry.js';
 import {seededRandom} from './config.js';
@@ -44,6 +45,7 @@ export function bloodDecal(world,point,radius=.4,hit=null){
  if(hit){geometry=new DecalGeometry(hit.object,point,rotation,new T.Vector3(radius*2,radius*(wall?2.7:2),.18));if(!geometry.attributes.position.count){geometry.dispose();return null;}}
  else geometry=new T.PlaneGeometry(radius*2,radius*2);
  const material=new T.MeshStandardMaterial({map:bloodTexture(world,wall,Math.floor(world.random()*8)),color:freshColor,roughness:.29,transparent:true,opacity:.88,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3,side:T.DoubleSide});
+ if(hit?.object.material.cutawayUniforms)applyCutaway(material,hit.object.material.cutawayUniforms);
  const mesh=new T.Mesh(geometry,material);mesh.userData.bloodDecal=true;mesh.userData.disposable=true;mesh.userData.age=0;mesh.userData.hitLocal=localPoint.clone();mesh.userData.surface=hit?.object||null;mesh.userData.wall=wall;mesh.userData.baseRadius=radius;mesh.receiveShadow=true;
  if(hit){world.scene.add(mesh);hit.object.attach(mesh);material.clippingPlanes=hit.object.material.clippingPlanes||null;}
  else{mesh.rotation.x=-Math.PI/2;mesh.rotation.z=world.random()*Math.PI*2;mesh.position.set(point.x,.058+world.random()*.004,point.z);world.scene.add(mesh);}
