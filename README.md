@@ -2,9 +2,11 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.33 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.34 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 Phone controls now use compact icons with ammo/cooldown readouts. The bell opens character notices for skill points, evolved weapons, new armour and ready quest rewards. See [mobile controls and notices](docs/MOBILE-4.33.md).
+
+All 13 weapons have individual controller feedback, with firing-rate adaptive trigger pulses for automatic weapons and distinct melee contacts/finishers. See [weapon haptics](docs/HAPTICS-4.34.md) for connection requirements and validation limits.
 
 ## Play locally
 
