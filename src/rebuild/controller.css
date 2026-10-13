@@ -18,3 +18,5 @@
 .pad-axis-key{display:inline-flex;justify-content:center;align-items:center;flex:0 0 56px;min-height:26px;font:10px var(--mono);border:1px solid #d9dfcda0;color:var(--bone)}
 .controller-action-legend li.is-down{color:#ffb182}.controller-action-legend li.is-down .pad-key,.controller-action-legend li.is-down .pad-axis-key{border-color:var(--orange);background:#533521}
 @media(max-width:480px){.controller-action-legend{grid-template-columns:1fr;gap:0}.controller-artwork{margin:16px -4px 0}.controller-reference figcaption strong{font-size:13px}}
+
+.pad-control .pad-small-label{font-size:10px}

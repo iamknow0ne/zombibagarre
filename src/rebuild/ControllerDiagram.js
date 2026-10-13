@@ -19,8 +19,8 @@ export function controllerSVG(family){
  const {buttons,left,right,dpad}=diagramGeometry(family),ps=family==='playstation',xbox=family==='xbox';
  const controls=Object.entries(buttons).map(([key,[x,y]])=>{const i=Number(key),shoulder=i>=4&&i<=7,stick=i===10||i===11,system=i===8||i===9;
   const shape=shoulder?'<rect x="-42" y="-15" width="84" height="30" rx="8"/>':stick?'<circle r="31"/><circle class="pad-stick-ring" r="23"/>':system?'<rect x="-12" y="-16" width="24" height="32" rx="8"/>':`<circle r="${i<4?17:13}"/>`;
-  const label=system?(i===8?'••':'≡'):buttonName(i,family);
-  return `<g class="pad-control ${stick?'pad-stick':''}" data-pad-button="${i}" transform="translate(${x} ${y})">${shape}<text text-anchor="middle" dominant-baseline="central" class="${i<4?'pad-symbol':''}">${label}</text></g>`;
+  const label=system&&family!=='generic'?(i===8?'••':'≡'):buttonName(i,family);
+  return `<g class="pad-control ${stick?'pad-stick':''}" data-pad-button="${i}" transform="translate(${x} ${y})">${shape}<text text-anchor="middle" dominant-baseline="central" class="${i<4?'pad-symbol':system&&family==='generic'?'pad-small-label':''}">${label}</text></g>`;
  }).join('');
  return `<svg class="controller-drawing ${ps?'dualsense-shell':xbox?'xbox-shell':'generic-shell'}" viewBox="0 0 500 302" role="img" aria-label="${ps?'PlayStation DualSense':xbox?'Xbox':'Standard gamepad'} controller, front view. Button actions are listed below.">
  <path class="pad-body" d="M105 77 Q70 82 60 126 L28 240 Q20 286 54 282 Q80 276 112 230 L145 203 Q178 251 220 235 L280 235 Q322 251 355 203 L388 230 Q420 276 446 282 Q480 286 472 240 L440 126 Q430 82 395 77 Z"/>
