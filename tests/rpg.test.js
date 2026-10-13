@@ -47,3 +47,37 @@ test('district and street contracts unlock the second guardian and launcher, wit
  assert.equal(claimQuest(s,'atlas','broker'),true);const q=go(s,'marshal');assert.equal(interactPlace(s),true);const boss=s.enemies.find(e=>e.secretId==='marshal');assert.equal(boss.bossKind,'dredger');boss.bossState='pursuit';s.damageEnemy(boss,999999);s.updateBoss(boss,2.1);s.damageEnemy(boss,999999);assert.ok(s.profile.relics.includes('storm'));assert.equal(q.defeated,true);assert.equal(nearbyPlace(s),null);
  const fresh=game(JSON.parse(JSON.stringify(s.profile)));assert.deepEqual(fresh.profile.relics,['void','storm']);assert.deepEqual(fresh.rpg.accepted,[]);assert.ok(fresh.places.filter(p=>p.kind==='secret').every(p=>!p.revealed&&!p.defeated));
 });
+
+test('specializations require their parent and free respec removes new bonuses without erasing expedition perks',async()=>{
+ const {SKILLS,skillLock}=await import('../src/rebuild/RPG.js');const s=game({xp:20000});
+ assert.equal(Object.keys(SKILLS).length,12);assert.match(skillLock(s.profile,'ambush'),/Ghost step/);assert.equal(spendPoint(s,'ambush'),false);
+ assert.equal(spendPoint(s,'quickstep'),true);assert.equal(spendPoint(s,'ambush'),true);assert.equal(s.player.dashShield,6);assert.equal(s.player.dashDamage,.2);
+ s.player.dashShield+=4;s.profile.skills=[];applyProfile(s);assert.equal(s.player.dashShield,4);assert.equal(s.player.dashDamage,0);
+ const restored=normalizeProfile({xp:20000,skills:['mender','vampire','winter','pyre','bulwark','lifeline','quickstep','ambush']});assert.equal(restored.skills.length,8);
+ assert.equal(normalizeProfile({xp:20000,skills:['inferno']}).skills.length,0);
+});
+test('inventory filters, comparison and equip agree on permanent gear bonuses',async()=>{
+ const {inventoryItems,armourComparison}=await import('../src/rebuild/Dossier.js');const s=game({owned:['warden-chest-3','scout-head-1','reaper-legs-2']});
+ assert.equal(inventoryItems(s.profile)[0].id,'warden-chest-3');assert.deepEqual(inventoryItems(s.profile,{slot:'head'}).map(a=>a.id),['scout-head-1']);
+ const before=s.player.maxHealth,delta=armourComparison(s.profile,'warden-chest-3').find(r=>r.key==='health').delta;equipArmour(s,'warden-chest-3');assert.equal(s.player.maxHealth-before,delta);
+ assert.ok(armourComparison(s.profile,'warden-chest-3').every(r=>r.delta===0));
+});
+test('journal stages track objectives, then return to the giver, with gated follow-up contracts',async()=>{
+ const {QUESTS,acceptQuest,questState,questObjective,trackQuest}=await import('../src/rebuild/RPG.js');const s=game();assert.equal(QUESTS.length,17);
+ assert.equal(acceptQuest(s,'salvage','smith'),false);go(s,'smith');assert.equal(acceptQuest(s,'salvage','smith'),true);assert.equal(acceptQuest(s,'salvage','smith'),false);
+ assert.equal(questState(s,QUESTS.find(q=>q.id==='salvage')),'active');assert.equal(trackQuest(s,'salvage'),true);assert.equal(questObjective(s,'salvage').target.kind,'cache');
+ s.rpg.cases=['case-a','case-b'];assert.equal(questState(s,QUESTS.find(q=>q.id==='salvage')),'ready');assert.equal(questObjective(s,'salvage').target.id,'smith');assert.equal(claimQuest(s,'salvage','smith'),true);assert.equal(trackQuest(s,'salvage'),false);
+ assert.equal(questState(s,QUESTS.find(q=>q.id==='enforcer')),'locked');assert.equal(acceptQuest(s,'enforcer','smith'),false);assert.equal(acceptQuest(s,'convoy','smith'),true);s.streetEvents.find(j=>j.kind==='cache').state='complete';assert.equal(claimQuest(s,'convoy','smith'),true);assert.equal(acceptQuest(s,'enforcer','smith'),true);
+});
+test('courier delivery requires a visit after acceptance, and every new contract pays once',async()=>{
+ const {QUESTS,acceptQuest,interactPlace}=await import('../src/rebuild/RPG.js');const s=game();go(s,'smith');interactPlace(s);s.resume();go(s,'medic');acceptQuest(s,'runner','medic');assert.deepEqual(questProgress(s,'runner'),[0,1]);go(s,'smith');interactPlace(s);s.resume();assert.deepEqual(questProgress(s,'runner'),[1,1]);
+ for(const q of QUESTS.filter(q=>q.metric)){go(s,q.npc);if(q.requires&&!s.rpg.claimed.includes(q.requires))s.rpg.claimed.push(q.requires);s.rpg.accepted.push(q.id);s.rpg.contacts=['smith','medic','broker'];s.rpg.delivery=true;s.rpg.runnerKills=12;s.rpg.heavyKills=6;s.wave=6;s.visited=new Set(['a','b','c','d','e','f','g']);for(const j of s.streetEvents)j.state='complete';for(const p of s.places.filter(p=>p.kind==='secret'))p.defeated=true;for(const slot of ['head','chest','legs']){const id=`scout-${slot}-0`;if(!s.profile.owned.includes(id))s.profile.owned.push(id);s.profile.equipment[slot]=id;}
+  assert.deepEqual(questProgress(s,q.id),[q.target,q.target],q.id);const coins=s.rpg.coins;assert.equal(claimQuest(s,q.id,q.npc),true,q.id);assert.equal(s.rpg.coins,coins+q.coins);assert.equal(claimQuest(s,q.id,q.npc),false,q.id);
+ }
+});
+test('traders occupy distinct city buildings with clear doorway routes',()=>{
+ for(let seed=0;seed<12;seed++){const layout=generateCity(seed),shops=makeRPGWorld(layout).filter(p=>p.kind==='shop');assert.equal(shops.length,3);assert.equal(new Set(shops.map(p=>p.buildingId)).size,3);for(const q of shops){const b=layout.buildings.find(b=>b.id===q.buildingId);assert.ok(b,`real building / seed ${seed}`);assert.ok(Math.abs(Math.max(Math.abs(q.x-b.x)-b.w/2,Math.abs(q.z-b.z)-b.d/2)-3.2)<1e-8);assert.equal(pointBlocked(q.x,q.z,2.5,[...layout.cover,...layout.buildings]),false);}}
+});
+test('shop storefronts retain separate destruction visibility while batching decorative geometry',async()=>{
+ const {rpgPlaceMesh}=await import('../src/rebuild/RPGVisuals.js');const q=game().places.find(p=>p.id==='smith'),g=rpgPlaceMesh(q);assert.ok(g.userData.facade);let meshes=0;g.traverse(o=>{if(o.isMesh)meshes++;});assert.ok(meshes<12,`bounded draw calls: ${meshes}`);g.userData.facade.visible=false;assert.ok(g.children.some(o=>o.isMesh&&o.visible));
+});

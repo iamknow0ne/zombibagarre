@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.18 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.19 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,14 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters with four bespoke articulated rigs, building-scale variants, two phases and a paired fight. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.19 — Survivor dossier
+
+- A unified character panel with a rarity-labelled equipment grid, filters, sorting, slot comparison, character preview, current stats and both weapon hands.
+- Twelve permanent skills across Survivor, Hunter and Artificer paths, with visible prerequisites and free reallocation. Existing saves and four original skills remain compatible.
+- Seventeen city contracts with courier, exploration, preparation, street encounters and guardian chains. Journal filters distinguish available, active, reward-ready and completed work; tracked objectives update their map destination.
+- Mara's workshop, Lenoir's clinic and Nocturne's archives now occupy actual city buildings, with accessible street entrances, distinct storefronts and traders. If the building falls, its frontage disappears and the trader remains available. Interiors are not enterable.
+- Mobile layouts and gamepad navigation retain the existing control scheme. See [design, research and validation](docs/RPG-4.19.md).
 
 ## New in 4.18 — Performance
 

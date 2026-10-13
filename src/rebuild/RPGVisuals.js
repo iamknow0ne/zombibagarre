@@ -1,6 +1,7 @@
 import * as T from 'three';
+import {batchRigid} from './RenderBatch.js';
 import {ARMOUR,DYES,RARITY_COLORS} from './RPG.js';
-const mesh=(parent,color,x,y,z,w,h,d,metal=.25)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d),new T.MeshStandardMaterial({color,roughness:.65,metalness:metal}));m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;};
+const mesh=(parent,color,x,y,z,w,h,d,metal=.25)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d),new T.MeshStandardMaterial({color,roughness:.65,metalness:metal}));m.geometry.userData.surfaceOwned=true;m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;};
 export function dressArmour(character,p){
  const key=JSON.stringify([p.armour,p.dye]);if(character.userData.armourKey===key)return;character.userData.armourKey=key;
  for(const g of character.userData.armourParts||[]){g.removeFromParent();g.traverse(m=>{m.geometry?.dispose();m.material?.dispose();});}
@@ -13,13 +14,28 @@ export function dressArmour(character,p){
 }
 export function rpgPlaceMesh(place){const g=new T.Group(),c=place.color;
  if(place.kind==='shop'){
-  mesh(g,0x34484a,0,.45,-.45,2.3,.9,.8);mesh(g,0x9d8664,0,.94,-.45,2.5,.12,1.05);
-  for(const x of [-1.3,1.3])mesh(g,0x49585a,x,1.4,-.8,.08,2.8,.08);mesh(g,c,0,2.8,-.35,2.9,.12,1.5);
-  const head=new T.Mesh(new T.IcosahedronGeometry(.21,2),new T.MeshStandardMaterial({color:0xb88d70}));head.position.set(0,1.73,-1);g.add(head);mesh(g,c,0,1.26,-1,.49,.6,.4);
-  for(const x of [-.45,.45])mesh(g,0xddd0ae,x,1.07,-.4,.3,.18,.3);
+  const facade=new T.Group();g.add(facade);g.userData.facade=facade;const width=Math.min(place.frontWidth||6,8),medic=place.id==='medic',smith=place.id==='smith';
+  // Fit a storefront onto a real, collidable city building. No freestanding miniature kiosk.
+  if(place.buildingId){
+   mesh(facade,0x283b3d,0,1.7,-3.12,width,3.4,.14);
+   for(const x of [-width/2+.13,width/2-.13])mesh(facade,0xafa38b,x,1.8,-2.96,.26,3.6,.32);
+   mesh(facade,0x182b2f,0,1.35,-2.97,1.45,2.7,.15);mesh(facade,0x869995,0,1.65,-2.87,1.13,1.45,.045);mesh(facade,0xd3bd82,.48,1.05,-2.81,.07,.28,.08);
+   for(const x of [-width*.32,width*.32]){mesh(facade,0x617b7a,x,1.7,-2.99,Math.max(.7,width*.24),1.7,.1);for(const dx of [-.3,0,.3])mesh(facade,0x263a3b,x+dx,1.7,-2.88,.04,1.7,.05);mesh(facade,0xb3a58b,x,.78,-2.75,Math.max(.8,width*.27),.12,.5);}
+   mesh(facade,c,0,3.2,-2.48,width+.3,.16,1.4);mesh(facade,c,0,3,-1.82,width+.3,.38,.08);
+   if(medic){mesh(facade,0xd7d4b8,-width*.32,2,-2.8,.85,.22,.08);mesh(facade,0xd7d4b8,-width*.32,2,-2.8,.22,.85,.09);}
+   if(smith){for(let n=0;n<4;n++)mesh(facade,0x7a8276,width*.32,.9+n*.36,-2.78,1.1,.08,.12);mesh(facade,0x656b66,1.9,.6,-1.8,1.2,.3,.7);mesh(facade,0x3b4748,1.9,.3,-1.8,.55,.6,.5);}
+   if(!medic&&!smith){for(let i=0;i<5;i++)mesh(facade,[0xc1a88a,0x948c71,0x6b8887][i%3],-width*.32-.4+i*.18,1.4,-2.73,.12,.5,.2);}
+   mesh(facade,0x9f9581,0,.07,-2.15,2.2,.14,1.4);
+  }else{mesh(facade,0x34484a,0,.45,-2,2.5,.9,.8);}
+  // A human-sized trader and a separate service lamp survive loss of the premises.
+  const head=new T.Mesh(new T.IcosahedronGeometry(.22,2),new T.MeshStandardMaterial({color:medic?0x8f674b:0xb88d70}));head.position.set(-.7,1.76,-1.4);g.add(head);mesh(g,medic?0xc9c7ad:c,-.7,1.23,-1.4,.5,.7,.38);
+  for(const x of [-.84,-.56])mesh(g,0x344348,x,.49,-1.4,.18,.85,.22);
+  for(const x of [-1.04,-.36])mesh(g,medic?0xc9c7ad:c,x,1.23,-1.4,.16,.6,.2);
+  mesh(g,0x405357,1.5,1.5,-.5,.07,3,.07);const lamp=mesh(g,c,1.5,2.9,-.5,.32,.25,.32);lamp.material.emissive.setHex(c);lamp.material.emissiveIntensity=.5;
+  g.rotation.y=place.angle||0;
  }else if(place.kind==='cache'){mesh(g,0x74684b,0,.4,0,1.1,.8,.8);for(const x of [-.35,.35])mesh(g,c,x,.43,.41,.1,.65,.03);}
  else{for(const x of [-1.1,1.1]){mesh(g,0x3d4847,x,1.6,0,.5,3.2,.6);mesh(g,c,x,2.15,.33,.12,.55,.04);}mesh(g,0x3d4847,0,3.3,0,2.7,.4,.7);}
- const ring=new T.Mesh(new T.RingGeometry(1.4,1.48,32),new T.MeshBasicMaterial({color:c,side:T.DoubleSide,transparent:true,opacity:.65,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.07;g.add(ring);g.position.set(place.x,0,place.z);return g;
+ const ring=new T.Mesh(new T.RingGeometry(1.4,1.48,32),new T.MeshBasicMaterial({color:c,side:T.DoubleSide,transparent:true,opacity:.65,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.07;g.add(ring);g.position.set(place.x,0,place.z);if(g.userData.facade)batchRigid(g.userData.facade);batchRigid(g);return g;
 }
 export function survivorPortrait(world,p,canvas){
  let renderer,figure;const scene=new T.Scene();
