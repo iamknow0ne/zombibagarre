@@ -7,6 +7,24 @@ export function touchAimTarget(direction,sim,assist=true){
  if(assist){const best=sim.enemies.filter(e=>e.health>0&&Math.hypot(e.x-p.x,e.z-p.z)<19&&!sim.blocked(p,e)).map(e=>({e,angle:Math.abs(Math.atan2(Math.sin(Math.atan2(e.x-p.x,e.z-p.z)-angle),Math.cos(Math.atan2(e.x-p.x,e.z-p.z)-angle)))})).filter(e=>e.angle<.22).sort((a,b)=>a.angle-b.angle)[0];if(best)target={x:best.e.x,z:best.e.z};}
  return target;
 }
+// Secondary fingers do not reliably produce compatibility clicks. Trigger combat
+// actions on contact, independently of either stick's captured pointer.
+export function bindTouchAction(button,input,activate){
+ let touchHandled=false;
+ button.addEventListener('pointerdown',e=>{
+  const touch=e.pointerType==='touch'||e.pointerType==='pen';
+  if(!touch){touchHandled=false;return;}
+  e.preventDefault();touchHandled=true;
+  if(button.disabled)return;
+  input.source='touch';input.pointer.active=false;activate();
+ });
+ button.addEventListener('click',e=>{
+  // Preserve keyboard/assistive activation and real mouse clicks, but never
+  // repeat an action when a browser also synthesizes a click after the touch.
+  if(e.pointerType==='touch'||e.pointerType==='pen'||e.sourceCapabilities?.firesTouchEvents||(touchHandled&&e.detail>0)){e.preventDefault();return;}
+  if(!button.disabled)activate();
+ });
+}
 export class TouchControls {
  constructor(input){this.input=input;this.sticks=[];
   for(const [zoneId,stickId,aim]of [['move-zone','joystick',false],['aim-zone','aim-joystick',true]]){

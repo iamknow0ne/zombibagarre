@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {TouchControls,stickVector,touchSettings,touchAimTarget} from '../src/rebuild/TouchControls.js';
+import {TouchControls,bindTouchAction,stickVector,touchSettings,touchAimTarget} from '../src/rebuild/TouchControls.js';
 import {gestureView,bindTouchMap} from '../src/rebuild/TouchMap.js';
 import {Input} from '../src/rebuild/Input.js';
 import {Simulation} from '../src/rebuild/Simulation.js';
@@ -44,4 +44,38 @@ test('map gestures distinguish taps from drags and pinches, and cancellation nev
   send('pointerdown',3,100,200);send('pointerdown',4,300,200);send('pointermove',4,390,200);send('pointerup',3,100,200);send('pointerup',4,390,200);assert.ok(map.view.zoom>1);assert.equal(taps,1);
   send('pointerdown',5,200,200);send('pointercancel',5,200,200);assert.equal(taps,1);send('pointerdown',6,200,200);dialog.dispatchEvent(new Event('close'));send('pointerup',6,200,200);assert.equal(taps,1);
  }finally{globalThis.window=old;}
+});
+
+
+test('secondary-finger dodge fires on contact in every stick direction without interrupting movement or aim',()=>{
+ class Element extends EventTarget{constructor(){super();this.style={};this.firstElementChild={style:{}};this.classList={add(){},remove(){}};}getBoundingClientRect(){return{left:0,top:0,width:160,height:160};}setPointerCapture(){}}
+ const els=Object.fromEntries(['move-zone','aim-zone','joystick','aim-joystick','touch-dash'].map(id=>[id,new Element()]));
+ const oldDocument=globalThis.document,oldWindow=globalThis.window;globalThis.window=new EventTarget();globalThis.document=Object.assign(new EventTarget(),{getElementById:id=>els[id],querySelector:()=>null});
+ const send=(id,type,pointerId,x=80,y=80)=>{const e=new Event(type,{cancelable:true});Object.assign(e,{pointerType:'touch',pointerId,isPrimary:pointerId===1,clientX:x,clientY:y});els[id].dispatchEvent(e);return e;};
+ try{
+  const input=Object.create(Input.prototype);Object.assign(input,{settings:touchSettings(),keys:new Set(),once:{},pointer:{active:false}});input.touchControls=new TouchControls(input);input.clear();let sim;
+  bindTouchAction(els['touch-dash'],input,()=>{if(sim.state==='playing')input.once.dash=true;});
+  for(const [x,y]of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]){
+   sim=new Simulation({layout:{cover:[]}});sim.start();sim.toSpawn=999;sim.spawnTimer=999;input.clear();
+   send('move-zone','pointerdown',1);send('move-zone','pointermove',1,80+x*70,80+y*70);
+   send('aim-zone','pointerdown',2);send('aim-zone','pointermove',2,80-x*70,80-y*70);
+   const held={...input.stick},e=send('touch-dash','pointerdown',3);assert.equal(e.defaultPrevented,true);
+   const frame=input.consume({},false,sim);assert.equal(frame.dash,true,'no click or finger release required');sim.update(1/60,frame);
+   assert.ok(sim.player.dash>0);const length=Math.hypot(frame.x,frame.z);assert.ok(Math.abs(sim.player.dashX-frame.x/length)<1e-9);assert.ok(Math.abs(sim.player.dashZ-frame.z/length)<1e-9,'movement wins over opposing aim');
+   send('touch-dash','pointerup',3);assert.deepEqual(input.stick,held);assert.equal(input.touchFiring,true);
+   for(let n=0;n<20;n++)sim.update(1/60,input.consume({},false,sim));assert.equal(sim.events.filter(e=>e.type==='dash').length,1);assert.ok(sim.player.moving,'walking continues after dodge');
+   send('move-zone','pointerup',1);assert.deepEqual(input.stick,{x:0,y:0});send('aim-zone','pointercancel',2);assert.equal(input.touchFiring,false);
+  }
+ }finally{globalThis.document=oldDocument;globalThis.window=oldWindow;}
+});
+test('touch combat actions ignore duplicate compatibility clicks, respect disabled state and retain mouse/keyboard activation',()=>{
+ const b=new EventTarget(),input={pointer:{active:true}};let n=0;bindTouchAction(b,input,()=>n++);
+ const send=(type,values={})=>{const e=new Event(type,{cancelable:true});Object.assign(e,values);b.dispatchEvent(e);};
+ send('pointerdown',{pointerType:'touch',isPrimary:false,pointerId:2});assert.equal(n,1);assert.equal(input.source,'touch');assert.equal(input.pointer.active,false);
+ send('pointerup',{pointerType:'touch',pointerId:2});send('click',{pointerType:'touch',detail:1});send('click',{detail:1});assert.equal(n,1,'release and compatibility clicks must not spend a second action');
+ send('pointercancel',{pointerType:'touch',pointerId:2});send('lostpointercapture',{pointerId:2});assert.equal(n,1);
+ send('click',{detail:0});assert.equal(n,2,'keyboard or assistive click still works');
+ send('pointerdown',{pointerType:'mouse'});send('click',{detail:1});assert.equal(n,3,'real mouse after touch works');
+ b.disabled=true;send('pointerdown',{pointerType:'touch',pointerId:3});send('click',{detail:0});assert.equal(n,3);
+ b.disabled=false;send('pointerdown',{pointerType:'touch',pointerId:4});assert.equal(n,4,'a fresh tap works without waiting for a previous click');
 });

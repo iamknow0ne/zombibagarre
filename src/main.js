@@ -2,6 +2,7 @@ import {normalizeProfile,RELICS} from './rebuild/RPG.js';
 import {RPGUI} from './rebuild/RPGUI.js';
 import './rebuild/rpg.css';
 import {renderUpgrades} from './rebuild/UpgradeUI.js';
+import {bindTouchAction} from './rebuild/TouchControls.js';
 import {TouchUI} from './rebuild/TouchUI.js';
 import {criticalChance} from './rebuild/Combat.js';
 import {armoryPreviews} from './rebuild/ArmoryPreview.js';
@@ -149,7 +150,7 @@ try{
   haptics=new Haptics(input,settings);dualsense=new DualSense(settings);input.onStopFeedback=()=>{haptics.stop();dualsense.stop();};controllerUI=new ControllerUI(input,settings,haptics,dualsense,()=>save('zb-quarantine-settings',settings),toggleAuto);controllerMap=new ControllerMap(()=>sim,input);input.onMapInput=(pad,dt)=>controllerMap.poll(pad,dt);$('vehicle-world-prompt').onclick=()=>{input.once.interact=true;};window.addEventListener('pagehide',()=>{haptics.stop();dualsense.disconnect();});
   touchUI=new TouchUI(input,settings,()=>save('zb-quarantine-settings',settings));
   rpgUI=new RPGUI({getSim:()=>sim,getWorld:()=>world,input,persist:()=>{rpgProfile=sim.profile;save('zb-rpg-profile',rpgProfile);},onPause:()=>showDialog('pause-dialog'),onEquipRelic:key=>{equipped=[key];loadout=key;}});
-  $('pause-arsenal').onclick=openArsenal;$('pause-map').onclick=openMap;$('touch-arsenal').onclick=openArsenal;$('touch-auto').onclick=()=>toggleAuto();
+  $('pause-arsenal').onclick=openArsenal;$('pause-map').onclick=openMap;$('touch-arsenal').onclick=openArsenal;bindTouchAction($('touch-auto'),input,()=>toggleAuto());
   $('run-mode').onchange=()=>{runMode=$('run-mode').value;reshuffle();};$('skin-select').value=skin;$('skin-select').onchange=()=>{skin=$('skin-select').value;settings.skin=skin;save('zb-quarantine-settings',settings);sim.player.skin=skin;};$('map-action').onclick=openMap;$('map-done').onclick=()=>$('map-dialog').close();$('map-dialog').addEventListener('close',()=>{if(mapReturn==='paused'&&sim.state==='paused')showDialog('pause-dialog');else if(mapReturn&&mapReturn!=='menu'&&sim.state==='paused')resume();mapReturn=null;});$('vehicle-action').onclick=()=>{input.once.interact=true;};
   $('open-camp').onclick=openCamp;$('camp-done').onclick=()=>$('camp-dialog').close();$('arsenal-done').onclick=()=>$('arsenal-dialog').close();
   $('open-arsenal').onclick=openArsenal;$('arsenal-action').onclick=openArsenal;$('arsenal-dialog').addEventListener('close',()=>{if(arsenalReturn==='paused'&&sim.state==='paused')showDialog('pause-dialog');else if(arsenalReturn&&arsenalReturn!=='menu'&&sim.state==='paused')resume();arsenalReturn=null;});
@@ -158,8 +159,8 @@ try{
   $('open-settings').onclick=()=>openSettings();$('pause-settings').onclick=()=>openSettings(true);$('settings-done').onclick=()=>$('settings-dialog').close();$('settings-dialog').addEventListener('close',settingsClosed);
   for(const id of ['pause-dialog','upgrade-dialog','result-dialog'])$(id).addEventListener('cancel',e=>{e.preventDefault();if(id==='pause-dialog')resume();});
   document.querySelectorAll('[data-loadout]').forEach(b=>b.onclick=()=>selectLoadout(b.dataset.loadout));
-  for(const[id,action]of [['dash-action','dash'],['melee-action','melee'],['grenade-action','grenade'],['touch-reload','reload'],['touch-dash','dash'],['touch-grenade','grenade']])$(id).onclick=()=>{if(['playing','extracting'].includes(sim.state))input.once[action]=true;};
-  $('touch-switch').onclick=()=>{cycleWeapon(1);};
+  for(const[id,action]of [['dash-action','dash'],['melee-action','melee'],['grenade-action','grenade'],['touch-reload','reload'],['touch-dash','dash'],['touch-grenade','grenade']])bindTouchAction($(id),input,()=>{if(['playing','extracting'].includes(sim.state))input.once[action]=true;});
+  bindTouchAction($('touch-switch'),input,()=>cycleWeapon(1));
   $('difficulty').value=settings.difficulty;$('quality').value=settings.quality;$('volume').value=settings.volume;$('reduced-motion').checked=settings.reducedMotion;$('gore').checked=settings.gore;
   const combatSettings={'damage-numbers':'damageNumbers','enemy-health-bars':'enemyHealthBars','critical-callouts':'criticalCallouts','damage-colors':'damageColors'};
   for(const [id,key]of Object.entries(combatSettings))$(id).checked=settings[key]!==false;
@@ -175,5 +176,5 @@ try{
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('rpgQA')){const {installRPGQA}=await import('../dev/rpg-qa.js');installRPGQA(input,()=>sim);}
   recordUI();world.applySettings(settings);world.update(sim,0,true);await loadingStage(88,'Warming lights, materials and controls');if(world.renderer.compileAsync)await world.renderer.compileAsync(world.scene,world.camera);last=performance.now();requestAnimationFrame(loop);
   // Read-only diagnostics for local QA. No gameplay mutation surface is exposed.
-  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.15.0'})});
+  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.15.1'})});
 }catch(error){console.error(error);$('error-detail').textContent='WebGL is needed to render Saint-Roch. Enable hardware acceleration or try a browser with WebGL support.';$('error').hidden=false;}

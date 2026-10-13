@@ -28,6 +28,11 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
 
+## New in 4.15.1
+
+- Mobile dodge activates immediately on touch-down, including a second finger while the movement stick is held. The dodge follows movement direction and releasing the button leaves the stick active.
+- Grenade, reload, weapon switching and auto-fire use the same multi-touch-safe button handling. Compatibility clicks cannot repeat a touch action; mouse and keyboard activation remain supported.
+
 ## New in 4.15 — permanent survivors, fresh expeditions
 
 - Character levels persist up to level 30. Start with three points and gain two per level; allocate Vigor, Might, Agility, Focus and Fortune, or learn four passive skills. Free reallocation lets you try different builds.

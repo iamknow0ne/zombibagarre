@@ -1,8 +1,8 @@
 // Development-only scripted touch gestures through real DOM pointer handlers.
 export function installTouchQA(input,getSim){
- input.source='touch';input.getGamepads=()=>[];let busy=false,lastAction='',before=null;
+ input.source='touch';input.getGamepads=()=>[];let busy=false,lastAction='',before=null,dodgeCheck=null;
  const wait=ms=>new Promise(r=>setTimeout(r,ms));
- const send=(id,type,pid,x,y)=>{const el=document.getElementById(id),r=el.getBoundingClientRect();el.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:pid,clientX:r.left+r.width*x,clientY:r.top+r.height*y,buttons:type==='pointerup'?0:1}));};
+ const send=(id,type,pid,x,y)=>{const el=document.getElementById(id),r=el.getBoundingClientRect();el.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:pid,isPrimary:pid===71,clientX:r.left+r.width*x,clientY:r.top+r.height*y,buttons:type==='pointerup'?0:1}));};
  const down=(zone,pid,x=.5,y=.5)=>send(zone,'pointerdown',pid,x,y),move=(zone,pid,x,y)=>send(zone,'pointermove',pid,x,y),up=(zone,pid)=>send(zone,'pointerup',pid,.5,.5);
  const click=id=>document.getElementById(id).click();
  const actions={
@@ -11,13 +11,13 @@ export function installTouchQA(input,getSim){
  move:async()=>{down('move-zone',71);move('move-zone',71,.85,.5);await wait(800);up('move-zone',71);},
  aim:async()=>{down('aim-zone',72);move('aim-zone',72,.65,.2);await wait(700);up('aim-zone',72);},
  both:async()=>{down('move-zone',71);down('aim-zone',72);move('move-zone',71,.82,.4);move('aim-zone',72,.35,.15);await wait(900);up('aim-zone',72);await wait(200);up('move-zone',71);},
- dodge:async()=>{down('move-zone',71);move('move-zone',71,.85,.5);click('touch-dash');await wait(350);up('move-zone',71);},
- grenade:async()=>{down('aim-zone',72);move('aim-zone',72,.5,.1);click('touch-grenade');await wait(500);up('aim-zone',72);},
+ dodge:async()=>{const p=getSim().player;p.dashCooldown=0;down('move-zone',71);move('move-zone',71,.85,.5);await wait(120);const origin={x:p.x,z:p.z};down('touch-dash',75);await wait(80);dodgeCheck={triggered:p.dash>0,cooldown:p.dashCooldown,direction:{x:p.dashX,z:p.dashZ},stickHeld:{...input.stick}};up('touch-dash',75);await wait(250);dodgeCheck.travel=Math.hypot(p.x-origin.x,p.z-origin.z);dodgeCheck.stickAfterRelease={...input.stick};up('move-zone',71);},
+ grenade:async()=>{down('aim-zone',72);move('aim-zone',72,.5,.1);down('touch-grenade',75);up('touch-grenade',75);await wait(500);up('aim-zone',72);},
  cancel:async()=>{down('move-zone',71);move('move-zone',71,.85,.5);down('aim-zone',72);move('aim-zone',72,.8,.1);await wait(120);send('move-zone','pointercancel',71,.8,.5);send('aim-zone','lostpointercapture',72,.8,.1);},
  map:()=>click('map-action'),pan:async()=>{down('city-atlas',73);move('city-atlas',73,.7,.6);up('city-atlas',73);},pinch:async()=>{down('city-atlas',73,.3,.5);down('city-atlas',74,.7,.5);move('city-atlas',73,.12,.5);move('city-atlas',74,.88,.5);up('city-atlas',73);up('city-atlas',74);},
  car:()=>click('vehicle-action'),drive:async()=>{down('move-zone',71);move('move-zone',71,.5,.1);await wait(1500);up('move-zone',71);await wait(500);},'drive-left':async()=>{down('move-zone',71);move('move-zone',71,.1,.5);await wait(1200);up('move-zone',71);await wait(750);},reverse:async()=>{down('drive-reverse',75);await wait(1000);up('drive-reverse',75);await wait(750);},brake:async()=>{down('drive-brake',75);await wait(700);up('drive-brake',75);},
  pause:()=>click('pause'),reload:()=>click('touch-reload'),swap:()=>click('touch-switch'),auto:()=>click('touch-auto'),arsenal:()=>click('touch-arsenal')
  };
  window.addEventListener('message',async e=>{if(e.origin!==location.origin||e.source!==parent||e.data?.type!=='touch-qa-action'||busy||!actions[e.data.action])return;busy=true;lastAction=e.data.action;if(document.getElementById('pause-dialog').open&&lastAction!=='pause')click('resume');if(!document.querySelector('dialog[open]'))document.getElementById('game').focus();const p=getSim().player;before={x:p.x,z:p.z,grenades:p.grenades,magazines:{...p.magazines}};try{await actions[lastAction]();}finally{busy=false;}});
- setInterval(()=>{const s=getSim(),p=s.player;if(['playing','extracting'].includes(s.state))p.invulnerable=2;const v=s.props.find(v=>v.id===p.vehicleId);parent.postMessage({type:'touch-qa-report',value:{state:s.state,action:lastAction,busy,before,player:{x:+p.x.toFixed(2),z:+p.z.toFixed(2),weapon:p.weapon,grenades:p.grenades,magazines:p.magazines,dashCooldown:p.dashCooldown},stick:input.stick,aim:input.touchAim,firing:!!input.touchFiring,source:input.source,vehicle:v?{speed:v.speed,angle:v.angle,x:v.x,z:v.z}:null,waypoint:p.waypoint,overlays:document.querySelectorAll('.combat-feedback').length}},location.origin);},200);
+ setInterval(()=>{const s=getSim(),p=s.player;if(['playing','extracting'].includes(s.state))p.invulnerable=2;const v=s.props.find(v=>v.id===p.vehicleId);parent.postMessage({type:'touch-qa-report',value:{state:s.state,action:lastAction,busy,before,dodgeCheck,player:{x:+p.x.toFixed(2),z:+p.z.toFixed(2),weapon:p.weapon,grenades:p.grenades,magazines:p.magazines,dashCooldown:p.dashCooldown},stick:input.stick,aim:input.touchAim,firing:!!input.touchFiring,source:input.source,vehicle:v?{speed:v.speed,angle:v.angle,x:v.x,z:v.z}:null,waypoint:p.waypoint,overlays:document.querySelectorAll('.combat-feedback').length}},location.origin);},200);
 }

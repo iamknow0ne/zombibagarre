@@ -10,7 +10,7 @@
 #touch-controls #joystick>span,#touch-controls #aim-joystick>span{position:absolute;top:auto;bottom:-23px;left:50%;transform:translateX(-50%);width:120px;text-align:center;font:9px var(--mono);color:var(--bone);letter-spacing:1px}
 #touch-controls button{pointer-events:auto;touch-action:manipulation;min-height:48px;background:#142125e8;border:1px solid #b6c0ae80;font:bold 10px var(--mono);letter-spacing:.3px;border-radius:5px;padding:8px;color:var(--bone);opacity:var(--touch-opacity)}
 #touch-controls button:active{background:var(--orange);color:var(--coal);transform:none;opacity:1}#touch-controls button:disabled{opacity:.4;cursor:default}
-#touch-controls .touch-action{position:absolute;bottom:calc(var(--touch-bottom) + 156px);width:64px}
+#touch-controls .touch-action{touch-action:none;position:absolute;bottom:calc(var(--touch-bottom) + 156px);width:64px}
 #touch-dash{right:var(--touch-right);border-color:var(--orange)!important}#touch-switch{left:var(--touch-left)}#touch-grenade{right:calc(var(--touch-right) + 72px);border-color:var(--orange)!important}#touch-reload{left:calc(var(--touch-left) + 72px)}
 .touch-tools{position:absolute;top:calc(var(--touch-top) + 48px);right:calc(var(--touch-right) + 56px);display:flex}.touch-tools button{width:76px;min-height:44px!important;opacity:1!important}#touch-arsenal{display:none}
 #touch-help{display:none;position:absolute;bottom:calc(var(--touch-bottom) + 1px);left:50%;transform:translateX(-50%);font:7px var(--mono);letter-spacing:.3px;white-space:nowrap;color:var(--muted)}
