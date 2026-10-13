@@ -37,7 +37,7 @@ test('blade melee knocks back, firearms cannot melee, and thrown grenades have a
 });
 test('spitters fire ranged projectiles and bosses telegraph delayed area damage',()=>{
  const s=isolated();s.spawnEnemy('spitter',0,-5);step(s,110);assert.ok(s.bullets.some(b=>b.enemy));
- const b=isolated();b.spawnEnemy('boss',0,-3);step(b,130);assert.ok(b.hazards.length>0);assert.equal(b.player.health,100);step(b,65);assert.ok(b.player.health<100);
+ const b=isolated();b.spawnEnemy('boss',0,-3);step(b,180);assert.ok(b.hazards.length>0);assert.equal(b.player.health,100);step(b,65);assert.ok(b.player.health<100);
 });
 test('wave completion waits for all spawns and dead enemies; upgrades apply once',()=>{
  const s=isolated();s.toSpawn=0;const e=s.spawnEnemy('walker',0,0);s.update(1/60,{auto:false});assert.equal(s.state,'playing');s.damageEnemy(e,10000);s.update(1/60,{auto:false});assert.equal(s.state,'upgrade');assert.equal(s.choices.length,3);s.player.health=40;const id=s.choices[0].id;assert.equal(s.chooseUpgrade(id),true);assert.equal(s.wave,2);assert.ok(s.player.health>=65);assert.equal(s.chooseUpgrade(id),false);assert.equal(s.wave,2);
@@ -99,7 +99,7 @@ test('all named build synergies require their actual contributing upgrades',()=>
 test('each district has a boss with distinct mechanics and a reset environment',()=>{
  for(let district=0;district<4;district++){
   const s=isolated();s.wave=district*4+3;s.nextWave();assert.equal(s.district,district);const boss=s.enemies.find(e=>e.type==='boss');assert.ok(boss);s.bossAttack(boss);
-  if(district===0)assert.ok(s.hazards.length);if(district===1)assert.ok(s.bullets.length>=10);if(district===2)assert.ok(s.enemies.length>=4);if(district===3)assert.ok(s.bullets.length&&s.hazards.length>=5);
+  assert.equal(boss.bossState,'telegraph');assert.equal(boss.bossMove,['judgement','harpoon','roots','furnace'][district]);assert.ok(s.hazards.every(h=>h.bossOwner===boss.id));if(district===1||district===3)assert.ok(s.hazards.every(h=>h.shape==='lane'));if(district===3)assert.equal(s.hazards.length,3);
  }
 });
 test('permanent progression affects a fresh run without leaking previous run state',()=>{
@@ -114,7 +114,7 @@ test('building colliders take ballistic damage, record impacts and can collapse'
 
 test('hit and death events retain their renderer event names for every enemy type',()=>{
  const s=isolated();for(const type of ['walker','runner','brute','spitter','boss','volatile','armored']){
-  const e=s.spawnEnemy(type,0,0);s.events=[];s.damageEnemy(e,99999);
+  const e=s.spawnEnemy(type,0,0);if(type==='boss'){e.bossState='pursuit';e.bossPhase=2;}s.events=[];s.damageEnemy(e,99999);
   assert.ok(s.events.some(e=>e.type==='hit'&&e.enemyType===type),type+' impact');
   assert.ok(s.events.some(e=>e.type==='kill'&&e.enemyType===type),type+' gore');
  }

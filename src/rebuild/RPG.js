@@ -1,3 +1,4 @@
+import {configureBoss} from './Bosses.js';
 import {distance,pointBlocked,seededRandom} from './config.js';
 import {waterAt} from './City.js';
 export const RARITIES=['COMMON','RARE','EPIC','LEGENDARY'];
@@ -56,6 +57,6 @@ export function purchase(sim,id,npc){if(nearbyPlace(sim)?.id!==npc)return false;
 export function interactPlace(sim){const q=nearbyPlace(sim);if(!q)return false;if(q.kind==='shop'){sim.emit('rpg-shop',{id:q.id});sim.pause();return true;}
  if(q.kind==='cache'){q.used=true;sim.rpg.cases.push(q.id);sim.rpg.coins+=35;gainXP(sim,40);sim.emit('rpg-notice',{message:'SUPPLY CASE RECOVERED · +35 CROWNS · RETURN TO MARA'});return true;}
  if(q.used)return true;const safe=sim.layout.spawnPoints.filter(p=>distance(p,q)<16&&distance(p,q)>5&&!pointBlocked(p.x,p.z,2,sim.obstacles)).sort((a,b)=>distance(a,q)-distance(b,q));if(!safe.length){sim.emit('rpg-notice',{message:'THE ENTRANCE IS BLOCKED · CLEAR THE AREA'});return true;}
- q.used=true;const e=sim.spawnEnemy('boss',safe[0].x,safe[0].z);e.bossName=q.id==='confessor'?'CINDER CONFESSOR':'DROWNED MARSHAL';e.bossKind=q.id==='confessor'?'cinder':'dredger';e.secretId=q.id;e.health=e.maxHealth=1800+levelForXP(sim.profile.xp).level*100;e.damage*=1.25;e.elite=true;q.guards=[e.id];sim.waveTotal++;sim.emit('rpg-notice',{message:`SECRET BOSS · ${e.bossName}`});return true;
+ q.used=true;const e=sim.spawnEnemy('boss',safe[0].x,safe[0].z);e.bossName=q.id==='confessor'?'CINDER CONFESSOR':'DROWNED MARSHAL';e.bossKind=q.id==='confessor'?'cinder':'dredger';configureBoss(sim,e,{variant:q.id==='confessor'?3:1,name:e.bossName,height:q.id==='confessor'?8.2:7.2});e.secretId=q.id;e.health=e.maxHealth=1800+levelForXP(sim.profile.xp).level*100;e.damage*=1.25;e.elite=true;q.guards=[e.id];sim.waveTotal++;sim.emit('rpg-notice',{message:`SECRET BOSS · ${e.bossName}`});return true;
 }
 export function rpgKill(sim,e){if(!sim.rpg)return;sim.rpg.kills++;sim.rpg.coins+=e.type==='boss'?70:e.type==='brute'?9:3;gainXP(sim,e.type==='boss'?180:e.type==='brute'?25:10);if(e.secretId){const q=sim.places.find(q=>q.id===e.secretId);if(q)q.defeated=true;const id=e.secretId==='confessor'?'ash':'storm';if(!sim.profile.relics.includes(id))sim.profile.relics.push(id);sim.rpg.coins+=250;sim.emit('profile');sim.emit('rpg-notice',{message:`${RELICS[id].name} DISCOVERED · PERMANENT RELIC · +250 CROWNS`});}}

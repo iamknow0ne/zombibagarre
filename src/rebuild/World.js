@@ -1,3 +1,4 @@
+import {buildBossModel,animateBossModel,bossWarning,animateBossWarning} from './BossVisuals.js';
 import {dressArmour,rpgPlaceMesh} from './RPGVisuals.js';
 import {StructureVisuals} from './StructureVisuals.js';
 import {CombatOverlay} from './CombatOverlay.js';
@@ -343,6 +344,7 @@ export class World {
     bloodSpray(this,e,e.part==='head'?24:14,8,e.part==='head'?1.7:.6);this.decal(e.x,e.z,.5);
   }
   leaveRemains(e){
+    if(e.bossProfile){const mesh=buildBossModel(e);mesh.position.set(e.x,0,e.z);mesh.rotation.y=e.angle;this.scene.add(mesh);this.effects.push({mesh,kind:'boss-remains',life:8,max:8});return;}
     const mesh=this.character(e.enemyType||'walker',e.bossKind,'scout',e.enemyId);mesh.position.set(e.x,0,e.z);mesh.rotation.y=e.angle||0;mesh.userData.frost.visible=false;
     const gory=this.settings.gore,death=e.death||'shot',slicePart=e.slicePart||'arm';
     if(gory&&(death==='headshot'||death==='exploded'||(death==='sliced'&&slicePart==='head'))){mesh.userData.body.children.filter(o=>o.position.y>1.48).forEach(o=>o.visible=false);this.detachParts({...e,part:death==='headshot'?'head':death==='sliced'?slicePart:'all'});}
@@ -381,14 +383,15 @@ export class World {
         vec2 q=vMapUv;float t=uFireTime;float n=fireFbm(vec2(q.x*6.,q.y*4.-t*2.8)+uFireSeed);
         float sway=(fireNoise(vec2(q.y*3.-t*2.,uFireSeed))-.5)*q.y*.42;
         float width=pow(1.-q.y,1.35)*.35;float fuel=width-abs(q.x-.5+sway)+(n-.5)*.37;
-        float flame=smoothstep(-.015,.09,fuel)*smoothstep(0.,.24,q.y)*smoothstep(1.,.65,q.y)*(.55+n*.45);
+        float flame=smoothstep(-.015,.09,fuel)*smoothstep(0.,.24,q.y)*(1.-smoothstep(.65,1.,q.y))*(.55+n*.45);
         float heat=clamp(fuel*3.+(1.-q.y)*.42+n*.22,0.,1.);
         vec3 red=vec3(.65,.018,.001),orange=vec3(1.,.12,.004),hot=vec3(1.,.38,.065);
         diffuseColor.rgb=mix(mix(red,orange,smoothstep(.08,.42,heat)),hot,smoothstep(.48,.9,heat));
         diffuseColor.rgb=mix(diffuseColor.rgb,mix(vec3(.03,.18,.8),vec3(.6,.85,1.),heat),uFireBlue);
-        diffuseColor.a*=flame;
+        float edge=smoothstep(0.,.12,q.x)*(1.-smoothstep(.88,1.,q.x))*smoothstep(0.,.08,q.y)*(1.-smoothstep(.94,1.,q.y));
+        diffuseColor.a*=flame*edge;if(diffuseColor.a<.005)discard;
       `);
-    };m.customProgramCacheKey=()=> 'turbulent-fire-v1';return m;
+    };m.customProgramCacheKey=()=> 'turbulent-fire-v2';return m;
   }
   flame(x,z,count=3,height=.6,angle=null,large=false,blue=false){
     if(!this.fireTex)this.fireTex=texture(128,128,(c)=>{
@@ -516,7 +519,9 @@ export class World {
     if(e.type==='prop-hit'&&e.kind==='building'&&e.health>0&&!e.thermal)this.buildingImpact(e);
     if(e.type==='prop-hit'&&e.kind!=='building'&&!e.weapon)debris(this,{x:e.x,z:e.z,material:materialFor(e.kind),count:5,power:2,scale:.4});
     if(e.type==='arc')this.lightning(e);if(e.type==='ignite')this.flame(e.x,e.z,6);if(e.type==='electrify')this.effect(e.x,e.z,0xa6e9ed,6,3);
-    if(e.type==='explosion'||e.type==='slam'){
+    if(e.type==='boss-phase'||e.type==='boss-defeated'){this.smoke(e.x,e.z,10,.4);debris(this,{x:e.x,z:e.z,material:'metal',count:24,power:8,scale:1.1});this.shake=.4;}
+    if(e.type==='slam'&&e.bossOwner){const count=e.shape==='lane'?10:e.innerRadius?18:10;for(let i=0;i<count;i++){const a=i/count*Math.PI*2,r=e.innerRadius?(e.radius+e.innerRadius)/2:e.radius*Math.sqrt((i+.5)/count),along=(i/(count-1)-.5)*(e.length||0),x=e.x+(e.shape==='lane'?Math.sin(e.angle)*along:Math.sin(a)*r),z=e.z+(e.shape==='lane'?Math.cos(e.angle)*along:Math.cos(a)*r);if(e.bossKind==='cinder')this.flame(x,z,2,.3,null,true);else if(e.bossKind==='dredger')this.splash(x,z,.7);debris(this,{x,z,material:e.bossKind==='bloom'?'wood':'earth',count:3,power:5,scale:.6});this.smoke(x,z,1,.15);}this.shake=.25;}
+    if(e.type==='explosion'||(e.type==='slam'&&!e.bossOwner)){
       const force=Math.max(.35,Math.min(1.7,(e.radius||3)/3)),tier=e.tier||0;
       if(!e.water)this.flame(e.x,e.z,e.source==='car'?14:Math.ceil(5*force+tier),.4,null,true);const lamp=this.blastLights.reduce((a,b)=>a.userData.life<b.userData.life?a:b);lamp.position.set(e.x,2,e.z);lamp.userData.life=.55;lamp.userData.power=e.water?40:160;lamp.color.set(e.water?0xb1d9e0:0xff9d42);lamp.intensity=lamp.userData.power;if(!e.water)this.effect(e.x,e.z,0xf2ae5e,Math.ceil(20*force+tier*3),8+force*3);if(!e.water)debris(this,{x:e.x,z:e.z,material:e.source==='car'||e.source==='barrel'?'metal':'earth',count:Math.ceil(24*force+tier*3),power:6+force*3,scale:.7+force*.3});this.smoke(e.x,e.z,e.water?6:Math.ceil(9*force),e.water?0:.4,e.water?0xb8cbca:0x69665c);this.shake=Math.min(.5,.22*force);
       const mesh=this.ring(e.radius,e.water?0x83aaac:0xf4ba77,.025);mesh.position.set(e.x,e.water?this.waterLevel()+.08:.1,e.z);mesh.userData.disposable=true;this.scene.add(mesh);this.effects.push({mesh,life:.22,max:.22,ring:true,opacity:.24});
@@ -531,7 +536,9 @@ export class World {
     const desired=this.inspectionTarget?new T.Vector3(this.inspectionTarget.x,0,this.inspectionTarget.z):menu?new T.Vector3(2,0,-7):new T.Vector3(p.x+lead.x,0,p.z-1+lead.z);
     if(this.layout.city){const lamps=[...(this.cityLampPositions||[])].sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z));this.cityLights.forEach((l,i)=>{const a=lamps[i];if(a){l.position.set(a.x,4.8,a.z);l.intensity=70;}});this.sun.position.set(p.x-18,32,p.z+5);this.sun.target.position.set(p.x,0,p.z);this.sun.target.updateMatrixWorld();this.ash.position.x=p.x;this.ash.position.z=p.z;for(const g of this.buildingMeshes.values())if(!g.userData.collapsed){const dx=g.userData.center.x-p.x,dz=g.userData.center.z-p.z;g.visible=Math.hypot(dx,dz)<(this.overview?800:70);this.fadeBuilding(g,!menu&&!this.overview&&obscuresSurvivor(g.userData.plan,p));}}
     this.focus.lerp(desired,1-Math.exp(-dt*4));
-    const height=this.portrait?(typeof this.portrait==='number'?this.portrait:10):this.inspectionTarget?46:this.overview?(this.layout.city?Math.max(this.layout.bounds.maxX-this.layout.bounds.minX,this.layout.bounds.maxZ-this.layout.bounds.minZ)*1.12:85):menu?39:p.vehicleId?42:this.touchView?(this.aspect<1?32:26):this.aspect<1?37:30;
+    let height=this.portrait?(typeof this.portrait==='number'?this.portrait:10):this.inspectionTarget?46:this.overview?(this.layout.city?Math.max(this.layout.bounds.maxX-this.layout.bounds.minX,this.layout.bounds.maxZ-this.layout.bounds.minZ)*1.12:85):menu?39:p.vehicleId?42:this.touchView?(this.aspect<1?32:26):this.aspect<1?37:30;
+    const bosses=sim.enemies.filter(e=>e.type==='boss'&&e.health>0&&Math.hypot(e.x-p.x,e.z-p.z)<32);if(bosses.length&&!menu&&!this.inspectionTarget&&!this.overview&&!this.portrait){const b=bosses.reduce((a,b)=>a.bossHeight>b.bossHeight?a:b);const midpoint=new T.Vector3((p.x+b.x)/2,b.bossHeight*.16,(p.z+b.z)/2);this.focus.lerp(midpoint, this.settings.reducedMotion?1:1-Math.exp(-dt*3));height=Math.max(height,Math.min(58,(Math.hypot(b.x-p.x,b.z-p.z)+b.bossHeight+8)/Math.min(1,this.aspect)));}
+    this.bossCameraHeight??=height;this.bossCameraHeight+=(height-this.bossCameraHeight)*(this.settings.reducedMotion?1:1-Math.exp(-dt*3));height=this.bossCameraHeight;
     this.camera.far=this.overview&&this.layout.city?900:160;this.camera.near=.1;this.camera.left=-height*this.aspect/2;this.camera.right=height*this.aspect/2;this.camera.top=height/2;this.camera.bottom=-height/2;this.camera.updateProjectionMatrix();
     this.shake=Math.max(0,this.shake-dt*1.8);const s=this.settings.reducedMotion?0:this.shake;
     const cameraDistance=this.overview&&this.layout.city?8:1;this.scene.fog.density=cameraDistance===8?.0009:.009;this.camera.position.set(this.focus.x+26*cameraDistance+(this.random()-.5)*s,this.focus.y+35*cameraDistance,this.focus.z+32*cameraDistance);this.camera.lookAt(this.focus);
@@ -541,9 +548,9 @@ export class World {
     updateBladeTrails(this.player,p,motionDt,!!this.settings.reducedMotion);
     this.player.visible=!p.vehicleId&&(sim.state!=='dead'||Math.sin(t*20)>-.5);
     this.playerRing.position.set(p.x,.045,p.z);this.playerRing.material.opacity=p.invulnerable>0?.4+.3*Math.sin(t*30):.8;
-    const chargingBoss=sim.enemies.find(e=>e.type==='boss'&&e.windup>0);this.bossTell.visible=!!chargingBoss;if(chargingBoss){this.bossTell.position.set(chargingBoss.x,.06,chargingBoss.z);this.bossTell.scale.setScalar(1+(1-chargingBoss.windup)*.7);}
+    this.bossTell.visible=false;
     this.extractionRing.visible=sim.state==='extracting'||sim.state==='victory';this.extractionRing.rotation.z=t*.4;
-    this.syncMap(this.characters,sim.enemies,e=>{const m=this.character(e.type,e.bossKind,'scout',e.id);m.position.set(e.x,0,e.z);m.rotation.y=e.angle;this.scene.add(m);return m;},(m,e)=>{m.position.lerp(new T.Vector3(e.x,0,e.z),1-Math.exp(-dt*24));m.rotation.y+=Math.atan2(Math.sin(e.angle-m.rotation.y),Math.cos(e.angle-m.rotation.y))*(1-Math.exp(-dt*12));this.animateCharacter(m,t+e.phase,e.windup<=0,false,dt,e);m.userData.body.rotation.x=e.crawling?-Math.PI/2:e.windup>0?-.17:0;if(e.crawling)m.position.y=.35;m.userData.legs.forEach(leg=>leg.visible=!e.crawling||!this.settings.gore);m.userData.arms[0].visible=!e.missingArm||!this.settings.gore;if(e.crawling){m.userData.arms.forEach((arm,i)=>arm.rotation.x=-.9+Math.sin(t*6+i*Math.PI)*.45);}if(e.burning>0){if(this.random()<dt*15)this.flame(e.x,e.z,2,.6);if(this.random()<dt*2)this.smoke(e.x,e.z,1);}if(e.electrified>0&&this.random()<dt*14)this.lightning({x:e.x-.35,z:e.z,y:.4,toX:e.x+.35,toZ:e.z+.1,toY:1.7});m.userData.frost.visible=sim.player.freeze>0||(sim.player.frost>0&&e.slow>0);if(m.userData.frost.visible&&this.random()<dt*4)this.effect(e.x,e.z,0xa2d8e3,1,1,'glass');m.scale.setScalar((e.type==='boss'?2.15:e.type==='brute'?1.5:e.type==='runner'?.85:1)*(e.flash>0?1.035:1)*(e.elite?1.15:1));});
+    this.syncMap(this.characters,sim.enemies,e=>{const m=e.type==='boss'?buildBossModel(e):this.character(e.type,e.bossKind,'scout',e.id);m.position.set(e.x,0,e.z);m.rotation.y=e.angle;this.scene.add(m);return m;},(m,e)=>{m.position.lerp(new T.Vector3(e.x,0,e.z),1-Math.exp(-dt*24));m.rotation.y+=Math.atan2(Math.sin(e.angle-m.rotation.y),Math.cos(e.angle-m.rotation.y))*(1-Math.exp(-dt*12));if(e.type==='boss'){animateBossModel(m,e,t);if(e.bossPhase===2&&motionDt>0&&this.random()<motionDt*3){if(e.bossKind==='cinder')plume(this,e.x,e.bossHeight*.91,e.z,.7,1.8,0x6e6e61);else this.effect(e.x,e.z,e.bossProfile.color,1,1,'ember',e.bossHeight*.7);}return;}this.animateCharacter(m,t+e.phase,e.windup<=0,false,dt,e);m.userData.body.rotation.x=e.crawling?-Math.PI/2:e.windup>0?-.17:0;if(e.crawling)m.position.y=.35;m.userData.legs.forEach(leg=>leg.visible=!e.crawling||!this.settings.gore);m.userData.arms[0].visible=!e.missingArm||!this.settings.gore;if(e.crawling){m.userData.arms.forEach((arm,i)=>arm.rotation.x=-.9+Math.sin(t*6+i*Math.PI)*.45);}if(e.burning>0){if(this.random()<dt*15)this.flame(e.x,e.z,2,.6);if(this.random()<dt*2)this.smoke(e.x,e.z,1);}if(e.electrified>0&&this.random()<dt*14)this.lightning({x:e.x-.35,z:e.z,y:.4,toX:e.x+.35,toZ:e.z+.1,toY:1.7});m.userData.frost.visible=sim.player.freeze>0||(sim.player.frost>0&&e.slow>0);if(m.userData.frost.visible&&this.random()<dt*4)this.effect(e.x,e.z,0xa2d8e3,1,1,'glass');m.scale.setScalar((e.type==='boss'?2.15:e.type==='brute'?1.5:e.type==='runner'?.85:1)*(e.flash>0?1.035:1)*(e.elite?1.15:1));});
     this.syncMap(this.projectiles,sim.bullets,b=>{const m=projectileMesh(b);this.scene.add(m);return m;},(m,b)=>{m.position.set(b.x,b.y??(b.enemy?.9:1.1),b.z);m.rotation.y=Math.atan2(b.vx,b.vz);m.rotation.x=-Math.atan2(b.vy||0,Math.hypot(b.vx,b.vz));if(b.weapon==='launcher'&&motionDt>0){m.userData.trail=(m.userData.trail||0)+motionDt;if(m.userData.trail>.055){m.userData.trail=0;plume(this,b.x,b.y,b.z,.12,.35,0xada58c);}}});
     this.syncMap(this.items,sim.pickups,item=>{
       const g=new T.Group(),color=POWERUPS[item.type].color;box(g,0x334b47,0,0,0,.48,.28,.4);box(g,color,0,.16,0,.37,.025,.29,{emissive:color,emissiveIntensity:.4});
@@ -561,7 +568,7 @@ export class World {
       else{cylinder(g,0x566869,0,1.6,0,.04,3.2);sign(g,'DANGER / ENFORCER',0,2.6,.04,2.4,.65,'#793f35','#e3c4a0');}
       const ring=this.ring(job.kind==='relay'?4:1.3,0xe0b674,.035);g.add(ring);g.userData.jobRing=ring;g.position.set(job.x,0,job.z);this.scene.add(g);return g;
     },(g,job)=>{g.visible=Math.hypot(p.x-job.x,p.z-job.z)<65;const ring=g.userData.jobRing;ring.material.color.setHex(job.state==='complete'?0x8eaf94:0xe0b674);ring.material.opacity=job.state==='complete'?.2:.6;});
-    this.syncMap(this.rings,sim.hazards,h=>{const m=this.ring(h.radius,h.friendly?0xf2c179:0xee684c,.1);m.userData.disposable=true;this.scene.add(m);return m;},(m,h)=>{m.position.set(h.x,.06,h.z);m.material.opacity=.4+.5*(1-h.timer/h.duration);m.scale.setScalar(.85+.15*(1-h.timer/h.duration));});
+    this.syncMap(this.rings,sim.hazards,h=>{const m=h.bossOwner?bossWarning(h):this.ring(h.radius,h.friendly?0xf2c179:0xee684c,.1);m.userData.disposable=true;this.scene.add(m);return m;},(m,h)=>{if(h.bossOwner){animateBossWarning(m,h);return;}m.position.set(h.x,.06,h.z);m.material.opacity=.4+.5*(1-h.timer/h.duration);m.scale.setScalar(.85+.15*(1-h.timer/h.duration));});
     this.structuralVisuals.update(sim.structures||[],p,this.overview);
     for(const jet of this.fountainJets){jet.mesh.visible=Math.hypot(jet.x-p.x,jet.z-p.z)<65;jet.mesh.material.opacity=.55+Math.sin(t*5+jet.phase)*.12;if(jet.mesh.visible&&this.random()<motionDt*2)this.splash(jet.x,jet.z,.2);}
     for(const v of sim.props)if(v.driveable&&v.health>0){const root=this.propMeshes.get(v.id),plan=this.layout.cover[Number(v.id.split('-')[1])];if(root&&plan){root.visible=Math.hypot(v.x-p.x,v.z-p.z)<70;root.position.set(v.x-plan.x,0,v.z-plan.z);const car=root.children[0];if(car)animateVehicle(car,{...v,occupied:p.vehicleId===v.id},motionDt,t);if(v.speed>5&&this.random()<dt*2)this.smoke(v.x-Math.sin(v.angle)*2,v.z-Math.cos(v.angle)*2,1,.1);}}
@@ -579,7 +586,8 @@ export class World {
     for(const e of this.effects){
       if(e.delay>0){e.delay-=motionDt;if(e.delay>0)continue;e.mesh.visible=true;}
       e.life-=motionDt;
-      if(e.ring){e.mesh.scale.addScalar(motionDt*2);e.mesh.material.opacity=Math.max(0,e.life/e.max)*(e.ripple?.4:e.opacity??1);}
+      if(e.kind==='boss-remains'){const age=e.max-e.life,fall=Math.min(1,age/2.8);e.mesh.userData.body.rotation.x=fall*1.32;e.mesh.position.y=-Math.max(0,age-4)*.6;e.mesh.userData.mats.glow.emissiveIntensity=Math.max(0,1-fall);if(age<2.8&&this.random()<motionDt*9)this.smoke(e.mesh.position.x,e.mesh.position.z,1,.3);}
+      else if(e.ring){e.mesh.scale.addScalar(motionDt*2);e.mesh.material.opacity=Math.max(0,e.life/e.max)*(e.ripple?.4:e.opacity??1);}
       else if(e.kind==='cutwave'){e.mesh.position.x+=e.vx*motionDt;e.mesh.position.z+=e.vz*motionDt;e.mesh.scale.addScalar(motionDt*2);e.mesh.traverse(o=>{if(o.material)o.material.opacity=Math.max(0,e.life/e.max)*.7;});}
       else if(e.kind==='lightning'){e.mesh.traverse(o=>{if(o.material)o.material.opacity=Math.max(0,e.life/e.max)*(o.userData.baseOpacity??1);});}
       else if(e.kind==='fire'){e.mesh.position.x+=e.vx*motionDt;e.mesh.position.y+=e.vy*motionDt;e.mesh.position.z+=e.vz*motionDt;e.vx*=Math.exp(-motionDt*2);e.vz*=Math.exp(-motionDt*2);e.mesh.scale.x+=motionDt*(e.large?4:.6);e.mesh.scale.y+=motionDt*(e.large?3:1);e.mesh.material.opacity=Math.min(.88,e.life/e.max);e.mesh.material.rotation=(e.rotation||0)+Math.sin(this.fireClock.value*3+e.vy)*.07;if(this.random()<motionDt*.8)this.effect(e.mesh.position.x,e.mesh.position.z,0xe69a35,1,2,'ember',e.mesh.position.y);}

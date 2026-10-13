@@ -6,7 +6,7 @@ export function installRPGQA(input,getSim){
   if(action==='start'){document.getElementById('start').click();return;}
   const s=getSim();if(action==='fund'){s.rpg.coins=2400;gainXP(s,6000);return;}
   if(action==='contracts'){s.rpg.kills=20;s.rpg.cases=['case-a','case-b'];for(const j of s.streetEvents)j.state='complete';s.visited=new Set(s.layout.landmarks.map(p=>p.name));return;}
-  if(action==='defeat'){for(const e of s.enemies.filter(e=>e.secretId))s.damageEnemy(e,999999);return;}
+  if(action==='defeat'){for(const e of s.enemies.filter(e=>e.secretId)){e.bossState='pursuit';s.damageEnemy(e,999999);s.updateBoss(e,2.1);s.damageEnemy(e,999999);}return;}
   const q=s.places.find(q=>q.id===action);if(!q)return;
   document.querySelectorAll('dialog[open]').forEach(d=>d.close());s.resume();input.clear();s.player.vehicleId=null;s.player.x=q.x;s.player.z=q.z;s.player.invulnerable=999;s.enemies=s.enemies.filter(e=>e.secretId);s.toSpawn=999;s.spawnTimer=999;input.once.interact=true;
  });

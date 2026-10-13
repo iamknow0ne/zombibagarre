@@ -95,7 +95,7 @@ export function lineBlocked(a,b,padding=0,obstacles=COVER){return obstacles.some
 
 export const TOTAL_WAVES=32;
 export const DISTRICTS=[
-  {name:'SAINT-ROCH',subtitle:'THE QUARANTINED QUARTER',boss:'THE WARDEN',bossKind:'warden',sky:0x25363e,ground:0x455257,accent:0xe4ae68,condition:'A quiet street. Until it isn’t.',enemyBias:'walker'},
+  {name:'SAINT-ROCH',subtitle:'THE QUARANTINED QUARTER',boss:'THE BELL WARDEN',bossKind:'warden',sky:0x25363e,ground:0x455257,accent:0xe4ae68,condition:'A quiet street. Until it isn’t.',enemyBias:'walker'},
   {name:'PORT DES CENDRES',subtitle:'THE ABANDONED DOCKS',boss:'THE DREDGER',bossKind:'dredger',sky:0x253e4a,ground:0x394e57,accent:0xa9c9c3,condition:'Fast packs. Ranged fire. Nowhere to hide.',enemyBias:'runner'},
   {name:'LES SERRES',subtitle:'THE INFECTED GARDENS',boss:'THE BLOOM MOTHER',bossKind:'bloom',sky:0x303c34,ground:0x4a5945,accent:0xb2c28a,condition:'Toxic spitters and volatile growth.',enemyBias:'spitter'},
   {name:'LA FONDERIE',subtitle:'THE LAST FURNACE',boss:'THE CINDER KING',bossKind:'cinder',sky:0x3a3030,ground:0x4f4841,accent:0xee9b54,condition:'Armoured hordes. One final extraction.',enemyBias:'armored'},
@@ -103,7 +103,7 @@ export const DISTRICTS=[
 DISTRICTS.push(
  {name:'CANOPÉE NOIRE',subtitle:'THE LOST JUNGLE',boss:'THE ROOT TYRANT',bossKind:'bloom',sky:0x26392c,ground:0x4d6040,accent:0xc7d49b,condition:'Dense growth. Burning paths.',enemyBias:'volatile'},
  {name:'LES DENTS BLANCHES',subtitle:'THE MOUNTAIN PASS',boss:'THE AVALANCHE',bossKind:'warden',sky:0x536578,ground:0x8d979e,accent:0xd5e6f0,condition:'Rock faces and frozen switchbacks.',enemyBias:'armored'},
- {name:'TERRES ROUGES',subtitle:'THE BADLANDS',boss:'THE DUST REAPER',bossKind:'dredger',sky:0x67483c,ground:0xb28a5d,accent:0xffce90,condition:'Open ground. Volatile fuel.',enemyBias:'runner'},
+ {name:'TERRES ROUGES',subtitle:'THE BADLANDS',boss:'THE ASHEN COVENANT',bossKind:'dredger',sky:0x67483c,ground:0xb28a5d,accent:0xffce90,condition:'Open ground. Volatile fuel.',enemyBias:'runner'},
  {name:'MARAIS MORT',subtitle:'THE DROWNED FRONTIER',boss:'THE FEN KING',bossKind:'cinder',sky:0x293d3b,ground:0x546356,accent:0xc0c6a2,condition:'One final stand beyond the marsh.',enemyBias:'spitter'},
 );
 Object.assign(ENEMIES,{

@@ -11,16 +11,16 @@ test('every weapon has a bounded critical chance which grows with evolution and 
  assert.equal(resolveCritical({crit:.8},{weapon:'carbine',execution:true},0).multiplier,1);
 });
 test('critical damage resolves once, stacks with headshots, and reports exact damage and capped mastery',()=>{
- const s=game(),e=s.spawnEnemy('boss',0,0);s.random=()=>0;const before=e.health;s.damageEnemy(e,10*1.65,0,0,{weapon:'marksman',headshot:true,kind:'ballistic'});
+ const s=game(),e=s.spawnEnemy('boss',0,0);e.bossState='pursuit';e.bossTimer=999;e.bossPhase=2;s.random=()=>0;const before=e.health;s.damageEnemy(e,10*1.65,0,0,{weapon:'marksman',headshot:true,kind:'ballistic'});
  const hit=s.events.find(e=>e.type==='damage');assert.equal(before-e.health,33);assert.equal(hit.amount,33);assert.equal(hit.dealt,33);assert.ok(hit.critical&&hit.headshot);assert.equal(hit.enemyId,e.id);assert.equal(hit.health,e.health);
  s.damageEnemy(e,99999,0,0,{weapon:'marksman'});const count=s.events.filter(e=>e.type==='damage').length;s.damageEnemy(e,10);assert.equal(s.events.filter(e=>e.type==='damage').length,count);assert.equal(s.player.mastery.marksman,e.maxHealth);
 });
 test('burn ticks accumulate exact fractional damage without critical rolls or per-tick gore',()=>{
- const s=game(),e=s.spawnEnemy('boss',0,0);s.random=()=>0;s.player.crit=.8;for(let i=0;i<20;i++)s.damageEnemy(e,.3,0,0,{kind:'fire',weapon:'flame',periodic:true});
+ const s=game(),e=s.spawnEnemy('boss',0,0);e.bossState='pursuit';e.bossTimer=999;e.bossPhase=2;s.random=()=>0;s.player.crit=.8;for(let i=0;i<20;i++)s.damageEnemy(e,.3,0,0,{kind:'fire',weapon:'flame',periodic:true});
  const hits=s.events.filter(e=>e.type==='damage');assert.equal(hits.length,20);assert.ok(hits.every(h=>h.amount===.3&&!h.critical));assert.equal(s.events.filter(e=>e.type==='hit').length,0);assert.ok(Math.abs(s.player.mastery.flame-6)<1e-9);
 });
 test('evolved damage is visibly larger without changing the displayed calculation',()=>{
- const s=game();s.random=()=>.99;const e=s.spawnEnemy('boss',0,0);s.damageEnemy(e,weaponStats(s.player,'carbine').damage,0,0,{weapon:'carbine'});s.player.mastery.carbine=8000;s.player.damage=1.5;s.damageEnemy(e,weaponStats(s.player,'carbine').damage*s.player.damage,0,0,{weapon:'carbine'});
+ const s=game();s.random=()=>.99;const e=s.spawnEnemy('boss',0,0);e.bossState='pursuit';e.bossTimer=999;e.bossPhase=2;s.damageEnemy(e,weaponStats(s.player,'carbine').damage,0,0,{weapon:'carbine'});s.player.mastery.carbine=8000;s.player.damage=1.5;s.damageEnemy(e,weaponStats(s.player,'carbine').damage*s.player.damage,0,0,{weapon:'carbine'});
  const [a,b]=s.events.filter(e=>e.type==='damage');assert.ok(b.amount>a.amount*2);assert.ok(damageSize(b.amount)>damageSize(a.amount));assert.equal(b.tier,3);
 });
 test('burst aggregation separates criticals, wounds and weapons, expires while paused clock stays still, and has a hard cap',()=>{

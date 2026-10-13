@@ -16,7 +16,7 @@ export class CombatOverlay {
  }
  applySettings(settings){this.settings=settings;if(settings.damageNumbers===false)this.feed.hits=[];if(settings.enemyHealthBars===false)this.bars.clear();}
  project(x,y,z,camera){const p=this.point.set(x,y,z).project(camera);return p.z>=-1&&p.z<=1&&Math.abs(p.x)<1.1&&Math.abs(p.y)<1.1?{x:(p.x*.5+.5)*this.w,y:(-.5*p.y+.5)*this.h}:null;}
- height(e){return e.crawling?1:(e.enemyType||e.type)==='boss'?4.5:(e.enemyType||e.type)==='brute'?3.25:(e.enemyType||e.type)==='runner'?2:2.5;}
+ height(e){return e.crawling?1:(e.enemyType||e.type)==='boss'?(e.bossHeight||6)*.65:(e.enemyType||e.type)==='brute'?3.25:(e.enemyType||e.type)==='runner'?2:2.5;}
  draw(sim,dt,camera){
   const c=this.ctx,w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
   if(this.w!==w||this.h!==h||this.dpr!==dpr){this.w=w;this.h=h;this.dpr=dpr;this.canvas.width=Math.round(w*dpr);this.canvas.height=Math.round(h*dpr);}

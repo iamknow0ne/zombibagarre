@@ -8,13 +8,13 @@ import {animateWeapons,solveArm} from '../src/rebuild/WeaponRig.js';
 const game=()=>{const s=new Simulation({seed:12});s.start('katana');s.props=[];s.obstacles=[];s.toSpawn=999;s.spawnTimer=9999;return s;};
 const tick=(s,n,input={})=>{for(let i=0;i<n;i++)s.update(1/60,{auto:false,...input});};
 test('blade damage, sound and feedback occur at contact, once per stroke',()=>{
- const s=game(),e=s.spawnEnemy('boss',0,5);e.speed=0;e.attack=999;const health=e.health;
+ const s=game(),e=s.spawnEnemy('boss',0,5);e.bossState='pursuit';e.bossTimer=999;e.bossPhase=2;e.speed=0;e.attack=999;const health=e.health;
  s.update(1/60,{firing:true,aim:e,auto:false});assert.equal(e.health,health);assert.ok(s.events.some(e=>e.type==='swing'));assert.ok(!s.events.some(e=>e.type==='slice'));
  tick(s,8);assert.equal(e.health,health);tick(s,6);assert.ok(e.health<health);const after=e.health;tick(s,20);assert.equal(e.health,after);assert.equal(s.events.filter(e=>e.type==='slice').length,1);
 });
 test('late blade tap buffers exactly one combo follow-up; switching and dodging cancel pending contact',()=>{
  const s=game();s.update(1/60,{firing:true,aim:{x:0,z:8},auto:false});tick(s,27);s.update(1/60,{firing:true,aim:{x:0,z:8},auto:false});tick(s,12);assert.equal(s.player.swingCombo,1);assert.equal(s.events.filter(e=>e.type==='swing').length,2);tick(s,80);assert.equal(s.events.filter(e=>e.type==='swing').length,2);
- for(const cancel of ['dash','switch']){const g=game(),e=g.spawnEnemy('boss',0,5);e.speed=0;e.attack=999;const health=e.health;g.update(1/60,{firing:true,aim:e,auto:false});if(cancel==='dash')g.update(1/60,{dash:true,x:1,auto:false});else g.switchWeapon('carbine');tick(g,30);assert.equal(e.health,health);assert.equal(g.player.meleeAttack,null);}
+ for(const cancel of ['dash','switch']){const g=game(),e=g.spawnEnemy('boss',0,5);e.bossState='pursuit';e.bossTimer=999;e.bossPhase=2;e.speed=0;e.attack=999;const health=e.health;g.update(1/60,{firing:true,aim:e,auto:false});if(cancel==='dash')g.update(1/60,{dash:true,x:1,auto:false});else g.switchWeapon('carbine');tick(g,30);assert.equal(e.health,health);assert.equal(g.player.meleeAttack,null);}
 });
 test('held attacks complete three distinct strokes, pause resets the combo and fast upgrades preserve contact',()=>{
  for(const key of ['katana','dual'])for(const multiplier of [1,.5]){const s=game();s.switchWeapon(key);s.player.fireMultiplier=multiplier;tick(s,150,{firing:true,aim:{x:0,z:9}});const hits=s.events.filter(e=>e.type==='slice');assert.ok(hits.length>=3);assert.deepEqual(hits.slice(0,3).map(e=>e.combo),[0,1,2]);assert.ok(hits[2].radius>hits[0].radius);tick(s,100);s.update(1/60,{firing:true,aim:{x:0,z:9},auto:false});assert.equal(s.player.swingCombo,0);}

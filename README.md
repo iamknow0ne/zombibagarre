@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.15 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.16 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -25,8 +25,17 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Katana and dual swords have three-hit combos, wider finishers, blade trails, limb cuts and timber damage. Blade stance grants 22% faster movement, a 1.1-second dodge cooldown and finisher dodge recovery.
 - Six randomized fall poses with varied timing and twist, plus severed arms/legs, living legless crawlers, falling corpses, charred burn deaths and electrical spasms. Precision weapons have a higher headshot chance; all hits still use planar aiming. Gore can be disabled.
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
-- Seven enemy types and eight boss encounters using four distinct telegraphed attack archetypes. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
+- Seven enemy types and eight boss encounters with four bespoke articulated rigs, building-scale variants, two phases and a paired fight. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.16 — Oaths of the Quarantine
+
+- Eight authored boss encounters: Bell Warden, Dredger, Bloom Mother, Cinder King, Root Cathedral, Avalanche, the Ashen Covenant duo and Fen King. Four original articulated models with shields, bells, hooks, cages, petals, furnace doors, pipes and biome details; giants reach 12.5 world metres.
+- Locked attack warnings match circle, lane and annulus damage. Read the wind-up, dodge the committed strike and punish recovery for +30% damage. A half-health transition absorbs overflow and adds follow-up attacks, preventing a single burst from skipping phase II.
+- The Reaper and Cantor take turns reserving major attacks. Each has a health bar; killing either enrages the survivor. Boss waves contain fewer ordinary enemies, and arrivals delay reinforcements.
+- Introductions, low bell/rumble cues, phase transformations, collapsing remains, attack-specific ground effects and wider combat framing. Mobile bars stay compact; reduced motion removes shake and animated zoom. Existing health-bar settings apply to the new boss display.
+- Hidden RPG guardians use the new models and encounter logic while keeping their permanent relic rewards.
+- See [boss design and research](docs/BOSS-DESIGN.md). Development-only encounter workshop: `/dev/boss-qa.html`. Its visible controls exercise the real simulation and renderer without saving progress. Production builds omit this fixture.
 
 ## New in 4.15.1
 

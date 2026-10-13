@@ -1,3 +1,4 @@
+import {configureBoss,bossDamage,bossDefeated,bossContains,updateBoss as stepBoss,beginBossAttack} from './Bosses.js';
 import {initRPG,rpgKill,interactPlace} from './RPG.js';
 import {startCollapse,updateCollapse} from './Collapse.js';
 import {igniteProp,splashWater,updateEnvironment} from './Environment.js';
@@ -34,10 +35,10 @@ export class Simulation {
   nextWave() {
     this.wave++;this.state='playing';const p=this.player;p.shield=Math.max(p.shield,p.waveShield||0);if(this.wave>1)p.grenades+=p.waveGrenades||0;const vehicle=this.props.find(v=>v.id===p.vehicleId);if(vehicle)vehicle.health=Math.min(vehicle.maxHealth,vehicle.health+vehicle.maxHealth*(p.vehicleRepair||0));const district=Math.floor((this.wave-1)/4);
     if(district!==this.district&&!this.layout.city){this.district=district;this.player.x=0;this.player.z=3;this.layout=generateMap(this.seed,district);this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.navigation.clear();this.pickups=[];this.fires=[];this.structures=[];this.rubblePiles=new Map();this.wetGround=[];this.emit('district',{district});}
-    this.toSpawn=this.wave%4===0?18+this.district*5:12+(this.wave-1)*3;
+    this.toSpawn=this.wave%4===0?Math.min(12,6+district*2):12+(this.wave-1)*3;
     this.spawnTimer=1;this.waveKills=0;this.waveTotal=this.toSpawn+(this.wave%4===0?1:0);
     if(this.layout.city)this.district=district;
-    if(this.wave%4===0){const b=this.layout.city?this.layout.spawnPoints.filter(p=>distance(p,this.player)>15&&distance(p,this.player)<28).sort((a,b)=>distance(a,this.player)-distance(b,this.player))[0]:null;this.spawnEnemy('boss',b?.x||0,b?.z||-13);}
+    if(this.wave%4===0){const b=this.layout.city?this.layout.spawnPoints.filter(p=>distance(p,this.player)>15&&distance(p,this.player)<28).sort((a,b)=>distance(a,this.player)-distance(b,this.player))[0]:null;const boss=this.spawnEnemy('boss',b?.x??0,b?.z??-13);if(district===6){const partner=this.spawnEnemy('boss',boss.x+7,boss.z+3);configureBoss(this,partner,{variant:3,name:'THE ASH CANTOR',height:6.4,radius:1.7,title:'REAPER & CANTOR / THE ASHEN COVENANT'});boss.duoId=partner.duoId=`covenant-${this.wave}`;for(const e of [boss,partner])e.health=e.maxHealth=e.maxHealth*.65;this.waveTotal++;}}
     this.emit('wave',{wave:this.wave,district:this.district});
   }
   spawnEnemy(type, x, z) {
@@ -45,7 +46,7 @@ export class Simulation {
     const health = base.health * (1 + (this.wave - 1) * .065) * scale;
     const e = { ...base, id: this.nextId++, type, x, z, health, maxHealth:health,angle:0,attack:1,bossKind:type==='boss'?DISTRICTS[this.district].bossKind:null,bossName:type==='boss'?DISTRICTS[this.district].boss:null,attackCount:0,
       windup: 0, flash: 0, knockX: 0, knockZ: 0, phase: this.random() * 8, damage: base.damage * scale, speed: base.speed * (this.difficulty === 'nightmare' ? 1.12 : 1) };
-    if(type==='boss'){e.health=e.maxHealth=(1250+this.district*850)*scale;e.speed=1.35+this.district*.12;}this.enemies.push(e);return e;
+    if(type==='boss'){e.health=e.maxHealth=(1250+this.district*850)*scale;configureBoss(this,e);}this.enemies.push(e);return e;
   }
   spawn() {
     const r = this.random();
@@ -108,20 +109,21 @@ export class Simulation {
     if (e.health <= 0 || !Number.isFinite(amount) || amount <= 0) return;
     impact={...impact,tier:impact.tier??weaponTier(this.player,impact.weapon)};const relic=this.player.rpgRelic;if(relic&&relic.base===impact.weapon&&relic.burn&&!impact.periodic&&!(e.wet>0)){e.burning=Math.max(e.burning||0,relic.burn);e.burnWeapon=impact.weapon;this.emit('ignite',{x:e.x,z:e.z});}
     amount*=perkDamage(this.player,e,impact);const crit=resolveCritical(this.player,impact,impact.weapon&&!impact.periodic&&!impact.execution?this.random():1);amount*=crit.multiplier;
+    amount=bossDamage(this,e,amount);if(amount<=0)return;
     const dealt=Math.min(e.health,Math.max(0,amount));e.health -= amount; e.flash = .1;const mass=e.type==='boss'?5:e.type==='brute'?2.5:e.type==='armored'?1.8:1;e.knockX=clamp(e.knockX+dx/mass,-12,12);e.knockZ=clamp(e.knockZ+dz/mass,-12,12);if(impact.weapon)this.earnMastery(impact.weapon,dealt*(1+(this.player.masteryBonus||0)));
     if(e.health>0&&e.type!=='boss'&&amount>=18&&['ballistic','explosion','slice'].includes(impact.kind)){
       const cripple=impact.part==='legs'||(impact.kind==='slice'&&this.random()<.3)||(impact.kind==='explosion'&&amount>55&&this.random()<.65)||(e.health<e.maxHealth*.45&&this.random()<.16);
       if(cripple&&!e.crawling){e.crawling=true;e.speed*=.38;e.damage*=.7;e.radius=Math.min(e.radius,.4);this.emit('dismember',{id:e.id,x:e.x,z:e.z,part:'legs',angle:e.angle});}
       else if(!e.missingArm&&(impact.part==='arm'||(e.health<e.maxHealth*.6&&this.random()<.13))){e.missingArm=true;e.damage*=.7;this.emit('dismember',{id:e.id,x:e.x,z:e.z,part:'arm',angle:e.angle});}
     }
-    this.emit('damage',{enemyId:e.id,x:e.x,z:e.z,enemyType:e.type,crawling:!!e.crawling,amount,dealt,health:Math.max(0,e.health),maxHealth:e.maxHealth,weapon:impact.weapon,kind:impact.kind,tier:impact.tier,critical:crit.critical,headshot:!!impact.headshot,finisher:!!impact.finisher,execution:!!impact.execution,periodic:!!impact.periodic,killed:e.health<=0});
+    this.emit('damage',{enemyId:e.id,x:e.x,z:e.z,enemyType:e.type,bossHeight:e.bossHeight,crawling:!!e.crawling,amount,dealt,health:Math.max(0,e.health),maxHealth:e.maxHealth,weapon:impact.weapon,kind:impact.kind,tier:impact.tier,critical:crit.critical,headshot:!!impact.headshot,finisher:!!impact.finisher,execution:!!impact.execution,periodic:!!impact.periodic,killed:e.health<=0});
     if(amount>=1)this.emit('hit' , { x:e.x,z:e.z,amount,enemyType:e.type,weapon:impact.weapon,tier:impact.tier||0,dx,dz,kind:impact.kind,crawling:!!e.crawling,headshot:!!impact.headshot });
     if (e.health <= 0) {
-      rpgKill(this,e);this.kills++; this.waveKills++; this.combo++; this.comboTimer = 3.5;
+      bossDefeated(this,e);rpgKill(this,e);this.kills++; this.waveKills++; this.combo++; this.comboTimer = 3.5;
       this.score += Math.round(e.score * (1 + Math.min(4, Math.floor(this.combo / 5)) * .25) * (this.player.doubleScore>0?2:1));
       this.player.health = Math.min(this.player.maxHealth, this.player.health+this.player.lifeSteal*(this.player.regen>0?2:1));
       if(e.type==='volatile')this.hazards.push({id:this.nextId++,x:e.x,z:e.z,radius:2.4,timer:.7,duration:.7,friendly:false,damage:24});
-      this.emit('kill', { x:e.x,z:e.z,enemyType:e.type,enemyId:e.id,bossKind:e.bossKind,angle:e.angle,slicePart:impact.part||['head','arm','legs'][Math.floor(this.random()*3)],variant:Math.floor(this.random()*6),fallSpeed:.65+this.random()*.8,twist:(this.random()-.5)*1.5,violent:amount>70,death:impact.kind==='slice'?'sliced':impact.headshot?'headshot':impact.kind==='explosion'?'exploded':impact.kind==='fire'||e.burning>0?'burned':impact.kind==='electric'?'electrocuted':'shot',crawling:!!e.crawling,missingArm:!!e.missingArm,dx,dz });
+      this.emit('kill', { x:e.x,z:e.z,enemyType:e.type,enemyId:e.id,bossKind:e.bossKind,bossProfile:e.bossProfile,bossHeight:e.bossHeight,angle:e.angle,slicePart:impact.part||['head','arm','legs'][Math.floor(this.random()*3)],variant:Math.floor(this.random()*6),fallSpeed:.65+this.random()*.8,twist:(this.random()-.5)*1.5,violent:amount>70,death:impact.kind==='slice'?'sliced':impact.headshot?'headshot':impact.kind==='explosion'?'exploded':impact.kind==='fire'||e.burning>0?'burned':impact.kind==='electric'?'electrocuted':'shot',crawling:!!e.crawling,missingArm:!!e.missingArm,dx,dz });
       if (this.kills % 4 === 0 || e.type === 'brute') { const types=Object.keys(POWERUPS); const type=this.player.health<45?'health':types[Math.floor(this.random()*types.length)];this.pickups.push({ id: this.nextId++, x:e.x,z:e.z,life:40,type }); }
     }
   }
@@ -200,7 +202,7 @@ export class Simulation {
       const d = distance(a, p), scale = Math.min(1, 10 / (d || 1));
       this.hazards.push({ id: this.nextId++, x: p.x + (a.x - p.x) * scale, z: p.z + (a.z - p.z) * scale, radius: 4.3*p.blastRadius, timer: .95, duration: .95, flight:.65, originX:p.x,originZ:p.z, thrown:true, friendly: true, damage: 180 * p.blast });p.throwAnimation=.5; this.emit('throw',{x:p.x,z:p.z});
     }
-    if (this.state === 'playing' && this.toSpawn > 0) {
+    if (this.state === 'playing' && this.toSpawn > 0 && !this.enemies.some(e=>e.type==='boss'&&e.bossState==='arrival')) {
       this.spawnTimer -= dt;
       if (this.spawnTimer <= 0) { this.spawn(); this.spawnTimer = Math.max(.38, 1.1 - this.wave * .1); }
     }
@@ -209,8 +211,9 @@ export class Simulation {
     this.updateEnemies(dt);
     this.updateBullets(dt);
     for (const h of this.hazards) {
+      if(h.bossOwner){const owner=this.enemies.find(e=>e.id===h.bossOwner);if(!owner||owner.health<=0||owner.phasePending||owner.bossState==='transition'){h.done=true;continue;}}
       h.timer -= dt;
-      if (h.timer <= 0 && !h.done) { h.done = true; if (h.friendly) { this.blast(h.x,h.z,h.radius,h.damage,'explosion',h.source||'grenade',h.weapon,h.tier||0);if(h.environment&&distance(p,h)<h.radius)this.damagePlayer(h.damage*.3); } else { this.emit('slam', h); if (distance(p, h) < h.radius + p.radius) this.damagePlayer(h.damage); } }
+      if (h.timer <= 0 && !h.done) { h.done = true; if (h.friendly) { this.blast(h.x,h.z,h.radius,h.damage,'explosion',h.source||'grenade',h.weapon,h.tier||0);if(h.environment&&distance(p,h)<h.radius)this.damagePlayer(h.damage*.3); } else { if(!h.charge){this.emit('slam', h);if(h.bossOwner?bossContains(h,p):distance(p,h)<h.radius+p.radius)this.damagePlayer(h.damage);} } }
     }
     this.hazards = this.hazards.filter(h => !h.done);
     for (const item of this.pickups) {
@@ -343,28 +346,8 @@ export class Simulation {
   igniteProp(p,x=p.x,z=p.z,y=.9,seconds=4){return igniteProp(this,p,x,z,y,seconds);}
   splashWater(x,z,power=1){return splashWater(this,x,z,power);}
   updateFire(dt){updateEnvironment(this,dt);}
-  updateBoss(e,dt){
-    if(e.chargeTimer>0){e.chargeTimer-=dt;this.move(e,e.chargeX*dt*13,e.chargeZ*dt*13);if(distance(e,this.player)<e.radius+this.player.radius+.35)this.damagePlayer(e.damage*1.2);return true;}
-    return false;
-  }
-  bossAttack(e){
-    const p=this.player;e.attackCount++;const rage=e.health<e.maxHealth*.5;
-    this.emit('boss-attack',{name:e.bossName,attack:e.bossKind});
-    if(e.bossKind==='warden'||(e.bossKind==='dredger'&&e.attackCount%2===0)){
-      if(e.attackCount%2===0){const d=Math.hypot(e.targetX-e.x,e.targetZ-e.z)||1;e.chargeX=(e.targetX-e.x)/d;e.chargeZ=(e.targetZ-e.z)/d;e.chargeTimer=.8;}
-      else this.hazards.push({id:this.nextId++,x:e.targetX,z:e.targetZ,radius:rage?4.6:3.5,timer:.85,duration:.85,friendly:false,damage:e.damage});
-    }
-    if(e.bossKind==='dredger'||e.bossKind==='cinder'){
-      const count=rage?14:10;for(let i=0;i<count;i++){const angle=i/count*Math.PI*2+e.attackCount*.25;this.bullets.push({id:this.nextId++,x:e.x,z:e.z,vx:Math.sin(angle)*6,vz:Math.cos(angle)*6,life:4,damage:e.damage*.55,enemy:true});}
-    }
-    if(e.bossKind==='bloom'){
-      for(let i=0;i<(rage?4:3);i++){const a=i*2.1+e.attackCount;const minion=this.spawnEnemy(i%2?'volatile':'runner',e.x+Math.sin(a)*2,e.z+Math.cos(a)*2);minion.health*=.65;this.waveTotal++;}
-      for(let i=0;i<3;i++){const a=i*2.1;this.hazards.push({id:this.nextId++,x:e.targetX+Math.sin(a)*3,z:e.targetZ+Math.cos(a)*3,radius:2.3,timer:1.15,duration:1.15,friendly:false,damage:e.damage*.7});}
-    }
-    if(e.bossKind==='cinder'){
-      for(let i=-2;i<=2;i++)this.hazards.push({id:this.nextId++,x:e.targetX+i*2.8,z:e.targetZ+(e.attackCount%2?0:i*2),radius:1.9,timer:1+Math.abs(i)*.13,duration:1.3,friendly:false,damage:e.damage});
-    }
-  }
+  updateBoss(e,dt){return stepBoss(this,e,dt);}
+  bossAttack(e){return beginBossAttack(this,e);}
   navigate(e, target = this.player) {
     // Shared breadth-first flow fields eliminate corner oscillation around cover.
     const bounds=this.layout.bounds||ARENA,step=this.layout.city?2:1,cols=Math.ceil((bounds.maxX-bounds.minX)/step),rows=Math.ceil((bounds.maxZ-bounds.minZ)/step),radius=e.radius+.12,key=String(e.radius);
