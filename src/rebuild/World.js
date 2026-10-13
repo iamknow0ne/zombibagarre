@@ -1,3 +1,5 @@
+import {SurfaceMaterials} from './SurfaceMaterials.js';
+import {stepCharacterMotion,hitRecoil} from './CharacterMotion.js';
 import {buildBossModel,animateBossModel,bossWarning,animateBossWarning} from './BossVisuals.js';
 import {dressArmour,rpgPlaceMesh} from './RPGVisuals.js';
 import {StructureVisuals} from './StructureVisuals.js';
@@ -60,7 +62,7 @@ let shadowTexture;
 export class World {
   constructor(canvas,settings,district=0,layout=generateMap(73,district)){
     this.feedback=new CombatOverlay(canvas);this.feedback.applySettings(settings);this.layout=layout;this.district=district;this.biome=DISTRICTS[district];
-    this.fireClock={value:0};this.settings=settings;this.random=seededRandom(layout.mapSeed);this.canvas=canvas;
+    this.surfaces=new SurfaceMaterials();this.fireClock={value:0};this.settings=settings;this.random=seededRandom(layout.mapSeed);this.canvas=canvas;
     this.renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
     this.renderer.localClippingEnabled=true;this.renderer.info.autoReset=false;this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?1.5:1.15));
     this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;
@@ -160,15 +162,15 @@ export class World {
     const ground=new T.Shape(this.layout.boundary.map(p=>new T.Vector2(p.x,-p.z)));for(const w of this.layout.water){const hole=new T.Path(waterOutline(w).map(p=>new T.Vector2(p.x,-p.z)));hole.closePath();ground.holes.push(hole);}const geo=new T.ShapeGeometry(ground);geo.rotateX(-Math.PI/2);const floor=new T.Mesh(geo,new T.MeshStandardMaterial({map:asphalt,color:0x939c7f,roughness:.98}));floor.position.y=-.04;floor.receiveShadow=true;g.add(floor);
     for(const road of this.layout.roads){
       const dx=road.b.x-road.a.x,dz=road.b.z-road.a.z,len=Math.hypot(dx,dz),angle=Math.atan2(dx,dz),cx=(road.a.x+road.b.x)/2,cz=(road.a.z+road.b.z)/2;
-      const strip=box(g,0x39484b,cx,-.008,cz,road.width,.045,len);strip.rotation.y=angle;strip.receiveShadow=true;
-      for(const p of[road.a,road.b])cylinder(g,0x39484b,p.x,-.008,p.z,road.width/2,.045,road.width/2,20);
+      const strip=box(g,0x39484b,cx,-.008,cz,road.width,.045,len);strip.rotation.y=angle;strip.receiveShadow=true;this.surfaces.apply(strip,'asphalt',0x526061);
+      for(const p of[road.a,road.b])this.surfaces.apply(cylinder(g,0x39484b,p.x,-.008,p.z,road.width/2,.045,road.width/2,20),'asphalt',0x526061);
       for(let d=3;d<len-2;d+=6){const x=road.a.x+dx*d/len,z=road.a.z+dz*d/len;if(waterAt(this.layout,x,z))continue;const dash=box(g,0xb5b59d,x,.025,z,.11,.012,2);dash.rotation.y=angle;}
     }
     for(const {x,z,park,w,d} of this.layout.parcels){
       let paving;
       if(park){const shape=new T.Shape([new T.Vector2(x-w/2,-z-d/2),new T.Vector2(x+w/2,-z-d/2),new T.Vector2(x+w/2,-z+d/2),new T.Vector2(x-w/2,-z+d/2)]);for(const lake of this.layout.water.filter(l=>l.x===x&&l.z===z))shape.holes.push(new T.Path(waterOutline(lake).map(p=>new T.Vector2(p.x,-p.z))));const geo=new T.ShapeGeometry(shape);geo.rotateX(-Math.PI/2);paving=new T.Mesh(geo,mat(0x63714c));paving.position.y=.14;g.add(paving);
        for(let i=0;i<65;i++){const gx=x+(r()-.5)*(w-1),gz=z+(r()-.5)*(d-1);if(this.layout.water.some(l=>waterContains({...l,w:l.w+1,d:l.d+1},gx,gz)))continue;const grass= new T.Mesh(new T.ConeGeometry(.12+r()*.18,.25+r()*.45,4),mat([0x708357,0x8d9461,0x4d6950][i%3]));grass.position.set(gx,.3,gz);grass.rotation.z=(r()-.5)*.4;g.add(grass);}
-      }else paving=box(g,0x7c8278,x,.04,z,w,.18,d);paving.receiveShadow=true;
+      }else paving=this.surfaces.apply(box(g,0x7c8278,x,.04,z,w,.18,d),'paving',0x9ea18f);paving.receiveShadow=true;
       for(const side of [-1,1]){box(g,0xa0a58e,x+side*w/2,.16,z,.25,.26,d);box(g,0xa0a58e,x,.16,z+side*d/2,w,.26,.25);}
       if(this.random()<.5)this.lamp(x-w/2,z-d/2);
     }
@@ -180,7 +182,7 @@ export class World {
   }
   cityBuilding(b){
     const g=new T.Group();g.position.set(b.x,0,b.z);g.userData.breakable=true;g.userData.glass=[];g.userData.sections=[];g.userData.material=b.material;g.userData.plan=b;this.static.add(g);this.buildingMeshes.set(b.id,g);
-    const wallMaterial=this.wallMaterial(b.color);
+    const wallKind=b.factory||b.material==='brick'?'brick':'plaster';
     const wall=box(g,0x343d3b,0,b.h/2,0,b.w-.8,b.h,b.d-.8);wall.visible=false;g.userData.wall=wall;g.userData.depth=b.d;
     // Slabs and columns remain visible through damaged exterior panels.
     for(let y=.3;y<b.h;y+=2.8)box(g,0x535b54,0,y,0,b.w-.9,.2,b.d-.9);
@@ -190,11 +192,11 @@ export class World {
       const face=new T.Group();face.rotation.y=front?0:Math.PI/2;face.position.set(front?0:signSide*depth/2,0,front?signSide*depth/2:0);g.add(face);
       const bays=Math.max(2,Math.floor(width/2.7)),bay=width/bays;
       for(let y=1.3;y<b.h;y+=2.8)for(let i=0;i<bays;i++){const x=-width/2+bay*(i+.5);
-        const section=box(face,b.color,x,y,0,bay-.04,2.65,.26);section.material=wallMaterial;section.userData.breakablePart=true;g.userData.sections.push(section);
+        const section=box(face,b.color,x,y,0,bay-.04,2.65,.26);this.surfaces.apply(section,wallKind,b.color);section.userData.breakablePart=true;g.userData.sections.push(section);
         if(y>2){const pane=box(face,b.factory?0xc1955b:0x48626b,x,y,.18*signSide,1.05,1.35,.035);pane.userData.glass=true;g.userData.glass.push(pane);}
       }
     }
-    const roof=box(g,0x3b4b52,0,b.h+.15,0,b.w+.3,.32,b.d+.3);roof.userData.breakablePart=true;g.userData.roof=roof;g.userData.sections.push(roof);
+    const roof=box(g,0x3b4b52,0,b.h+.15,0,b.w+.3,.32,b.d+.3);this.surfaces.apply(roof,'roof',0x57626a);roof.userData.breakablePart=true;g.userData.roof=roof;g.userData.sections.push(roof);
     box(g,0x65736c,-b.w*.2,b.h+.5,0,3,.7,2);if(b.factory)cylinder(g,0x7e7060,b.w*.25,b.h+2.5,0,.9,5);
     for(const side of [-1,1]){box(g,0xb4ac96,0,b.h-.18,side*(b.d/2+.16),b.w,.18,.35);box(g,0x5c6b60,side*(b.w/2-.3),b.h/2,b.d/2+.24,.09,b.h,.09);}
     for(let y=3;y<b.h;y+=2.8)box(g,0xb0aa94,0,y,b.d/2+.18,b.w,.12,.25);
@@ -230,7 +232,7 @@ export class World {
     this.static.traverse(o=>{if(!o.isMesh||o.userData.boundary)return;let p=o;while(p){if(p.userData.breakable||p.userData.keep)return;p=p.parent;}
       const v=new T.Vector3();o.getWorldPosition(v);if(o.geometry.type==='ShapeGeometry'||o.geometry.type==='ExtrudeGeometry')return;
       if((!insideMap(this.layout,v.x,v.z,0)&&!(this.district>=4&&v.y>.7))||(this.district>=4&&v.y<.07&&o.material===mat(0xa2a591)))remove.push(o);
-    });for(const o of remove)o.removeFromParent();
+    });for(const o of remove){o.removeFromParent();if(o.geometry.userData.surfaceOwned)o.geometry.dispose();}
   }
   wildTree(x,z){
     const g=this.static,r=this.random,mountain=this.district===5;
@@ -321,7 +323,7 @@ export class World {
     for(const {material,geos}of batches.values()){const mesh=new T.Mesh(mergeGeometries(geos),material);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.shellPart=true;shell.add(mesh);geos.forEach(g=>g.dispose());}g.add(shell);g.userData.shell=shell;const faded=g.userData.faded;g.userData.faded=undefined;this.fadeBuilding(g,!!faded);
   }
   destroy(){
-    this.structuralVisuals.dispose();
+    this.surfaces.dispose();this.structuralVisuals.dispose();
     this.feedback.destroy();
     this.reflectionTarget?.dispose();for(const tex of this.bloodTextures?.values()||[])tex.dispose();
     this.scene.traverse(o=>{if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==sphereGeo&&!o.geometry.userData.shared)o.geometry.dispose();if(o.material){for(const m of Array.isArray(o.material)?o.material:[o.material]){if(!m.userData.shared){m.map?.dispose();m.dispose();}}}if(o.isLight)o.shadow?.map?.dispose();});
@@ -344,7 +346,7 @@ export class World {
     bloodSpray(this,e,e.part==='head'?24:14,8,e.part==='head'?1.7:.6);this.decal(e.x,e.z,.5);
   }
   leaveRemains(e){
-    if(e.bossProfile){const mesh=buildBossModel(e);mesh.position.set(e.x,0,e.z);mesh.rotation.y=e.angle;this.scene.add(mesh);this.effects.push({mesh,kind:'boss-remains',life:8,max:8});return;}
+    if(e.bossProfile){const mesh=buildBossModel(e,this.surfaces);mesh.position.set(e.x,0,e.z);mesh.rotation.y=e.angle;this.scene.add(mesh);this.effects.push({mesh,kind:'boss-remains',life:8,max:8});return;}
     const mesh=this.character(e.enemyType||'walker',e.bossKind,'scout',e.enemyId);mesh.position.set(e.x,0,e.z);mesh.rotation.y=e.angle||0;mesh.userData.frost.visible=false;
     const gory=this.settings.gore,death=e.death||'shot',slicePart=e.slicePart||'arm';
     if(gory&&(death==='headshot'||death==='exploded'||(death==='sliced'&&slicePart==='head'))){mesh.userData.body.children.filter(o=>o.position.y>1.48).forEach(o=>o.visible=false);this.detachParts({...e,part:death==='headshot'?'head':death==='sliced'?slicePart:'all'});}
@@ -410,9 +412,9 @@ export class World {
   }
   building(x,z,w,h,color,name,trim,parent=this.static) {
     const g=new T.Group();g.position.set(x,0,z);parent.add(g);g.userData.breakable=true;g.userData.glass=[];g.userData.sections=[];this.buildingMeshes.set(`building-${this.buildingMeshes.size}`,g);const depth=7,front=depth/2;box(g,0x717c72,0,-.1,.8,w+.5,.3,9);
-    const wall=box(g,color,0,h/2,0,w,h,depth);wall.material=this.wallMaterial(color);g.userData.wall=wall;
+    const wall=box(g,color,0,h/2,0,w,h,depth);this.surfaces.apply(wall,'plaster',color);g.userData.wall=wall;
     g.userData.sections=[];wall.scale.z=depth-.8;wall.material=mat(0x343b36);
-    for(let y=1;y<h;y+=2)for(let xx=-w/2+1;xx<w/2;xx+=2){const section=box(g,color,xx,Math.min(y,h-.8),front-.12,1.93,1.93,.42);section.material=this.wallMaterial(color);section.userData.breakablePart=true;g.userData.sections.push(section);}
+    for(let y=1;y<h;y+=2)for(let xx=-w/2+1;xx<w/2;xx+=2){const section=box(g,color,xx,Math.min(y,h-.8),front-.12,1.93,1.93,.42);this.surfaces.apply(section,'plaster',color);section.userData.breakablePart=true;g.userData.sections.push(section);}
     for(const side of [-1,1])for(let y=1;y<h;y+=2)for(let zz=-2;zz<3;zz+=2){const section=box(g,color,side*(w/2-.1),Math.min(y,h-.8),zz,.42,1.93,1.93);section.userData.breakablePart=true;g.userData.sections.push(section);}
 
     for(let row=.9;row<h;row+=.42)for(const side of [-1,1])box(g,0xb2aa94,side*(w/2-.19),row,front+.15,.4,.028,.015);
@@ -449,7 +451,7 @@ export class World {
   batchStatic(root=this.static,destination=this.scene){
     root.updateWorldMatrix(true,true);destination.updateWorldMatrix(true,false);const inverse=destination.matrixWorld.clone().invert();const batches=new Map(),remove=[];
     root.traverse(o=>{if(!o.visible||!o.isMesh||o.material.transparent||o.userData.glass||o.userData.breakablePart||o.userData.shellPart)return;if(root===this.static){let ancestor=o.parent;while(ancestor&&ancestor!==root){if(ancestor.userData.breakable)return;ancestor=ancestor.parent;}}let ancestor=o.parent;while(ancestor&&ancestor!==root){if(!ancestor.visible||ancestor.userData.keepGroup)return;ancestor=ancestor.parent;}const key=`${o.material.uuid}:${!!o.geometry.index}:${Object.keys(o.geometry.attributes).sort().join(',')}:${o.castShadow}`;const a=batches.get(key)||{mat:o.material,shadow:o.castShadow,geos:[]};const geo=o.geometry.clone();geo.applyMatrix4(inverse.clone().multiply(o.matrixWorld));a.geos.push(geo);batches.set(key,a);remove.push(o);});
-    for(const o of remove)o.removeFromParent();
+    for(const o of remove){o.removeFromParent();if(o.geometry.userData.surfaceOwned)o.geometry.dispose();}
     for(const {mat,geos,shadow}of batches.values()){const merged=mergeGeometries(geos);if(merged){const m=new T.Mesh(merged,mat);m.castShadow=shadow;m.receiveShadow=true;destination.add(m);}for(const g of geos)g.dispose();}
   }
   character(type,bossKind=null,skinId='scout',appearance=0){
@@ -513,7 +515,7 @@ export class World {
     if(e.type==='cut-wave')cutWave(this,e);
     if(e.type==='ricochet')weaponImpact(this,{...e,kind:'car',normal:{x:e.dx/20,z:e.dz/20}});
     if(e.type==='reload'&&['revolver','launcher'].includes(e.weapon)){const p=this.player.position;for(let i=0;i<(e.weapon==='revolver'?6:4);i++)ejectCasing(this,{...e,x:p.x,z:p.z,angle:this.player.rotation.y},.3+i*.04);}
-    if(e.type==='hit'){if(this.settings.gore){bloodSpray(this,e,Math.min(12,4+Math.ceil(Math.sqrt(e.amount))),4+Math.min(6,Math.sqrt(e.amount)*.5),e.crawling?.35:e.headshot?1.65:1.05);}else this.effect(e.x,e.z,0xb4ad87,3,2);}
+    if(e.type==='hit'){const target=this.characters.get(e.enemyId);if(target&&!target.userData.boss)target.userData.impact={age:0,amount:e.amount,angle:Math.atan2(e.dx??0,e.dz??1)-target.rotation.y};if(this.settings.gore){bloodSpray(this,e,Math.min(12,4+Math.ceil(Math.sqrt(e.amount))),4+Math.min(6,Math.sqrt(e.amount)*.5),e.crawling?.35:e.headshot?1.65:1.05);}else this.effect(e.x,e.z,0xb4ad87,3,2);}
     if(e.type==='kill')this.leaveRemains(e);if(e.type==='dismember')this.detachParts(e);
     if(e.type==='destroy')this.destroyProp(e);if(e.type==='building-stage')this.damageBuildingStage(e);
     if(e.type==='prop-hit'&&e.kind==='building'&&e.health>0&&!e.thermal)this.buildingImpact(e);
@@ -532,7 +534,7 @@ export class World {
   }
   update(sim,dt,menu=false){
     this.fireClock.value+=dt;const t=sim.time,p=sim.player,motionDt=['paused','upgrade','dead','victory'].includes(sim.state)?0:dt;
-    const driving=sim.props.find(v=>v.id===p.vehicleId),lead=driving?{x:(driving.vx||0)*.25,z:(driving.vz||0)*.25}:{x:0,z:0};
+    const driving=sim.props.find(v=>v.id===p.vehicleId),lead=driving?{x:(driving.vx||0)*.25,z:(driving.vz||0)*.25}:this.settings.reducedMotion?{x:0,z:0}:{x:clamp((p.moveX||0)*.12,-.8,.8),z:clamp((p.moveZ||0)*.12,-.8,.8)};
     const desired=this.inspectionTarget?new T.Vector3(this.inspectionTarget.x,0,this.inspectionTarget.z):menu?new T.Vector3(2,0,-7):new T.Vector3(p.x+lead.x,0,p.z-1+lead.z);
     if(this.layout.city){const lamps=[...(this.cityLampPositions||[])].sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z));this.cityLights.forEach((l,i)=>{const a=lamps[i];if(a){l.position.set(a.x,4.8,a.z);l.intensity=70;}});this.sun.position.set(p.x-18,32,p.z+5);this.sun.target.position.set(p.x,0,p.z);this.sun.target.updateMatrixWorld();this.ash.position.x=p.x;this.ash.position.z=p.z;for(const g of this.buildingMeshes.values())if(!g.userData.collapsed){const dx=g.userData.center.x-p.x,dz=g.userData.center.z-p.z;g.visible=Math.hypot(dx,dz)<(this.overview?800:70);this.fadeBuilding(g,!menu&&!this.overview&&obscuresSurvivor(g.userData.plan,p));}}
     this.focus.lerp(desired,1-Math.exp(-dt*4));
@@ -541,7 +543,7 @@ export class World {
     this.bossCameraHeight??=height;this.bossCameraHeight+=(height-this.bossCameraHeight)*(this.settings.reducedMotion?1:1-Math.exp(-dt*3));height=this.bossCameraHeight;
     this.camera.far=this.overview&&this.layout.city?900:160;this.camera.near=.1;this.camera.left=-height*this.aspect/2;this.camera.right=height*this.aspect/2;this.camera.top=height/2;this.camera.bottom=-height/2;this.camera.updateProjectionMatrix();
     this.shake=Math.max(0,this.shake-dt*1.8);const s=this.settings.reducedMotion?0:this.shake;
-    const cameraDistance=this.overview&&this.layout.city?8:1;this.scene.fog.density=cameraDistance===8?.0009:.009;this.camera.position.set(this.focus.x+26*cameraDistance+(this.random()-.5)*s,this.focus.y+35*cameraDistance,this.focus.z+32*cameraDistance);this.camera.lookAt(this.focus);
+    const cameraDistance=this.overview&&this.layout.city?8:1;this.scene.fog.density=cameraDistance===8?.0009:.009;this.camera.position.set(this.focus.x+26*cameraDistance+Math.sin(t*47)*s*.45,this.focus.y+35*cameraDistance,this.focus.z+32*cameraDistance+Math.sin(t*61)*s*.3);this.camera.lookAt(this.focus);
     if(this.player.userData.skin!==p.skin){this.removeDynamic(this.player);this.player=this.character('player',null,p.skin);this.player.position.set(p.x,0,p.z);this.player.rotation.y=p.angle;this.scene.add(this.player);}
     dressArmour(this.player,p);this.player.position.lerp(new T.Vector3(p.x,0,p.z),1-Math.exp(-dt*22));this.player.rotation.y+=Math.atan2(Math.sin(p.angle-this.player.rotation.y),Math.cos(p.angle-this.player.rotation.y))*(1-Math.exp(-dt*20));this.animateCharacter(this.player,t,p.moving,p.dash>0,motionDt,p);
     animateWeapons(this.player,p,t,motionDt,{box,sphere,cylinder,batch:(a,b)=>this.batchStatic(a,b),remove:m=>this.removeDynamic(m)});
@@ -550,7 +552,7 @@ export class World {
     this.playerRing.position.set(p.x,.045,p.z);this.playerRing.material.opacity=p.invulnerable>0?.4+.3*Math.sin(t*30):.8;
     this.bossTell.visible=false;
     this.extractionRing.visible=sim.state==='extracting'||sim.state==='victory';this.extractionRing.rotation.z=t*.4;
-    this.syncMap(this.characters,sim.enemies,e=>{const m=e.type==='boss'?buildBossModel(e):this.character(e.type,e.bossKind,'scout',e.id);m.position.set(e.x,0,e.z);m.rotation.y=e.angle;this.scene.add(m);return m;},(m,e)=>{m.position.lerp(new T.Vector3(e.x,0,e.z),1-Math.exp(-dt*24));m.rotation.y+=Math.atan2(Math.sin(e.angle-m.rotation.y),Math.cos(e.angle-m.rotation.y))*(1-Math.exp(-dt*12));if(e.type==='boss'){animateBossModel(m,e,t);if(e.bossPhase===2&&motionDt>0&&this.random()<motionDt*3){if(e.bossKind==='cinder')plume(this,e.x,e.bossHeight*.91,e.z,.7,1.8,0x6e6e61);else this.effect(e.x,e.z,e.bossProfile.color,1,1,'ember',e.bossHeight*.7);}return;}this.animateCharacter(m,t+e.phase,e.windup<=0,false,dt,e);m.userData.body.rotation.x=e.crawling?-Math.PI/2:e.windup>0?-.17:0;if(e.crawling)m.position.y=.35;m.userData.legs.forEach(leg=>leg.visible=!e.crawling||!this.settings.gore);m.userData.arms[0].visible=!e.missingArm||!this.settings.gore;if(e.crawling){m.userData.arms.forEach((arm,i)=>arm.rotation.x=-.9+Math.sin(t*6+i*Math.PI)*.45);}if(e.burning>0){if(this.random()<dt*15)this.flame(e.x,e.z,2,.6);if(this.random()<dt*2)this.smoke(e.x,e.z,1);}if(e.electrified>0&&this.random()<dt*14)this.lightning({x:e.x-.35,z:e.z,y:.4,toX:e.x+.35,toZ:e.z+.1,toY:1.7});m.userData.frost.visible=sim.player.freeze>0||(sim.player.frost>0&&e.slow>0);if(m.userData.frost.visible&&this.random()<dt*4)this.effect(e.x,e.z,0xa2d8e3,1,1,'glass');m.scale.setScalar((e.type==='boss'?2.15:e.type==='brute'?1.5:e.type==='runner'?.85:1)*(e.flash>0?1.035:1)*(e.elite?1.15:1));});
+    this.syncMap(this.characters,sim.enemies,e=>{const m=e.type==='boss'?buildBossModel(e,this.surfaces):this.character(e.type,e.bossKind,'scout',e.id);m.position.set(e.x,0,e.z);m.rotation.y=e.angle;this.scene.add(m);return m;},(m,e)=>{m.position.lerp(new T.Vector3(e.x,0,e.z),1-Math.exp(-dt*24));m.rotation.y+=Math.atan2(Math.sin(e.angle-m.rotation.y),Math.cos(e.angle-m.rotation.y))*(1-Math.exp(-dt*12));if(e.type==='boss'){animateBossModel(m,e,t);if(e.bossPhase===2&&motionDt>0&&this.random()<motionDt*3){if(e.bossKind==='cinder')plume(this,e.x,e.bossHeight*.91,e.z,.7,1.8,0x6e6e61);else this.effect(e.x,e.z,e.bossProfile.color,1,1,'ember',e.bossHeight*.7);}return;}this.animateCharacter(m,t+e.phase,e.windup<=0,false,motionDt,e);if(e.crawling)m.userData.body.rotation.x=-Math.PI/2;if(e.crawling)m.position.y=.35;m.userData.legs.forEach(leg=>leg.visible=!e.crawling||!this.settings.gore);m.userData.arms[0].visible=!e.missingArm||!this.settings.gore;if(e.crawling){m.userData.arms.forEach((arm,i)=>arm.rotation.x=-.9+Math.sin(t*6+i*Math.PI)*.45);}if(e.burning>0){if(this.random()<dt*15)this.flame(e.x,e.z,2,.6);if(this.random()<dt*2)this.smoke(e.x,e.z,1);}if(e.electrified>0&&this.random()<dt*14)this.lightning({x:e.x-.35,z:e.z,y:.4,toX:e.x+.35,toZ:e.z+.1,toY:1.7});m.userData.frost.visible=sim.player.freeze>0||(sim.player.frost>0&&e.slow>0);if(m.userData.frost.visible&&this.random()<dt*4)this.effect(e.x,e.z,0xa2d8e3,1,1,'glass');m.scale.setScalar((e.type==='boss'?2.15:e.type==='brute'?1.5:e.type==='runner'?.85:1)*(e.flash>0?1.035:1)*(e.elite?1.15:1));});
     this.syncMap(this.projectiles,sim.bullets,b=>{const m=projectileMesh(b);this.scene.add(m);return m;},(m,b)=>{m.position.set(b.x,b.y??(b.enemy?.9:1.1),b.z);m.rotation.y=Math.atan2(b.vx,b.vz);m.rotation.x=-Math.atan2(b.vy||0,Math.hypot(b.vx,b.vz));if(b.weapon==='launcher'&&motionDt>0){m.userData.trail=(m.userData.trail||0)+motionDt;if(m.userData.trail>.055){m.userData.trail=0;plume(this,b.x,b.y,b.z,.12,.35,0xada58c);}}});
     this.syncMap(this.items,sim.pickups,item=>{
       const g=new T.Group(),color=POWERUPS[item.type].color;box(g,0x334b47,0,0,0,.48,.28,.4);box(g,color,0,.16,0,.37,.025,.29,{emissive:color,emissiveIntensity:.4});
@@ -629,13 +631,15 @@ export class World {
     });
   }
   animateCharacter(m,t,moving,dash,dt=1/60,state={}){
-    const d=m.userData,player=d.type==='player',speed=d.type==='runner'?13:player?10:6.5,velocity=Math.hypot(state.moveX||0,state.moveZ||0);if(player)d.gait=(d.gait||0)+dt*velocity*2.05;const phase=player?d.gait:t*speed,blend=1-Math.exp(-dt*14);d.walk=(d.walk||0)+((moving?1:0)-(d.walk||0))*blend;
-    const stride=Math.sin(phase)*d.walk*.62,forward=player&&velocity>.1?((state.moveX||0)*Math.sin(state.angle)+(state.moveZ||0)*Math.cos(state.angle))/velocity:1,strafe=player&&velocity>.1?((state.moveX||0)*Math.cos(state.angle)-(state.moveZ||0)*Math.sin(state.angle))/velocity:0;
-    d.legs.forEach((leg,i)=>{leg.rotation.x=(i?-1:1)*stride*forward;leg.rotation.z=(i?1:-1)*stride*strafe*.65;leg.userData.knee.rotation.x=Math.max(0,Math.sin(phase+(i?Math.PI:0)))*d.walk*.9;});
-    d.body.position.y=Math.abs(Math.sin(phase))*d.walk*.055+Math.sin(t*2)*.018;d.body.rotation.y=Math.sin(phase)*d.walk*.065;d.body.rotation.z=Math.sin(phase*.5)*d.walk*.035;d.body.rotation.x=dash?.55:0;
-    d.arms.forEach((arm,i)=>{arm.rotation.x=player?-.6: -.35+(i?1:-1)*stride*.4;arm.rotation.z=i?.1:-.1;arm.userData.elbow.rotation.x=player?-.85:-.35+Math.sin(phase+i)*.15;});
-    if(state.windup>0){const strike=Math.sin((1-state.windup)*Math.PI);d.arms.forEach(a=>{a.rotation.x=-1.2*strike;a.userData.elbow.rotation.x=-.8;});d.body.rotation.y=strike*.25;}
-    if(player&&WEAPONS[state.weapon]?.melee){d.body.rotation.x=dash?.75:.12;d.arms.forEach((a,i)=>{a.rotation.x=-.45;a.rotation.z=i?.35:-.35;});}
-    if(player){d.body.rotation.x+=d.walk*.06;d.body.rotation.z-=strafe*d.walk*.055;}
+    const d=m.userData,player=d.type==='player';d.motion??={phase:player?0:(state.phase||0)*2};const pose=stepCharacterMotion(d.motion,state,dt,{player,runner:d.type==='runner',brute:d.type==='brute'}),{phase,walk,forward,strafe}=pose;d.gait=phase;d.walk=walk;
+    d.legs.forEach((leg,i)=>{const cycle=phase+(i?Math.PI:0),swing=Math.sin(cycle),lift=Math.max(0,swing);leg.rotation.x=swing*walk*.62*forward;leg.rotation.z=swing*walk*strafe*.42;leg.userData.knee.rotation.x=lift*walk*.82+pose.land;});
+    d.body.position.y=Math.abs(Math.sin(phase))*walk*.045+Math.sin(t*2)*.014-pose.land*.45;d.body.rotation.y=Math.sin(phase)*walk*.055;d.body.rotation.z=pose.roll+Math.sin(phase*.5)*walk*.022;d.body.rotation.x=pose.pitch;
+    d.arms.forEach((arm,i)=>{arm.rotation.x=player?-.6:-.35+(i?1:-1)*Math.sin(phase)*walk*.25;arm.rotation.z=i?.1:-.1;arm.userData.elbow.rotation.x=player?-.85:-.35+Math.sin(phase+i)*walk*.15;});
+    if(state.windup>0){const strike=Math.sin((1-state.windup)*Math.PI);d.arms.forEach(a=>{a.rotation.x=-1.2*strike;a.userData.elbow.rotation.x=-.8;});d.body.rotation.y+=strike*.25;d.body.rotation.x-=strike*.12;}
+    if(player&&WEAPONS[state.weapon]?.melee){d.body.rotation.x+=dash?.15:.1;d.arms.forEach((a,i)=>{a.rotation.x=-.45;a.rotation.z=i?.35:-.35;});}
+    if(d.impact){d.impact.age+=dt;const kick=hitRecoil(d.impact.age,d.impact.amount);d.body.rotation.x+=Math.cos(d.impact.angle)*kick;d.body.rotation.z-=Math.sin(d.impact.angle)*kick;if(d.impact.age>.24)d.impact=null;}
+    if(dt>0&&pose.footfall&&!state.crawling&&!state.vehicleId&&(player||Math.hypot(m.position.x-this.player.position.x,m.position.z-this.player.position.z)<13)){
+      const x=m.position.x+Math.cos(m.rotation.y)*pose.side*.17,z=m.position.z-Math.sin(m.rotation.y)*pose.side*.17;if(waterAt(this.layout,x,z))this.splash(x,z,.16);else if(!this.settings.reducedMotion&&player)plume(this,x,.08,z,.16,.24,0x989380);
+    }
   }
 }

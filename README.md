@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.16 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.17 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,13 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters with four bespoke articulated rigs, building-scale variants, two phases and a paired fight. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.17 — Tactile streets
+
+- World-scaled asphalt, paving, masonry, roof tiles and corrugated factory cladding with fine wear, bump and roughness detail. Shared procedural maps preserve texture scale across differently sized structures.
+- Distance-driven character gait, directional strafing, acceleration and braking lean, dodge landing compression and brief directional hit reactions. Stationary enemies no longer walk in place.
+- Weapon rigs counter body lean while hands remain attached to their grips. Subtle footfall sounds, dust and water splashes; gentler directional camera feedback. Reduced Motion suppresses optional camera lead, shake and dust.
+- Boss armour, bone and bark gain surface detail; lower core emission preserves colour and shape under bloom.
 
 ## New in 4.16 — Oaths of the Quarantine
 

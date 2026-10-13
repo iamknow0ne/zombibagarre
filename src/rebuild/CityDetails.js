@@ -16,23 +16,21 @@ export function dressBuilding(world,g,b,kit){
  const original=new Set();g.traverse(o=>original.add(o));
  g.userData.style=style;
  if(style==='foundry'){
-  if(!world.industrialMaterial){const sheet=texture(128,128,c=>{c.fillStyle='#74817d';c.fillRect(0,0,128,128);for(let x=0;x<128;x+=12){c.fillStyle='#475b5c';c.fillRect(x,0,2,128);c.fillStyle='#97a297';c.fillRect(x+2,0,2,128);}c.fillStyle='#85644e';c.fillRect(0,106,128,22);});world.industrialMaterial=new T.MeshStandardMaterial({map:sheet,bumpMap:sheet,bumpScale:.07,roughness:.7,metalness:.25});}
-  for(const m of g.userData.sections)if(m.position.y<b.h)m.material=world.industrialMaterial;
+  for(const m of g.userData.sections)if(m.position.y<b.h){const old=m.geometry;world.surfaces.apply(m,'cladding',0x8b9790);if(old.userData.surfaceOwned)old.dispose();}
  }
 
  const roofAccessories=new T.Group();roofAccessories.userData.keepGroup=true;g.add(roofAccessories);g.userData.roofAccessories=roofAccessories;
  // Roof fixtures remain attached to the structure through collapse.
  if((style==='hotel'||style==='tenement')&&(!b.roof||['hip','gable'].includes(b.roof))){
-  world.roofMaterials??={};
-  if(!world.roofMaterials[style]){const tiles=texture(256,256,c=>{const rr=seededRandom(719);c.fillStyle=style==='hotel'?'#607884':'#94765d';c.fillRect(0,0,256,256);for(let y=0;y<256;y+=16)for(let x=-16;x<256;x+=32){const off=(y/16%2)*16;c.fillStyle=`rgba(18,30,34,${.08+rr()*.13})`;c.fillRect(x+off,y,31,15);c.strokeStyle='rgba(23,37,40,.35)';c.lineWidth=1;c.strokeRect(x+off,y,32,16);c.fillStyle='rgba(220,222,199,.13)';c.fillRect(x+off,y,30,1);}});tiles.wrapS=tiles.wrapT=T.RepeatWrapping;tiles.repeat.set(4,3);world.roofMaterials[style]=new T.MeshStandardMaterial({map:tiles,bumpMap:tiles,bumpScale:.08,roughness:.76});}
+  const roofMaterial=world.surfaces.material('slate',style==='hotel'?0x829aa6:0xb39579);
   let roof;
   if(b.roof==='gable'){
    roof=new T.Group();roof.userData.keepGroup=true;const rise=Math.min(2.8,b.w*.24),slope=Math.atan2(rise,b.w/2),length=Math.hypot(b.w/2,rise);
-   for(const side of [-1,1]){const panel=box(roof,0x607884,side*b.w/4,b.h+rise/2,0,length+.15,.16,b.d+.35);panel.material=world.roofMaterials[style];panel.rotation.z=-side*slope;}
+   for(const side of [-1,1]){const panel=box(roof,0x607884,side*b.w/4,b.h+rise/2,0,length+.15,.16,b.d+.35);panel.material=roofMaterial;panel.rotation.z=-side*slope;}
    const capGeo=new T.BufferGeometry();capGeo.setAttribute('position',new T.Float32BufferAttribute([-b.w/2,0,0,b.w/2,0,0,0,rise,0],3));capGeo.computeVertexNormals();
    for(const side of [-1,1]){const cap=new T.Mesh(capGeo,mat(b.color,{side:T.DoubleSide}));cap.position.set(0,b.h,side*b.d/2);roof.add(cap);}
-  }else{roof=new T.Mesh(new T.CylinderGeometry(.72,1,1,4,1,false,Math.PI/4),world.roofMaterials[style]);roof.scale.set(b.w*.69,2.7,b.d*.69);roof.position.y=b.h+1.3;}
-  g.add(roof);g.userData.decoratedRoof=roof;roof.userData.breakablePart=true;g.userData.sections.push(roof);
+  }else{roof=new T.Mesh(new T.CylinderGeometry(.72,1,1,4,1,false,Math.PI/4),roofMaterial);roof.scale.set(b.w*.69,2.7,b.d*.69);roof.position.y=b.h+1.3;}
+  g.add(roof);roof.traverse(m=>{if(m.isMesh&&m.material===roofMaterial)world.surfaces.apply(m,'slate',style==='hotel'?0x829aa6:0xb39579);});g.userData.decoratedRoof=roof;roof.userData.breakablePart=true;g.userData.sections.push(roof);
   for(const x of [-b.w*.3,b.w*.25]){box(roofAccessories,0x9b8065,x,b.h+2.5,-b.d*.19,.8,2.1,1);box(roofAccessories,0xb6a58c,x,b.h+3.55,-b.d*.19,1,.15,1.2);}
   if(b.roof!=='gable')for(let x=-b.w*.32;x<b.w*.4;x+=3.5){box(roofAccessories,trim,x,b.h+1,b.d*.34,1.6,1.6,1.1);box(roofAccessories,0x2b414d,x,b.h+1,b.d*.34+.57,.85,1,.03);box(roofAccessories,0x465b67,x,b.h+1.9,b.d*.34,1.9,.2,1.4);}
  }else if(style==='civic'){
@@ -47,7 +45,7 @@ export function dressBuilding(world,g,b,kit){
  if((style==='foundry'||style==='warehouse')&&b.roof==='gable'){
   const roof=new T.Group();roof.userData.keepGroup=true;const rise=Math.min(2.4,b.w*.2),slope=Math.atan2(rise,b.w/2),length=Math.hypot(b.w/2,rise);
   for(const side of [-1,1]){const panel=box(roof,0x566b6a,side*b.w/4,b.h+rise/2,0,length+.15,.16,b.d+.3);panel.rotation.z=-side*slope;}
-  g.add(roof);g.userData.decoratedRoof=roof;roof.userData.breakablePart=true;g.userData.sections.push(roof);
+  g.add(roof);roof.traverse(m=>{if(m.isMesh)world.surfaces.apply(m,'roof',0x7b8f8e);});g.userData.decoratedRoof=roof;roof.userData.breakablePart=true;g.userData.sections.push(roof);
  }
  if(['flat','terrace'].includes(b.roof)){
   for(const side of [-1,1]){box(roofAccessories,trim,side*b.w/2,b.h+.4,0,.18,.65,b.d);box(roofAccessories,trim,0,b.h+.4,side*b.d/2,b.w,.65,.18);}
@@ -93,9 +91,8 @@ export function dressBuilding(world,g,b,kit){
 export function dressStreets(world,kit){
  const {box,cylinder,sphere,sign,mat,plane,texture}=kit,g=world.static,r=seededRandom(world.layout.mapSeed^0x589abd);
  // Sidewalk islands follow the generated parcels; roads remain open.
- const tiles=texture(256,256,c=>{c.fillStyle='#929487';c.fillRect(0,0,256,256);for(let y=0;y<256;y+=32)for(let x=0;x<256;x+=64){const off=(y/32%2)*32;c.strokeStyle='#6e776f';c.lineWidth=2;c.strokeRect(x-off,y,64,32);c.fillStyle=`rgba(44,52,47,${r()*.08})`;c.fillRect(x-off+2,y+2,60,28);}});tiles.wrapS=tiles.wrapT=T.RepeatWrapping;tiles.repeat.set(5,5);const paving=new T.MeshStandardMaterial({map:tiles,roughness:.88});
  const grass=texture(256,256,c=>{c.fillStyle='#798161';c.fillRect(0,0,256,256);for(let i=0;i<7000;i++){c.fillStyle=i%3?'rgba(31,54,30,.11)':'rgba(206,201,133,.2)';c.fillRect(r()*256,r()*256,.6+r()*2,1+r()*5);}});grass.wrapS=grass.wrapT=T.RepeatWrapping;grass.repeat.set(7,7);const lawn=new T.MeshStandardMaterial({map:grass,roughness:1});
- for(const {x,z,park,w,d} of world.layout.parcels){if(!park)plane(g,paving,x,.141,z,w-.4,d-.4,true);else{
+ for(const {x,z,park,w,d} of world.layout.parcels){if(!park)world.surfaces.apply(plane(g,world.surfaces.material('paving',0xaeb0a0),x,.141,z,w-.4,d-.4,true),'paving',0xaeb0a0);else{
   plane(g,lawn,x,.142,z,23.6,23.6,true);box(g,0xa89b79,x,.15,z,2,.025,23.6);box(g,0xa89b79,x,.15,z,23.6,.025,2);
   // Distinct park furniture: rose beds, a circular fountain or a glass pavilion.
   const kind=Math.floor(r()*3);

@@ -1,7 +1,8 @@
+import {surfaceUV,SURFACES} from './SurfaceMaterials.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import * as T from 'three';
 // Sculpted in a six-metre reference space. All joints remain separate for combat poses.
-export function buildBossModel(e){
+export function buildBossModel(e,surfaces){
  const root=new T.Group(),body=new T.Group();root.add(body);const profile=e.bossProfile,kind=profile.kind,pale=profile.color===0xd8e9ee;
  const mats={iron:new T.MeshStandardMaterial({color:pale?0x778e97:0x303d3e,roughness:.58,metalness:.65}),rust:new T.MeshStandardMaterial({color:0x77533e,roughness:.91}),bone:new T.MeshStandardMaterial({color:pale?0xe0e8de:0xb4ab8c,roughness:.78}),dark:new T.MeshStandardMaterial({color:0x182525,roughness:.9}),bark:new T.MeshStandardMaterial({color:0x4c5740,roughness:1}),glow:new T.MeshStandardMaterial({color:profile.color,emissive:profile.color,emissiveIntensity:1.3,roughness:.3}),red:new T.MeshStandardMaterial({color:0x795144,roughness:.85})};
  const mesh=(parent,geometry,material,x,y,z,sx=1,sy=1,sz=1)=>{const m=new T.Mesh(geometry,mats[material]);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=m.receiveShadow=true;parent.add(m);return m;};
@@ -42,14 +43,16 @@ export function buildBossModel(e){
  }
  if(profile.height>9&&kind==='warden'){for(const side of [-1,1])for(let i=0;i<5;i++){const shard=mesh(body,new T.ConeGeometry(.15,.85+i*.12,5),'bone',side*(.8+i*.13),4.15+i*.05,-.12);shard.rotation.z=-side*(.45+i*.13);}}
  if(profile.name==='THE FEN KING'){for(const side of [-1,1]){rod(body,'bark',[side*.9,4.1,0],[side*1.4,5.9,-.2],.15,.01);for(let i=0;i<3;i++)rod(body,'bone',[side*(1+i*.1),4.6+i*.3,-.1],[side*(1.7+i*.13),4.9+i*.3,-.2],.065,.01);}mats.iron.color.setHex(0x384e46);mats.rust.color.setHex(0x697d62);}
- root.scale.setScalar(profile.height/6);root.userData={boss:true,body,legs,arms,petals,doors,chains,mats,height:profile.height};batchBoss(body);return root;
+ root.scale.setScalar(profile.height/6);
+ if(surfaces){for(const [key,material]of Object.entries(mats)){if(key==='glow')continue;const kind=key==='bark'?'bark':['iron','rust'].includes(key)?'metal':'plaster',maps=surfaces.textures(kind);material.map=maps.albedo;material.bumpMap=maps.relief;material.bumpScale=SURFACES[kind].bump;material.roughnessMap=maps.relief;}root.traverse(m=>{if(m.isMesh&&m.material!==mats.glow){const old=m.geometry;surfaceUV(m,1.8);old.dispose();}});}
+ root.userData={boss:true,body,legs,arms,petals,doors,chains,mats,height:profile.height};batchBoss(body);return root;
 }
 export function animateBossModel(root,e,time){
  const u=root.userData,phase=e.bossPhase===2,opening=phase?(e.bossState==='transition'?1-e.bossTimer/e.bossDuration:1):0,walk=e.bossState==='pursuit',wind=e.bossState==='telegraph'?1-e.bossTimer/e.bossDuration:0,strike=e.bossState==='strike',recover=e.bossState==='recovery';
  const breathing=Math.sin(time*1.7)*.025,attack=strike?Math.sin(Math.min(1,1-e.bossTimer/e.bossDuration)*Math.PI):0;
  u.body.position.y=breathing+(walk?Math.abs(Math.sin(time*3))*.07:0)-(recover?.14:0);u.body.rotation.x=-wind*.12+attack*.18+(recover?.08:0);u.body.rotation.z=walk?Math.sin(time*3)*.035:0;
  u.legs.forEach((l,i)=>{l.rotation.x=walk?Math.sin(time*3+i*Math.PI)*.2:0;});u.arms.forEach((a,i)=>{a.rotation.x=-wind*(e.bossKind==='dredger'?.25:.85)+attack*.7+(walk?Math.sin(time*3+i*Math.PI)*.12:0);a.rotation.z=(e.bossKind==='warden'?(i?-.18:.4)*opening:0);});
- u.petals.forEach((g,i)=>{g.rotation.x=(.1+.85*opening)+Math.sin(time*1.4+i)*.04+wind*.2-attack*.2;});u.doors.forEach((g,i)=>{g.rotation.y=(i?1:-1)*(.14+opening*1.01+wind*.25*(1-opening));});u.chains.forEach((g,i)=>{g.rotation.z=Math.sin(time*1.5+i)*.1+wind*(i?.25:-.25);g.rotation.x=attack*.7;});if(e.bossKind==='dredger'){u.arms[0].position.y=4.6-opening*.75;u.arms[0].rotation.z=Math.sin(time*1.4)*(phase?.2:.06);}if(e.bossKind==='warden')u.arms[0].rotation.y=-.65*opening;u.mats.glow.emissiveIntensity=(phase?2:1.1)+wind*1.7+(recover?.6:0);u.mats.glow.color.setHex(recover?0xa8e4ce:e.bossProfile.color);if(e.flash>0)u.mats.bone.emissive.setHex(0x483e2b);else u.mats.bone.emissive.setHex(0);
+ u.petals.forEach((g,i)=>{g.rotation.x=(.1+.85*opening)+Math.sin(time*1.4+i)*.04+wind*.2-attack*.2;});u.doors.forEach((g,i)=>{g.rotation.y=(i?1:-1)*(.14+opening*1.01+wind*.25*(1-opening));});u.chains.forEach((g,i)=>{g.rotation.z=Math.sin(time*1.5+i)*.1+wind*(i?.25:-.25);g.rotation.x=attack*.7;});if(e.bossKind==='dredger'){u.arms[0].position.y=4.6-opening*.75;u.arms[0].rotation.z=Math.sin(time*1.4)*(phase?.2:.06);}if(e.bossKind==='warden')u.arms[0].rotation.y=-.65*opening;u.mats.glow.emissiveIntensity=(phase?.65:.35)+wind*.45+(recover?.2:0);u.mats.glow.color.setHex(recover?0xa8e4ce:e.bossProfile.color);if(e.flash>0)u.mats.bone.emissive.setHex(0x483e2b);else u.mats.bone.emissive.setHex(0);
 }
 export function bossWarning(h){
  const g=new T.Group(),material=new T.MeshBasicMaterial({color:0xec795a,transparent:true,opacity:.55,depthWrite:false,side:T.DoubleSide});

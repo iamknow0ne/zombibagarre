@@ -117,7 +117,7 @@ export class Simulation {
       else if(!e.missingArm&&(impact.part==='arm'||(e.health<e.maxHealth*.6&&this.random()<.13))){e.missingArm=true;e.damage*=.7;this.emit('dismember',{id:e.id,x:e.x,z:e.z,part:'arm',angle:e.angle});}
     }
     this.emit('damage',{enemyId:e.id,x:e.x,z:e.z,enemyType:e.type,bossHeight:e.bossHeight,crawling:!!e.crawling,amount,dealt,health:Math.max(0,e.health),maxHealth:e.maxHealth,weapon:impact.weapon,kind:impact.kind,tier:impact.tier,critical:crit.critical,headshot:!!impact.headshot,finisher:!!impact.finisher,execution:!!impact.execution,periodic:!!impact.periodic,killed:e.health<=0});
-    if(amount>=1)this.emit('hit' , { x:e.x,z:e.z,amount,enemyType:e.type,weapon:impact.weapon,tier:impact.tier||0,dx,dz,kind:impact.kind,crawling:!!e.crawling,headshot:!!impact.headshot });
+    if(amount>=1)this.emit('hit' , { x:e.x,z:e.z,enemyId:e.id,amount,enemyType:e.type,weapon:impact.weapon,tier:impact.tier||0,dx,dz,kind:impact.kind,crawling:!!e.crawling,headshot:!!impact.headshot });
     if (e.health <= 0) {
       bossDefeated(this,e);rpgKill(this,e);this.kills++; this.waveKills++; this.combo++; this.comboTimer = 3.5;
       this.score += Math.round(e.score * (1 + Math.min(4, Math.floor(this.combo / 5)) * .25) * (this.player.doubleScore>0?2:1));
@@ -169,7 +169,7 @@ export class Simulation {
     if(p.vehicleId)this.drive(dt,mx,mz,input);
     else if (p.dash > 0) { p.dash -= dt; this.move(p, p.dashX * 22 * dt, p.dashZ * 22 * dt); }
     else{const stanceSpeed=isMelee(p)?1.22:1;this.move(p, mx * p.speed * stanceSpeed * dt, mz * p.speed * stanceSpeed * dt);}
-    p.moveX=dt?(p.x-beforeMove.x)/dt:0;p.moveZ=dt?(p.z-beforeMove.z)/dt:0;p.moving=Math.hypot(p.moveX,p.moveZ)>.08;
+    p.moveX=dt?(p.x-beforeMove.x)/dt:0;p.moveZ=dt?(p.z-beforeMove.z)/dt:0;p.moving=Math.hypot(p.moveX,p.moveZ)>.08;if(!p.vehicleId&&p.dash<=0){p.footTravel=(p.footTravel||0)+distance(p,beforeMove);if(p.footTravel>1.53){p.footTravel%=1.53;this.emit('footstep',{water:!!waterAt(this.layout,p.x,p.z)});}}
     const w = weaponStats(p);
     const target = this.enemies.filter(e => e.health > 0 && distance(p, e) < w.range && !this.blocked(p, e)).sort((a, b) => distance(p, a) - distance(p, b))[0];
     let aim = input.aim;
