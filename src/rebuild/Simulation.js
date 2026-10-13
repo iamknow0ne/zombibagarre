@@ -1,3 +1,4 @@
+import {createFocus,stepFocus,endFocus,rewardFocus,beginFocusDive,FOCUS} from './BulletTime.js';
 import {createWeather,updateWeather,addNightReinforcements,weatherMovement} from './Weather.js';
 import {weaponLock,permittedLoadout} from './Progression.js';
 import {throwOrdnance,detonateThrowable} from './Throwables.js';
@@ -22,19 +23,19 @@ import { WEAPONS, weaponStats, ENEMIES, ARENA, COVER, UPGRADES, seededRandom, cl
 export class Simulation {
   constructor({ seed=73,difficulty='standard',meta={},layout=null,mode='campaign',skin='scout',profile=null,progression='sandbox',environment={} }={}) {
     this.progression=progression==='hero'?'hero':'sandbox';this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.streetEvents=makeStreetEvents(this.layout);this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
-    this.weather=createWeather(seed,environment);this.state = 'menu'; this.enemies = []; this.bullets = []; this.pickups = []; this.hazards = [];this.fires=[];
+    this.focus=createFocus();this.timeScale=1;this.focusEnabled=environment?.bulletTime!==false;this.weather=createWeather(seed,environment);this.state = 'menu'; this.enemies = []; this.bullets = []; this.pickups = []; this.hazards = [];this.fires=[];
     this.time = 0; this.wave = 0; this.kills = 0; this.score = 0; this.combo = 0; this.comboTimer = 0;
     this.player = this.makePlayer('carbine'); this.upgrades = []; this.upgradeOffers=[]; this.rerolls=2; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);if(profile)initRPG(this,profile);
   }
   makePlayer(weapon) {
     return { skin:this.skin,vehicleId:null,swing:0,swingCombo:0,swingWeapon:null,x: 0, z: 3, angle: Math.PI, radius: .4, health: 100, maxHealth: 100, speed: 5.2, damage: 1,
       weapon, upgradeRanks:{}, ambushTime:0, mastery:{},shotCounts:{},swingCount:0, magazines: Object.fromEntries(Object.entries(WEAPONS).map(([k, v]) => [k, v.magazine])), reload: 0, reloadTotal: 0,
-      fire: 0, invulnerable: 0, dash: 0, dashCooldown: 0, dashMax: 2.7, dashX: 0, dashZ: -1,
+      fire: 0, invulnerable: 0, dash: 0, focusDive:false, diveDuration:FOCUS.diveDuration, dashCooldown: 0, dashMax: 2.7, dashX: 0, dashZ: -1,
       melee: 0, throwable: 'frag', grenades: 3, blast: 1, pickupRange: 1.35, lifeSteal: 0, reloadMultiplier: 1, fireMultiplier: 1, moving: false, resistance:0, regen:0, pierce:0, crit:0, magazineBonus:0, burn:0, frost:0, blastRadius:1, shield:0, overdrive:0, doubleScore:0, freeze:0,equipped:[weapon],weaponTimers:{},reloads:{},reloadDurations:{},shots:{},equippedAt:-99,moveX:0,moveZ:0,meleeAttack:null,meleeBuffer:null,attackHeld:false,throwAnimation:0,offhandRecoil:0,swapBoost:0,lastWeapon:null,lastWeaponTime:-100 };
   }
   emit(type, data = {}) { this.events.push({ ...data, type }); }
-  start(weapon = 'carbine') { this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave(); }
-  pause() { if (['playing', 'extracting'].includes(this.state)) { this.previousState = this.state; this.state = 'paused'; } }
+  start(weapon = 'carbine') { this.focus=createFocus();this.timeScale=1; this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave(); }
+  pause() { if (['playing', 'extracting'].includes(this.state)) { this.previousState = this.state; this.state = 'paused';endFocus(this,true); } }
   resume() { if (this.state === 'paused') this.state = this.previousState; }
   nextWave() {
     this.wave++;this.state='playing';const p=this.player;p.shield=Math.max(p.shield,p.waveShield||0);if(this.wave>1)p.grenades+=p.waveGrenades||0;const vehicle=this.props.find(v=>v.id===p.vehicleId);if(vehicle)vehicle.health=Math.min(vehicle.maxHealth,vehicle.health+vehicle.maxHealth*(p.vehicleRepair||0));const district=Math.floor((this.wave-1)/4);
@@ -96,7 +97,7 @@ export class Simulation {
     if(oldTwin&&oldTwin!==newTwin)p.twinReserves[oldTwin]={ammo:p.magazines.offhand,reload:p.reloads.offhand||0,duration:p.reloadDurations.offhand||0,timer:p.weaponTimers.offhand||0};p.equipped=next;
     p.weapon=next[0];
     if(newTwin&&oldTwin!==newTwin){const saved=p.twinReserves[newTwin];p.magazines.offhand=saved?.ammo??magazineSize(p,newTwin);p.reloads.offhand=saved?.reload||0;p.reloadDurations.offhand=saved?.duration||0;p.weaponTimers.offhand=saved?.timer??WEAPONS[newTwin].interval*.5;}
-    if(changed){p.equippedAt=this.time;p.meleeAttack=null;p.meleeBuffer=null;p.shots={};p.swing=0;p.swingWeapon=null;p.swingCombo=0;p.lastSwing=-99;p.dashCooldown=Math.min(p.dashCooldown,isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax);this.emit('switch');}
+    if(changed){if(isMelee(p))p.focusDive=false;p.equippedAt=this.time;p.meleeAttack=null;p.meleeBuffer=null;p.shots={};p.swing=0;p.swingWeapon=null;p.swingCombo=0;p.lastSwing=-99;p.dashCooldown=Math.min(p.dashCooldown,isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax);this.emit('switch');}
     p.reload=p.reloads[p.weapon]||0;return changed;
   }
   equipWeapon(key){if(!WEAPONS[key])return false;return this.setLoadout(toggleLoadout(this.player.equipped,key));}
@@ -124,7 +125,7 @@ export class Simulation {
     this.emit('damage',{enemyId:e.id,x:e.x,z:e.z,enemyType:e.type,bossHeight:e.bossHeight,crawling:!!e.crawling,amount,dealt,health:Math.max(0,e.health),maxHealth:e.maxHealth,weapon:impact.weapon,kind:impact.kind,tier:impact.tier,critical:crit.critical,headshot:!!impact.headshot,finisher:!!impact.finisher,execution:!!impact.execution,periodic:!!impact.periodic,killed:e.health<=0});
     if(amount>=1)this.emit('hit' , { x:e.x,z:e.z,enemyId:e.id,amount,enemyType:e.type,weapon:impact.weapon,tier:impact.tier||0,dx,dz,kind:impact.kind,crawling:!!e.crawling,headshot:!!impact.headshot });
     if (e.health <= 0) {
-      bossDefeated(this,e);rpgKill(this,e);this.kills++; this.waveKills++; this.combo++; this.comboTimer = 3.5;
+      bossDefeated(this,e);rpgKill(this,e);rewardFocus(this,{...impact,critical:crit.critical});this.kills++; this.waveKills++; this.combo++; this.comboTimer = 3.5;
       this.score += Math.round(e.score * (1 + Math.min(4, Math.floor(this.combo / 5)) * .25) * (this.player.doubleScore>0?2:1));
       this.player.health = Math.min(this.player.maxHealth, this.player.health+this.player.lifeSteal*(this.player.regen>0?2:1));
       if(e.type==='volatile')this.hazards.push({id:this.nextId++,x:e.x,z:e.z,radius:2.4,timer:.7,duration:.7,friendly:false,damage:24});
@@ -152,7 +153,7 @@ export class Simulation {
   rerollUpgrades(){if(this.state!=='upgrade'||this.rerolls<=0)return false;this.rerolls--;this.offerUpgrades();return true;}
   update(dt, input = {}) {
     if (!['playing', 'extracting'].includes(this.state)) return;
-    dt = clamp(dt, 0, .05); this.time += dt;updateWeather(this,dt);const p = this.player;
+    dt = clamp(dt, 0, .05);dt*=stepFocus(this,dt,!!input.bulletTime); this.time += dt;updateWeather(this,dt);const p = this.player;
     for (const key of ['ambushTime', 'fire', 'invulnerable', 'dashCooldown', 'melee','overdrive','doubleScore','freeze','swapBoost','swing','throwAnimation','offhandRecoil']) p[key] = Math.max(0, p[key] - dt);
     p.health = Math.min(p.maxHealth,p.health+p.regen*dt*(p.lifeSteal>0?2:1));
     this.comboTimer -= dt; if (this.comboTimer <= 0) this.combo = 0;
@@ -167,15 +168,16 @@ export class Simulation {
     if (length > 1) { mx /= length; mz /= length; }
     if(input.interact){if(!this.profile||!interactPlace(this))this.interactVehicle();if(this.state==='paused')return;}
     if (input.dash && !p.vehicleId&& p.dashCooldown === 0) {
-      p.ambushTime=3;p.shield=Math.max(p.shield,p.dashShield||0);p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.dash = isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax;
+      p.ambushTime=3;p.shield=Math.max(p.shield,p.dashShield||0);p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;const dive=!isMelee(p)&&beginFocusDive(this);p.focusDive=!!dive;p.dash = dive?FOCUS.diveDuration:isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax;
       p.dashX = length > .1 ? mx / Math.hypot(mx, mz) : Math.sin(p.angle); p.dashZ = length > .1 ? mz / Math.hypot(mx, mz) : Math.cos(p.angle); this.emit('dash');
     }
     const beforeMove={x:p.x,z:p.z};
     p.moving = length > .1;
     if(p.vehicleId){p.slideX=p.slideZ=0;this.drive(dt,mx,mz,input);}
-    else if (p.dash > 0) { p.slideX=p.dashX*p.speed;p.slideZ=p.dashZ*p.speed;p.dash -= dt; this.move(p, p.dashX * 22 * dt, p.dashZ * 22 * dt); }
+    else if (p.dash > 0) { p.slideX=p.dashX*p.speed;p.slideZ=p.dashZ*p.speed;p.dash = Math.max(0,p.dash-dt); this.move(p, p.dashX * 22 * dt, p.dashZ * 22 * dt); }
     else{const stanceSpeed=isMelee(p)?1.22:1;const drift=weatherMovement(p,mx,mz,p.speed*stanceSpeed,dt,this.weather),x=p.x,z=p.z;this.move(p,drift.x,drift.z);if(Math.abs(p.x-x)<Math.abs(drift.x)*.1)p.slideX=0;if(Math.abs(p.z-z)<Math.abs(drift.z)*.1)p.slideZ=0;}
     p.moveX=dt?(p.x-beforeMove.x)/dt:0;p.moveZ=dt?(p.z-beforeMove.z)/dt:0;p.moving=Math.hypot(p.moveX,p.moveZ)>.08;if(!p.vehicleId&&p.dash<=0){p.footTravel=(p.footTravel||0)+distance(p,beforeMove);if(p.footTravel>1.53){p.footTravel%=1.53;this.emit('footstep',{water:!!waterAt(this.layout,p.x,p.z)});}}
+    if(p.dash<=0)p.focusDive=false;
     const w = weaponStats(p);
     const target = this.enemies.filter(e => e.health > 0 && distance(p, e) < w.range).sort((a, b) => distance(p, a) - distance(p, b)).find(e=>!this.blocked(p,e));
     let aim = input.aim;
@@ -197,7 +199,7 @@ export class Simulation {
       const slot=slotKey(p.equipped,key,i),gun=weaponStats(p,key);const gunTarget=key===p.weapon?target:this.enemies.filter(e=>e.health>0&&distance(p,e)<gun.range).sort((a,b)=>distance(p,a)-distance(p,b)).find(e=>!this.blocked(p,e));
       const firing=input.fireHands?!!input.fireHands[i]||(gun.melee&&input.fireHands.some(Boolean)):input.firing;
       const gunAim=firing?input.aim:!manual&&input.auto!==false?gunTarget:null;
-      if(gunAim&&((!manual&&input.auto!==false&&gunTarget)||firing)&&!p.weaponTimers[slot]&&!p.reloads[slot]&&p.dash<=0&&p.throwAnimation<=.12){
+      if(gunAim&&((!manual&&input.auto!==false&&gunTarget)||firing)&&!p.weaponTimers[slot]&&!p.reloads[slot]&&(p.dash<=0||p.focusDive)&&p.throwAnimation<=.12){
         if(!gun.melee&&p.magazines[slot]<=0)this.reload(key,slot);else this.fireWeapon(key,gunAim,slot,i);
       }
     }
@@ -230,6 +232,7 @@ export class Simulation {
       if (this.wave === TOTAL_WAVES) { this.state = 'extracting'; this.emit('extraction'); }
       else { this.state = 'upgrade';if(this.wave%4===0)this.rerolls=Math.min(5,this.rerolls+1);this.offerUpgrades(); }
     }
+    if(!['playing','extracting'].includes(this.state)||p.vehicleId)endFocus(this,true);
     if (this.state === 'extracting') {
       if (distance(p, { x: 0, z: -10 }) < 3) this.extraction += dt; else this.extraction = Math.max(0, this.extraction - dt * .5);
       if (this.extraction >= 4) { this.state = 'victory'; this.score += 5000 + Math.round(p.health * 10); this.emit('victory'); }
@@ -243,7 +246,7 @@ export class Simulation {
       const a=angle+(this.random()-.5)*w.spread*2,headshot=!['flame','launcher','arc'].includes(key)&&this.random()<(key==='marksman'?.32:key==='revolver'?.22:.07);
       this.bullets.push({id:this.nextId++,x:originX,z:originZ,vx:Math.sin(a)*w.speed,vz:Math.cos(a)*w.speed,life:w.range/w.speed,headshot,damage:w.damage*(headshot?1.65:1)*p.damage*(p.swapBoost>0?1.25:1),enemy:false,tier:w.tier,ricochets:w.ricochet||0,y:1.1,vy:key==='launcher'?3.8:0,gravity:key==='launcher'?8:0,terminal:key==='marksman'&&w.tier===3,cluster:key==='launcher'&&w.tier===3,pierce:(w.pierce||0)+p.pierce,hitIds:[],weapon:key,burn:(w.burn||0)+p.burn,frost:p.frost,explosive:(key==='revolver'&&w.tier===3&&count%4===0?1.6:w.explosive||0)*p.blastRadius});
     }
-    this.emit('shoot',{x:originX,z:originZ,angle,weapon:key,hand,variant,tier:w.tier,interval:p.weaponTimers[slot]});
+    this.emit('shoot',{x:originX,z:originZ,angle,weapon:key,hand,variant,tier:w.tier,interval:p.weaponTimers[slot]/(this.timeScale||1)});
   }
   slice(key,aim){
     const p=this.player;if(!WEAPONS[key]?.melee||p.meleeAttack||p.vehicleId||p.dash>0||p.throwAnimation>0)return false;

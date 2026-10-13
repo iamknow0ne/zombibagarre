@@ -3,7 +3,7 @@ export function feedbackPattern(event){
  const weapon=weaponPulse(event);if(weapon)return weapon;
  let spec=({hurt:[.85,.45,210],explosion:[1,.65,260],dash:[.1,.45,90],throw:[.2,.3,110],loaded:[.12,.3,65],powerup:[.2,.5,140],vehicle:[.3,.2,120]})[event.type];
  if(event.type==='vehicle-hit')spec=[Math.min(1,event.power/18),.4,150];if(event.type==='vehicle-skid')spec=[.07,Math.min(.35,event.power*.35),65];
- if(event.type==='progression')spec=[.15,.4,150];if(event.type==='ordnance-burst')spec=event.throwable==='shock'?[.2,.85,180]:[.45,.3,150];if(!spec)return null;return{strongMagnitude:spec[0],weakMagnitude:spec[1],duration:spec[2],startDelay:0};
+ if(event.type==='focus')spec=event.active?[.15,.45,130]:[.1,.12,60];if(event.type==='focus-dive')spec=[.25,.55,130];if(event.type==='progression')spec=[.15,.4,150];if(event.type==='ordnance-burst')spec=event.throwable==='shock'?[.2,.85,180]:[.45,.3,150];if(!spec)return null;return{strongMagnitude:spec[0],weakMagnitude:spec[1],duration:spec[2],startDelay:0};
 }
 export class Haptics{
  constructor(input,settings){this.input=input;this.settings=settings;this.last=-1000;this.priorityUntil=0;this.hands=[null,null];this.status='Connect a controller to check vibration.';}

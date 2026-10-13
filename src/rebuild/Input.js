@@ -9,9 +9,11 @@ export class Input {
     this.settings=settings;this.source='keyboard';
     this.padButtons=[];this.pad=null;this.padGuard=false;this.keys=new Set();this.once={};this.pointer={x:.5,y:.5,active:false};this.firing=false;this.stick={x:0,y:0};this.canvas=canvas;this.onAction=onAction;
     window.addEventListener('keydown',e=>{this.source='keyboard';if(e.target.matches('input,select,textarea'))return;
+      // Let an existing dialog handle Escape; prevent the same key from closing a newly opened pause dialog.
+      if(e.code==='Escape'){if(document.querySelector('dialog[open]'))return;e.preventDefault();}
       if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&!document.querySelector('dialog[open]'))e.preventDefault();
       if(!e.repeat){const actions={Escape:'pause',KeyP:'pause',KeyT:'auto',KeyB:'arsenal',KeyM:'map'};if(actions[e.code])onAction(actions[e.code]);
-        const single={Space:'dash',KeyF:'melee',KeyE:'grenade',KeyR:'reload',KeyV:'interact',Digit9:'katana',Digit0:'dual',Digit1:'carbine',Digit2:'shotgun',Digit3:'smg',Digit4:'revolver',Digit5:'marksman',Digit6:'flame',Digit7:'launcher',Digit8:'arc'};if(single[e.code]){if(e.code.startsWith('Digit'))this.once.weapon=single[e.code];else this.once[single[e.code]]=true;}}
+        const single={Space:'dash',KeyF:'melee',KeyE:'grenade',KeyR:'reload',KeyV:'interact',KeyC:'bulletTime',Digit9:'katana',Digit0:'dual',Digit1:'carbine',Digit2:'shotgun',Digit3:'smg',Digit4:'revolver',Digit5:'marksman',Digit6:'flame',Digit7:'launcher',Digit8:'arc'};if(single[e.code]){if(e.code.startsWith('Digit'))this.once.weapon=single[e.code];else this.once[single[e.code]]=true;}}
       this.keys.add(e.code);
     });
     window.addEventListener('keyup',e=>this.keys.delete(e.code));
@@ -64,7 +66,7 @@ export class Input {
       if(this.weaponWheelActive)return;
       if(press[b.auto])this.onAction('auto');
     }else{this.weaponHold?.reset();this.onCancelWheel?.();}
-    for(const action of (sim.player.vehicleId?['interact']:['dash','reload','interact','grenade']))if(press[b[action]])this.once[action]=true;
+    for(const action of (sim.player.vehicleId?['interact']:['dash','reload','interact','grenade','bulletTime']))if(press[b[action]])this.once[action]=true;
     if(Math.hypot(pad.aim.x,pad.aim.y)>.1){
       const a=worldStick({x:pad.aim.x,y:pad.aim.y*(settings.invertAim?-1:1)}),len=Math.hypot(a.x,a.z),range=5+11*Math.min(1,len),angle=Math.atan2(a.x,a.z);
       const previous=this.aimAngle??angle,delta=Math.atan2(Math.sin(angle-previous),Math.cos(angle-previous));this.aimAngle=previous+delta*(1-Math.exp(-dt*24*settings.aimSensitivity));

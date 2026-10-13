@@ -1,9 +1,11 @@
+import {focusDivePose} from './BulletTime.js';
 import {createWeaponMesh} from './WeaponModels.js';
 import {weaponTier,WEAPON_FINISHES} from './Evolution.js';
 import * as T from 'three';
 import {WEAPON_MOTION,recoilAt,meleePose,smooth,shotPose,weaponReloadPose} from './WeaponMotion.js';
 import {WEAPONS} from './config.js';
 import {slotKey,normalizeLoadout} from './Loadout.js';
+const diveRotation=new T.Quaternion(),diveEuler=new T.Euler();
 const down=new T.Vector3(0,-1,0),upperLength=.34,lowerLength=.32;
 
 export const buildWeapon=(key,kit,tier=0)=>createWeaponMesh(key,kit,tier);
@@ -43,7 +45,7 @@ export function animateWeapons(character,state,t,dt,kit){
   g.position.z-=recoil*profile.kick+(two?0:r.lower*.055+equip*.06);g.position.y-=r.lower*.12+equip*.15;
   g.position.y+=Math.sin(t*2.4+hand*.6)*.009+Math.sin(phase*2)*walk*.012/(.5+profile.weight);
   g.rotation.y+=Math.sin(phase)*walk*.018/(.5+profile.weight)+motion.yaw*side;g.rotation.z+=motion.roll*side;g.rotation.x+=motion.pitch;g.position.y+=motion.rise;g.rotation.z-=(d.motion?.pose?.roll||0)*.28;g.rotation.x-=(d.motion?.pose?.pitch||0)*.16;
-  if(state.dash>0){g.rotation.x+=.5;g.position.z-=.08;}
+  if(state.dash>0&&!state.focusDive){g.rotation.x+=.5;g.position.z-=.08;}
   if(blade){
    const active=state.swing>0&&state.swingWeapon===key,progress=active?1-state.swing/state.swingDuration:0,pose=meleePose(key,state.swingCombo,progress,state.swingVariant||0);
    const striking=key!=='dual'||hand===(state.swingCombo===1?1:0)||pose.finisher;
@@ -59,6 +61,7 @@ export function animateWeapons(character,state,t,dt,kit){
    if(g.userData.rotor){g.userData.rotor.rotation.z=key==='arc'?Math.sin(t*5)*recoil*.15:0;g.userData.rotor.position.y=key==='arc'?Math.sin(t*18)*recoil*.012:0;}
    totalRecoil+=recoil*profile.kick;
   }
+  if(!blade&&state.focusDive){const dive=focusDivePose(state);g.position.z-=dive.lift*.2;diveRotation.setFromEuler(diveEuler.set(dive.pitch,0,dive.roll)).invert();g.quaternion.premultiply(diveRotation);}
   g.updateMatrix();const grip=new T.Vector3(0,0,0).applyMatrix4(g.matrix);
   if(state.throwAnimation>.12&&hand===0){const f=1-state.throwAnimation/.5;g.visible=false;const q=smooth(f/.55);grip.set(.34,1.65+Math.sin(f*Math.PI)*.22,-.26+q*.77);}else g.visible=true;
   d.gripError=Math.max(d.gripError,solveArm(arm,grip,g.quaternion,side));

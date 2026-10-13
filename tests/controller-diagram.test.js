@@ -4,7 +4,7 @@ import {diagramActions,diagramGeometry,controllerSVG} from '../src/rebuild/Contr
 import {BINDINGS,rebind} from '../src/rebuild/ControllerConfig.js';
 test('combat reference follows remapped actions without losing either hand or the stick controls',()=>{
  const settings={bindings:rebind(BINDINGS,'rightFire',7)},actions=diagramActions(settings);
- assert.equal(actions.find(a=>a.label==='Right weapon / melee').id,'7');assert.equal(actions.find(a=>a.label==='Left weapon').id,'6');assert.equal(actions.filter(a=>a.id==='move').length,1);assert.equal(actions.filter(a=>a.id==='aim').length,1);assert.equal(actions.length,14);
+ assert.equal(actions.find(a=>a.label==='Right weapon / melee').id,'7');assert.equal(actions.find(a=>a.label==='Left weapon').id,'6');assert.equal(actions.filter(a=>a.id==='move').length,1);assert.equal(actions.filter(a=>a.id==='aim').length,1);assert.equal(actions.length,15);
 });
 test('vehicle reference distinguishes easy driving from pedals and follows the exit binding',()=>{
  const settings={bindings:rebind(BINDINGS,'interact',2),drivingStyle:'assisted'},easy=diagramActions(settings,'driving');assert.equal(easy.some(a=>a.id==='7'),false);assert.ok(easy.some(a=>a.id==='6'&&a.label==='Hold to reverse'));assert.equal(easy.find(a=>a.label.startsWith('Exit')).id,'2');const racing=diagramActions({...settings,drivingStyle:'racing'},'driving');assert.ok(racing.some(a=>a.id==='7'&&a.label==='Accelerate'));assert.ok(racing.some(a=>a.id==='1'&&a.label==='Handbrake'));

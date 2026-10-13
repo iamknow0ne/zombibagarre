@@ -1,5 +1,6 @@
 import {UPGRADES,UPGRADE_TIERS,rankOf} from './Upgrades.js';
 const paths={
+ hourglass:'M5 2h14M5 22h14M7 2v4c0 3 5 4 5 6s-5 3-5 6v4M17 2v4c0 3-5 4-5 6s5 3 5 6v4M8 18h8M9 5h6',
  swap:'M3 7h17l-4-4m4 4-4 4M21 17H4l4-4m-4 4 4 4',
  dodge:'M2 9h5m-6 5h5m5-10 4 1 3 5-5 3-3 7m3-7 5 5h4M9 9l3-4m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0',
  bell:'M5 17h14l-2-4V8a5 5 0 0 0-10 0v5Zm5 3a2 2 0 0 0 4 0M12 1v2',

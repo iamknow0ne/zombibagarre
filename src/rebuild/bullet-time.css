@@ -1,0 +1,20 @@
+/* Focus is a field instrument: bone marks, amber active state, no flashing. */
+#focus-action{position:absolute;right:28px;bottom:146px;min-height:48px;width:152px;padding:8px 10px;gap:10px;border:1px solid #b6c0ae80;background:#142125ed;pointer-events:auto;touch-action:none;color:var(--bone);border-radius:3px}
+#focus-action[aria-pressed=true]{border-color:var(--orange);color:#ffd3a9}
+#focus-action:disabled{cursor:default;opacity:.55}
+.focus-caption{display:flex;flex-direction:column;gap:5px;min-width:0;text-align:left;font:10px var(--mono)}
+.focus-caption small{font:8px var(--mono);white-space:nowrap;color:var(--muted)}
+.focus-caption kbd,.focus-caption .pad-key{font-size:9px;min-width:14px;margin-left:4px;padding:1px 3px}
+.focus-meter{position:absolute;left:6px;right:6px;bottom:2px;height:2px;background:#eee8d82a;overflow:hidden}
+.focus-meter i{display:block;height:100%;background:var(--bone)}
+#focus-action[aria-pressed=true] .focus-meter i{background:var(--orange)}
+#focus-veil{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;box-shadow:inset 0 0 80px 15px #09151d80,inset 0 0 0 2px #c7ac7280}
+.focus-settings{margin-top:22px;border-top:1px solid var(--line);padding-top:10px}.focus-settings>p{font-size:12px;line-height:1.6;color:var(--muted)}
+.touch-layout #focus-action{left:50%;right:auto;transform:translateX(-50%);bottom:calc(var(--touch-bottom) + 156px);width:48px;height:48px;min-height:48px;padding:8px;border-radius:50%;opacity:var(--touch-opacity)}
+.touch-layout #focus-action:active{transform:translateX(-50%)}
+.touch-layout #focus-action[aria-pressed=true]{opacity:1}
+.touch-layout .focus-caption{display:none}
+.touch-layout #focus-action .focus-meter{left:9px;right:9px;bottom:3px}
+.touch-layout #focus-action .action-value{bottom:4px;right:0}
+@media (orientation:landscape) and (max-height:600px){.touch-layout #focus-action{bottom:calc(var(--touch-bottom) + 128px)}}
+@media(prefers-reduced-motion:reduce){#focus-veil{box-shadow:inset 0 0 0 2px #c7ac7280}}

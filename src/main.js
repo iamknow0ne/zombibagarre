@@ -1,3 +1,6 @@
+import {endFocus} from './rebuild/BulletTime.js';
+import {BulletTimeUI} from './rebuild/BulletTimeUI.js';
+import './rebuild/bullet-time.css';
 import {WeaponWheel,cycleHand,WHEEL_TIME_SCALE} from './rebuild/WeaponWheel.js';
 import {installFullscreen} from './rebuild/Fullscreen.js';
 import './rebuild/weapon-wheel.css';
@@ -46,7 +49,7 @@ import { WEAPONS, weaponStats, WAVE_NAMES, distance, lineBlocked, magazineSize, 
 const $=id=>document.getElementById(id);
 function read(key,fallback){try{const value=JSON.parse(localStorage.getItem(key));return value??fallback;}catch{return fallback;}}
 function save(key,value){if(import.meta.env.DEV&&['controllerQA','touchQA','upgradeQA','rpgQA','bossQA'].some(k=>new URLSearchParams(location.search).has(k))&&['zb-quarantine-record','zb-rpg-profile','zb-quarantine-settings'].includes(key))return;try{localStorage.setItem(key,JSON.stringify(value));}catch{/* Private browsing may not permit persistence. The game still works. */}}
-const defaults={questGuidance:true,visualStyle:'classic',progression:'sandbox',progressionPopups:true,volume:45,quality:matchMedia('(pointer:coarse)').matches?'balanced':'high',difficulty:'standard',gore:true,damageNumbers:true,enemyHealthBars:true,criticalCallouts:true,damageColors:true,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
+const defaults={bulletTime:true,focusCinematics:true,questGuidance:true,visualStyle:'classic',progression:'sandbox',progressionPopups:true,volume:45,quality:matchMedia('(pointer:coarse)').matches?'balanced':'high',difficulty:'standard',gore:true,damageNumbers:true,enemyHealthBars:true,criticalCallouts:true,damageColors:true,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
 const stored=read('zb-quarantine-settings',{});const settings={...defaults,...(stored&&typeof stored==='object'?stored:{})};
 if(!['sandbox','hero'].includes(settings.progression))settings.progression='sandbox';
 if(!['classic','pixel'].includes(settings.visualStyle))settings.visualStyle='classic';
@@ -64,7 +67,7 @@ const freshSeed=()=>crypto.getRandomValues(new Uint32Array(1))[0];
 let sim=new Simulation({seed:freshSeed(),mode:runMode,skin,profile:rpgProfile,progression:settings.progression,environment:settings}),world,input,audio=new Audio(settings.volume/100),loadout=equipped[0],auto=settings.autoFire,last=performance.now(),accumulator=0,noticeUntil=0,toastUntil=0,resultSaved=false;
 equipped=permittedLoadout(sim,equipped);loadout=equipped[0];
 if(throwableLock(sim,equippedThrowable))equippedThrowable='frag';
-let controllerUI,controllerMap,haptics,dualsense,touchUI,loreUI;
+let controllerUI,controllerMap,haptics,dualsense,touchUI,loreUI,bulletTimeUI;
 let loreFromPause=false;
 let settingsFromPause=false,arsenalReturn=null,lastHud=0,frameCount=0,lastFps=performance.now(),fps=0;
 function recordUI(){$('scrap-total').textContent=`${record.scrap} SCRAP`; $('best-score').textContent=record.score?Math.round(record.score).toLocaleString('en-US'):'—';$('record-detail').textContent=record.wins?`${record.wins} SUCCESSFUL EXTRACTION${record.wins===1?'':'S'}`:record.score?'STILL LOOKING FOR A WAY OUT':'YOUR STORY STARTS HERE';}
@@ -120,7 +123,7 @@ function finish(){
 }
 function openMap(){if(!['playing','extracting','menu','paused'].includes(sim.state))return;mapReturn=sim.state;if(sim.state==='paused')$('pause-dialog').close();if(sim.state!=='menu')sim.pause();showDialog('map-dialog');controllerMap.open();}
 function formatTime(t){return `${Math.floor(t/60).toString().padStart(2,'0')}:${Math.floor(t%60).toString().padStart(2,'0')}`;}
-function processEvents(){let profileDirty=false;for(const e of sim.events){if(e.type==='profile')profileDirty=true;if(e.type==='rpg-notice'||e.type==='weather')toast(e.message);if(e.type==='rpg-shop')rpgUI.open(e.id);if(e.type==='district'){rebuildMap();sim.setBuildings(world.buildingTargets);announce(`DISTRICT ${e.district+1} / ${DISTRICTS.length}`,DISTRICTS[e.district].name);}world.onEvent(e);audio.event(e);dualsense?.event(e);if(e.type!=='explosion'||distance(e,sim.player)<20)haptics?.event(e);
+function processEvents(){if(!['playing','extracting'].includes(sim.state))endFocus(sim,true);let profileDirty=false;for(const e of sim.events){if(e.type==='profile')profileDirty=true;if(e.type==='rpg-notice'||e.type==='weather')toast(e.message);if(e.type==='rpg-shop')rpgUI.open(e.id);if(e.type==='district'){rebuildMap();sim.setBuildings(world.buildingTargets);announce(`DISTRICT ${e.district+1} / ${DISTRICTS.length}`,DISTRICTS[e.district].name);}world.onEvent(e);audio.event(e);dualsense?.event(e);if(e.type!=='explosion'||distance(e,sim.player)<20)haptics?.event(e);
   if(e.type==='wave')announce(`${sim.layout.city?'CITY THREAT':DISTRICTS[sim.district].name} · WAVE ${String(e.wave).padStart(2,'0')} / ${TOTAL_WAVES}`,e.wave%4===0?DISTRICTS[sim.district].boss:WAVE_NAMES[(e.wave-1)%WAVE_NAMES.length]);
   if(e.type==='street-job'||e.type==='street-complete')toast(`${e.name} · ${e.message}`);if(e.type==='vehicle')toast(e.message);if(e.type==='discovery')toast(`${e.name} DISCOVERED · +2 GRENADES · +25 HEALTH`);
   if(e.type==='evolution')toast(`${WEAPONS[e.weapon].name} EVOLVED · ${TIER_MARKS[e.tier]} ${e.tier===3?e.name:TIER_NAMES[e.tier]}`);
@@ -155,27 +158,27 @@ function hud(){const p=sim.player,w=weaponStats(p);$('weather-hud').textContent=
   const buffs=[p.shield>0?`ARMOUR ${Math.ceil(p.shield)}`:'',p.overdrive>0?`OVERDRIVE ${Math.ceil(p.overdrive)}s`:'',p.freeze>0?`COLD FRONT ${Math.ceil(p.freeze)}s`:'',p.doubleScore>0?`BOUNTY ×2 ${Math.ceil(p.doubleScore)}s`:''].filter(Boolean);$('active-powers').replaceChildren(...buffs.map(text=>{const tag=document.createElement('span');tag.textContent=text;return tag;}));
   updateBossHUD(sim,settings);
 }
-function loop(now){input.pollGamepad(sim,now);dualsense?.update(sim,input,now);const delta=Math.min(.1,(now-last)/1000);last=now;
+function loop(now){sim.focusEnabled=settings.bulletTime!==false;input.pollGamepad(sim,now);if(input.weaponWheelActive)endFocus(sim,true);dualsense?.update(sim,input,now);const delta=Math.min(.1,(now-last)/1000);last=now;
   if(['playing','extracting'].includes(sim.state)){
     accumulator=Math.min(.15,accumulator+delta*(input.weaponWheelActive?WHEEL_TIME_SCALE:1));const frame=input.consume(world,auto,sim,delta);
     if(frame.destination){if(distance(sim.player,frame.destination)<.3)input.destination=null;else{const dest=sim.blocked(sim.player,frame.destination,.48)?sim.navigate(sim.player,frame.destination):frame.destination;if(dest){const d=distance(sim.player,dest)||1;frame.x=(dest.x-sim.player.x)/d;frame.z=(dest.z-sim.player.z)/d;}}}
     let once=true;
-    while(accumulator>=1/60){sim.update(1/60,once?frame:{...frame,dash:false,melee:false,grenade:false,reload:false,interact:false,weapon:null});once=false;accumulator-=1/60;}
-    if(once)Object.assign(input.once,{dash:frame.dash,melee:frame.melee,grenade:frame.grenade,reload:frame.reload,interact:frame.interact,weapon:frame.weapon});
+    while(accumulator>=1/60){sim.update(1/60,once?frame:{...frame,bulletTime:false,dash:false,melee:false,grenade:false,reload:false,interact:false,weapon:null});once=false;accumulator-=1/60;}
+    if(once)Object.assign(input.once,{bulletTime:frame.bulletTime,dash:frame.dash,melee:frame.melee,grenade:frame.grenade,reload:frame.reload,interact:frame.interact,weapon:frame.weapon});
   }else accumulator=0;
-  processEvents();if(now-lastHud>80){hud();controllerUI?.update(sim,world,auto);touchUI?.update(sim,world,auto);rpgUI?.update();navigationRoute(sim);lastHud=now;}
+  processEvents();if(now-lastHud>80){hud();controllerUI?.update(sim,world,auto);touchUI?.update(sim,world,auto);bulletTimeUI?.update(sim);rpgUI?.update();navigationRoute(sim);lastHud=now;}
   frameCount++;if(now-lastFps>1000){fps=Math.round(frameCount*1000/(now-lastFps));frameCount=0;lastFps=now;if(import.meta.env.DEV){$('game').dataset.fps=fps;$('game').dataset.diagnostics=JSON.stringify({seed:sim.seed,state:sim.state,x:+sim.player.x.toFixed(2),z:+sim.player.z.toFixed(2),weapon:sim.player.weapon,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,props:sim.obstacles.length,effects:world.effects.length,geometries:world.renderer.info.memory.geometries});}}
   if(now>noticeUntil)$('announcement').classList.remove('show');if(now>toastUntil)$('toast').textContent='';
   $('damage-flash').style.opacity=Math.max(0,parseFloat($('damage-flash').style.opacity||0)-delta*2);
-  const renderDelta=renderSchedule.next(now,sim.state,document.hidden,world.requestRender);if(renderDelta!==null){world.update(sim,renderDelta*(input.weaponWheelActive?WHEEL_TIME_SCALE:1),sim.state==='menu');world.requestRender=false;}audio.update(sim.time,['playing','extracting'].includes(sim.state),sim.props.find(v=>v.id===sim.player.vehicleId),sim.weather);
+  const renderDelta=renderSchedule.next(now,sim.state,document.hidden,world.requestRender);if(renderDelta!==null){world.update(sim,renderDelta*(input.weaponWheelActive?WHEEL_TIME_SCALE:sim.timeScale||1),sim.state==='menu');world.requestRender=false;}audio.update(sim.time,['playing','extracting'].includes(sim.state),sim.props.find(v=>v.id===sim.player.vehicleId),sim.weather,sim.timeScale||1);
   requestAnimationFrame(loop);
 }
 try{
   await loadingStage(55,'Building Saint-Roch');
   rebuildMap();$('new-map').onclick=reshuffle;$('new-map-mobile').onclick=reshuffle;input=new Input($('game'),action=>{if(action==='pause')togglePause();if(action==='auto'&&['playing','extracting'].includes(sim.state))toggleAuto();if(action==='arsenal')openArsenal();if(action==='map')openMap();if(action==='nextWeapon')cycleWeapon(1);if(action==='prevWeapon')cycleWeapon(-1);},settings);
   new WeaponWheel(input,()=>sim,toast);installFullscreen();
-  haptics=new Haptics(input,settings);dualsense=new DualSense(settings);input.onStopFeedback=()=>{haptics.stop();dualsense.stop();};controllerUI=new ControllerUI(input,settings,haptics,dualsense,()=>save('zb-quarantine-settings',settings),toggleAuto);controllerMap=new ControllerMap(()=>sim,input);input.onMapInput=(pad,dt)=>controllerMap.poll(pad,dt);$('vehicle-world-prompt').onclick=()=>{input.once.interact=true;};window.addEventListener('pagehide',()=>{haptics.stop();dualsense.disconnect();});
-  touchUI=new TouchUI(input,settings,()=>save('zb-quarantine-settings',settings));
+  haptics=new Haptics(input,settings);dualsense=new DualSense(settings);input.onStopFeedback=()=>{haptics.stop();dualsense.stop();endFocus(sim,true);};controllerUI=new ControllerUI(input,settings,haptics,dualsense,()=>save('zb-quarantine-settings',settings),toggleAuto);controllerMap=new ControllerMap(()=>sim,input);input.onMapInput=(pad,dt)=>controllerMap.poll(pad,dt);$('vehicle-world-prompt').onclick=()=>{input.once.interact=true;};window.addEventListener('pagehide',()=>{haptics.stop();dualsense.disconnect();});
+  touchUI=new TouchUI(input,settings,()=>save('zb-quarantine-settings',settings));bulletTimeUI=new BulletTimeUI(input,settings,()=>sim,()=>save('zb-quarantine-settings',settings));
   rpgUI=new RPGUI({getSim:()=>sim,getWorld:()=>world,input,persist:()=>{rpgProfile=sim.profile;equipped=permittedLoadout(sim,equipped);loadout=equipped[0];if(throwableLock(sim,equippedThrowable))equippedThrowable='frag';updateLoadout();save('zb-rpg-profile',rpgProfile);},onPause:()=>showDialog('pause-dialog'),onEquipRelic:key=>{equipped=[key];loadout=key;updateLoadout();},onMap:()=>{const origin=rpgUI.returnState;rpgUI.returnState='map';rpgUI.dialog.close();openMap();mapReturn=origin;},onIdentity:key=>{skin=key;settings.skin=key;sim.skin=key;sim.player.skin=key;$('skin-select').value=key;save('zb-quarantine-settings',settings);},onLoadout:keys=>{equipped=[...keys];loadout=keys[0];updateLoadout();}});
   $('pause-arsenal').onclick=openArsenal;$('pause-map').onclick=openMap;$('touch-arsenal').onclick=openArsenal;bindTouchAction($('touch-auto'),input,()=>toggleAuto());
   for(const id of ['progression-mode','progression-setting']){$(id).value=settings.progression;$(id).onchange=()=>changeProgression($(id).value);}

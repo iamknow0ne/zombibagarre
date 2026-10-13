@@ -54,3 +54,12 @@ test('fresh firearms never create sword rigs, including a stale mixed loadout',(
   const s=game(),m=dummyRig();s.setLoadout([weapon]);s.player.equipped.push('katana');animateWeapons(m,s.player,0,0,kit);assert.deepEqual(m.userData.weaponRigs.filter(Boolean).map(g=>g.userData.key),[weapon]);
  }
 });
+
+test('shooting dives keep gun grips in reach and barrels level in every direction',()=>{
+ for(const keys of [['carbine'],['smg','smg'],['shotgun','flame']])for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5]){
+  const s=game();s.setLoadout(keys);const p=s.player,m=dummyRig();Object.assign(p,{focusDive:true,diveDuration:.32,dash:.16,dashX:Math.sin(angle),dashZ:Math.cos(angle),angle:0});
+  animateWeapons(m,p,10,1/60,kit);assert.ok(m.userData.gripError<.03,`${keys}: ${m.userData.gripError}`);
+  const body=m.userData.body;body.rotation.set(Math.cos(angle)*.9,0,-Math.sin(angle)*1.05);m.updateMatrixWorld(true);
+  for(const gun of m.userData.weaponRigs.filter(Boolean)){const forward=new T.Vector3(0,0,1).applyQuaternion(gun.getWorldQuaternion(new T.Quaternion()));assert.ok(Math.abs(forward.y)<.05,`${keys}: barrel pitch ${forward.y}`);}
+ }
+});
