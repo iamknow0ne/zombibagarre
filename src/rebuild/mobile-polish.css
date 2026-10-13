@@ -1,0 +1,73 @@
+/* Phone field kit: 44px controls, 12px body copy, 4/8/12px spacing.
+   Keep the established coal/bone/amber palette and reserve the centre for combat. */
+@media (max-width:700px), (orientation:landscape) and (max-height:600px){
+ .touch-layout dialog{padding:16px;max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
+ .touch-layout dialog h2{font-size:26px;margin:8px 0 12px}
+ .touch-layout dialog p{line-height:1.5}
+ .touch-layout #rpg-dialog{padding:12px;width:calc(100vw - 12px)}
+ .touch-layout .rpg-header{align-items:center;gap:8px}
+ .touch-layout .rpg-header h2{font-size:24px;margin:0}
+ .touch-layout .rpg-header>div>small{display:none}
+ .touch-layout #rpg-close{flex:0 0 44px}
+ .touch-layout #rpg-summary{padding:8px 0;gap:4px 10px;font-size:10px;line-height:1.4}
+ .touch-layout #rpg-summary b{font-size:15px}
+ .touch-layout #rpg-tabs{top:-12px;flex-wrap:nowrap;gap:3px;padding:8px 0;overflow-x:auto;scrollbar-width:thin}
+ .touch-layout #rpg-tabs button{position:relative;display:flex;align-items:center;justify-content:center;flex:1 0 44px;min-width:44px;height:44px;padding:6px}
+ .touch-layout #rpg-tabs .rpg-tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ .touch-layout #rpg-tabs .dossier-icon{display:inline-flex;width:23px;height:23px;margin:0}
+ .touch-layout #rpg-tabs .notice-count{position:absolute;top:0;right:0;margin:0;font-size:9px}
+ .touch-layout #rpg-tabs #rpg-back{font-size:0;flex:0 0 44px}
+ .touch-layout #rpg-dialog:not([data-tab=equipment]):not([data-tab=appearance]) #rpg-character{display:none}
+ .touch-layout #rpg-dialog:not([data-tab=equipment]):not([data-tab=appearance]) .rpg-layout{grid-template-columns:minmax(0,1fr)}
+ .touch-layout #rpg-content h3{margin:12px 0 6px;font-size:20px}
+ .touch-layout #rpg-content p{font-size:12px;margin:6px 0 10px}
+ .touch-layout #rpg-content .field-notice{padding:12px 0;column-gap:8px}
+ .touch-layout #rpg-content .field-notice button{justify-self:start;width:auto;min-height:44px}
+ .touch-layout .training-summary{padding:8px 10px;gap:6px;font-size:11px}
+ .touch-layout .training-summary span{font-size:10px;margin-left:auto}
+ .touch-layout .attribute-details{padding:8px 0;margin:4px 0}
+ .touch-layout .attribute-details summary{display:flex;align-items:center;min-height:44px;font-size:11px;cursor:pointer}
+ .touch-layout .attribute-details summary:before{content:'+';margin-right:8px;font-size:20px;color:var(--orange)}
+ .touch-layout .attribute-details[open] summary:before{content:'−'}
+ .touch-layout .attribute-grid{grid-template-columns:1fr;gap:5px}
+ .touch-layout .attribute-grid article{display:grid;grid-template-columns:22px 1fr auto;gap:3px 8px;padding:8px;align-items:center}
+ .touch-layout .attribute-grid article>.dossier-icon{grid-row:1/3}
+ .touch-layout .attribute-grid article>b{grid-column:3;grid-row:1;font:13px var(--mono)}
+ .touch-layout #rpg-content .attribute-grid p{grid-column:2;min-height:0;font-size:11px;margin:0}
+ .touch-layout #rpg-content .attribute-grid button{grid-column:3;grid-row:2;min-width:92px;min-height:44px;font-size:10px!important}
+ .touch-layout #rpg-content .skill-node{padding:10px;gap:5px}
+ .touch-layout .skill-node>.dossier-icon{width:24px;height:24px;margin-bottom:0}
+ .touch-layout .skill-node>strong{font-size:21px;margin:3px 0}
+ .touch-layout #rpg-content .skill-node p{min-height:0}
+ .touch-layout .rpg-footnote{font-size:10px!important;margin:10px 0 0}
+ .touch-layout #upgrade-dialog{padding:14px}
+ .touch-layout #upgrade-dialog .ranked-upgrade{padding:10px;gap:3px 9px}
+ .touch-layout #upgrade-dialog .ranked-upgrade b{font-size:23px}
+ .touch-layout #upgrade-dialog .ranked-upgrade p{font-size:12px;margin:4px 0}
+ .touch-layout #upgrade-dialog .ranked-upgrade .choose{display:none}
+ .touch-layout #upgrade-dialog .perk-icon{width:28px;height:28px;margin:3px 0}
+ .touch-layout #upgrade-dialog #upgrade-legend{margin:8px 0;font-size:9px}
+ .touch-layout #upgrade-dialog .upgrade-reward{font-size:11px}
+ .touch-layout #pause-readout{font-size:11px;gap:6px;margin:8px 0;padding:8px 0}
+ .touch-layout .pause-tools{gap:6px}
+ .touch-layout #settings-dialog .setting-row{padding:10px 0;gap:12px;font-size:13px}
+ .touch-layout #settings-dialog .setting-row select{max-width:58%;font-size:12px}
+ .touch-layout #settings-dialog .setting-row input[type=range]{min-width:0;max-width:50%}
+ /* Boss names and move telegraphs already have a dedicated strip. */
+ .touch-layout:has(#boss-hud:not([hidden])) .announcement.boss-announcement.show{display:none}
+ .touch-layout .boss-caption{font-size:10px;letter-spacing:0}
+ .touch-layout .boss-row small{font-size:9px;letter-spacing:0;line-height:1.3}
+ .touch-layout .toast:not(:empty){top:var(--touch-notice-top,calc(var(--touch-top) + 102px));max-width:min(290px,calc(100% - 24px));max-height:none;font:11px/1.4 var(--mono);padding:5px 8px}
+ .touch-layout:has(#boss-hud:not([hidden])) .toast:not(:empty){top:var(--touch-notice-top)}
+ .touch-layout #hud{background:linear-gradient(#12202785,transparent 115px,transparent calc(100% - 120px),#10202785)}
+}
+@media (orientation:portrait) and (max-width:700px){
+ .touch-layout .wave-status{left:56%}
+}
+@media (orientation:landscape) and (max-height:600px){
+ .touch-layout .toast:not(:empty){max-width:32vw}
+ .touch-layout #rpg-summary>span:last-child{width:auto}
+ .touch-layout #rpg-dialog .rpg-layout{grid-template-columns:minmax(0,1fr)}
+ .touch-layout #rpg-dialog[data-tab=equipment] #rpg-character{display:none}
+ .touch-layout #rpg-content .attribute-grid{grid-template-columns:1fr 1fr}
+}

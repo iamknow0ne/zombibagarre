@@ -15,7 +15,7 @@ export function makeStreetEvents(layout){
  return selected;
 }
 export function updateStreetEvents(sim,dt){
- if(sim.state!=='playing')return;
+ if(!['playing','extracting'].includes(sim.state))return;
  const p=sim.player;
  for(const job of sim.streetEvents){
   if(job.state==='complete')continue;

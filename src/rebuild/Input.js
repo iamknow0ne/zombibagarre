@@ -3,7 +3,7 @@ import {cameraMovement} from './ViewRig.js';
 import {TouchControls,touchAimTarget} from './TouchControls.js';
 import {assistedDrive} from './Vehicles.js';
 import {sampleGamepad,worldStick,selectGamepad} from './Gamepad.js';
-import {BINDINGS,CONTROL_DEFAULTS,controllerFamily,handInput,stepRange,directionalControl} from './ControllerConfig.js';
+import {BINDINGS,CONTROL_DEFAULTS,controllerFamily,handInput,stepRange,enabledOptionIndex,directionalControl} from './ControllerConfig.js';
 export class Input {
   constructor(canvas,onAction,settings=CONTROL_DEFAULTS){
     this.settings=settings;this.source='keyboard';
@@ -89,13 +89,14 @@ export class Input {
     const horizontal=pad.buttons[14]?-1:pad.buttons[15]?1:Math.abs(pad.move.x)>.6?Math.sign(pad.move.x):0;
     const direction=vertical||horizontal;
     if(direction&&(!this.menuHeld||now>(this.menuRepeat||0))){
-      if(horizontal&&active?.tagName==='SELECT'){active.selectedIndex=Math.max(0,Math.min(active.options.length-1,active.selectedIndex+horizontal));active.dispatchEvent(new Event('change',{bubbles:true}));active.dispatchEvent(new Event('input',{bubbles:true}));}
+      if(horizontal&&active?.tagName==='SELECT'){this.changeSelection(active,horizontal);}
       else if(horizontal&&active?.type==='range'){active.value=String(stepRange(active.value,horizontal,active));active.dispatchEvent(new Event('input',{bubbles:true}));}
       else{const next=controls[directionalControl(controls.map(e=>e.getBoundingClientRect()),index,vertical?0:horizontal,vertical)];next?.focus();next?.scrollIntoView({block:'nearest'});}
       this.menuRepeat=now+(this.menuHeld?170:380);
     }this.menuHeld=!!direction;
-    if(pad.pressed[0]){if(active?.tagName==='SELECT'){active.selectedIndex=(active.selectedIndex+1)%active.options.length;active.dispatchEvent(new Event('change',{bubbles:true}));active.dispatchEvent(new Event('input',{bubbles:true}));}else if(active?.tagName==='BUTTON'||active?.tagName==='SUMMARY'||active?.type==='checkbox')active.click();}
+    if(pad.pressed[0]){if(active?.tagName==='SELECT'){this.changeSelection(active,1,true);}else if(active?.tagName==='BUTTON'||active?.tagName==='SUMMARY'||active?.type==='checkbox')active.click();}
   }
+  changeSelection(select,direction,wrap=false){const index=enabledOptionIndex(select.options,select.selectedIndex,direction,wrap);if(index===select.selectedIndex)return;select.selectedIndex=index;select.dispatchEvent(new Event('change',{bubbles:true}));select.dispatchEvent(new Event('input',{bubbles:true}));}
   consume(world,auto,sim=null,dt=1/60){
     if(this.weaponWheelActive){this.once={};return {x:0,z:0,auto:false,firing:false,fireHands:[false,false],aim:null};}
     const k=this.keys;let x=(k.has('KeyD')||k.has('ArrowRight')?1:0)-(k.has('KeyA')||k.has('KeyQ')||k.has('ArrowLeft')?1:0)+this.stick.x;

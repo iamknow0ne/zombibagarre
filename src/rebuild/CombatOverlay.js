@@ -22,8 +22,8 @@ export class CombatOverlay {
  drawProgression(sim,camera,place){
   if(this.settings.progressionPopups===false||!this.progression?.items.length)return;
   const anchor=this.project(sim.player.x,2.8,sim.player.z,camera);if(!anchor)return;const c=this.ctx;
-  for(const [i,item]of this.progression.items.entries()){
-   const age=this.progression.clock-item.born,width=Math.min(this.w-20,this.mobile?228:280),height=46;
+  for(const [i,item]of this.progression.items.slice(0,this.mobile?1:3).entries()){
+   const age=this.progression.clock-item.born,width=Math.min(this.w-20,this.mobile?176:280),height=this.mobile?36:46;
    const p=place({x:Math.max(width/2+8,Math.min(this.w-width/2-8,anchor.x)),y:anchor.y-34-i*52-(this.settings.reducedMotion?0:Math.min(age,.2)*30)},width,height);if(!p)continue;
    c.save();c.globalAlpha=Math.min(1,age/.12,(item.life-age)/.4);c.fillStyle='#132529';c.fillRect(p.x-width/2,p.y-height/2,width,height);c.fillStyle=item.color;c.fillRect(p.x-width/2,p.y-height/2,3,height);c.textAlign='center';c.textBaseline='middle';c.font="bold 14px 'Arial Narrow',sans-serif";c.fillText(item.title,p.x,p.y-7,width-18);c.font="9px Consolas,monospace";c.fillText(item.detail||'',p.x,p.y+11,width-18);c.restore();
   }

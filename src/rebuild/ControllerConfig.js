@@ -18,6 +18,14 @@ export function buttonName(index,family='playstation'){return (family==='playsta
 export function glyph(index,family='playstation'){const text=buttonName(index,family);return `<span class="pad-key ${index<4?'pad-face':''}" aria-label="${family==='playstation'?['Cross','Circle','Square','Triangle'][index]||text:text}">${text}</span>`;}
 export function handInput(pad,bindings=BINDINGS){return [!!pad?.buttons[bindings.rightFire],!!pad?.buttons[bindings.leftFire]];}
 export function stepRange(value,direction,{min=0,max=100,step=1}={}){return Math.max(+min,Math.min(+max,+(+value+direction*(+step||1)).toFixed(4)));}
+export function enabledOptionIndex(options,index,direction,wrap=false){
+ const step=Math.sign(direction);if(!step||!options.length)return index;
+ for(let n=1;n<=options.length;n++){
+  const candidate=index+n*step;if(!wrap&&(candidate<0||candidate>=options.length))break;
+  const i=(candidate%options.length+options.length)%options.length,o=options[i];
+  if(!o.disabled&&!o.hidden&&!(o.parentElement?.tagName==='OPTGROUP'&&o.parentElement.disabled))return i;
+ }return index;
+}
 export function directionalControl(rects,index,x,y){
  const from=rects[index];if(!from)return 0;const cx=from.left+from.width/2,cy=from.top+from.height/2;
  const candidates=rects.map((r,i)=>({i,dx:r.left+r.width/2-cx,dy:r.top+r.height/2-cy})).filter(v=>v.i!==index&&(x?v.dx*x>4:v.dy*y>4));

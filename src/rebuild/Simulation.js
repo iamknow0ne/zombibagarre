@@ -96,7 +96,12 @@ export class Simulation {
   setLoadout(keys){
     const p=this.player,next=permittedLoadout(this,keys),changed=next.join('|')!==p.equipped.join('|');
     const oldTwin=p.equipped.length===2&&p.equipped[0]===p.equipped[1]?p.equipped[0]:null,newTwin=next.length===2&&next[0]===next[1]?next[0]:null;p.twinReserves??={};
-    if(oldTwin&&oldTwin!==newTwin)p.twinReserves[oldTwin]={ammo:p.magazines.offhand,reload:p.reloads.offhand||0,duration:p.reloadDurations.offhand||0,timer:p.weaponTimers.offhand||0};p.equipped=next;
+    if(oldTwin&&oldTwin!==newTwin){
+      p.twinReserves[oldTwin]={ammo:p.magazines.offhand,reload:p.reloads.offhand||0,duration:p.reloadDurations.offhand||0,timer:p.weaponTimers.offhand||0};
+      // The shared offhand slot belongs only to the active matching pair. Its
+      // suspended reload must not complete against the next main-hand weapon.
+      for(const state of [p.magazines,p.reloads,p.reloadDurations,p.weaponTimers])delete state.offhand;
+    }p.equipped=next;
     p.weapon=next[0];
     if(newTwin&&oldTwin!==newTwin){const saved=p.twinReserves[newTwin];p.magazines.offhand=saved?.ammo??magazineSize(p,newTwin);p.reloads.offhand=saved?.reload||0;p.reloadDurations.offhand=saved?.duration||0;p.weaponTimers.offhand=saved?.timer??WEAPONS[newTwin].interval*.5;}
     if(changed){if(isMelee(p))p.focusDive=false;p.equippedAt=this.time;p.meleeAttack=null;p.meleeBuffer=null;p.shots={};p.swing=0;p.swingWeapon=null;p.swingCombo=0;p.lastSwing=-99;p.dashCooldown=Math.min(p.dashCooldown,isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax);this.emit('switch');}
@@ -159,7 +164,7 @@ export class Simulation {
     for (const key of ['ambushTime', 'fire', 'invulnerable', 'dashCooldown', 'melee','overdrive','doubleScore','freeze','swapBoost','swing','throwAnimation','offhandRecoil']) p[key] = Math.max(0, p[key] - dt);
     p.health = Math.min(p.maxHealth,p.health+p.regen*dt*(p.lifeSteal>0?2:1));
     this.comboTimer -= dt; if (this.comboTimer <= 0) this.combo = 0;
-    for(const slot of [...Object.keys(WEAPONS),'offhand']){
+    for(const slot of [...Object.keys(WEAPONS),...(p.equipped.length===2&&p.equipped[0]===p.equipped[1]?['offhand']:[])]){
       const key=slot==='offhand'?p.equipped[0]:slot;p.weaponTimers[slot]=Math.max(0,(p.weaponTimers[slot]||0)-dt);
       if(p.reloads[slot]>0){p.reloads[slot]=Math.max(0,p.reloads[slot]-dt);if(p.reloads[slot]===0){p.magazines[slot]=magazineSize(p,key);p.health=Math.min(p.maxHealth,p.health+(p.reloadHeal||0));this.emit('loaded',{weapon:key,slot});}}
     }
@@ -289,7 +294,7 @@ export class Simulation {
     if(type==='freeze')p.freeze=8;
     if(type==='double')p.doubleScore=15;
     if(type==='grenade')p.grenades+=2;
-    if(type==='ammo'){for(const key of Object.keys(WEAPONS))p.magazines[key]=magazineSize(p,key);if(p.equipped[0]===p.equipped[1])p.magazines.offhand=magazineSize(p,p.equipped[0]);p.reload=0;p.reloads={};}
+    if(type==='ammo'){for(const key of Object.keys(WEAPONS))p.magazines[key]=magazineSize(p,key);if(p.equipped[0]===p.equipped[1])p.magazines.offhand=magazineSize(p,p.equipped[0]);for(const [key,reserve]of Object.entries(p.twinReserves||{}))Object.assign(reserve,{ammo:magazineSize(p,key),reload:0,duration:0});p.reload=0;p.reloads={};p.reloadDurations={};}
     if(type==='nova')this.blast(p.x,p.z,10,300,'explosion');
     this.emit('powerup',{powerup:type,...POWERUPS[type]});
   }

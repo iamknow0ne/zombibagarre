@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {World} from './rebuild/World.js';
+import {readStoredObject} from './rebuild/Persistence.js';
 import {placeAnchorLabel} from './rebuild/TraversalLabels.js';
 import {Simulation} from './rebuild/Simulation.js';
 import {Input} from './rebuild/Input.js';
@@ -11,7 +12,7 @@ import {coursePlan,initTraversal,stepTraversal,supportBelow,grappleAvailability,
 const $=id=>document.getElementById(id);
 try{await boot();}catch(error){$('loading').hidden=false;$('loading').replaceChildren();const heading=document.createElement('strong');heading.textContent='TRAINING COULD NOT START';const note=document.createElement('span');note.textContent=error.message;const retry=document.createElement('button');retry.textContent='RETRY';retry.onclick=()=>location.reload();$('loading').append(heading,note,retry);console.error(error);}
 async function boot(){
- const plan=coursePlan(),b=plan.bounds;let saved={};try{saved=JSON.parse(localStorage.getItem('zb-quarantine-settings')||'{}');}catch{}
+ const plan=coursePlan(),b=plan.bounds;let saved={};try{saved=readStoredObject(localStorage,'zb-quarantine-settings');}catch{}
  const settings={...CONTROL_DEFAULTS,...saved,bindings:{...BINDINGS},quality:saved.quality||'balanced',viewMode:'diorama',worldTheme:'quarantine',visualStyle:'classic',shaderStyle:'natural',foliageDetail:'standard',environmentDetail:'standard',lightingDetail:saved.lightingDetail||'standard',populationDetail:'off',weatherEffects:'off',reducedMotion:saved.reducedMotion||matchMedia('(prefers-reduced-motion: reduce)').matches,gore:false};
  const layout={...generateMap(73),cover:[],bounds:b,boundary:[{x:b.minX,z:b.minZ},{x:b.maxX,z:b.minZ},{x:b.maxX,z:b.maxZ},{x:b.minX,z:b.maxZ}],road:{x:15,z:13,width:6}};
  const sim=new Simulation({layout,environment:{dayCycle:'day',weatherMode:'clear'}});sim.start('carbine');initTraversal(sim.player,plan.spawn);sim.events=[];sim.enemies=[];sim.props=plan.boxes;sim.obstacles=plan.boxes;

@@ -9,7 +9,7 @@
 [![Play now](https://img.shields.io/badge/PLAY_NOW-IN_YOUR_BROWSER-e38b50?style=for-the-badge&labelColor=182327)](https://iamknow0ne.github.io/zombibagarre/)
 
 [![Build and deployment](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml)
-[![Version](https://img.shields.io/badge/version-4.39.1-e38b50?labelColor=182327)](docs/VISIBILITY-4.39.1.md)
+[![Version](https://img.shields.io/badge/version-4.40.0-e38b50?labelColor=182327)](docs/AUDIT-4.40.md)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-b5c7b1?logo=threedotjs&logoColor=white&labelColor=182327)](package.json)
 [![Controls](https://img.shields.io/badge/controls-keyboard_%C2%B7_gamepad_%C2%B7_touch-8bbdc8?labelColor=182327)](#controls)
 
@@ -125,7 +125,15 @@ Meet **Rook, Saint, Torque and Vesper**, explore the factions, and read the Ward
 
 [World art & lore](docs/art/WORLD-DOSSIER.md) · [Survivor & Warden portraits](docs/art/PORTRAITS-4.36.md) · [City sprite and texture atlases](docs/art/CITY-ASSETS.md)
 
-## Latest field report · 4.39.1
+## Latest field report · 4.40.0
+
+**More room to fight on mobile.** Compact character tabs, reachable attribute spending, smaller upgrade panels and quieter combat notices. Full alerts remain in **Pause → Recent field messages**. The boss strip keeps the information without a second large box covering your survivor.
+
+**Reliability fixes.** Matching-pair reloads keep the correct weapon state, ammo supplies refill holstered pairs, malformed profile/settings records recover safely, controller menus skip locked options, and unfinished street encounters keep working after wave 32 until you extract. [Audit, regression checks and remaining limits](docs/AUDIT-4.40.md).
+
+**Beyond Saint-Roch?** A proposed path from enterable buildings and neighbouring cities to a hidden hangar, a launch into orbit and a first explorable moon. This is a future design proposal, not a shipped feature. [Read the expansion plan](docs/BEYOND-THE-QUARANTINE.md).
+
+### Previous camera and visibility update · 4.39
 
 **Keep your survivor in sight.** Rooftop Training now shares the city’s building visibility effect. A wider, softly feathered opening follows the full body behind walls and around corners; the roof beneath your feet stays solid. [Visibility fixes and checks](docs/VISIBILITY-4.39.1.md).
 

@@ -33,12 +33,13 @@ const int=(n,max=1000000)=>Math.max(0,Math.min(max,Math.floor(Number(n)||0)));
 export function levelForXP(xp){let level=1,spent=0;while(level<30&&xp>=spent+120+level*60){spent+=120+level*60;level++;}return{level,current:xp-spent,next:level===30?0:120+level*60};}
 export function normalizeProfile(raw={}){
  if(!raw||typeof raw!=='object')raw={};const xp=int(raw.xp),level=levelForXP(xp).level;
- const p={version:1,xp,appearance:normalizeAppearance(raw.appearance),attributes:{},skills:[],owned:['scout-chest-0'],equipment:{head:null,chest:'scout-chest-0',legs:null},relics:[],relic:null,dye:DYES[raw.dye]?raw.dye:'olive'};let budget=3+(level-1)*2;
+ const p={version:1,xp,appearance:normalizeAppearance(raw.appearance),attributes:{},skills:[],owned:['scout-chest-0'],equipment:{head:null,chest:'scout-chest-0',legs:null},relics:[],relic:null,dye:Object.hasOwn(DYES,raw.dye)?raw.dye:'olive'};let budget=3+(level-1)*2;
  for(const [key,a]of Object.entries(ATTRIBUTES)){p.attributes[key]=Math.min(budget,int(raw.attributes?.[key],a.max));budget-=p.attributes[key];}
- for(const [key,s]of Object.entries(SKILLS))if(raw.skills?.includes?.(key)&&level>=s.level&&budget>=s.cost&&(!s.parent||p.skills.includes(s.parent))){p.skills.push(key);budget-=s.cost;}
- if(Array.isArray(raw.owned))p.owned=[...new Set([...p.owned,...raw.owned.filter(id=>ARMOUR[id])])];
+ const learned=new Set(Array.isArray(raw.skills)?raw.skills:[]);
+ for(const [key,s]of Object.entries(SKILLS))if(learned.has(key)&&level>=s.level&&budget>=s.cost&&(!s.parent||p.skills.includes(s.parent))){p.skills.push(key);budget-=s.cost;}
+ if(Array.isArray(raw.owned))p.owned=[...new Set([...p.owned,...raw.owned.filter(id=>typeof id==='string'&&Object.hasOwn(ARMOUR,id))])];
  for(const slot of ['head','chest','legs'])if(raw.equipment?.[slot]===null)p.equipment[slot]=null;else if(p.owned.includes(raw.equipment?.[slot])&&ARMOUR[raw.equipment[slot]].slot===slot)p.equipment[slot]=raw.equipment[slot];
- p.relics=Array.isArray(raw.relics)?[...new Set(raw.relics.filter(id=>RELICS[id]))]:[];p.relic=p.relics.includes(raw.relic)?raw.relic:null;return p;
+ p.relics=Array.isArray(raw.relics)?[...new Set(raw.relics.filter(id=>typeof id==='string'&&Object.hasOwn(RELICS,id)))]:[];p.relic=p.relics.includes(raw.relic)?raw.relic:null;return p;
 }
 export function pointsLeft(p){return 3+(levelForXP(p.xp).level-1)*2-Object.values(p.attributes).reduce((a,b)=>a+b,0)-p.skills.reduce((n,k)=>n+SKILLS[k].cost,0);}
 export function bonuses(p){const a=p.attributes,b={maxHealth:a.vigor*8,damage:a.might*.03,speed:a.agility*.08,resistance:0,crit:a.fortune*.005,regen:p.skills.includes('mender')?.6:0,lifeSteal:p.skills.includes('vampire')?2:0,burn:p.skills.includes('pyre')?2:0,frost:p.skills.includes('winter')?1:0,reloadMultiplier:-a.focus*.015};for(const id of Object.values(p.equipment)){const g=ARMOUR[id];if(g)for(const k of ['maxHealth','damage','speed','resistance'])b[k]+=g[k==='maxHealth'?'health':k]||0;}for(const key of p.skills)for(const [stat,value]of Object.entries(SKILLS[key].bonuses||{}))b[stat]=(b[stat]||0)+value;return b;}
