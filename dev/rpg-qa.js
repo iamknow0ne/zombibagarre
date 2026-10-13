@@ -3,6 +3,7 @@ export function installRPGQA(input,getSim){
  input.source='touch';const pad={id:'DualSense (VIRTUAL RPG TEST)',index:99,connected:true,mapping:'standard',axes:[0,0,0,0],buttons:Array.from({length:18},()=>({pressed:false,value:0}))};let padEnabled=false;input.getGamepads=()=>padEnabled?[pad]:[];
  window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent||e.data?.type!=='rpg-qa')return;const action=e.data.action;
   if(action.startsWith('pad-')){padEnabled=true;window.focus();const index={down:13,right:15,confirm:0,back:1}[action.slice(4)];setTimeout(()=>{pad.buttons[index]={pressed:true,value:1};setTimeout(()=>pad.buttons[index]={pressed:false,value:0},160);},220);return;}
+  if(action==='touch'){padEnabled=false;input.source='touch';return;}
   if(action==='start'){document.getElementById('start').click();return;}
   const s=getSim();if(action==='fund'){s.rpg.coins=2400;gainXP(s,6000);return;}
   if(action==='kit'){s.profile.owned.push(...['scout-head-1','scout-legs-1','warden-chest-2','warden-head-2','warden-legs-1','reaper-chest-3','reaper-head-2','reaper-legs-2'].filter(id=>!s.profile.owned.includes(id)));return;}

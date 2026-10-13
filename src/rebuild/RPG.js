@@ -66,7 +66,7 @@ const moreQuests=[
 ];
 for(const [id,name,npc,text,metric,target,coins,xp,gear,requires]of moreQuests)QUESTS.push({id,name,npc,text,metric,target,coins,xp,gear,requires,reward:`${coins} crowns · ${xp} XP${gear?` · ${RARITIES[ARMOUR[gear].tier].toLowerCase()} ${ARMOUR[gear].name}`:''}`});
 export function questAvailable(sim,q){return !q.requires||sim.rpg.claimed.includes(q.requires);}
-export function acceptQuest(sim,id,npc){const q=QUESTS.find(q=>q.id===id);if(!q||q.npc!==npc||!questAvailable(sim,q)||nearbyPlace(sim)?.id!==npc||sim.rpg.accepted.includes(id))return false;sim.rpg.accepted.push(id);if(id==='runner')sim.rpg.delivery=false;sim.rpg.tracked=id;return true;}
+export function acceptQuest(sim,id,npc){const q=QUESTS.find(q=>q.id===id);if(!q||q.npc!==npc||!questAvailable(sim,q)||nearbyPlace(sim)?.id!==npc||sim.rpg.accepted.includes(id))return false;sim.rpg.accepted.push(id);if(id==='runner')sim.rpg.delivery=false;trackQuest(sim,id);return true;}
 export function questState(sim,q){if(sim.rpg.claimed.includes(q.id))return 'complete';if(!questAvailable(sim,q))return 'locked';if(!sim.rpg.accepted.includes(q.id))return 'available';const [n,max]=questProgress(sim,q.id);return n>=max?'ready':'active';}
 export function questObjective(sim,id){
  const q=QUESTS.find(q=>q.id===id);if(!q)return null;const state=questState(sim,q),contact=sim.places.find(p=>p.id===q.npc);let target=null,text=q.text;
@@ -80,9 +80,10 @@ export function questObjective(sim,id){
  else if(['atlas','survey'].includes(id)){target=sim.layout.landmarks.filter(p=>!sim.visited.has(p.name)).sort((a,b)=>distance(a,sim.player)-distance(b,sim.player))[0];text='Reach the marked district to discover it.';}
  else if(id==='watch'){target=sim.streetEvents.find(p=>p.state!=='complete');text=target?.instruction||q.text;}
  else if(['cinder','drowned','covenant'].includes(id)){target=sim.places.find(p=>p.kind==='secret'&&p.revealed&&!p.defeated&&(id==='covenant'||p.id===(id==='cinder'?'confessor':'marshal')));text=target?.used?'Defeat the summoned guardian.':'Reach the seal and summon its guardian on foot.';if(!target){target=contact;text='Complete The voice below and Names of the lost at Nocturne to reveal both seals.';}}
+ if(state==='active'&&['mercy','hunters','armoured','nightshift','wardrobe'].includes(id)){const [done,total]=questProgress(sim,id);text=id==='wardrobe'?'Equip head, chest and leg armour in Character → Inventory.':id==='nightshift'?`Survive until wave ${total}. Fight anywhere in the city.`:`Defeat ${Math.max(0,total-done)} more ${id==='hunters'?'runners':id==='armoured'?'brutes or armoured enemies':'enemies'}. Fight anywhere in the city.`;}
  return {text,target,state};
 }
-export function trackQuest(sim,id){const q=QUESTS.find(q=>q.id===id);if(!q||['complete','locked'].includes(questState(sim,q)))return false;sim.rpg.tracked=id;const o=questObjective(sim,id);sim.player.waypoint=o.target?{x:o.target.x,z:o.target.z}:null;return true;}
+export function trackQuest(sim,id){const q=QUESTS.find(q=>q.id===id);if(!q||['complete','locked'].includes(questState(sim,q)))return false;sim.rpg.tracked=id;const o=questObjective(sim,id);sim.player.waypoint=o.target?{x:o.target.x,z:o.target.z,source:'quest',questId:id,name:o.target.name||q.name}:null;return true;}
 const DEFINITIONS=[{id:'smith',name:'MARA / ARMOURER',kind:'shop',color:0xe3b875},{id:'medic',name:'DR. LENOIR / FIELD MEDIC',kind:'shop',color:0x9fceb0},{id:'broker',name:'NOCTURNE / RELIC DEALER',kind:'shop',color:0xabc8d7},{id:'case-a',name:'SUPPLY CASE / I',kind:'cache',color:0xe3b875},{id:'case-b',name:'SUPPLY CASE / II',kind:'cache',color:0xe3b875},{id:'confessor',name:'THE SEALED FURNACE',kind:'secret',color:0xef9e5b},{id:'marshal',name:'THE DROWNED CHAPEL',kind:'secret',color:0x82dbe6}];
 export function makeRPGWorld(layout){
  if(!layout.city)return[];const random=seededRandom((layout.mapSeed||0)^0x41415),chosen=[];
@@ -101,7 +102,7 @@ export function questProgress(sim,id){const r=sim.rpg,q=QUESTS.find(q=>q.id===id
 }
 export function claimQuest(sim,id,npc){const q=QUESTS.find(q=>q.id===id),r=sim.rpg;if(!q||q.npc!==npc||r.claimed.includes(id)||!r.accepted.includes(id)||nearbyPlace(sim)?.id!==npc)return false;const [n,max]=questProgress(sim,id);if(n<max)return false;
  r.claimed.push(id);const rewards={salvage:[160,220,'warden-chest-1'],mercy:[180,240,'scout-legs-1'],signal:[120,180],atlas:[160,220],watch:[300,350]}[id]||[q.coins,q.xp,q.gear];r.coins+=rewards[0];if(rewards[2]&&!sim.profile.owned.includes(rewards[2]))sim.profile.owned.push(rewards[2]);if(id==='watch'&&!sim.profile.relics.includes('void'))sim.profile.relics.push('void');
- const secret=id==='signal'?'confessor':id==='atlas'?'marshal':null;if(secret){const p=sim.places.find(p=>p.id===secret);if(p){p.revealed=true;sim.player.waypoint={x:p.x,z:p.z};}}
+ const secret=id==='signal'?'confessor':id==='atlas'?'marshal':null;if(secret){const p=sim.places.find(p=>p.id===secret);if(p){p.revealed=true;sim.player.waypoint={x:p.x,z:p.z,source:'manual',name:p.name};}}
  gainXP(sim,rewards[1]);sim.emit('rpg-notice',{message:`${q.name.toUpperCase()} · ${q.reward.toUpperCase()}`});return true;
 }
 export function shopStock(sim,npc){const level=levelForXP(sim.profile.xp).level;return Object.values(ARMOUR).filter(g=>g.level<=level&&(npc==='smith'?g.family==='warden':npc==='medic'?g.family==='scout':g.family==='reaper'));}

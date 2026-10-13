@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.20 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.21 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,15 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters with four bespoke articulated rigs, building-scale variants, two phases and a paired fight. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.21 — Street atlas & quest guidance
+
+- A redesigned atlas distinguishes streets, buildings, water, bridges, traders, supplies and objectives; labels avoid overlapping and remain readable when resized.
+- The mission ledger shows the contact → objective → return stages, next action, progress, reward and destination. Jump directly between the map and quest journal.
+- Gold walking routes avoid live scenery and water, update as objectives change, and refresh after destruction. An unavailable route is explicitly shown as a dotted bearing, never a promised path.
+- Custom blue destinations stay separate from tracked contracts. Find your location or objective, pan, zoom, filter map layers and browse nearby services with mouse, touch or controller.
+- On phones, a compact tracked-quest strip opens the atlas; the atlas offers a next-step shortcut above the map and collapses its location directory.
+- See [design and verification](docs/ATLAS-4.21.md).
 
 ## New in 4.20 — Survivor identities & build consistency
 
