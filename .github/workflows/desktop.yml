@@ -30,8 +30,19 @@ jobs:
           test -x "$RUNNER_TEMP/Deck Test/Zombie Bagarre/launch.sh"
           test -f "$XDG_DATA_HOME/applications/zombie-bagarre.desktop"
           bash 'release/zombie-bagarre-linux-x64/Install Zombie Bagarre.sh' --prefix "$RUNNER_TEMP/Deck Test/Zombie Bagarre"
-      - name: Boot the packaged offline game (software GPU, not a Deck benchmark)
-        run: timeout 150s xvfb-run -a -s '-screen 0 1280x800x24' release/zombie-bagarre-linux-x64/zombie-bagarre --steam-deck --smoke-test --use-angle=swiftshader --enable-unsafe-swiftshader
+      - name: Boot the installed launcher (software GPU, not a Deck benchmark)
+        env:
+          XDG_STATE_HOME: ${{ runner.temp }}/bagarre-startup-logs
+        run: |
+          timeout 150s xvfb-run -a -s '-screen 0 1280x800x24' "$RUNNER_TEMP/Deck Test/Zombie Bagarre/launch.sh" --smoke-test --use-angle=swiftshader --enable-unsafe-swiftshader
+          grep -q 'SMOKE PASS' "$XDG_STATE_HOME/zombie-bagarre/launch.log"
+      - name: Keep startup diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SteamDeck-startup-diagnostics
+          path: ${{ runner.temp }}/bagarre-startup-logs/
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
           name: Zombie-Bagarre-SteamDeck

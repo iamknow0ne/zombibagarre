@@ -4,7 +4,7 @@ An offline Linux x86_64 edition for Steam Deck LCD and OLED, packaged with Elect
 
 ## Install on your Deck
 
-1. Download **Zombie-Bagarre-4.37.0-SteamDeck-x86_64.tar.gz** from the [v4.37.0 release](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.37.0).
+1. Download **Zombie-Bagarre-4.40.1-SteamDeck-x86_64.tar.gz** from the [v4.40.1 test release](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.40.1).
 2. On the Deck, choose **Steam → Power → Switch to Desktop**.
 3. Open the downloaded archive in Ark and **extract the entire folder**. Open the extracted `zombie-bagarre-linux-x64` folder.
 4. Run **Install Zombie Bagarre.sh**. If Dolphin offers a choice, select **Execute** / **Run in Konsole**. You can also open Konsole in that folder and enter:
@@ -56,8 +56,20 @@ Bindings remain remappable. Easy driving is the default: point the stick to driv
 - To uninstall, remove `~/Games/Zombie Bagarre`, its optional backup folders, `~/.local/share/applications/zombie-bagarre.desktop`, and `~/.local/share/icons/hicolor/256x256/apps/zombie-bagarre.png`. Remove the non-Steam shortcut in Steam. Keep the save directory if you want your character later.
 - No controls: launch through Steam with a Gamepad template, press a button, then inspect the live controller diagram in Settings. The raw-layout calibration remains available.
 - Low FPS: use Balanced or Battery saver, keep native/85% rendering, and enable the performance readout. Steam's own performance overlay can show device load and frame pacing.
-- Black window or startup failure: launch `launch.sh --windowed` from Konsole and include the output in a bug report. The package retains Chromium's sandbox and driver checks. Do not add `--no-sandbox` or disable the SteamOS read-only filesystem.
-- Verify a download: place the `.sha256` file beside the archive and run `sha256sum -c Zombie-Bagarre-4.37.0-SteamDeck-x86_64.tar.gz.sha256`.
+- Black window or startup failure: close the running entry in Steam first, then run the commands below in Desktop Mode. From v4.40.1, the launcher saves early errors (including errors before Electron starts), and the app records its startup stages. Include these logs in a bug report. The package retains Chromium's sandbox and driver checks. Do not add `--no-sandbox` or disable the SteamOS read-only filesystem.
+- Verify a download: place the `.sha256` file beside the archive and run `sha256sum -c Zombie-Bagarre-4.40.1-SteamDeck-x86_64.tar.gz.sha256`.
+
+```sh
+bash "$HOME/Games/Zombie Bagarre/launch.sh" --windowed
+```
+
+If no window appears, open another Konsole tab and read the launch log:
+
+```sh
+tail -n 80 "${XDG_STATE_HOME:-$HOME/.local/state}/zombie-bagarre/launch.log"
+```
+
+The app's second log is `~/.config/zombie-bagarre/diagnostics/startup.log` (or under your custom XDG config directory). If this file is absent, include the launcher log: the failure may have occurred before the app's JavaScript started. Logs stay on your device; nothing is uploaded automatically. Startup has a two-minute watchdog, and recorded stages distinguish opening the window, loading assets and warming graphics. The launcher log rotates at 2 MiB on the next launch.
 
 ## Build & verification
 
@@ -69,7 +81,7 @@ npm run desktop:linux
 
 Output: `release/Zombie-Bagarre-<package version>-SteamDeck-x86_64.tar.gz` plus SHA-256 checksum. Packaging downloads the pinned official Linux Electron runtime; the resulting game is fully offline. Node 22.12+ is required. `npm run desktop:mac` creates a local unsigned macOS test build, and `npm run desktop:dev` launches the installed host Electron runtime after building the game.
 
-The desktop workflow builds on Linux and boots the packaged application under Xvfb/software rendering, waiting for the actual world, shaders, UI and desktop bridge to initialize. Unit tests cover protocol isolation, settings preservation, graphics presets and frame scheduling. This verifies packaging and startup, **not Steam Deck hardware performance or Steam Input output**.
+The desktop workflow builds on Linux, installs and updates into a path containing spaces, then boots that installed `launch.sh` under Xvfb/software rendering, waiting for the actual world, shaders, UI and desktop bridge to initialize. It retains startup logs. Unit tests also cover the launcher's argument/exit-code preservation, missing files, logging failures, initialization without animation frames, and startup timeout handling. This verifies packaging and startup, **not Steam Deck hardware performance or Steam Input output**.
 
 Before calling this Deck-validated, test on the LCD device: install and add the shortcut; launch offline in Gaming Mode; move/aim/fire both hands; hold both weapon wheels; navigate upgrades/map/character menus; drive; test rumble; suspend/resume; quit/relaunch and check character persistence; measure crowded combat and boss encounters with Balanced and Rich.
 
@@ -86,4 +98,4 @@ The desktop UI reuses the game's field-equipment layout: charcoal/bone/amber pal
 
 The app loads only its packaged assets using a private secure origin, with a sandboxed renderer, isolated preload, no renderer Node access, restricted IPC, blocked external navigation and a content security policy. Normal GPU acceleration is enabled; no unsupported Vulkan/HDR or hardware-access claims are made. This remains the existing 2.5D rendering engine, not a native engine rewrite.
 
-The published **v4.37.0** archive predates Rooftop Training. Test the course in the [browser](https://iamknow0ne.github.io/zombibagarre/traversal.html), or build the current source; installing the existing archive does not add the course.
+**Device report:** v4.37.0 installed on a Steam Deck LCD but did not display the game in Gaming Mode or Desktop Mode. The exact cause is still awaiting the device's error output. v4.40.1 removes an unbounded animation-frame wait during loading, restores hidden windows on a second launch, adds startup diagnostics and tests the installed launcher. It is a diagnostic test release, **not a confirmed fix for that hardware report**. It also includes the web changes through v4.40.0 and Rooftop Training.

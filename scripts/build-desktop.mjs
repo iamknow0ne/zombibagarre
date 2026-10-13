@@ -14,7 +14,7 @@ await cp(path.join(root,'dist'),path.join(stage,'dist'),{recursive:true});
 // Original source PNGs are not runtime dependencies; the game uses WebP.
 for(const name of await readdir(path.join(stage,'dist','art')))if(name.endsWith('.png'))await rm(path.join(stage,'dist','art',name));
 await mkdir(path.join(stage,'desktop'));
-for(const name of ['main.cjs','preload.cjs','policy.cjs','icon.png'])await cp(path.join(root,'desktop',name),path.join(stage,'desktop',name));
+for(const name of ['main.cjs','preload.cjs','policy.cjs','startup.cjs','icon.png'])await cp(path.join(root,'desktop',name),path.join(stage,'desktop',name));
 await writeFile(path.join(stage,'package.json'),JSON.stringify({name:'zombie-bagarre',productName:'Zombie Bagarre',version:pkg.version,description:pkg.description,main:'desktop/main.cjs',author:'iamknow0ne',private:true},null,2));
 const [output]=await packager({dir:stage,out:path.join(root,'release'),name:'zombie-bagarre',executableName:'zombie-bagarre',platform,arch,
   electronVersion:pkg.devDependencies.electron,asar:true,overwrite:true,prune:false,appBundleId:'games.zombibagarre.quarantine',appVersion:pkg.version});

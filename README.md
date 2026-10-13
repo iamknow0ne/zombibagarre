@@ -9,7 +9,7 @@
 [![Play now](https://img.shields.io/badge/PLAY_NOW-IN_YOUR_BROWSER-e38b50?style=for-the-badge&labelColor=182327)](https://iamknow0ne.github.io/zombibagarre/)
 
 [![Build and deployment](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml)
-[![Version](https://img.shields.io/badge/version-4.40.0-e38b50?labelColor=182327)](docs/AUDIT-4.40.md)
+[![Version](https://img.shields.io/badge/version-4.40.1-e38b50?labelColor=182327)](docs/STEAM-DECK.md)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-b5c7b1?logo=threedotjs&logoColor=white&labelColor=182327)](package.json)
 [![Controls](https://img.shields.io/badge/controls-keyboard_%C2%B7_gamepad_%C2%B7_touch-8bbdc8?labelColor=182327)](#controls)
 
@@ -145,7 +145,9 @@ Meet **Rook, Saint, Torque and Vesper**, explore the factions, and read the Ward
 
 ## Install on Steam Deck
 
-**[Download the offline Linux edition →](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.37.0)**
+**[Download the offline Linux test edition →](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.40.1)**
+
+**Startup investigation:** a Deck LCD launch failure was reported in both Desktop and Gaming Mode. v4.40.1 includes startup recovery changes and saved error logs; confirmation on the affected device is still needed. [Troubleshooting and logs](docs/STEAM-DECK.md#saves-updates--troubleshooting).
 
 Extract the archive in Desktop Mode, run **Install Zombie Bagarre.sh**, then add **Zombie Bagarre** through Steam’s **Add a Non-Steam Game** menu. Return to Gaming Mode and play without a browser or internet connection. Native Linux; no Proton required.
 
