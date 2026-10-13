@@ -1,0 +1,28 @@
+/* A field archive: one painting, one reading column, no decorative card grid. */
+#lore-dialog{--lore-accent:#f18147;width:min(1180px,calc(100vw - 32px));max-width:none;max-height:calc(100dvh - 32px);padding:0;background:#142125;color:#eee8d8;border:1px solid #63716e;overflow:auto;border-radius:2px}
+#lore-dialog[data-world=cyberpunk]{--lore-accent:#81d6d8}
+#lore-dialog button{min-height:44px;border-radius:0;font:700 11px monospace;letter-spacing:.06em}
+#lore-dialog button:focus-visible{outline:2px solid var(--lore-accent);outline-offset:-3px}
+.lore-toolbar,.lore-worlds,.lore-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 24px;border-bottom:1px solid #41504f}
+.lore-toolbar{position:sticky;top:0;z-index:2;background:#142125}
+#lore-dialog .label{color:#c1c8bc;margin:0;font:11px monospace;letter-spacing:.13em}
+.lore-worlds{justify-content:flex-start;padding-block:0;gap:24px}
+#lore-dialog .lore-worlds button,#lore-dialog .lore-chapters button{background:transparent;border:0;border-bottom:2px solid transparent;color:#aebbb7;padding:14px 0}
+#lore-dialog button[aria-pressed=true]{color:var(--lore-accent);border-bottom-color:var(--lore-accent)}
+.lore-layout{display:grid;grid-template-columns:1.05fr 1fr}
+.lore-art{margin:0;position:relative;min-width:0;background:#10191d;align-self:start}
+.lore-art img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain}
+.lore-art figcaption{padding:20px 24px;font:italic 20px Georgia,serif;color:#eee8d8}
+.lore-art small{display:block;margin-top:10px;font:10px monospace;letter-spacing:.14em;color:#b8c0b7}
+#lore-art-status:not(:empty){padding:0 24px 16px;font:12px monospace;color:#c1c8bc}
+.lore-reading{padding:28px 32px;border-left:1px solid #41504f}
+#lore-dialog h2{font:normal clamp(30px,3.4vw,45px)/1.04 Impact,'Arial Narrow',sans-serif;text-transform:uppercase;letter-spacing:.01em;margin:12px 0 22px;color:#eee8d8}
+.lore-chapters{display:flex;flex-wrap:wrap;gap:16px;border-bottom:1px solid #41504f;margin-bottom:20px}
+#lore-copy p{font:15px/1.65 Georgia,serif;color:#d5d8cb;margin:0 0 16px}
+#lore-copy h3{font:700 12px/1.4 monospace;text-transform:uppercase;color:var(--lore-accent);margin:20px 0 7px}
+#lore-copy blockquote{margin:24px 0 0;padding:0 0 0 16px;border-left:2px solid var(--lore-accent);font:italic 17px/1.5 Georgia,serif;color:#eee8d8}
+#lore-copy cite{display:block;font:11px/1.5 monospace;color:#aebbb7;margin-top:10px}
+.lore-foot{border-top:1px solid #41504f;border-bottom:0;font:11px/1.5 monospace;color:#b8c0b7}
+.lore-foot span{max-width:65ch}.lore-foot button{flex-shrink:0}
+@media(max-width:740px){#menu .menu-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;margin-top:12px}#menu .menu-links button{min-height:48px;padding:8px 0;font-size:11px;letter-spacing:.04em;text-align:left;border-bottom:1px solid #41504f}#menu .menu-links span{margin-left:5px}}
+@media(max-width:740px){#lore-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}.lore-layout{grid-template-columns:1fr}.lore-reading{border-left:0;border-top:1px solid #41504f;padding:24px 20px}.lore-toolbar,.lore-worlds,.lore-foot{padding-inline:20px}.lore-worlds{gap:20px}.lore-art figcaption{padding:14px 20px;font-size:18px}.lore-art small{margin-top:6px}.lore-chapters{gap:14px}.lore-foot{align-items:flex-start;flex-direction:column}.lore-foot button{width:100%}}
