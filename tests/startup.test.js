@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {loadingFrame} from '../src/rebuild/LoadingFrame.js';
-const {startupWatch,startupLog}=createRequire(import.meta.url)('../desktop/startup.cjs');
+const {startupWatch,startupLog,graphicsSwitches}=createRequire(import.meta.url)('../desktop/startup.cjs');
 
 function clock(){
  let next=0;const tasks=new Map();
@@ -35,6 +35,23 @@ test('ready and ordinary quit cancel startup watchdogs',()=>{
   const timer=clock();const watch=startupWatch({log:()=>{},fail:()=>assert.fail('unexpected startup failure'),schedule:timer.schedule,cancel:timer.cancel});
   watch[action]();watch.fail('late event');assert.equal(timer.tasks.size,0);
  }
+});
+test('three GPU startup crashes terminate the invisible retry loop with a useful diagnosis',()=>{
+ const timer=clock(),failures=[];
+ const watch=startupWatch({log:()=>{},fail:why=>failures.push(why),schedule:timer.schedule,cancel:timer.cancel});
+ for(let i=0;i<4;i++)watch.gpuExit({type:'Utility',reason:'crashed',exitCode:139});
+ watch.gpuExit({type:'GPU',reason:'clean-exit',exitCode:0});
+ for(let i=0;i<2;i++)watch.gpuExit({type:'GPU',reason:'crashed',exitCode:139});
+ assert.equal(failures.length,0);
+ watch.gpuExit({type:'GPU',reason:'crashed',exitCode:139});
+ assert.equal(failures.length,1);assert.match(failures[0],/139/);assert.match(failures[0],/OpenGL/);assert.equal(timer.tasks.size,0);
+});
+test('OpenGL compatibility is opt-in, Linux-only, and preserves GPU acceleration and sandboxing',()=>{
+ assert.deepEqual(graphicsSwitches('linux','default'),[]);assert.deepEqual(graphicsSwitches('darwin',''),[]);
+ const switches=new Map(graphicsSwitches('linux','opengl'));
+ assert.equal(switches.get('use-angle'),'gl');assert.equal(switches.get('use-gl'),'angle');assert.ok(switches.has('disable-gpu-shader-disk-cache'));
+ assert.equal(switches.size,3);
+ assert.throws(()=>graphicsSwitches('darwin','opengl'));assert.throws(()=>graphicsSwitches('linux','unknown'));
 });
 test('native diagnostics persist even without the shell launcher',t=>{
  const root=mkdtempSync(path.join(tmpdir(),'bagarre-log-'));t.after(()=>rmSync(root,{recursive:true,force:true}));

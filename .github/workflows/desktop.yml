@@ -21,7 +21,7 @@ jobs:
       - run: npm test
       - run: npm run desktop:linux
       - name: Install Linux smoke-test dependencies
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgtk-3-0 libnss3 libasound2 libgbm1
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgtk-3-0 libnss3 libasound2 libgbm1 libgl1-mesa-dri
       - name: Exercise user installation and update
         env:
           XDG_DATA_HOME: ${{ runner.temp }}/bagarre-desktop-data
@@ -35,6 +35,13 @@ jobs:
           XDG_STATE_HOME: ${{ runner.temp }}/bagarre-startup-logs
         run: |
           timeout 150s xvfb-run -a -s '-screen 0 1280x800x24' "$RUNNER_TEMP/Deck Test/Zombie Bagarre/launch.sh" --smoke-test --use-angle=swiftshader --enable-unsafe-swiftshader
+          grep -q 'SMOKE PASS' "$XDG_STATE_HOME/zombie-bagarre/launch.log"
+      - name: Boot the OpenGL compatibility launcher (Mesa software renderer)
+        env:
+          XDG_STATE_HOME: ${{ runner.temp }}/bagarre-startup-logs/opengl
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          timeout 150s xvfb-run -a -s '-screen 0 1280x800x24' "$RUNNER_TEMP/Deck Test/Zombie Bagarre/Launch OpenGL.sh" --smoke-test
           grep -q 'SMOKE PASS' "$XDG_STATE_HOME/zombie-bagarre/launch.log"
       - name: Keep startup diagnostics
         if: always()

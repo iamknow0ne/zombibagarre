@@ -20,10 +20,12 @@ const [output]=await packager({dir:stage,out:path.join(root,'release'),name:'zom
   electronVersion:pkg.devDependencies.electron,asar:true,overwrite:true,prune:false,appBundleId:'games.zombibagarre.quarantine',appVersion:pkg.version});
 if(platform==='linux'){
  await cp(path.join(root,'desktop','launch.sh'),path.join(output,'launch.sh'));
+ await cp(path.join(root,'desktop','launch-opengl.sh'),path.join(output,'Launch OpenGL.sh'));
  await cp(path.join(root,'desktop','install.sh'),path.join(output,'Install Zombie Bagarre.sh'));
  await mkdir(path.join(output,'desktop'),{recursive:true});await cp(path.join(root,'desktop','icon.png'),path.join(output,'desktop','icon.png'));
  await cp(path.join(root,'docs','STEAM-DECK.md'),path.join(output,'START-HERE.md'));
  await chmod(path.join(output,'launch.sh'),0o755);await chmod(path.join(output,'Install Zombie Bagarre.sh'),0o755);
+ await chmod(path.join(output,'Launch OpenGL.sh'),0o755);
  const name=`Zombie-Bagarre-${pkg.version}-SteamDeck-x86_64.tar.gz`,archive=path.join(root,'release',name);
  execFileSync('tar',['-czf',archive,'-C',path.dirname(output),path.basename(output)],{stdio:'inherit'});
  const digest=createHash('sha256').update(await readFile(archive)).digest('hex');

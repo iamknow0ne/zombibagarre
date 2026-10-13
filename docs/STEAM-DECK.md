@@ -71,6 +71,16 @@ tail -n 80 "${XDG_STATE_HOME:-$HOME/.local/state}/zombie-bagarre/launch.log"
 
 The app's second log is `~/.config/zombie-bagarre/diagnostics/startup.log` (or under your custom XDG config directory). If this file is absent, include the launcher log: the failure may have occurred before the app's JavaScript started. Logs stay on your device; nothing is uploaded automatically. Startup has a two-minute watchdog, and recorded stages distinguish opening the window, loading assets and warming graphics. The launcher log rotates at 2 MiB on the next launch.
 
+**GPU process exits with code 139:** this indicates a segmentation fault in the graphics process, not an installation or controller-binding error. Close the running entry in Steam before each test. Try **Launch OpenGL.sh** in the installed folder (or add `--graphics=opengl` to the game's Steam Launch Options). This selects ANGLE's hardware OpenGL backend and bypasses GPU shader disk caching; it preserves character saves and the Chromium sandbox. It is a compatibility test, not a guaranteed solution for every driver. Remove the launch option to return to automatic graphics selection.
+
+On the older v4.37.0 package, the equivalent one-time test is:
+
+```sh
+bash "$HOME/Games/Zombie Bagarre/launch.sh" --windowed --use-gl=angle --use-angle=gl --disable-gpu-shader-disk-cache
+```
+
+The normal launcher remains hardware accelerated. The software renderers in CI are test-only and are not made the default to conceal a hardware failure.
+
 ## Build & verification
 
 ```sh
@@ -81,7 +91,7 @@ npm run desktop:linux
 
 Output: `release/Zombie-Bagarre-<package version>-SteamDeck-x86_64.tar.gz` plus SHA-256 checksum. Packaging downloads the pinned official Linux Electron runtime; the resulting game is fully offline. Node 22.12+ is required. `npm run desktop:mac` creates a local unsigned macOS test build, and `npm run desktop:dev` launches the installed host Electron runtime after building the game.
 
-The desktop workflow builds on Linux, installs and updates into a path containing spaces, then boots that installed `launch.sh` under Xvfb/software rendering, waiting for the actual world, shaders, UI and desktop bridge to initialize. It retains startup logs. Unit tests also cover the launcher's argument/exit-code preservation, missing files, logging failures, initialization without animation frames, and startup timeout handling. This verifies packaging and startup, **not Steam Deck hardware performance or Steam Input output**.
+The desktop workflow builds on Linux, installs and updates into a path containing spaces, then boots the installed launchers under Xvfb: SwiftShader for the standard launch and Mesa software OpenGL for the compatibility launch. Both must initialize the actual world, shaders, UI and desktop bridge. It retains startup logs. Unit tests also cover the launcher's argument/exit-code preservation, missing files, logging failures, initialization without animation frames, and startup timeout handling. This verifies packaging and startup, **not Steam Deck hardware performance or Steam Input output**.
 
 Before calling this Deck-validated, test on the LCD device: install and add the shortcut; launch offline in Gaming Mode; move/aim/fire both hands; hold both weapon wheels; navigate upgrades/map/character menus; drive; test rumble; suspend/resume; quit/relaunch and check character persistence; measure crowded combat and boss encounters with Balanced and Rich.
 
@@ -95,7 +105,9 @@ The desktop UI reuses the game's field-equipment layout: charcoal/bone/amber pal
 - [Electron security guidance](https://www.electronjs.org/docs/latest/tutorial/security)
 - [Electron custom protocols](https://www.electronjs.org/docs/latest/api/protocol)
 - [Electron suspend/resume events](https://www.electronjs.org/docs/latest/api/power-monitor)
+- [ANGLE backend selection](https://github.com/google/angle/blob/main/doc/DebuggingTips.md#using-angle-in-chromium)
+- [Electron graphics-process crash events](https://www.electronjs.org/docs/latest/tutorial/crash-reporting#reacting-to-crashes-at-runtime)
 
 The app loads only its packaged assets using a private secure origin, with a sandboxed renderer, isolated preload, no renderer Node access, restricted IPC, blocked external navigation and a content security policy. Normal GPU acceleration is enabled; no unsupported Vulkan/HDR or hardware-access claims are made. This remains the existing 2.5D rendering engine, not a native engine rewrite.
 
-**Device report:** v4.37.0 installed on a Steam Deck LCD but did not display the game in Gaming Mode or Desktop Mode. The exact cause is still awaiting the device's error output. v4.40.1 removes an unbounded animation-frame wait during loading, restores hidden windows on a second launch, adds startup diagnostics and tests the installed launcher. It is a diagnostic test release, **not a confirmed fix for that hardware report**. It also includes the web changes through v4.40.0 and Rooftop Training.
+**Device report:** v4.37.0 installed on a Steam Deck LCD but did not display the game in Gaming Mode or Desktop Mode. The supplied terminal photo shows repeated GPU-process exits with code 139; the precise driver/backend cause is not established. v4.40.1 adds an OpenGL compatibility launcher, stops repeated GPU startup crashes with a useful error, removes an unbounded animation-frame wait during loading, restores hidden windows on a second launch, saves startup diagnostics and tests the installed launchers. It is a diagnostic test release, **not a confirmed fix for that hardware report**. It also includes the web changes through v4.40.0 and Rooftop Training.

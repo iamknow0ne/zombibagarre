@@ -4,7 +4,7 @@ const {tmpdir} = require('node:os');
 const path = require('node:path');
 const {pathToFileURL} = require('node:url');
 const {ORIGIN, trustedURL, assetPath, trustedSender} = require('./policy.cjs');
-const {startupLog, startupWatch} = require('./startup.cjs');
+const {startupLog, startupWatch, graphicsSwitches} = require('./startup.cjs');
 const smoke = process.argv.includes('--smoke-test');
 const deck = process.argv.includes('--steam-deck') || process.env.SteamDeck === '1' || (() => {
   try { return /Jupiter|Galileo/i.test(readFileSync('/sys/devices/virtual/dmi/id/product_name', 'utf8')); } catch { return false; }
@@ -18,7 +18,11 @@ const startup = startupWatch({log, fail: reason => {
   app.exit(1);
 }});
 app.on('before-quit', () => startup.stop());
-app.on('child-process-gone', (_event, details) => log('CHILD PROCESS EXIT', JSON.stringify(details)));
+app.on('child-process-gone', (_event, details) => {log('CHILD PROCESS EXIT', JSON.stringify(details));startup.gpuExit(details);});
+const graphicsMode = app.commandLine.getSwitchValue('graphics') || 'default';
+try { for (const [name,value] of graphicsSwitches(process.platform,graphicsMode)) app.commandLine.appendSwitch(name,value); }
+catch (error) { startup.fail(error.message); }
+log('GRAPHICS REQUEST', JSON.stringify({mode:graphicsMode,angle:app.commandLine.getSwitchValue('use-angle') || 'automatic'}));
 // Gamescope and Steam's overlay use Xwayland. Keep Chromium's normal GPU path,
 // driver checks and renderer sandbox: no forced Vulkan or --no-sandbox flags.
 if (process.platform === 'linux') app.commandLine.appendSwitch('ozone-platform', 'x11');
@@ -30,6 +34,7 @@ else {
   app.on('second-instance', () => { if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); log('WINDOW', 'Existing window shown'); } });
   app.whenReady().then(async () => {
     startup.stage('creating the game window');
+    app.getGPUInfo('basic').then(info => log('GPU INFO',JSON.stringify(info))).catch(error => log('GPU INFO FAILED',error.message));
     const root = path.join(app.getAppPath(), 'dist');
     protocol.handle('bagarre', request => {
       const target = assetPath(request.url, root);
@@ -68,7 +73,7 @@ else {
     win.webContents.setWindowOpenHandler(() => ({action:'deny'}));
     win.webContents.on('will-navigate', (event, url) => { if (!trustedURL(url)) event.preventDefault(); });
     win.webContents.on('will-attach-webview', event => event.preventDefault());
-    const status = () => ({version:app.getVersion(),platform:process.platform,steamDeck:deck,fullscreen:win.isFullScreen(),gpu:app.getGPUFeatureStatus().webgl2 || app.getGPUFeatureStatus().webgl || 'unknown'});
+    const status = () => ({version:app.getVersion(),platform:process.platform,steamDeck:deck,fullscreen:win.isFullScreen(),graphicsMode,gpu:app.getGPUFeatureStatus().webgl2 || app.getGPUFeatureStatus().webgl || 'unknown'});
     for (const [channel, action] of Object.entries({
       'desktop:status':status,
       'desktop:fullscreen':() => {win.setFullScreen(!win.isFullScreen()); return win.isFullScreen();},
