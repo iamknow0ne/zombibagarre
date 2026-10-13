@@ -197,7 +197,7 @@ The former implementation is retained in `src/legacy-main.js` and `legacy-3d.htm
 
 </details>
 
-[Detailed development history](docs/DEVELOPMENT-HISTORY.md) · [Boss design](docs/BOSS-DESIGN.md) · [Living-world rules](docs/LIVING-WORLD-4.31.md) · [Report a bug](https://github.com/iamknow0ne/zombibagarre/issues)
+[Platform & demake roadmap](docs/PLATFORM-ROADMAP.md) · [Detailed development history](docs/DEVELOPMENT-HISTORY.md) · [Boss design](docs/BOSS-DESIGN.md) · [Living-world rules](docs/LIVING-WORLD-4.31.md) · [Report a bug](https://github.com/iamknow0ne/zombibagarre/issues)
 
 ---
 
