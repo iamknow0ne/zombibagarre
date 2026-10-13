@@ -42,10 +42,10 @@ export function buildRoute(sim,target){
  const path=[finish];for(let i=to;i!==-1;i=parent[i]){path.push(point(i));if(i===from)break;}path.push(start);path.reverse();
  const smooth=[path[0]];let i=0;while(i<path.length-1){let j=Math.min(path.length-1,i+30);while(j>i&&!routeSegmentClear(sim,path[i],path[j]))j--;if(j===i)return [];smooth.push(path[j]);i=j;}return smooth;
 }
-export function navigationRoute(sim){
- const target=sim.player.waypoint;if(!target){sim.questRoute=null;return null;}
- const p=sim.player,old=sim.questRoute,key=`${target.x.toFixed(1)}:${target.z.toFixed(1)}:${target.source||'manual'}`,revision=sim.geometryRevision||0;
+export function navigationRoute(sim,target=sim.player.waypoint,cacheSlot='questRoute'){
+ if(!target){sim[cacheSlot]=null;return null;}
+ const p=sim.player,old=sim[cacheSlot],key=`${target.x.toFixed(1)}:${target.z.toFixed(1)}:${target.source||'manual'}`,revision=sim.geometryRevision||0;
  if(old&&old.key===key&&old.revision===revision&&distance(old.origin,p)<8){old.status=distance(p,target)<3?'arrived':old.points.length?'route':'unavailable';return old;}
  const points=buildRoute(sim,target),length=points.slice(1).reduce((n,p,i)=>n+distance(points[i],p),0);
- return sim.questRoute={key,revision,origin:{x:p.x,z:p.z},points,length,source:target.source||'manual',status:distance(p,target)<3?'arrived':points.length?'route':'unavailable'};
+ return sim[cacheSlot]={key,revision,origin:{x:p.x,z:p.z},points,length,source:target.source||'manual',status:distance(p,target)<3?'arrived':points.length?'route':'unavailable'};
 }

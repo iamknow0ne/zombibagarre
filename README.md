@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.27 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.28 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,12 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters with four bespoke articulated rigs, building-scale variants, two phases and a paired fight. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets, generated environment atlases and synthesized audio; artwork is served with the game, without third-party asset or font requests.
+
+## New in 4.28 — Quiet quest guidance
+
+- Track a contract in the Map or Journal to see a small amber chevron beside your hero, with walking distance to the objective. It points toward a reachable route corner around buildings and water, follows the actual camera, and advances from contact to objective to reward.
+- Arrival becomes a compact TALK / COLLECT / HERE cue (ON FOOT while driving). City-wide tasks have no arbitrary destination arrow. If no walking route is found, BEARING explicitly indicates straight-line direction only.
+- Settings → Quest direction enables or disables the overlay immediately and saves the preference. Custom map pins remain independent. The guide reserves space from combat labels and avoids mobile controls; there is no flashing, pulsing or extra world-render pass.
 
 ## New in 4.27 — Local building cutaways
 

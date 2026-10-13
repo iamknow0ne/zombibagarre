@@ -1,3 +1,4 @@
+import {QuestCompass} from './QuestCompass.js';
 import {ProgressionFeed} from './ProgressionFeed.js';
 import {Vector3} from 'three';
 import {DamageFeed,damageStyle,damageText,damageSize} from './Combat.js';
@@ -6,9 +7,9 @@ export class CombatOverlay {
  constructor(game){
   this.canvas=document.createElement('canvas');this.canvas.className='combat-feedback';this.canvas.setAttribute('aria-hidden','true');
   Object.assign(this.canvas.style,{position:'fixed',inset:'0',pointerEvents:'none',width:'100%',height:'100%'});
-  game.insertAdjacentElement('afterend',this.canvas);this.ctx=this.canvas.getContext('2d');this.feed=new DamageFeed();this.progression=new ProgressionFeed();this.bars=new Map();this.point=new Vector3();this.settings={};
+  game.insertAdjacentElement('afterend',this.canvas);this.ctx=this.canvas.getContext('2d');this.compass=new QuestCompass();this.feed=new DamageFeed();this.progression=new ProgressionFeed();this.bars=new Map();this.point=new Vector3();this.settings={};
  }
- clear(){this.feed.clear();this.progression?.clear();this.bars.clear();this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);}
+ clear(){this.questHint=null;this.feed.clear();this.progression?.clear();this.bars.clear();this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);}
  destroy(){this.canvas.remove();this.bars.clear();}
  event(hit){
   if(this.settings.progressionPopups!==false)this.progression?.add(hit);
@@ -29,7 +30,7 @@ export class CombatOverlay {
  }
  height(e){return e.crawling?1:(e.enemyType||e.type)==='boss'?(e.bossHeight||6)*.65:(e.enemyType||e.type)==='brute'?3.25:(e.enemyType||e.type)==='runner'?2:2.5;}
  draw(sim,dt,camera){
-  const c=this.ctx,w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+  this.compass.drawn=false;const c=this.ctx,w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
   if(this.w!==w||this.h!==h||this.dpr!==dpr){this.w=w;this.h=h;this.dpr=dpr;this.canvas.width=Math.round(w*dpr);this.canvas.height=Math.round(h*dpr);}
   c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);this.feed.update(dt);this.progression?.update(dt);
   if(sim.state==='menu')return;
@@ -37,6 +38,7 @@ export class CombatOverlay {
   // Shared screen-space occupancy keeps nearby labels apart, including on phones.
   const occupied=[...(this.reserved||[])];this.drawnNumbers=0;this.drawnBars=0;const overlaps=r=>occupied.some(o=>Math.abs(o.x-r.x)<(o.w+r.w)/2+3&&Math.abs(o.y-r.y)<(o.h+r.h)/2+3);
   const place=(p,width,height)=>{for(const [dx,dy]of [[0,0],[-28,-12],[28,-12],[0,-38],[-36,-40],[36,-40]]){const r={x:p.x+dx,y:p.y+dy,w:width,h:height};if(r.x-width/2<4||r.x+width/2>w-4||r.y-height/2<16||r.y+height/2>h-24||overlaps(r))continue;occupied.push(r);return r;}return null;};
+  if(this.settings.questGuidance!==false)this.compass.draw(c,this.questHint,sim,camera,w,h,occupied,this.mobile);
   this.drawProgression(sim,camera,place);
   if(this.settings.enemyHealthBars!==false){let count=0;for(const e of [...sim.enemies].sort((a,b)=>Math.hypot(a.x-sim.player.x,a.z-sim.player.z)-Math.hypot(b.x-sim.player.x,b.z-sim.player.z))){
    if(e.health<=0||e.health>=e.maxHealth||count>=(this.mobile?10:32))continue;const state=this.bars.get(e.id);if(!state||this.feed.clock-state.hitAt>4)continue;

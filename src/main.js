@@ -40,7 +40,7 @@ import { WEAPONS, weaponStats, WAVE_NAMES, distance, lineBlocked, magazineSize, 
 const $=id=>document.getElementById(id);
 function read(key,fallback){try{const value=JSON.parse(localStorage.getItem(key));return value??fallback;}catch{return fallback;}}
 function save(key,value){if(import.meta.env.DEV&&['controllerQA','touchQA','upgradeQA','rpgQA','bossQA'].some(k=>new URLSearchParams(location.search).has(k))&&['zb-quarantine-record','zb-rpg-profile','zb-quarantine-settings'].includes(key))return;try{localStorage.setItem(key,JSON.stringify(value));}catch{/* Private browsing may not permit persistence. The game still works. */}}
-const defaults={visualStyle:'classic',progression:'sandbox',progressionPopups:true,volume:45,quality:matchMedia('(pointer:coarse)').matches?'balanced':'high',difficulty:'standard',gore:true,damageNumbers:true,enemyHealthBars:true,criticalCallouts:true,damageColors:true,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
+const defaults={questGuidance:true,visualStyle:'classic',progression:'sandbox',progressionPopups:true,volume:45,quality:matchMedia('(pointer:coarse)').matches?'balanced':'high',difficulty:'standard',gore:true,damageNumbers:true,enemyHealthBars:true,criticalCallouts:true,damageColors:true,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
 const stored=read('zb-quarantine-settings',{});const settings={...defaults,...(stored&&typeof stored==='object'?stored:{})};
 if(!['sandbox','hero'].includes(settings.progression))settings.progression='sandbox';
 if(!['classic','pixel'].includes(settings.visualStyle))settings.visualStyle='classic';
@@ -182,7 +182,7 @@ try{
   for(const[id,action]of [['dash-action','dash'],['melee-action','melee'],['grenade-action','grenade'],['touch-reload','reload'],['touch-dash','dash'],['touch-grenade','grenade']])bindTouchAction($(id),input,()=>{if(['playing','extracting'].includes(sim.state))input.once[action]=true;});
   bindTouchAction($('touch-switch'),input,()=>cycleWeapon(1));
   $('visual-style').value=settings.visualStyle;$('difficulty').value=settings.difficulty;$('quality').value=settings.quality;$('volume').value=settings.volume;$('reduced-motion').checked=settings.reducedMotion;$('gore').checked=settings.gore;
-  const combatSettings={'progression-popups':'progressionPopups','damage-numbers':'damageNumbers','enemy-health-bars':'enemyHealthBars','critical-callouts':'criticalCallouts','damage-colors':'damageColors'};
+  const combatSettings={'quest-guidance':'questGuidance','progression-popups':'progressionPopups','damage-numbers':'damageNumbers','enemy-health-bars':'enemyHealthBars','critical-callouts':'criticalCallouts','damage-colors':'damageColors'};
   for(const [id,key]of Object.entries(combatSettings))$(id).checked=settings[key]!==false;
   function updateSettings(){for(const [id,key]of Object.entries(combatSettings))settings[key]=$(id).checked;settings.visualStyle=$('visual-style').value;settings.difficulty=$('difficulty').value;settings.quality=$('quality').value;settings.volume=Number($('volume').value);settings.reducedMotion=$('reduced-motion').checked;settings.gore=$('gore').checked;save('zb-quarantine-settings',settings);document.body.classList.toggle('reduced-motion',settings.reducedMotion);world.applySettings(settings);audio.setVolume(settings.volume/100);}
   for(const id of ['visual-style','difficulty','quality','volume','reduced-motion','gore',...Object.keys(combatSettings)])$(id).addEventListener('input',updateSettings);
@@ -194,8 +194,8 @@ try{
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('touchQA')){const {installTouchQA}=await import('../dev/touch-qa.js');installTouchQA(input,()=>sim);}
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('upgradeQA')){const {installUpgradeQA}=await import('../dev/upgrade-qa.js');installUpgradeQA(input,()=>sim);}
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('bossQA')){const {installBossQA}=await import('../dev/boss-qa.js');installBossQA(input,()=>sim,()=>world);}
-  if(import.meta.env.DEV&&new URLSearchParams(location.search).has('rpgQA')){const {installRPGQA}=await import('../dev/rpg-qa.js');installRPGQA(input,()=>sim);}
+  if(import.meta.env.DEV&&new URLSearchParams(location.search).has('rpgQA')){const {installRPGQA}=await import('../dev/rpg-qa.js');installRPGQA(input,()=>sim,()=>world);}
   recordUI();world.applySettings(settings);world.update(sim,0,true);await loadingStage(88,'Warming lights, materials and controls');if(world.renderer.compileAsync)await world.renderer.compileAsync(world.scene,world.camera);last=performance.now();requestAnimationFrame(loop);
   // Read-only diagnostics for local QA. No gameplay mutation surface is exposed.
-  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.27.0'})});
+  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.28.0'})});
 }catch(error){console.error(error);$('error-detail').textContent='WebGL is needed to render Saint-Roch. Enable hardware acceleration or try a browser with WebGL support.';$('error').hidden=false;}

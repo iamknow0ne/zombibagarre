@@ -1,3 +1,4 @@
+import {QuestCompass} from '../src/rebuild/QuestCompass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Simulation} from '../src/rebuild/Simulation.js';
@@ -39,7 +40,7 @@ test('mobile feedback respects reserved HUD and thumb regions and limits visible
  try{
   Object.assign(globalThis,{innerWidth:390,innerHeight:844,devicePixelRatio:1});
   const o=Object.create(CombatOverlay.prototype),noop=()=>{};
-  o.canvas={};o.ctx=new Proxy({measureText:()=>({width:24})},{get:(t,k)=>t[k]??noop});o.feed=new DamageFeed();o.bars=new Map();o.settings={};o.mobile=true;o.project=(x,y,z)=>({x,y:z});
+  o.compass=new QuestCompass();o.canvas={};o.ctx=new Proxy({measureText:()=>({width:24})},{get:(t,k)=>t[k]??noop});o.feed=new DamageFeed();o.bars=new Map();o.settings={};o.mobile=true;o.project=(x,y,z)=>({x,y:z});
   for(let i=0;i<20;i++)o.event({type:'damage',enemyId:i,x:50+i%4*90,z:130+Math.floor(i/4)*120,amount:30,dealt:30,health:70,maxHealth:100,kind:'ballistic'});
   const sim={state:'playing',enemies:[],player:{x:0,z:0}};
   o.reserved=[{x:195,y:422,w:390,h:844}];o.draw(sim,0,{});assert.equal(o.drawnNumbers,0,'no label may cover a reserved region');
