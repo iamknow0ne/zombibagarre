@@ -15,13 +15,13 @@ export class TouchUI {
   const input=this.input,p=sim.player,active=(matchMedia('(pointer:coarse)').matches||innerWidth<=700||input.source==='touch')&&input.source!=='gamepad';document.body.classList.toggle('touch-layout',active);world.touchView=active;world.feedback.mobile=active;world.feedback.reserved=[];if(!active)return;
   $('equipped-hud').innerHTML=p.equipped.map((key,i)=>{const w=weaponStats(p,key),slot=slotKey(p.equipped,key,i);return `<div class="touch-weapon-line"><span>${w.name} <small>${TIER_MARKS[weaponTier(p,key)]}</small></span><b>${w.melee?'MELEE':p.reloads[slot]>0?'↻':p.magazines[slot]}</b></div>`;}).join('');
   const playing=['playing','extracting'].includes(sim.state),melee=MELEE_KEYS.includes(p.weapon);
-  $('touch-auto').textContent=auto?'AUTO ON':'AUTO OFF';$('touch-auto').setAttribute('aria-pressed',String(auto));
+  $('touch-auto').disabled=!!world.viewRig?.active;$('touch-auto').textContent=world.viewRig?.active?'MANUAL':auto?'AUTO ON':'AUTO OFF';$('touch-auto').setAttribute('aria-pressed',String(auto&&!world.viewRig?.active));
   $('touch-dash').disabled=!playing||p.dashCooldown>0;$('touch-dash').textContent=p.dashCooldown>0?`${p.dashCooldown.toFixed(1)}s`:'DODGE';
   $('touch-grenade').disabled=!playing||p.grenades<=0||p.throwAnimation>0;$('touch-grenade').textContent=`${THROWABLES[p.throwable||'frag'].short} · ${p.grenades}`;
   $('touch-reload').disabled=!playing||melee||p.reload>0;$('touch-reload').textContent=melee?'MELEE':p.reload>0?'LOADING':'RELOAD';
   $('aim-joystick').querySelector('span').textContent=melee?'AIM / STRIKE':'AIM / FIRE';$('joystick').querySelector('span').textContent=p.vehicleId?'DRIVE':'MOVE';
   $('vehicle-action').textContent=p.vehicleId?'EXIT VEHICLE':'ENTER VEHICLE';$('map-action').querySelector('span').textContent='MAP';$('vehicle-world-prompt').hidden=true;
-  $('touch-help').textContent=p.vehicleId?'RELEASE STICK TO BRAKE':auto?'MOVE TO SURVIVE · AIM TO OVERRIDE':'RIGHT STICK TO AIM + ATTACK';
+  $('touch-help').textContent=p.vehicleId?'RELEASE STICK TO BRAKE':world.viewRig?.active?'RIGHT STICK TO LOOK + ATTACK':auto?'MOVE TO SURVIVE · AIM TO OVERRIDE':'RIGHT STICK TO AIM + ATTACK';
   // Keep floating combat labels off the information strip and both thumb areas.
   const selectors=['.hud-top','.weapon-hud','#map-action','.touch-tools','#boss-hud','.toast:not(:empty)','.announcement.show','.vehicle-readout','#vehicle-action','#move-zone','#aim-zone','.touch-action','.driving-hud','.drive-touch'];
   world.feedback.reserved=[...document.querySelectorAll(selectors.join(','))].filter(el=>!el.hidden&&el.getClientRects().length&&getComputedStyle(el).display!=='none').map(el=>el.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0).map(r=>({x:r.x+r.width/2,y:r.y+r.height/2,w:r.width+8,h:r.height+8}));

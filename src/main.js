@@ -1,3 +1,4 @@
+import {displaySettings,WORLD_LORE} from './rebuild/DisplaySettings.js';
 import './rebuild/controller.css';
 import {weaponLock,throwableLock,permittedLoadout,availableWeapons,canDualWield,enforceProgression,testing} from './rebuild/Progression.js';
 import {decorateMenus} from './rebuild/MenuPolish.js';
@@ -46,7 +47,7 @@ if(!['sandbox','hero'].includes(settings.progression))settings.progression='sand
 if(!['classic','pixel'].includes(settings.visualStyle))settings.visualStyle='classic';
 if(!['high','balanced','low'].includes(settings.quality))settings.quality=defaults.quality;
 if(!['relaxed','standard','nightmare'].includes(settings.difficulty))settings.difficulty=defaults.difficulty;
-Object.assign(settings,controlSettings(settings));
+Object.assign(settings,controlSettings(settings),displaySettings(settings));
 settings.volume=Number.isFinite(settings.volume)?Math.max(0,Math.min(100,settings.volume)):45;
 let record=read('zb-quarantine-record',{score:0,wins:0});if(!record||typeof record!=='object')record={score:0,wins:0};
 record.scrap=Math.max(0,Number(record.scrap)||0);record.meta=record.meta&&typeof record.meta==='object'?record.meta:{};for(const u of META_UPGRADES)record.meta[u.id]=Math.max(0,Math.min(u.max,Math.floor(Number(record.meta[u.id])||0)));
@@ -71,7 +72,7 @@ function start(){closeDialogs();if(sim.state!=='menu'||world.district!==0||sim.m
 function menu(){closeDialogs();reshuffle();input.clear();$('menu').hidden=false;$('hud').hidden=true;$('damage-flash').style.opacity=0;recordUI();$('start').focus();}
 function togglePause(){if(rpgUI?.dialog.open){rpgUI.dialog.close();return;}if($('map-dialog').open){$('map-dialog').close();return;}if($('arsenal-dialog').open){$('arsenal-dialog').close();return;}if(sim.state==='paused'){if($('settings-dialog').open){$('settings-dialog').close();showDialog('pause-dialog');}else resume();}else if(['playing','extracting'].includes(sim.state)){sim.pause();showDialog('pause-dialog');}}
 function resume(){closeDialogs();sim.resume();input.clear();accumulator=0;$('game').focus();}
-function toggleAuto(value=!auto){auto=value;settings.autoFire=auto;save('zb-quarantine-settings',settings);$('auto-action').setAttribute('aria-pressed',String(auto));$('auto-action').innerHTML=`AUTO FIRE <b>${auto?'ON':'OFF'}</b>`;toast(auto?'AUTO FIRE ENABLED':input?.source==='touch'?'MANUAL FIRE · DRAG THE RIGHT STICK':input?.source==='gamepad'?'MANUAL FIRE · USE YOUR HAND BUTTONS':'MANUAL AIM · HOLD LEFT MOUSE TO FIRE');}
+function toggleAuto(value=!auto){if(world?.viewRig.active){toast('CAMERA VIEWS USE MANUAL ATTACKS · RETURN TO DIORAMA FOR AUTO FIRE');return;}auto=value;settings.autoFire=auto;save('zb-quarantine-settings',settings);$('auto-action').setAttribute('aria-pressed',String(auto));$('auto-action').innerHTML=`AUTO FIRE <b>${auto?'ON':'OFF'}</b>`;toast(auto?'AUTO FIRE ENABLED':input?.source==='touch'?'MANUAL FIRE · DRAG THE RIGHT STICK':input?.source==='gamepad'?'MANUAL FIRE · USE YOUR HAND BUTTONS':'MANUAL AIM · HOLD LEFT MOUSE TO FIRE');}
 function openSettings(fromPause=false){settingsFromPause=fromPause;if(fromPause)$('pause-dialog').close();showDialog('settings-dialog');}
 function settingsClosed(){if(settingsFromPause&&sim.state==='paused'){settingsFromPause=false;showDialog('pause-dialog');}}
 function openArsenal(){
@@ -137,19 +138,20 @@ function hud(){const p=sim.player,w=weaponStats(p);
   $('ammo').innerHTML=w.melee?`COMBO <small>${sim.time-(p.lastSwing??-99)<1.3?p.swingCombo+1:1} / 3</small>`:`${p.magazines[p.weapon]} <small>/ ${magazineSize(p)}</small>`;
   const mastery=masteryProgress(p,p.weapon);$('mastery-fill').style.width=`${mastery.progress*100}%`;$('mastery-track').setAttribute('aria-valuenow',String(Math.round(mastery.progress*100)));$('mastery-track').setAttribute('aria-label',`${w.name} mastery: ${TIER_NAMES[w.tier]}, ${mastery.next?Math.ceil(mastery.next-mastery.xp)+' damage to next evolution':'maximum tier'}`);
   const attack=p.meleeAttack,attackAge=attack?sim.time-attack.started:0;
-  $('reload-label').textContent=w.melee?(attack?(attackAge<attack.timing.contact?'WIND-UP':attackAge<attack.timing.cutEnd?'SLASH':p.weaponTimers[p.weapon]<=.18?'TAP TO CHAIN':'RECOVERING'):'HOLD ATTACK TO COMBO'):p.reload>0?`RELOADING ${p.reload.toFixed(1)}s`:auto?'AUTO TARGETING':'MANUAL AIM';
+  $('reload-label').textContent=w.melee?(attack?(attackAge<attack.timing.contact?'WIND-UP':attackAge<attack.timing.cutEnd?'SLASH':p.weaponTimers[p.weapon]<=.18?'TAP TO CHAIN':'RECOVERING'):'HOLD ATTACK TO COMBO'):p.reload>0?`RELOADING ${p.reload.toFixed(1)}s`:world.viewRig?.active?'MANUAL / CAMERA VIEW':auto?'AUTO TARGETING':'MANUAL AIM';
   $('reload-fill').style.width=w.melee&&attack?`${Math.min(100,attackAge/attack.timing.duration*100)}%`:p.reload>0?`${(1-p.reload/p.reloadTotal)*100}%`:'0%';$('hud-gun').className=`weapon-symbol ${p.weapon==='carbine'?'rifle':p.weapon}`;
   $('dash-state').textContent=p.dashCooldown>0?`${p.dashCooldown.toFixed(1)}s`:'READY';$('dash-action').classList.toggle('cooldown',p.dashCooldown>0);
   $('melee-action').disabled=!w.melee;$('melee-state').textContent=!w.melee?'BLADE ONLY':p.weaponTimers[p.weapon]>.18?'SWING':p.weaponTimers[p.weapon]>0?'CHAIN':'READY';$('melee-action').classList.toggle('cooldown',(p.weaponTimers[p.weapon]||0)>.18);
   $('grenade-action').querySelector('span').textContent=THROWABLES[p.throwable||'frag'].short;$('grenade-action').setAttribute('aria-label','Throw '+THROWABLES[p.throwable||'frag'].name);$('grenade-state').textContent=`× ${p.grenades}`;$('combo').hidden=sim.combo<3;$('combo').textContent=`${sim.combo} KILL STREAK`;
   drawAtlas($('minimap'),sim);const vehicle=sim.props.find(v=>v.id===p.vehicleId),nearCar=sim.props.find(v=>v.driveable&&v.health>0&&distance(v,p)<5);$('vehicle-action').hidden=!vehicle&&!nearCar;$('vehicle-action').innerHTML=vehicle?'EXIT VEHICLE <b>V</b>':'ENTER VEHICLE <b>V</b>';$('vehicle-status').textContent=vehicle?`${vehicle.vehicleName} · ${Math.round(Math.abs(vehicle.speed||0)*3.6)} KM/H · ${Math.ceil(vehicle.health/vehicle.maxHealth*100)}% HULL`:p.waypoint?`DESTINATION ${Math.round(distance(p,p.waypoint))} m`:sim.layout.city?'FREE ROAM · M MAP':'';
-  $('district-hud').textContent=sim.layout.city?`${[...sim.layout.landmarks].sort((a,b)=>distance(a,p)-distance(b,p))[0].name} / OPEN CITY`:`${DISTRICTS[sim.district].name} / DISTRICT ${sim.district+1} OF ${DISTRICTS.length}`;$('equipped-hud').textContent=p.equipped.map((k,i)=>{const slot=slotKey(p.equipped,k,i);return `${WEAPONS[k].name} ${WEAPONS[k].melee?'BLADE':p.magazines[slot]}${p.reloads[slot]>0?' ↻':''}`;}).join('  ·  ');
+  document.body.classList.toggle('perspective-play',!!world.viewRig?.active&&['playing','extracting'].includes(sim.state));
+  $('district-hud').textContent=sim.layout.city?`${[...sim.layout.landmarks].sort((a,b)=>distance(a,p)-distance(b,p))[0].name} / OPEN CITY`:`${DISTRICTS[sim.district].name} / DISTRICT ${sim.district+1} OF ${DISTRICTS.length}`;if(settings.worldTheme==='cyberpunk')$('district-hud').textContent='BLACKOUT 2089 / '+$('district-hud').textContent;$('equipped-hud').textContent=p.equipped.map((k,i)=>{const slot=slotKey(p.equipped,k,i);return `${WEAPONS[k].name} ${WEAPONS[k].melee?'BLADE':p.magazines[slot]}${p.reloads[slot]>0?' ↻':''}`;}).join('  ·  ');
   const buffs=[p.shield>0?`ARMOUR ${Math.ceil(p.shield)}`:'',p.overdrive>0?`OVERDRIVE ${Math.ceil(p.overdrive)}s`:'',p.freeze>0?`COLD FRONT ${Math.ceil(p.freeze)}s`:'',p.doubleScore>0?`BOUNTY ×2 ${Math.ceil(p.doubleScore)}s`:''].filter(Boolean);$('active-powers').replaceChildren(...buffs.map(text=>{const tag=document.createElement('span');tag.textContent=text;return tag;}));
   updateBossHUD(sim,settings);
 }
 function loop(now){input.pollGamepad(sim,now);dualsense?.update(sim,input,now);const delta=Math.min(.1,(now-last)/1000);last=now;
   if(['playing','extracting'].includes(sim.state)){
-    accumulator=Math.min(.15,accumulator+delta);const frame=input.consume(world,auto,sim);
+    accumulator=Math.min(.15,accumulator+delta);const frame=input.consume(world,auto,sim,delta);
     if(frame.destination){if(distance(sim.player,frame.destination)<.3)input.destination=null;else{const dest=sim.blocked(sim.player,frame.destination,.48)?sim.navigate(sim.player,frame.destination):frame.destination;if(dest){const d=distance(sim.player,dest)||1;frame.x=(dest.x-sim.player.x)/d;frame.z=(dest.z-sim.player.z)/d;}}}
     let once=true;
     while(accumulator>=1/60){sim.update(1/60,once?frame:{...frame,dash:false,melee:false,grenade:false,reload:false,interact:false,weapon:null});once=false;accumulator-=1/60;}
@@ -181,21 +183,24 @@ try{
   document.querySelectorAll('[data-loadout]').forEach(b=>b.onclick=()=>selectLoadout(b.dataset.loadout));
   for(const[id,action]of [['dash-action','dash'],['melee-action','melee'],['grenade-action','grenade'],['touch-reload','reload'],['touch-dash','dash'],['touch-grenade','grenade']])bindTouchAction($(id),input,()=>{if(['playing','extracting'].includes(sim.state))input.once[action]=true;});
   bindTouchAction($('touch-switch'),input,()=>cycleWeapon(1));
+  const displayControls={'world-theme':'worldTheme','diorama-clarity':'dioramaClarity','shader-style':'shaderStyle','view-mode':'viewMode','foliage-detail':'foliageDetail','environment-detail':'environmentDetail','population-detail':'populationDetail','lighting-detail':'lightingDetail'};
+  const themeUI=()=>{const lore=WORLD_LORE[settings.worldTheme];$('world-lore').textContent=lore.brief;document.querySelector('.chapter > span').textContent=lore.title;document.querySelector('.intro').textContent=lore.intro;document.body.dataset.worldTheme=settings.worldTheme;};
+  for(const [id,key]of Object.entries(displayControls))$(id).value=settings[key];themeUI();
   $('visual-style').value=settings.visualStyle;$('difficulty').value=settings.difficulty;$('quality').value=settings.quality;$('volume').value=settings.volume;$('reduced-motion').checked=settings.reducedMotion;$('gore').checked=settings.gore;
   const combatSettings={'quest-guidance':'questGuidance','progression-popups':'progressionPopups','damage-numbers':'damageNumbers','enemy-health-bars':'enemyHealthBars','critical-callouts':'criticalCallouts','damage-colors':'damageColors'};
   for(const [id,key]of Object.entries(combatSettings))$(id).checked=settings[key]!==false;
-  function updateSettings(){for(const [id,key]of Object.entries(combatSettings))settings[key]=$(id).checked;settings.visualStyle=$('visual-style').value;settings.difficulty=$('difficulty').value;settings.quality=$('quality').value;settings.volume=Number($('volume').value);settings.reducedMotion=$('reduced-motion').checked;settings.gore=$('gore').checked;save('zb-quarantine-settings',settings);document.body.classList.toggle('reduced-motion',settings.reducedMotion);world.applySettings(settings);audio.setVolume(settings.volume/100);}
-  for(const id of ['visual-style','difficulty','quality','volume','reduced-motion','gore',...Object.keys(combatSettings)])$(id).addEventListener('input',updateSettings);
+  function updateSettings(){for(const [id,key]of Object.entries(displayControls))settings[key]=$(id).value;themeUI();for(const [id,key]of Object.entries(combatSettings))settings[key]=$(id).checked;settings.visualStyle=$('visual-style').value;settings.difficulty=$('difficulty').value;settings.quality=$('quality').value;settings.volume=Number($('volume').value);settings.reducedMotion=$('reduced-motion').checked;settings.gore=$('gore').checked;save('zb-quarantine-settings',settings);document.body.classList.toggle('reduced-motion',settings.reducedMotion);world.applySettings(settings);audio.setVolume(settings.volume/100);}
+  for(const id of ['visual-style','difficulty','quality','volume','reduced-motion','gore',...Object.keys(combatSettings),...Object.keys(displayControls)])$(id).addEventListener('input',updateSettings);
   window.addEventListener('resize',()=>world.resize());
   const focusLost=()=>{if(['playing','extracting'].includes(sim.state)){sim.pause();showDialog('pause-dialog');}input.clear();};
   window.addEventListener('blur',focusLost);document.addEventListener('visibilitychange',()=>{if(document.hidden)focusLost();});
   $('game').addEventListener('webglcontextlost',e=>{e.preventDefault();focusLost();$('error-detail').textContent='The graphics connection was interrupted. Reload to start a fresh run.';$('error').hidden=false;});
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('controllerQA')){const {installControllerQA}=await import('../dev/controller-qa.js');installControllerQA(input,()=>sim);}
-  if(import.meta.env.DEV&&new URLSearchParams(location.search).has('touchQA')){const {installTouchQA}=await import('../dev/touch-qa.js');installTouchQA(input,()=>sim);}
+  if(import.meta.env.DEV&&new URLSearchParams(location.search).has('touchQA')){const {installTouchQA}=await import('../dev/touch-qa.js');installTouchQA(input,()=>sim,()=>world);}
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('upgradeQA')){const {installUpgradeQA}=await import('../dev/upgrade-qa.js');installUpgradeQA(input,()=>sim);}
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('bossQA')){const {installBossQA}=await import('../dev/boss-qa.js');installBossQA(input,()=>sim,()=>world);}
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('rpgQA')){const {installRPGQA}=await import('../dev/rpg-qa.js');installRPGQA(input,()=>sim,()=>world);}
   recordUI();world.applySettings(settings);world.update(sim,0,true);await loadingStage(88,'Warming lights, materials and controls');if(world.renderer.compileAsync)await world.renderer.compileAsync(world.scene,world.camera);last=performance.now();requestAnimationFrame(loop);
   // Read-only diagnostics for local QA. No gameplay mutation surface is exposed.
-  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.28.0'})});
+  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.29.0'})});
 }catch(error){console.error(error);$('error-detail').textContent='WebGL is needed to render Saint-Roch. Enable hardware acceleration or try a browser with WebGL support.';$('error').hidden=false;}

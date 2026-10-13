@@ -1,3 +1,4 @@
+import {cameraMovement} from './ViewRig.js';
 import {TouchControls,touchAimTarget} from './TouchControls.js';
 import {assistedDrive} from './Vehicles.js';
 import {sampleGamepad,worldStick} from './Gamepad.js';
@@ -15,16 +16,18 @@ export class Input {
     window.addEventListener('keyup',e=>this.keys.delete(e.code));
     window.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')this.source='touch';});
     window.addEventListener('blur',()=>this.clear());
-    canvas.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;this.source='keyboard';this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
-    canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return;this.source='keyboard';this.firing=e.button===0;canvas.setPointerCapture(e.pointerId);if(e.button===2)this.moveRequest={x:e.clientX/innerWidth,y:e.clientY/innerHeight};this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
+    canvas.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;this.source='keyboard';if(document.pointerLockElement===canvas||(this.perspective&&e.buttons===2)){this.lookX=(this.lookX||0)+e.movementX;this.lookY=(this.lookY||0)+e.movementY;}this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
+    canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return;this.source='keyboard';if(this.perspective&&this.playing&&!this.lockUnavailable&&canvas.requestPointerLock&&!document.querySelector('dialog[open]')&&document.pointerLockElement!==canvas){try{canvas.requestPointerLock()?.catch?.(()=>{this.lockUnavailable=true;});}catch{this.lockUnavailable=true;}return;}this.firing=e.button===0;canvas.setPointerCapture(e.pointerId);if(e.button===2&&!this.perspective)this.moveRequest={x:e.clientX/innerWidth,y:e.clientY/innerHeight};this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
     canvas.addEventListener('pointerup',()=>{this.firing=false;});canvas.addEventListener('pointercancel',()=>{this.firing=false;});canvas.addEventListener('contextmenu',e=>e.preventDefault());
     canvas.addEventListener('wheel',e=>{e.preventDefault();onAction(e.deltaY>0?'nextWeapon':'prevWeapon');},{passive:false});
+    document.addEventListener('pointerlockerror',()=>{this.lockUnavailable=true;});
+    document.addEventListener('pointerlockchange',()=>{const locked=document.pointerLockElement===canvas;if(this.wasLocked&&!locked&&this.playing&&!document.querySelector('dialog[open]'))onAction('pause');this.wasLocked=locked;});
     this.touchHoldIds={};
     for(const [id,key]of [['drive-brake','touchBrake'],['drive-reverse','touchReverse']]){const button=document.getElementById(id);button?.addEventListener('pointerdown',e=>{if(this.touchHoldIds[key]!==undefined)return;e.preventDefault();this.source='touch';this.touchHoldIds[key]=e.pointerId;this[key]=true;try{button.setPointerCapture(e.pointerId);}catch{/* The browser may have cancelled the pointer. */}});for(const event of ['pointerup','pointercancel','lostpointercapture'])button?.addEventListener(event,e=>{if(this.touchHoldIds[key]===e.pointerId){delete this.touchHoldIds[key];this[key]=false;}});}
     this.touchControls=new TouchControls(this);
   }
-  clear(){this.touchControls?.clear();this.touchWorldAim=null;this.touchFiring=false;this.touchHoldIds={};this.touchBrake=this.touchReverse=false;this.padGuard=true;this.padAim=null;this.keys.clear();this.once={};this.firing=false;this.destination=null;this.moveRequest=null;this.stick={x:0,y:0};this.resetStick?.();this.resetAim?.();this.touchAim=null;this.onStopFeedback?.();}
-  pollGamepad(sim,now=performance.now()){
+  clear(){if(typeof document!=='undefined'&&document?.pointerLockElement===this.canvas)document?.exitPointerLock?.();this.perspective=false;this.lookX=this.lookY=0;this.touchControls?.clear();this.touchWorldAim=null;this.touchFiring=false;this.touchHoldIds={};this.touchBrake=this.touchReverse=false;this.padGuard=true;this.padAim=null;this.keys.clear();this.once={};this.firing=false;this.destination=null;this.moveRequest=null;this.stick={x:0,y:0};this.resetStick?.();this.resetAim?.();this.touchAim=null;this.onStopFeedback?.();}
+  pollGamepad(sim,now=performance.now()){this.playing=['playing','extracting'].includes(sim.state);
     const dt=Math.min(.05,Math.max(0,(now-(this.padTime??now))/1000));this.padTime=now;
     if(document.hidden||!document.hasFocus()){if(!this.padInactive)this.clear();this.padInactive=true;this.padButtons=[];return;}this.padInactive=false;
     let pads=[];try{pads=Array.from(this.getGamepads?this.getGamepads():navigator.getGamepads?.()||[]).filter(Boolean);}catch{/* Some embedded browsers deny access. */}
@@ -79,7 +82,7 @@ export class Input {
     }this.menuHeld=!!direction;
     if(pad.pressed[0]){if(active?.tagName==='SELECT'){active.selectedIndex=(active.selectedIndex+1)%active.options.length;active.dispatchEvent(new Event('change',{bubbles:true}));active.dispatchEvent(new Event('input',{bubbles:true}));}else if(active?.tagName==='BUTTON'||active?.tagName==='SUMMARY'||active?.type==='checkbox')active.click();}
   }
-  consume(world,auto,sim=null){
+  consume(world,auto,sim=null,dt=1/60){
     const k=this.keys;let x=(k.has('KeyD')||k.has('ArrowRight')?1:0)-(k.has('KeyA')||k.has('KeyQ')||k.has('ArrowLeft')?1:0)+this.stick.x;
     let y=(k.has('KeyS')||k.has('ArrowDown')?1:0)-(k.has('KeyW')||k.has('KeyZ')||k.has('ArrowUp')?1:0)+this.stick.y;
     const pad=this.padGuard||this.source&&this.source!=='gamepad'?null:this.pad;if(pad){x+=pad.move.x;y+=pad.move.y;}
@@ -89,6 +92,8 @@ export class Input {
     const touchSim=sim||(world.player?{player:world.player.position,enemies:[],blocked:()=>false}:null);
     const touchTarget=this.source==='touch'&&this.touchAim&&touchSim?touchAimTarget(this.touchAim,touchSim,this.settings?.touchAimAssist!==false):null;this.touchWorldAim=touchTarget;
     const out={brake:k.has('Space')||!!pad?.buttons[1],destination:this.destination,...this.once,x:x*.776+y*.63,z:-x*.63+y*.776,auto:aiming?false:auto,aim:pad&&(hands.some(Boolean)||this.once.grenade||aiming)?this.padAim:touchTarget||(this.pointer.active?world.aim(this.pointer.x,this.pointer.y):null),firing:this.firing||!!this.touchFiring,fireHands:hands};this.once={};
+    this.perspective=!!world.viewRig?.active;
+    if(this.perspective&&sim){const rig=world.viewRig,look=pad?.aim||(this.source==='touch'&&this.touchFiring?this.touchAim:null);rig.look((this.lookX||0)+(look?.x||0)*18*Math.min(.05,dt)*60*(this.settings?.aimSensitivity||1),(this.lookY||0)+(look?.y||0)*14*Math.min(.05,dt)*60*(this.settings?.invertAim?-1:1));this.lookX=this.lookY=0;Object.assign(out,cameraMovement(x,y,rig.yaw));out.aim=rig.aim(sim.player);out.auto=false;out.destination=null;this.destination=null;this.touchWorldAim=out.aim;}
     const vehicle=sim?.props.find(v=>v.id===sim.player.vehicleId);
     if(vehicle){
       this.destination=this.moveRequest=null;out.destination=null;out.firing=false;out.fireHands=[false,false];out.grenade=out.dash=out.melee=out.reload=false;out.weapon=null;

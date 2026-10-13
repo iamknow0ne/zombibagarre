@@ -53,3 +53,10 @@
 .combat-settings{border:0;border-top:1px solid var(--line);padding:18px 0 0;margin:12px 0 0;min-width:0}.combat-settings legend{font:10px var(--mono);letter-spacing:1.5px;color:var(--orange);padding-right:14px}.combat-settings .setting-row{padding:16px 0}.combat-settings .setting-row:first-of-type{border-top:0}.setting-row input[type=checkbox]{flex-shrink:0}.damage-legend{display:flex;gap:12px;flex-wrap:wrap;font:9px var(--mono)!important;letter-spacing:.6px}.damage-legend span:before{content:'';display:inline-block;width:5px;height:5px;background:currentColor;margin-right:5px}.damage-legend .bullet{color:#f5edcf}.damage-legend .burn{color:#ffab62}.damage-legend .shock{color:#8fe6ff}.damage-legend .blast{color:#ff9585}.damage-legend .slice{color:#bdf3be}.combat-note{font-size:11px!important;line-height:1.7!important}.arsenal-spec{line-height:1.8}
 
 .arsenal-slots label{min-width:0}.arsenal-slots label:last-child{grid-column:1/-1}#throwable-description{border-left:2px solid var(--orange);padding:10px 12px;font-size:12px;line-height:1.6}#throwable-select{min-height:44px}
+
+/* World treatment stays within the field-equipment UI. */
+#view-crosshair{display:none;pointer-events:none;position:fixed;z-index:9;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;color:#ede5cf;text-shadow:0 1px 3px #101b20}
+.perspective-play #view-crosshair{display:block}body:has(dialog[open]) #view-crosshair{display:none}
+#view-crosshair i{display:block;margin:auto;width:14px;height:14px;border:1px solid #ede5cf;border-radius:50%;box-shadow:0 0 0 1px #14252b}#view-crosshair span{display:block;margin-top:7px;font:8px monospace;letter-spacing:1px;opacity:.65}
+body[data-world-theme="cyberpunk"] .chapter>span{color:#80d8df}#world-lore{border-left:2px solid #9a875e;padding-left:12px;text-wrap:pretty}
+@media(max-width:600px){#view-crosshair span{display:none}}

@@ -36,7 +36,7 @@ export class ControllerUI{
   $('controller-device').textContent=input.pad?`${input.family==='playstation'?'PLAYSTATION':input.family==='xbox'?'XBOX':'GAMEPAD'} · ${input.pad.id}`:'Press a button on your connected controller.';
   $('vibration-status').textContent=this.haptics.capability()?(this.haptics.status.startsWith('Connect')?'Vibration available · use Test vibration.':this.haptics.status):'Vibration is not exposed by the current browser / controller.';$('dualsense-status').textContent=this.dualsense.status;
   for(const [id,action,key]of [['dash-action','dash','SPACE'],['melee-action','rightFire','F'],['grenade-action','grenade','E']])$(id).querySelector('kbd, .pad-key').outerHTML=this.prompt(action,key);
-  $('arsenal-action').innerHTML=`ARSENAL ${this.prompt('arsenal','B')}`;$('auto-action').innerHTML=`AUTO FIRE <b>${auto?'ON':'OFF'}</b> ${this.prompt('auto','T')}`;
+  $('arsenal-action').innerHTML=`ARSENAL ${this.prompt('arsenal','B')}`;$('auto-action').disabled=!!world.viewRig?.active;$('auto-action').innerHTML=`${world.viewRig?.active?'CAMERA AIM':'AUTO FIRE'} <b>${world.viewRig?.active?'MANUAL':auto?'ON':'OFF'}</b> ${this.prompt('auto','T')}`;
   $('map-action').querySelector('span').innerHTML=`STREET MAP ${this.prompt('map','M')}`;
   $('pause').innerHTML=pad?this.prompt('pause','ESC'):'Ⅱ';
   $('control-autoFire').checked=auto;$('auto-action').setAttribute('aria-pressed',String(auto));
