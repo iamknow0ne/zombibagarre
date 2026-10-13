@@ -9,7 +9,7 @@
 [![Play now](https://img.shields.io/badge/PLAY_NOW-IN_YOUR_BROWSER-e38b50?style=for-the-badge&labelColor=182327)](https://iamknow0ne.github.io/zombibagarre/)
 
 [![Build and deployment](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml)
-[![Version](https://img.shields.io/badge/version-4.36.0-e38b50?labelColor=182327)](docs/RELEASE-4.36.md)
+[![Version](https://img.shields.io/badge/version-4.37.0-e38b50?labelColor=182327)](docs/STEAM-DECK.md)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-b5c7b1?logo=threedotjs&logoColor=white&labelColor=182327)](package.json)
 [![Controls](https://img.shields.io/badge/controls-keyboard_%C2%B7_gamepad_%C2%B7_touch-8bbdc8?labelColor=182327)](#controls)
 
@@ -121,6 +121,14 @@ Meet **Rook, Saint, Torque and Vesper**, explore the factions, and read the Ward
 Illustrated survivor and Warden dossiers, height-aware aiming for the experimental FPS/TPS cameras, faster city collision queries and smaller artwork downloads. The local fixed-scene crowded benchmark improved from **80 to 104 FPS**; results vary by device. The six existing raster delivery assets became **82% smaller**.
 
 The release passed **278 automated tests**, the production build, full campaign checks on all three difficulties and an open-city completion run. See the [release report for measurements, browser QA and remaining limitations](docs/RELEASE-4.36.md).
+
+## Install on Steam Deck
+
+**[Download the offline Linux edition →](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.37.0)**
+
+Extract the archive in Desktop Mode, run **Install Zombie Bagarre.sh**, then add **Zombie Bagarre** through Steam’s **Add a Non-Steam Game** menu. Return to Gaming Mode and play without a browser or internet connection. Native Linux; no Proton required.
+
+The LCD preset starts at native resolution with a 60 FPS cap, independent LT/RT firing, configurable graphics profiles, suspend handling and a controller-accessible Quit button. Hardware performance and rumble still need testing on the actual Deck. [Installation, controls and tuning guide](docs/STEAM-DECK.md).
 
 ## Run locally
 

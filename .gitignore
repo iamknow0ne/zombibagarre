@@ -28,3 +28,7 @@ dist/
 .env.*
 !.env.example
 coverage/
+
+# Standalone desktop build output
+.desktop-build/
+release/

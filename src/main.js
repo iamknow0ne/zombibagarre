@@ -1,3 +1,8 @@
+import {desktopDefaults} from './rebuild/DesktopProfile.js';
+import {installDesktopUI} from './rebuild/DesktopUI.js';
+import './rebuild/desktop.css';
+const desktop=window.bagarreDesktop;
+let desktopUI;
 import {endFocus} from './rebuild/BulletTime.js';
 import {BulletTimeUI} from './rebuild/BulletTimeUI.js';
 import './rebuild/bullet-time.css';
@@ -50,7 +55,7 @@ const $=id=>document.getElementById(id);
 function read(key,fallback){try{const value=JSON.parse(localStorage.getItem(key));return value??fallback;}catch{return fallback;}}
 function save(key,value){if(import.meta.env.DEV&&['controllerQA','touchQA','upgradeQA','rpgQA','bossQA'].some(k=>new URLSearchParams(location.search).has(k))&&['zb-quarantine-record','zb-rpg-profile','zb-quarantine-settings'].includes(key))return;try{localStorage.setItem(key,JSON.stringify(value));}catch{/* Private browsing may not permit persistence. The game still works. */}}
 const defaults={bulletTime:true,focusCinematics:true,questGuidance:true,visualStyle:'classic',progression:'sandbox',progressionPopups:true,volume:45,quality:matchMedia('(pointer:coarse)').matches?'balanced':'high',difficulty:'standard',gore:true,damageNumbers:true,enemyHealthBars:true,criticalCallouts:true,damageColors:true,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
-const stored=read('zb-quarantine-settings',{});const settings={...defaults,...(stored&&typeof stored==='object'?stored:{})};
+const stored=read('zb-quarantine-settings',{});const settings={...defaults,...desktopDefaults(desktop),...(stored&&typeof stored==='object'?stored:{})};
 if(!['sandbox','hero'].includes(settings.progression))settings.progression='sandbox';
 if(!['classic','pixel'].includes(settings.visualStyle))settings.visualStyle='classic';
 if(!['high','balanced','low'].includes(settings.quality))settings.quality=defaults.quality;
@@ -167,10 +172,10 @@ function loop(now){sim.focusEnabled=settings.bulletTime!==false;input.pollGamepa
     if(once)Object.assign(input.once,{bulletTime:frame.bulletTime,dash:frame.dash,melee:frame.melee,grenade:frame.grenade,reload:frame.reload,interact:frame.interact,weapon:frame.weapon});
   }else accumulator=0;
   processEvents();if(now-lastHud>80){hud();controllerUI?.update(sim,world,auto);touchUI?.update(sim,world,auto);bulletTimeUI?.update(sim);rpgUI?.update();navigationRoute(sim);lastHud=now;}
-  frameCount++;if(now-lastFps>1000){fps=Math.round(frameCount*1000/(now-lastFps));frameCount=0;lastFps=now;if(import.meta.env.DEV){$('game').dataset.fps=fps;$('game').dataset.diagnostics=JSON.stringify({seed:sim.seed,state:sim.state,x:+sim.player.x.toFixed(2),z:+sim.player.z.toFixed(2),weapon:sim.player.weapon,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,props:sim.obstacles.length,effects:world.effects.length,geometries:world.renderer.info.memory.geometries});}}
+  if(now-lastFps>1000){fps=Math.round(frameCount*1000/(now-lastFps));frameCount=0;lastFps=now;desktopUI?.performance(fps);if(import.meta.env.DEV){$('game').dataset.fps=fps;$('game').dataset.diagnostics=JSON.stringify({seed:sim.seed,state:sim.state,x:+sim.player.x.toFixed(2),z:+sim.player.z.toFixed(2),weapon:sim.player.weapon,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,props:sim.obstacles.length,effects:world.effects.length,geometries:world.renderer.info.memory.geometries});}}
   if(now>noticeUntil)$('announcement').classList.remove('show');if(now>toastUntil)$('toast').textContent='';
   $('damage-flash').style.opacity=Math.max(0,parseFloat($('damage-flash').style.opacity||0)-delta*2);
-  const renderDelta=renderSchedule.next(now,sim.state,document.hidden,world.requestRender);if(renderDelta!==null){world.update(sim,renderDelta*(input.weaponWheelActive?WHEEL_TIME_SCALE:sim.timeScale||1),sim.state==='menu');world.requestRender=false;}audio.update(sim.time,['playing','extracting'].includes(sim.state),sim.props.find(v=>v.id===sim.player.vehicleId),sim.weather,sim.timeScale||1);
+  const renderDelta=renderSchedule.next(now,sim.state,document.hidden,world.requestRender,settings.frameLimit);if(renderDelta!==null){world.update(sim,renderDelta*(input.weaponWheelActive?WHEEL_TIME_SCALE:sim.timeScale||1),sim.state==='menu');world.requestRender=false;frameCount++;}audio.update(sim.time,['playing','extracting'].includes(sim.state),sim.props.find(v=>v.id===sim.player.vehicleId),sim.weather,sim.timeScale||1);
   requestAnimationFrame(loop);
 }
 try{
@@ -205,6 +210,7 @@ try{
   for(const id of ['visual-style','difficulty','quality','volume','reduced-motion','gore',...Object.keys(combatSettings),...Object.keys(displayControls)])$(id).addEventListener('input',updateSettings);
   window.addEventListener('resize',()=>world.resize());
   const focusLost=()=>{if(['playing','extracting'].includes(sim.state)){sim.pause();showDialog('pause-dialog');}input.clear();};
+  desktopUI=installDesktopUI({bridge:desktop,settings,apply:updateSettings,onSuspend:()=>{focusLost();last=performance.now();accumulator=0;},input});
   window.addEventListener('blur',focusLost);document.addEventListener('visibilitychange',()=>{if(document.hidden)focusLost();});
   $('game').addEventListener('webglcontextlost',e=>{e.preventDefault();focusLost();$('error-detail').textContent='The graphics connection was interrupted. Reload to start a fresh run.';$('error').hidden=false;});
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('controllerQA')){const {installControllerQA}=await import('../dev/controller-qa.js');installControllerQA(input,()=>sim);}
@@ -214,5 +220,5 @@ try{
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('rpgQA')){const {installRPGQA}=await import('../dev/rpg-qa.js');installRPGQA(input,()=>sim,()=>world);}
   recordUI();world.applySettings(settings);world.update(sim,0,true);await loadingStage(88,'Warming lights, materials and controls');if(world.renderer.compileAsync)await world.renderer.compileAsync(world.scene,world.camera);last=performance.now();requestAnimationFrame(loop);
   // Read-only diagnostics for local QA. No gameplay mutation surface is exposed.
-  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.36.0'})});
+  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.37.0'})});
 }catch(error){console.error(error);$('error-detail').textContent='WebGL is needed to render Saint-Roch. Enable hardware acceleration or try a browser with WebGL support.';$('error').hidden=false;}

@@ -7,8 +7,11 @@ try{
  await loadingStage(100,'The streets are ready');
  document.getElementById('loading').hidden=true;
  document.getElementById('start').focus();
+ window.bagarreDesktop?.ready();
 }catch(error){
  console.error(error);document.getElementById('loading-stage').textContent='Unable to enter the city. Check your connection and WebGL support, then retry.';
  document.getElementById('loading-retry').hidden=false;
 }
 document.getElementById('loading-retry').onclick=()=>location.reload();
+
+document.getElementById('error-retry').onclick=()=>location.reload();

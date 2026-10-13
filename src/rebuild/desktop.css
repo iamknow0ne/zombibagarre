@@ -1,0 +1,6 @@
+/* The same field-equipment tokens and focus treatment as the browser game. */
+#desktop-performance{position:fixed;right:12px;bottom:8px;z-index:25;padding:5px 8px;background:#162327e8;color:#ede5cf;font:12px monospace;pointer-events:none}
+#desktop-performance[hidden]{display:none}
+#desktop-quit-dialog{max-width:520px}
+#desktop-quit-dialog button{min-height:44px;width:100%;margin-top:12px}
+#desktop-settings select{min-width:160px}

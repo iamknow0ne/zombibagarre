@@ -1,0 +1,42 @@
+name: Build Steam Deck edition
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths: ['desktop/**', 'scripts/build-desktop.mjs', 'src/rebuild/Desktop*', 'src/rebuild/RenderSchedule.js', 'src/rebuild/Fullscreen.js', '.github/workflows/desktop.yml', 'package*.json']
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run desktop:linux
+      - name: Install Linux smoke-test dependencies
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgtk-3-0 libnss3 libasound2 libgbm1
+      - name: Exercise user installation and update
+        env:
+          XDG_DATA_HOME: ${{ runner.temp }}/bagarre-desktop-data
+        run: |
+          bash 'release/zombie-bagarre-linux-x64/Install Zombie Bagarre.sh' --prefix "$RUNNER_TEMP/Deck Test/Zombie Bagarre"
+          test -x "$RUNNER_TEMP/Deck Test/Zombie Bagarre/launch.sh"
+          test -f "$XDG_DATA_HOME/applications/zombie-bagarre.desktop"
+          bash 'release/zombie-bagarre-linux-x64/Install Zombie Bagarre.sh' --prefix "$RUNNER_TEMP/Deck Test/Zombie Bagarre"
+      - name: Boot the packaged offline game (software GPU, not a Deck benchmark)
+        run: timeout 150s xvfb-run -a -s '-screen 0 1280x800x24' release/zombie-bagarre-linux-x64/zombie-bagarre --steam-deck --smoke-test --use-angle=swiftshader --enable-unsafe-swiftshader
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Zombie-Bagarre-SteamDeck
+          path: |
+            release/*.tar.gz
+            release/*.sha256
+          if-no-files-found: error
+          retention-days: 30
