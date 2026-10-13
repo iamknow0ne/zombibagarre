@@ -1,3 +1,4 @@
+import {bossImpactFX,stepBossEffect} from './BossFX.js';
 import {THROWABLES} from './Throwables.js';
 import {throwableMesh,ordnanceBurst} from './ThrowableVisuals.js';
 import {buildSurvivor,animateSurvivorDetails} from './SurvivorVisuals.js';
@@ -526,8 +527,7 @@ export class World {
     if(e.type==='prop-hit'&&e.kind==='building'&&e.health>0&&!e.thermal)this.buildingImpact(e);
     if(e.type==='prop-hit'&&e.kind!=='building'&&!e.weapon)debris(this,{x:e.x,z:e.z,material:materialFor(e.kind),count:5,power:2,scale:.4});
     if(e.type==='arc')this.lightning(e);if(e.type==='ignite')this.flame(e.x,e.z,6);if(e.type==='electrify')this.effect(e.x,e.z,0xa6e9ed,6,3);
-    if(e.type==='boss-phase'||e.type==='boss-defeated'){this.smoke(e.x,e.z,10,.4);debris(this,{x:e.x,z:e.z,material:'metal',count:24,power:8,scale:1.1});this.shake=.4;}
-    if(e.type==='slam'&&e.bossOwner){const count=e.shape==='lane'?10:e.innerRadius?18:10;for(let i=0;i<count;i++){const a=i/count*Math.PI*2,r=e.innerRadius?(e.radius+e.innerRadius)/2:e.radius*Math.sqrt((i+.5)/count),along=(i/(count-1)-.5)*(e.length||0),x=e.x+(e.shape==='lane'?Math.sin(e.angle)*along:Math.sin(a)*r),z=e.z+(e.shape==='lane'?Math.cos(e.angle)*along:Math.cos(a)*r);if(e.bossKind==='cinder')this.flame(x,z,2,.3,null,true);else if(e.bossKind==='dredger')this.splash(x,z,.7);debris(this,{x,z,material:e.bossKind==='bloom'?'wood':'earth',count:3,power:5,scale:.6});this.smoke(x,z,1,.15);}this.shake=.25;}
+    if(e.type==='boss-phase'||e.type==='boss-defeated'||(e.type==='slam'&&e.bossOwner)||e.type==='boss-charge-impact')bossImpactFX(this,e);
     if(e.type==='explosion'||(e.type==='slam'&&!e.bossOwner)){
       const force=Math.max(.35,Math.min(1.7,(e.radius||3)/3)),tier=e.tier||0;
       if(!e.water)this.flame(e.x,e.z,e.source==='car'?14:Math.ceil(5*force+tier),.4,null,true);const lamp=this.blastLights.reduce((a,b)=>a.userData.life<b.userData.life?a:b);lamp.position.set(e.x,2,e.z);lamp.userData.life=.55;lamp.userData.power=e.water?40:160;lamp.color.set(e.water?0xb1d9e0:0xff9d42);lamp.intensity=lamp.userData.power;if(!e.water)this.effect(e.x,e.z,0xf2ae5e,Math.ceil(20*force+tier*3),8+force*3);if(!e.water)debris(this,{x:e.x,z:e.z,material:e.source==='car'||e.source==='barrel'?'metal':'earth',count:Math.ceil(24*force+tier*3),power:6+force*3,scale:.7+force*.3});this.smoke(e.x,e.z,e.water?6:Math.ceil(9*force),e.water?0:.4,e.water?0xb8cbca:0x69665c);this.shake=Math.min(.5,.22*force);
@@ -597,6 +597,7 @@ export class World {
       if(e.delay>0){e.delay-=motionDt;if(e.delay>0)continue;e.mesh.visible=true;}
       e.life-=motionDt;
       if(e.kind==='boss-remains'){const age=e.max-e.life,fall=Math.min(1,age/2.8);e.mesh.userData.body.rotation.x=fall*1.32;e.mesh.position.y=-Math.max(0,age-4)*.6;e.mesh.userData.mats.glow.emissiveIntensity=Math.max(0,1-fall);if(age<2.8&&this.random()<motionDt*9)this.smoke(e.mesh.position.x,e.mesh.position.z,1,.3);}
+      else if(e.kind==='boss-ground'||e.kind==='boss-wave')stepBossEffect(e,motionDt);
       else if(e.ring){e.mesh.scale.addScalar(motionDt*2);e.mesh.material.opacity=Math.max(0,e.life/e.max)*(e.ripple?.4:e.opacity??1);}
       else if(e.kind==='cutwave'){e.mesh.position.x+=e.vx*motionDt;e.mesh.position.z+=e.vz*motionDt;e.mesh.scale.addScalar(motionDt*2);e.mesh.traverse(o=>{if(o.material)o.material.opacity=Math.max(0,e.life/e.max)*.7;});}
       else if(e.kind==='lightning'){e.mesh.traverse(o=>{if(o.material)o.material.opacity=Math.max(0,e.life/e.max)*(o.userData.baseOpacity??1);});}

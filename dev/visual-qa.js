@@ -1,3 +1,4 @@
+import {configureBoss,beginBossAttack} from '../src/rebuild/Bosses.js';
 import {initRPG,gainXP} from '../src/rebuild/RPG.js';
 import {VEHICLES,vehiclePlan} from '../src/rebuild/Vehicles.js';
 import {debris} from '../src/rebuild/Effects.js';
@@ -38,7 +39,7 @@ function setup(){
     else sim.damageEnemy(e,9999,0,0,{kind:death,headshot:death==='headshot'});
   }stopAt=.45;
  }else if(scene==='boss'){
-  sim.player.x=0;sim.player.z=3;const e=sim.spawnEnemy('boss',0,-3);e.attack=.2;e.speed=0;stopAt=2.5;
+  sim.player.x=0;sim.player.z=7;const e=sim.spawnEnemy('boss',0,-3);configureBoss(sim,e,{variant:district});e.bossStarted=true;e.bossPhase=2;e.bossState='pursuit';beginBossAttack(sim,e,e.bossProfile.moves[0]);stopAt=e.windup+.23;
  }else{stopAt=.05;}
  world.focus.set(['map','city'].includes(scene)?0:sim.player.x,0,['map','city'].includes(scene)?0:sim.player.z-1);if(scene==='map')world.overview=true;
  world.player.position.set(sim.player.x,0,sim.player.z);
@@ -62,3 +63,5 @@ $('gore-toggle').onclick=()=>{settings.gore=!settings.gore;world.applySettings(s
 $('city-seed').onchange=setup;
 $('biome').onchange=()=>{district=+$('biome').value;setup();};$('advance').onclick=()=>{for(let i=0;i<6;i++)step(1/60);report();};$('replay').onclick=setup;
 window.addEventListener('resize',()=>{world.resize();world.update(sim,0,['map','city'].includes(scene));});setup();requestAnimationFrame(loop);
+
+$('boss-phase').onclick=()=>{const b=sim.enemies.find(e=>e.type==='boss');if(!b)return;b.bossPhase=1;b.phasePending=true;stopAt=sim.time+.23;};
