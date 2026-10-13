@@ -12,6 +12,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     rollupOptions: {
+      input: {game: 'index.html', traversal: 'traversal.html'},
       output: {
         manualChunks: {
           'three': ['three']

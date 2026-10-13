@@ -67,7 +67,7 @@ npm test
 npm run desktop:linux
 ```
 
-Output: `release/Zombie-Bagarre-4.37.0-SteamDeck-x86_64.tar.gz` plus SHA-256 checksum. Packaging downloads the pinned official Linux Electron runtime; the resulting game is fully offline. Node 22.12+ is required. `npm run desktop:mac` creates a local unsigned macOS test build, and `npm run desktop:dev` launches the installed host Electron runtime after building the game.
+Output: `release/Zombie-Bagarre-<package version>-SteamDeck-x86_64.tar.gz` plus SHA-256 checksum. Packaging downloads the pinned official Linux Electron runtime; the resulting game is fully offline. Node 22.12+ is required. `npm run desktop:mac` creates a local unsigned macOS test build, and `npm run desktop:dev` launches the installed host Electron runtime after building the game.
 
 The desktop workflow builds on Linux and boots the packaged application under Xvfb/software rendering, waiting for the actual world, shaders, UI and desktop bridge to initialize. Unit tests cover protocol isolation, settings preservation, graphics presets and frame scheduling. This verifies packaging and startup, **not Steam Deck hardware performance or Steam Input output**.
 
@@ -85,3 +85,5 @@ The desktop UI reuses the game's field-equipment layout: charcoal/bone/amber pal
 - [Electron suspend/resume events](https://www.electronjs.org/docs/latest/api/power-monitor)
 
 The app loads only its packaged assets using a private secure origin, with a sandboxed renderer, isolated preload, no renderer Node access, restricted IPC, blocked external navigation and a content security policy. Normal GPU acceleration is enabled; no unsupported Vulkan/HDR or hardware-access claims are made. This remains the existing 2.5D rendering engine, not a native engine rewrite.
+
+The published **v4.37.0** archive predates Rooftop Training. Test the course in the [browser](https://iamknow0ne.github.io/zombibagarre/traversal.html), or build the current source; installing the existing archive does not add the course.

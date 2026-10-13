@@ -9,7 +9,7 @@
 [![Play now](https://img.shields.io/badge/PLAY_NOW-IN_YOUR_BROWSER-e38b50?style=for-the-badge&labelColor=182327)](https://iamknow0ne.github.io/zombibagarre/)
 
 [![Build and deployment](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml)
-[![Version](https://img.shields.io/badge/version-4.37.0-e38b50?labelColor=182327)](docs/STEAM-DECK.md)
+[![Version](https://img.shields.io/badge/version-4.38.0-e38b50?labelColor=182327)](docs/TRAVERSAL.md)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-b5c7b1?logo=threedotjs&logoColor=white&labelColor=182327)](package.json)
 [![Controls](https://img.shields.io/badge/controls-keyboard_%C2%B7_gamepad_%C2%B7_touch-8bbdc8?labelColor=182327)](#controls)
 
@@ -39,6 +39,15 @@ Explore a ruined town on foot or behind the wheel. Pair two guns, master a blade
 </table>
 
 <sub>All images above are captured from the running game. The two city close-ups use staged art-inspection scenes. Click any gallery image for the full-size capture.</sub>
+
+
+## Take the high road
+
+**[Play Rooftop Training →](https://iamknow0ne.github.io/zombibagarre/traversal.html)** · [Controls and scope](docs/TRAVERSAL.md)
+
+Jump onto cargo, grapple between roofs, release the cable in mid-air and reach a 10.5 m summit. **Watch Demo** shows the route using the actual movement physics. Training is separate from expeditions and never changes your character save.
+
+[![The survivor at the summit of the rooftop traversal course](docs/screenshots/rooftop-training-4.38.jpg)](https://iamknow0ne.github.io/zombibagarre/traversal.html)
 
 ## The game
 
@@ -177,7 +186,7 @@ The former implementation is retained in `src/legacy-main.js` and `legacy-3d.htm
 <summary><b>Current scope & compatibility</b></summary>
 
 - Single-player, finite generated worlds. No multiplayer, cloud saves or mid-expedition save/resume. Progress belongs to the current browser and origin.
-- Diorama is the primary camera. FPS/TPS remain experimental; jumping, rooftops and grappling are proposals, not enabled mechanics.
+- Diorama is the primary camera. FPS/TPS remain experimental. Jumping and grappling are playable in **Rooftop Training**; city combat and enemy navigation remain on the ground.
 - Destruction uses bounded debris physics and staged structural damage. It is not a structural-engineering or fluid solver.
 - Touch and controller flows have browser QA and regression coverage. Physical-phone, Steam Deck and direct DualSense USB/Bluetooth validation remain separate hardware checks. Optional WebHID trigger effects require a compatible browser; standard play does not require WebHID.
 - Gore, combat labels, quest guidance, motion and graphics detail are configurable in Settings.

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#17282c"><title>Rooftop Run · Zombie Bagarre</title><link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./src/traversal.css"></head>
+<body>
+<canvas id="game" tabindex="0" aria-label="Rooftop traversal course. Move with WASD or arrow keys, Space to jump, E to grapple or release."></canvas>
+<div id="loading" role="status"><strong>ROOFTOP RUN</strong><span>Preparing the training district…</span></div>
+<header><div><span class="eyebrow">SAINT-ROCH / TRAVERSAL LAB</span><h1>ROOFTOP RUN</h1></div><div class="header-actions"><button id="demo" title="Watch a demonstration using the actual movement physics">WATCH DEMO</button><button id="fullscreen" aria-label="Toggle fullscreen" title="Fullscreen">⛶</button><button id="pause" aria-label="Pause training" title="Pause">Ⅱ</button></div></header>
+<section class="route" aria-label="Training progress"><div class="route-line"><b id="objective">01 / JUMP ONTO THE CARGO</b><span id="progress">0 / 4</span></div><p id="instruction">Move toward the striped crate and jump. Amber rings mark grapple anchors.</p><div id="steps" aria-label="Checkpoints"><span>01 CARGO</span><span>02 ROOF</span><span>03 RELAY</span><span>04 SUMMIT</span></div></section>
+<div class="altimeter"><span>HEIGHT</span><strong id="height">0.0 <small>m</small></strong><span id="motion">GROUNDED</span></div>
+<div id="notice" role="status"></div>
+<div id="anchor-tag" aria-hidden="true"><b>⌖</b><span></span></div>
+<div id="hero-tag" aria-hidden="true">⌄</div>
+<div id="move-zone" aria-label="Movement joystick"><div id="joystick"><i></i></div><span>MOVE</span></div>
+<nav class="actions" aria-label="Traversal controls">
+<button id="jump" aria-label="Jump"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 18V4m-5 5 5-5 5 5M5 20h14"/></svg><span>JUMP</span><kbd>SPACE</kbd></button>
+<button id="grapple" aria-label="Grapple or release cable"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21 15 5m-6 0 7-2 3 7M15 5l-1 8c-1 5-7 4-6 0"/></svg><span>GRAPPLE</span><kbd>E</kbd></button>
+<button id="target" aria-label="Select next grapple anchor"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6"/><path d="M12 2v5m0 10v5M2 12h5m10 0h5"/></svg><span>TARGET</span><kbd>T</kbd></button>
+<button id="return" aria-label="Return to last checkpoint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 4 9l5 5M4 9h9a5 5 0 0 1 0 10h-2"/></svg><span>RETRY</span><kbd>R</kbd></button>
+</nav>
+<footer><span id="input-help">WASD / ARROWS · MOVE</span><span>TRAINING ONLY · NO SAVE CHANGES</span></footer>
+<dialog id="pause-dialog"><span class="eyebrow">TRAVERSAL LAB</span><h2>TAKE THE HIGH ROAD.</h2><p>Jump onto the cargo, then grapple to three rooftops. Tap grapple again to release the cable. Move in the air to adjust your landing.</p><p>Marked anchors are solid attachment points. A blocked or distant anchor cannot pull you through a building. Falling returns you to the street; retry returns you to your last rooftop.</p><p class="scope">This is a movement prototype. City combat, roof quests and enemy climbing are not enabled here.</p><button id="resume" class="primary">RESUME TRAINING</button><button id="demo-paused">WATCH ROUTE DEMO</button><button id="restart">RESTART COURSE</button><button id="exit">BACK TO GAME</button></dialog>
+<script type="module" src="./src/traversal.js"></script>
+</body></html>
