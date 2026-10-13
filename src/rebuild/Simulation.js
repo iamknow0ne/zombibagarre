@@ -1,8 +1,9 @@
+import {createWeather,updateWeather,addNightReinforcements,weatherMovement} from './Weather.js';
 import {weaponLock,permittedLoadout} from './Progression.js';
 import {throwOrdnance,detonateThrowable} from './Throwables.js';
 import {MELEE_PROFILES} from './MeleeWeapons.js';
 import {configureBoss,bossDamage,bossDefeated,bossContains,updateBoss as stepBoss,beginBossAttack} from './Bosses.js';
-import {initRPG,rpgKill,interactPlace,applyExpeditionUpgrade} from './RPG.js';
+import {initRPG,rpgKill,interactPlace,applyExpeditionUpgrade,updateNightQuests} from './RPG.js';
 import {startCollapse,updateCollapse} from './Collapse.js';
 import {igniteProp,splashWater,updateEnvironment} from './Environment.js';
 import {rollUpgrades,rankOf,perkDamage} from './Upgrades.js';
@@ -19,9 +20,9 @@ import { generateMap, insideMap, segmentInMap } from './Map.js';
 import { WEAPONS, weaponStats, ENEMIES, ARENA, COVER, UPGRADES, seededRandom, clamp, distance, segmentCircle, lineBlocked, pointBlocked, POWERUPS, magazineSize, PROP_HEALTH, segmentBoxTime, TOTAL_WAVES, DISTRICTS } from './config.js';
 
 export class Simulation {
-  constructor({ seed=73,difficulty='standard',meta={},layout=null,mode='campaign',skin='scout',profile=null,progression='sandbox' }={}) {
+  constructor({ seed=73,difficulty='standard',meta={},layout=null,mode='campaign',skin='scout',profile=null,progression='sandbox',environment={} }={}) {
     this.progression=progression==='hero'?'hero':'sandbox';this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.streetEvents=makeStreetEvents(this.layout);this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
-    this.state = 'menu'; this.enemies = []; this.bullets = []; this.pickups = []; this.hazards = [];this.fires=[];
+    this.weather=createWeather(seed,environment);this.state = 'menu'; this.enemies = []; this.bullets = []; this.pickups = []; this.hazards = [];this.fires=[];
     this.time = 0; this.wave = 0; this.kills = 0; this.score = 0; this.combo = 0; this.comboTimer = 0;
     this.player = this.makePlayer('carbine'); this.upgrades = []; this.upgradeOffers=[]; this.rerolls=2; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);if(profile)initRPG(this,profile);
   }
@@ -32,17 +33,17 @@ export class Simulation {
       melee: 0, throwable: 'frag', grenades: 3, blast: 1, pickupRange: 1.35, lifeSteal: 0, reloadMultiplier: 1, fireMultiplier: 1, moving: false, resistance:0, regen:0, pierce:0, crit:0, magazineBonus:0, burn:0, frost:0, blastRadius:1, shield:0, overdrive:0, doubleScore:0, freeze:0,equipped:[weapon],weaponTimers:{},reloads:{},reloadDurations:{},shots:{},equippedAt:-99,moveX:0,moveZ:0,meleeAttack:null,meleeBuffer:null,attackHeld:false,throwAnimation:0,offhandRecoil:0,swapBoost:0,lastWeapon:null,lastWeaponTime:-100 };
   }
   emit(type, data = {}) { this.events.push({ ...data, type }); }
-  start(weapon = 'carbine') { this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing'; this.nextWave(); }
+  start(weapon = 'carbine') { this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave(); }
   pause() { if (['playing', 'extracting'].includes(this.state)) { this.previousState = this.state; this.state = 'paused'; } }
   resume() { if (this.state === 'paused') this.state = this.previousState; }
   nextWave() {
     this.wave++;this.state='playing';const p=this.player;p.shield=Math.max(p.shield,p.waveShield||0);if(this.wave>1)p.grenades+=p.waveGrenades||0;const vehicle=this.props.find(v=>v.id===p.vehicleId);if(vehicle)vehicle.health=Math.min(vehicle.maxHealth,vehicle.health+vehicle.maxHealth*(p.vehicleRepair||0));const district=Math.floor((this.wave-1)/4);
     if(district!==this.district&&!this.layout.city){this.district=district;this.player.x=0;this.player.z=3;this.layout=generateMap(this.seed,district);this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.navigation.clear();this.pickups=[];this.fires=[];this.structures=[];this.rubblePiles=new Map();this.wetGround=[];this.emit('district',{district});}
     this.toSpawn=this.wave%4===0?Math.min(12,6+district*2):12+(this.wave-1)*3;
-    this.spawnTimer=1;this.waveKills=0;this.waveTotal=this.toSpawn+(this.wave%4===0?1:0);
+    this.waveBaseCount=this.toSpawn;this.nightReinforced=false;this.spawnTimer=1;this.waveKills=0;this.waveTotal=this.toSpawn+(this.wave%4===0?1:0);
     if(this.layout.city)this.district=district;
     if(this.wave%4===0){const b=this.layout.city?this.layout.spawnPoints.filter(p=>distance(p,this.player)>15&&distance(p,this.player)<28).sort((a,b)=>distance(a,this.player)-distance(b,this.player))[0]:null;const boss=this.spawnEnemy('boss',b?.x??0,b?.z??-13);if(district===6){const partner=this.spawnEnemy('boss',boss.x+7,boss.z+3);configureBoss(this,partner,{variant:3,name:'THE ASH CANTOR',height:6.4,radius:1.7,title:'REAPER & CANTOR / THE ASHEN COVENANT'});boss.duoId=partner.duoId=`covenant-${this.wave}`;for(const e of [boss,partner])e.health=e.maxHealth=e.maxHealth*.65;this.waveTotal++;}}
-    this.emit('wave',{wave:this.wave,district:this.district});
+    addNightReinforcements(this);this.emit('wave',{wave:this.wave,district:this.district});
   }
   spawnEnemy(type, x, z) {
     const base = ENEMIES[type]; const scale = this.difficulty === 'relaxed' ? .7 : this.difficulty === 'nightmare' ? 1.3 : 1;
@@ -81,11 +82,11 @@ export class Simulation {
   move(body, dx, dz) {
     const r = body.radius,oldX=body.x,oldZ=body.z,bounds=this.layout.bounds||ARENA;
     body.x = clamp(body.x + dx, bounds.minX + r, bounds.maxX - r);
-    for (const o of this.obstacles) if (o.id!==body.vehicleId&&o!==body&&(Math.abs(body.x - o.x) < o.w / 2 + r && Math.abs(body.z - o.z) < o.d / 2 + r))
+    for (const o of this.obstacles) if (o.id!==body.vehicleId&&o!==body&&(Math.abs(body.x - o.x) < o.w / 2 + r - 1e-7 && Math.abs(body.z - o.z) < o.d / 2 + r - 1e-7))
       body.x = o.x + Math.sign(body.x - o.x || -dx || 1) * (o.w / 2 + r);
     if(!insideMap(this.layout,body.x,body.z,r))body.x=oldX;
     body.z = clamp(body.z + dz, bounds.minZ + r, bounds.maxZ - r);
-    for (const o of this.obstacles) if (o.id!==body.vehicleId&&o!==body&&(Math.abs(body.x - o.x) < o.w / 2 + r && Math.abs(body.z - o.z) < o.d / 2 + r))
+    for (const o of this.obstacles) if (o.id!==body.vehicleId&&o!==body&&(Math.abs(body.x - o.x) < o.w / 2 + r - 1e-7 && Math.abs(body.z - o.z) < o.d / 2 + r - 1e-7))
       body.z = o.z + Math.sign(body.z - o.z || -dz || 1) * (o.d / 2 + r);
     if(!insideMap(this.layout,body.x,body.z,r))body.z=oldZ;
   }
@@ -151,7 +152,7 @@ export class Simulation {
   rerollUpgrades(){if(this.state!=='upgrade'||this.rerolls<=0)return false;this.rerolls--;this.offerUpgrades();return true;}
   update(dt, input = {}) {
     if (!['playing', 'extracting'].includes(this.state)) return;
-    dt = clamp(dt, 0, .05); this.time += dt; const p = this.player;
+    dt = clamp(dt, 0, .05); this.time += dt;updateWeather(this,dt);const p = this.player;
     for (const key of ['ambushTime', 'fire', 'invulnerable', 'dashCooldown', 'melee','overdrive','doubleScore','freeze','swapBoost','swing','throwAnimation','offhandRecoil']) p[key] = Math.max(0, p[key] - dt);
     p.health = Math.min(p.maxHealth,p.health+p.regen*dt*(p.lifeSteal>0?2:1));
     this.comboTimer -= dt; if (this.comboTimer <= 0) this.combo = 0;
@@ -171,9 +172,9 @@ export class Simulation {
     }
     const beforeMove={x:p.x,z:p.z};
     p.moving = length > .1;
-    if(p.vehicleId)this.drive(dt,mx,mz,input);
-    else if (p.dash > 0) { p.dash -= dt; this.move(p, p.dashX * 22 * dt, p.dashZ * 22 * dt); }
-    else{const stanceSpeed=isMelee(p)?1.22:1;this.move(p, mx * p.speed * stanceSpeed * dt, mz * p.speed * stanceSpeed * dt);}
+    if(p.vehicleId){p.slideX=p.slideZ=0;this.drive(dt,mx,mz,input);}
+    else if (p.dash > 0) { p.slideX=p.dashX*p.speed;p.slideZ=p.dashZ*p.speed;p.dash -= dt; this.move(p, p.dashX * 22 * dt, p.dashZ * 22 * dt); }
+    else{const stanceSpeed=isMelee(p)?1.22:1;const drift=weatherMovement(p,mx,mz,p.speed*stanceSpeed,dt,this.weather),x=p.x,z=p.z;this.move(p,drift.x,drift.z);if(Math.abs(p.x-x)<Math.abs(drift.x)*.1)p.slideX=0;if(Math.abs(p.z-z)<Math.abs(drift.z)*.1)p.slideZ=0;}
     p.moveX=dt?(p.x-beforeMove.x)/dt:0;p.moveZ=dt?(p.z-beforeMove.z)/dt:0;p.moving=Math.hypot(p.moveX,p.moveZ)>.08;if(!p.vehicleId&&p.dash<=0){p.footTravel=(p.footTravel||0)+distance(p,beforeMove);if(p.footTravel>1.53){p.footTravel%=1.53;this.emit('footstep',{water:!!waterAt(this.layout,p.x,p.z)});}}
     const w = weaponStats(p);
     const target = this.enemies.filter(e => e.health > 0 && distance(p, e) < w.range).sort((a, b) => distance(p, a) - distance(p, b)).find(e=>!this.blocked(p,e));
@@ -205,7 +206,7 @@ export class Simulation {
     if(input.grenade)throwOrdnance(this,input.aim||aim);
     if (this.state === 'playing' && this.toSpawn > 0 && !this.enemies.some(e=>e.type==='boss'&&e.bossState==='arrival')) {
       this.spawnTimer -= dt;
-      if (this.spawnTimer <= 0) { this.spawn(); this.spawnTimer = Math.max(.38, 1.1 - this.wave * .1); }
+      if (this.spawnTimer <= 0) { this.spawn(); this.spawnTimer = Math.max(.38, 1.1 - this.wave * .1)*(this.weather.night?.85:1); }
     }
     if(this.layout.city){for(const e of this.enemies)if(distance(e,p)>75&&e.type!=='boss'&&!e.incidentId){e.health=0;this.toSpawn++;}for(const place of this.layout.landmarks)if(!this.visited.has(place.name)&&distance(place,p)<6){this.visited.add(place.name);p.grenades+=2;p.health=Math.min(p.maxHealth,p.health+25);this.score+=500;this.emit('discovery',{name:place.name});}}
     this.updateFire(dt);updateCollapse(this,dt);
@@ -222,7 +223,7 @@ export class Simulation {
       if ((item.type!=='health'||p.health<p.maxHealth) && distance(p,item)<p.pickupRange) { this.collect(item.type); item.life=0; }
     }
     this.pickups = this.pickups.filter(i => i.life > 0);
-    updateStreetEvents(this,dt);
+    updateStreetEvents(this,dt);updateNightQuests(this);
     this.enemies = this.enemies.filter(e => e.health > 0);
     if (this.state === 'playing' && this.toSpawn === 0 && this.enemies.length === 0) {
       this.bullets = []; this.hazards = [];
@@ -291,7 +292,7 @@ export class Simulation {
     for(let i=0;target&&i<=w.chain;i++){
       visited.add(target.id);this.emit('arc',{x:from.x,z:from.z,toX:target.x,toZ:target.z,weapon:'arc',tier:w.tier});
       if(target.burning>0)this.emit('combo',{name:'PLASMA ARC',description:'Fire + electricity: +40% arc damage'});
-      this.damageEnemy(target,w.damage*p.damage*Math.pow(.83,i)*(target.burning>0?1.4:1)*(p.swapBoost>0?1.25:1),0,0,{kind:'electric',weapon:'arc',tier:w.tier});target.slow=Math.max(target.slow||0,.6);target.electrified=.8;this.emit('electrify',{x:target.x,z:target.z});if(p.burn&&!(target.wet>0)){target.burning=p.burn;target.burnWeapon='arc';}
+      this.damageEnemy(target,w.damage*p.damage*Math.pow(.83,i)*(target.burning>0?1.4:target.wet>0?1.25:1)*(p.swapBoost>0?1.25:1),0,0,{kind:'electric',weapon:'arc',tier:w.tier});target.slow=Math.max(target.slow||0,.6);target.electrified=.8;this.emit('electrify',{x:target.x,z:target.z});if(p.burn&&!(target.wet>0)){target.burning=p.burn;target.burnWeapon='arc';}
       from=target;target=this.enemies.filter(e=>e.health>0&&!visited.has(e.id)&&distance(from,e)<4.5&&!this.blocked(from,e)).sort((a,b)=>distance(from,a)-distance(from,b))[0];
     }
   }
@@ -340,7 +341,7 @@ export class Simulation {
     }
   }
   addFire(x,z,radius=1.6){
-    if(waterAt(this.layout,x,z)||(this.wetGround||[]).some(w=>distance(w,{x,z})<w.radius))return;
+    if((this.weather?.rain>.5&&this.weather.wetness>.8)||waterAt(this.layout,x,z)||(this.wetGround||[]).some(w=>distance(w,{x,z})<w.radius))return;
     if(this.fires.some(f=>distance(f,{x,z})<radius))return;
     const fire={id:this.nextId++,x,z,radius,life:7};this.fires.push(fire);if(this.fires.length>24)this.fires.shift();this.emit('ignite',{x,z,radius});
   }

@@ -1,5 +1,6 @@
 import {clamp} from './config.js';
 import {waterAt} from './City.js';
+import {shelteredAt} from './Weather.js';
 
 export const fuelFor=p=>p.kind==='planter'?16:p.kind==='crate'?12:['barrel','car'].includes(p.kind)?9:p.material==='wood'?15:0;
 export function buildingSurfaces(b){
@@ -38,6 +39,7 @@ export function splashWater(sim,x,z,power=1){
  return quenched;
 }
 export function updateEnvironment(sim,dt){
+ rainOnWorld(sim,dt);
  sim.wetGround=(sim.wetGround||[]).filter(w=>(w.life-=dt)>0);
  for(const e of sim.enemies){e.wet=Math.max(0,(e.wet||0)-dt);if(e.wet>0)e.burning=0;}
  for(const p of sim.props){
@@ -54,11 +56,27 @@ export function updateEnvironment(sim,dt){
    for(const other of sim.obstacles)if(other!==p&&Math.hypot(Math.max(0,Math.abs(other.x-p.x)-other.w/2),Math.max(0,Math.abs(other.z-p.z)-other.d/2))<Math.max(p.w,p.d)/2+1)igniteProp(sim,other,p.x,p.z,1.2,3);
   }
  }
- for(const fire of sim.fires){fire.life-=dt;for(const e of sim.enemies)if(e.health>0&&!(e.wet>0)&&Math.hypot(e.x-fire.x,e.z-fire.z)<fire.radius+e.radius)e.burning=Math.max(e.burning||0,2.5);
+ for(const fire of sim.fires){if(fire.life<=0)continue;fire.life-=dt;for(const e of sim.enemies)if(e.health>0&&!(e.wet>0)&&Math.hypot(e.x-fire.x,e.z-fire.z)<fire.radius+e.radius)e.burning=Math.max(e.burning||0,2.5);
   for(const p of sim.obstacles)if(Math.hypot(Math.max(0,Math.abs(p.x-fire.x)-p.w/2),Math.max(0,Math.abs(p.z-fire.z)-p.d/2))<fire.radius)igniteProp(sim,p,fire.x,fire.z,.9,3);
   if(Math.hypot(sim.player.x-fire.x,sim.player.z-fire.z)<fire.radius*.65)sim.damagePlayer(8);
  }
  sim.fires=sim.fires.filter(f=>f.life>0);
  // Fountains continually wet their basin; no random visual frame controls gameplay.
  sim.fountainTick=(sim.fountainTick||0)+dt;if(sim.fountainTick>1){sim.fountainTick=0;for(const w of sim.layout.water||[])if(w.feature==='fountain')splashWater(sim,w.x,w.z,1.2);}
+}
+
+// Four bounded weather-physics passes per second. Exterior bays retain char and
+// spent fuel after cooling; rain is not a repair or a source of splash damage.
+export function rainOnWorld(sim,dt){
+ const w=sim.weather;if(!w)return;w.physicsTick+=dt;if(w.physicsTick<.25)return;const step=w.physicsTick;w.physicsTick=0;let steamBudget=6;
+ const steam=(x,z,y=0)=>{if(steamBudget>0&&Math.hypot(x-sim.player.x,z-sim.player.z)<48){steamBudget--;sim.emit('steam',{x,z,y,power:2});}};
+ const soak=(o,x,z,y=1)=>{
+  const rain=shelteredAt(sim,x,z,y)?0:w.rain;
+  o.rainDose=clamp((o.rainDose||0)+step*(rain>.1?rain:-.3),0,1.5);
+  if(rain>.2&&o.rainDose>=1){if(o.burning>0)steam(x,z,y);o.burning=0;o.heat=0;o.wet=Math.max(o.wet||0,1);}
+ };
+ if(w.rain<.02&&!w.wetness)return;
+ for(const p of sim.props)if(p.health>0){if(p.kind==='building'){for(const c of p.surfaces||[])soak(c,c.x,c.z,c.y);}else soak(p,p.x,p.z,1);}
+ for(const e of sim.enemies)if(e.health>0)soak(e,e.x,e.z,1);
+ for(const f of sim.fires)if(f.life>0&&!shelteredAt(sim,f.x,f.z)){f.life-=step*w.rain*6;if(f.life<=0)steam(f.x,f.z);}
 }

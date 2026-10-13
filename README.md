@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.30 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.31 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -14,6 +14,8 @@ npm run dev
 Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run build` creates the production site in `dist`; `npm run preview` serves that build.
 
 ## What is in this version
+
+- **4.31 · Living world:** ten-minute day/night cycle, regional clear/rain/snow/fog forecasts, snow traction and melting, rain extinguishing exposed fires into steam, wet-enemy electrical synergy, changing street lights, and three night-only contracts. Settings can pin time/weather or reduce weather particles. [Rules and validation](docs/LIVING-WORLD-4.31.md).
 
 - **4.30 · World Dossier:** two original cinematic artworks and illustrated lore for Quarantine and Blackout, with contacts, factions and survivor stories. Open from the title or pause menu; previewing a world never changes your run. Artwork downloads only when opened. [Art direction and generation prompts](docs/art/WORLD-DOSSIER.md).
 

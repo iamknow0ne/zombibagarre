@@ -1,3 +1,4 @@
+import {WeatherVisuals} from './WeatherVisuals.js';
 import {ViewRig} from './ViewRig.js';
 import {WorldAmbience} from './WorldAmbience.js';
 import {displaySettings} from './DisplaySettings.js';
@@ -98,7 +99,7 @@ export class World {
     this.blastLights=Array.from({length:3},()=>{const l=new T.PointLight(0xff9d42,0,17,2);this.scene.add(l);l.userData.life=0;return l;});
     this.cityLights=this.layout.city?Array.from({length:4},()=>{const l=new T.PointLight(0xffb65c,0,12,2);this.scene.add(l);return l;}):[];
     this.muzzleLight=new T.PointLight(0xffad55,0,5,2);this.scene.add(this.muzzleLight);
-    this.ambience=new WorldAmbience(this);this.raycaster=new T.Raycaster();this.groundPlane=new T.Plane(new T.Vector3(0,1,0),0);this.resize();
+    this.ambience=new WorldAmbience(this);this.weatherVisuals=new WeatherVisuals(this);this.raycaster=new T.Raycaster();this.groundPlane=new T.Plane(new T.Vector3(0,1,0),0);this.resize();
   }
   buildStreet() {
     if(this.layout.city){this.buildCity();this.buildProps();return;}
@@ -335,7 +336,7 @@ export class World {
     for(const {material,geos}of batches.values()){const mesh=new T.Mesh(mergeGeometries(geos),material);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.shellPart=true;shell.add(mesh);geos.forEach(g=>g.dispose());}g.add(shell);g.userData.shell=shell;this.cutaway?.bind(g);
   }
   destroy(){
-    this.viewRig?.hands?.removeFromParent();this.ambience?.dispose();this.cutaway?.dispose();this.cityArt?.dispose();this.characterInstances.dispose();this.surfaces.dispose();this.structuralVisuals.dispose();
+    this.viewRig?.hands?.removeFromParent();this.ambience?.dispose();this.weatherVisuals?.dispose();this.cutaway?.dispose();this.cityArt?.dispose();this.characterInstances.dispose();this.surfaces.dispose();this.structuralVisuals.dispose();
     this.feedback.destroy();
     this.reflectionTarget?.dispose();for(const tex of this.bloodTextures?.values()||[])tex.dispose();
     this.scene.traverse(o=>{if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==sphereGeo&&!o.geometry.userData.shared)o.geometry.dispose();if(o.material){for(const m of Array.isArray(o.material)?o.material:[o.material]){if(!m.userData.shared){m.map?.dispose();m.dispose();}}}if(o.isLight)o.shadow?.map?.dispose();});
@@ -522,7 +523,7 @@ export class World {
       const g=this.buildingMeshes.get(e.id);if(g&&!g.userData.collapsed){if(!this.charTex)this.charTex=texture(64,64,c=>{const grad=c.createRadialGradient(32,32,5,32,32,31);grad.addColorStop(0,'rgba(12,14,12,.88)');grad.addColorStop(.5,'rgba(16,18,14,.65)');grad.addColorStop(1,'rgba(18,20,16,0)');c.fillStyle=grad;c.fillRect(0,0,64,64);});
       this.charTex.userData.shared=true;const stain=new T.Mesh(new T.PlaneGeometry(2.3,2.9),new T.MeshBasicMaterial({map:this.charTex,transparent:true,depthWrite:false,side:T.DoubleSide}));stain.position.set(e.x-g.position.x,e.y+.45,e.z-g.position.z);if(e.face<2)stain.position.z+=(e.face===0?-1:1)*.32;else{stain.position.x+=(e.face===2?-1:1)*.32;stain.rotation.y=Math.PI/2;}g.add(stain);this.impacts.push(stain);if(this.impacts.length>160)this.removeDynamic(this.impacts.shift());}
     }
-    if(e.type==='steam')this.smoke(e.x,e.z,Math.min(5,e.power+1),.3,0xc4d3cf);
+    if(e.type==='steam')this.smoke(e.x,e.z,Math.min(5,e.power+1),e.y??.3,0xc4d3cf);
     if(e.type==='structural-impact'){const before=this.effects.length;this.smoke(e.x,e.z,1,Math.max(.15,e.y-.2),0xa59d87);for(const dust of this.effects.slice(before)){dust.mesh.scale.multiplyScalar(1+e.power*.25);dust.vy*=.5;dust.vx*=1.5;}debris(this,{x:e.x,z:e.z,y:e.y,material:e.material,count:Math.ceil(e.power*2),power:e.power+1,scale:.65+e.size*.15});this.shake=Math.max(this.shake,Math.min(.35,e.power*.055));}
     if(e.type==='vehicle-hit'){debris(this,{x:e.x,z:e.z,material:'metal',count:12,power:4});this.shake=Math.max(this.shake,Math.min(.3,e.power*.012));}
     if(e.type==='vehicle-skid')this.smoke(e.x,e.z,1,.1,0x7c8075);
@@ -550,7 +551,7 @@ export class World {
     if(e.type==='spark')this.effect(e.x,e.z,0xddbe84,5,3);
   }
   update(sim,dt,menu=false){
-    this.camera=this.orthoCamera;const profile=this.profile;let mark=profile?performance.now():0;const lap=name=>{if(profile){const now=performance.now();profile[name]=now-mark;mark=now;}};
+    this.weatherState=sim.weather;this.camera=this.orthoCamera;const profile=this.profile;let mark=profile?performance.now():0;const lap=name=>{if(profile){const now=performance.now();profile[name]=now-mark;mark=now;}};
     this.fireClock.value+=dt;const t=sim.time,p=sim.player,motionDt=['paused','upgrade','dead','victory'].includes(sim.state)?0:dt;
     const driving=sim.props.find(v=>v.id===p.vehicleId),lead=driving?{x:(driving.vx||0)*.25,z:(driving.vz||0)*.25}:this.settings.reducedMotion?{x:0,z:0}:{x:clamp((p.moveX||0)*.12,-.8,.8),z:clamp((p.moveZ||0)*.12,-.8,.8)};
     const desired=this.inspectionTarget?new T.Vector3(this.inspectionTarget.x,0,this.inspectionTarget.z):menu?new T.Vector3(2,0,-7):new T.Vector3(p.x+lead.x,0,p.z-1+lead.z);
@@ -641,7 +642,7 @@ export class World {
     this.muzzleLight.intensity=Math.max(0,this.muzzleLight.intensity-dt*220);
     lap('effects');this.viewRig.active=this.settings.viewMode!=='diorama'&&!menu&&!this.overview&&!this.portrait&&!this.inspectionTarget;if(this.viewRig.active){this.viewRig.update(sim,this.aspect,motionDt);this.camera=this.viewRig.camera;this.player.visible=this.player.visible&&this.settings.viewMode!=='first';this.playerRing.visible=false;}else this.playerRing.visible=true;this.viewRig.syncHands(this.player,sim,this.scene);this.composer.passes[0].camera=this.camera;this.camera.updateMatrixWorld();this.cutaway.update(this.player,this.camera,dt,!this.viewRig.active&&!menu&&!this.overview,this.settings.reducedMotion);this.feedback.draw(sim,motionDt,this.camera);
     lap('overlay');this.characterInstances.update(this.characters);lap('instances');this.renderer.info.reset();
-    this.cityArt?.update(motionDt,p,this.camera,this.fireClock.value);this.ambience?.update(motionDt,p,this.camera);
+    this.cityArt?.update(motionDt,p,this.camera,this.fireClock.value);this.ambience?.update(motionDt,p,this.camera,sim.weather);this.weatherVisuals?.update(sim,motionDt);
     if(this.ao.enabled||this.pixelArtPass.enabled||this.bloom.enabled){this.ao.ssaoMaterial.uniforms.cameraNear.value=this.camera.near;this.ao.ssaoMaterial.uniforms.cameraFar.value=this.camera.far;this.ao.ssaoMaterial.uniforms.cameraProjectionMatrix.value.copy(this.camera.projectionMatrix);this.ao.ssaoMaterial.uniforms.cameraInverseProjectionMatrix.value.copy(this.camera.projectionMatrixInverse);this.composer.render();}else this.renderer.render(this.scene,this.camera);lap('render');
   }
   syncMap(map,entities,create,update){const ids=new Set(entities.map(e=>e.id));for(const[id,m]of map)if(!ids.has(id)){this.removeDynamic(m);map.delete(id);}for(const e of entities){if(!map.has(e.id))map.set(e.id,create(e));update(map.get(e.id),e);}}
@@ -654,7 +655,7 @@ export class World {
     if(player&&WEAPONS[state.weapon]?.melee){d.body.rotation.x+=dash?.15:.1;d.arms.forEach((a,i)=>{a.rotation.x=-.45;a.rotation.z=i?.35:-.35;});}
     if(d.impact){d.impact.age+=dt;const kick=hitRecoil(d.impact.age,d.impact.amount);d.body.rotation.x+=Math.cos(d.impact.angle)*kick;d.body.rotation.z-=Math.sin(d.impact.angle)*kick;if(d.impact.age>.24)d.impact=null;}
     if(dt>0&&pose.footfall&&!state.crawling&&!state.vehicleId&&(player||Math.hypot(m.position.x-this.player.position.x,m.position.z-this.player.position.z)<13)){
-      const x=m.position.x+Math.cos(m.rotation.y)*pose.side*.17,z=m.position.z-Math.sin(m.rotation.y)*pose.side*.17;if(waterAt(this.layout,x,z))this.splash(x,z,.16);else if(!this.settings.reducedMotion&&player)plume(this,x,.08,z,.16,.24,0x989380);
+      const x=m.position.x+Math.cos(m.rotation.y)*pose.side*.17,z=m.position.z-Math.sin(m.rotation.y)*pose.side*.17;if(waterAt(this.layout,x,z))this.splash(x,z,.16);else if(!this.settings.reducedMotion&&player&&!(this.weatherState?.wetness>.1)&&!(this.weatherState?.snowCover>.1))plume(this,x,.08,z,.16,.24,0x989380);
     }
   }
 }

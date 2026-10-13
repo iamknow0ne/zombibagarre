@@ -60,3 +60,5 @@
 #view-crosshair i{display:block;margin:auto;width:14px;height:14px;border:1px solid #ede5cf;border-radius:50%;box-shadow:0 0 0 1px #14252b}#view-crosshair span{display:block;margin-top:7px;font:8px monospace;letter-spacing:1px;opacity:.65}
 body[data-world-theme="cyberpunk"] .chapter>span{color:#80d8df}#world-lore{border-left:2px solid #9a875e;padding-left:12px;text-wrap:pretty}
 @media(max-width:600px){#view-crosshair span{display:none}}
+
+.weather-hud{font:10px/1.5 var(--mono);letter-spacing:.05em;color:#eee8d8;margin-bottom:3px}.living-world-settings{border:1px solid #41504f;margin:16px 0;padding:16px}.living-world-settings legend{font:12px monospace;color:#f18147;padding:0 8px}@media(max-width:740px){.weather-hud{font-size:8px;letter-spacing:0;margin:0}.living-world-settings{padding:12px}}

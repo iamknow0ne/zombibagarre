@@ -1,0 +1,18 @@
+import {World} from '../src/rebuild/World.js';
+import {Simulation} from '../src/rebuild/Simulation.js';
+import {updateWeather,weatherLabel} from '../src/rebuild/Weather.js';
+const settings={quality:'balanced',lightingDetail:'standard',environmentDetail:'standard',foliageDetail:'standard',weatherEffects:'full',populationDetail:'off',worldTheme:'quarantine',visualStyle:'classic',volume:0};
+const sim=new Simulation({seed:73,environment:{dayCycle:'day',weatherMode:'clear'}});sim.start();sim.toSpawn=999;sim.spawnTimer=999999;sim.player.invulnerable=99999;
+const world=new World(document.querySelector('#game'),settings,0,sim.layout);world.applySettings(settings);sim.setBuildings(world.buildingTargets);
+const building=sim.props.filter(p=>p.kind==='building').sort((a,b)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z))[0];
+sim.player.x=building.x;sim.player.z=building.z+building.d/2+4;world.inspectionTarget={x:building.x,z:building.z};world.portrait=27;
+let steam=0,last=performance.now(),dirty=true;
+const preset=new URLSearchParams(location.search).get("scene");
+for(const b of document.querySelectorAll('[data-time]'))b.onclick=()=>{dirty=true;sim.weather.options.dayCycle=b.dataset.time;updateWeather(sim,0);};
+for(const b of document.querySelectorAll('[data-weather]'))b.onclick=()=>{dirty=true;const k=b.dataset.weather;sim.weather.options.weatherMode=k;sim.weather.rain=sim.weather.snow=sim.weather.fog=0;if(k!=='clear')sim.weather[k]=1;if(k==='snow')sim.weather.snowCover=1;if(k==='clear')sim.weather.snowCover=sim.weather.wetness=0;updateWeather(sim,0);};
+document.querySelector('#ignite').onclick=()=>{dirty=true;sim.weather.options.weatherMode='clear';sim.weather.rain=0;sim.weather.wetness=0;building.surfaces?.forEach(c=>{c.wet=0;c.rainDose=0;c.fuel=14;});for(const x of [-2,0,2])for(const y of [1,3.7,6.5])sim.igniteProp(building,building.x+x,building.z+building.d/2,y,12);};
+document.querySelector('#pause').onclick=()=>{dirty=true;sim.state==='paused'?sim.resume():sim.pause();};
+document.querySelector('#particles').onclick=()=>{dirty=true;settings.weatherEffects=settings.weatherEffects==='off'?'full':'off';};
+addEventListener('resize',()=>world.resize());
+if(preset==='rain')document.querySelector('#ignite').click();if(['rain','snow','fog'].includes(preset))document.querySelector(`[data-weather="${preset}"]`).click();if(preset==='night')document.querySelector('[data-time="night"]').click();
+function frame(now){if(preset&&sim.time>5)sim.pause();if(sim.state==='paused'&&!dirty){requestAnimationFrame(frame);return;}dirty=false;const dt=Math.min(.05,(now-last)/1000);last=now;sim.update(dt,{auto:false});for(const e of sim.events){if(e.type==='steam')steam++;world.onEvent(e);}sim.events=[];world.update(sim,dt);const w=sim.weather;document.querySelector('#report').textContent=`${weatherLabel(w)} / ${sim.state}\nBurning bays: ${(building.surfaces||[]).filter(c=>c.burning>0).length} · Steam plumes: ${steam}\nSnow cover: ${w.snowCover.toFixed(2)} · Wet ground: ${w.wetness.toFixed(2)} · Particles: ${settings.weatherEffects}\nDraw calls: ${world.renderer.info.render.calls} · Weather draws: ${+world.weatherVisuals.rain.visible + +world.weatherVisuals.snow.visible + +world.weatherVisuals.ripple.visible}`;requestAnimationFrame(frame);}requestAnimationFrame(frame);
