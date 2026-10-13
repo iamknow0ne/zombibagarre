@@ -1,3 +1,4 @@
+import {normalizeAppearance,appearanceSignature} from './Customization.js';
 import {configureBoss} from './Bosses.js';
 import {distance,pointBlocked,seededRandom,lineBlocked} from './config.js';
 import {waterAt} from './City.js';
@@ -29,7 +30,7 @@ const int=(n,max=1000000)=>Math.max(0,Math.min(max,Math.floor(Number(n)||0)));
 export function levelForXP(xp){let level=1,spent=0;while(level<30&&xp>=spent+120+level*60){spent+=120+level*60;level++;}return{level,current:xp-spent,next:level===30?0:120+level*60};}
 export function normalizeProfile(raw={}){
  if(!raw||typeof raw!=='object')raw={};const xp=int(raw.xp),level=levelForXP(xp).level;
- const p={version:1,xp,attributes:{},skills:[],owned:['scout-chest-0'],equipment:{head:null,chest:'scout-chest-0',legs:null},relics:[],relic:null,dye:DYES[raw.dye]?raw.dye:'olive'};let budget=3+(level-1)*2;
+ const p={version:1,xp,appearance:normalizeAppearance(raw.appearance),attributes:{},skills:[],owned:['scout-chest-0'],equipment:{head:null,chest:'scout-chest-0',legs:null},relics:[],relic:null,dye:DYES[raw.dye]?raw.dye:'olive'};let budget=3+(level-1)*2;
  for(const [key,a]of Object.entries(ATTRIBUTES)){p.attributes[key]=Math.min(budget,int(raw.attributes?.[key],a.max));budget-=p.attributes[key];}
  for(const [key,s]of Object.entries(SKILLS))if(raw.skills?.includes?.(key)&&level>=s.level&&budget>=s.cost&&(!s.parent||p.skills.includes(s.parent))){p.skills.push(key);budget-=s.cost;}
  if(Array.isArray(raw.owned))p.owned=[...new Set([...p.owned,...raw.owned.filter(id=>ARMOUR[id])])];
@@ -38,7 +39,7 @@ export function normalizeProfile(raw={}){
 }
 export function pointsLeft(p){return 3+(levelForXP(p.xp).level-1)*2-Object.values(p.attributes).reduce((a,b)=>a+b,0)-p.skills.reduce((n,k)=>n+SKILLS[k].cost,0);}
 export function bonuses(p){const a=p.attributes,b={maxHealth:a.vigor*8,damage:a.might*.03,speed:a.agility*.08,resistance:0,crit:a.fortune*.005,regen:p.skills.includes('mender')?.6:0,lifeSteal:p.skills.includes('vampire')?2:0,burn:p.skills.includes('pyre')?2:0,frost:p.skills.includes('winter')?1:0,reloadMultiplier:-a.focus*.015};for(const id of Object.values(p.equipment)){const g=ARMOUR[id];if(g)for(const k of ['maxHealth','damage','speed','resistance'])b[k]+=g[k==='maxHealth'?'health':k]||0;}for(const key of p.skills)for(const [stat,value]of Object.entries(SKILLS[key].bonuses||{}))b[stat]=(b[stat]||0)+value;return b;}
-export function applyProfile(sim){const p=sim.player,b=bonuses(sim.profile),old=p.rpgBonuses||{};for(const k of new Set([...Object.keys(b),...Object.keys(old)]))p[k]=(p[k]||0)+(b[k]||0)-(old[k]||0);p.health=Math.min(p.health,p.maxHealth);p.rpgBonuses=b;p.armour={...sim.profile.equipment};p.dye=sim.profile.dye;p.rpgRelic=RELICS[sim.profile.relic]||null;}
+export function applyProfile(sim){const p=sim.player,b=bonuses(sim.profile),old=p.rpgBonuses||{};for(const k of Object.keys(b))b[k]*=p.rpgScales?.[k]||1;for(const k of new Set([...Object.keys(b),...Object.keys(old)]))p[k]=(p[k]||0)+(b[k]||0)-(old[k]||0);p.health=Math.min(p.health,p.maxHealth);p.rpgBonuses=b;p.armour={...sim.profile.equipment};p.dye=sim.profile.dye;p.appearance={...sim.profile.appearance};p.appearanceKey=appearanceSignature(p.skin,p.appearance);p.rpgRelic=RELICS[sim.profile.relic]||null;}
 export function spendPoint(sim,key){const p=sim.profile;if(ATTRIBUTES[key]&&pointsLeft(p)>0&&p.attributes[key]<ATTRIBUTES[key].max){p.attributes[key]++;applyProfile(sim);sim.emit('profile');return true;}const s=SKILLS[key];if(s&&!skillLock(p,key)){p.skills.push(key);applyProfile(sim);sim.emit('profile');return true;}return false;}
 export function equipArmour(sim,id){const a=ARMOUR[id];if(!a||!sim.profile.owned.includes(id))return false;sim.profile.equipment[a.slot]=id;applyProfile(sim);sim.emit('profile');return true;}
 export function gainXP(sim,n){const before=levelForXP(sim.profile.xp).level;sim.profile.xp=int(sim.profile.xp+n);const after=levelForXP(sim.profile.xp).level;sim.emit('profile');if(after>before)sim.emit('rpg-notice',{message:`LEVEL ${after} · +${(after-before)*2} SKILL POINTS · OPEN CHARACTER IN PAUSE`});}
@@ -111,3 +112,11 @@ export function interactPlace(sim){const q=nearbyPlace(sim);if(!q)return false;i
  q.used=true;const e=sim.spawnEnemy('boss',safe[0].x,safe[0].z);e.bossName=q.id==='confessor'?'CINDER CONFESSOR':'DROWNED MARSHAL';e.bossKind=q.id==='confessor'?'cinder':'dredger';configureBoss(sim,e,{variant:q.id==='confessor'?3:1,name:e.bossName,height:q.id==='confessor'?8.2:7.2});e.secretId=q.id;e.health=e.maxHealth=1800+levelForXP(sim.profile.xp).level*100;e.damage*=1.25;e.elite=true;q.guards=[e.id];sim.waveTotal++;sim.emit('rpg-notice',{message:`SECRET BOSS · ${e.bossName}`});return true;
 }
 export function rpgKill(sim,e){if(!sim.rpg)return;sim.rpg.kills++;if(e.type==='runner')sim.rpg.runnerKills++;if(['brute','armored'].includes(e.type))sim.rpg.heavyKills++;sim.rpg.coins+=e.type==='boss'?70:e.type==='brute'?9:3;gainXP(sim,e.type==='boss'?180:e.type==='brute'?25:10);if(e.secretId){const q=sim.places.find(q=>q.id===e.secretId);if(q)q.defeated=true;const id=e.secretId==='confessor'?'ash':'storm';if(!sim.profile.relics.includes(id))sim.profile.relics.push(id);sim.rpg.coins+=250;sim.emit('profile');sim.emit('rpg-notice',{message:`${RELICS[id].name} DISCOVERED · PERMANENT RELIC · +250 CROWNS`});}}
+
+// Multiplicative expedition perks scale both the stat and its removable permanent contribution.
+export function applyExpeditionUpgrade(player,upgrade,rank){
+ const tracked=['speed','reloadMultiplier'],before=Object.fromEntries(tracked.map(k=>[k,player[k]]));
+ const resistance=player.rpgBonuses?.resistance||0,crit=player.rpgBonuses?.crit||0;
+ player.resistance-=resistance;player.crit-=crit;upgrade.apply(player,rank);player.resistance+=resistance;player.crit+=crit;
+ player.rpgScales??={};for(const k of tracked)if(before[k]&&player[k]!==before[k]){const factor=player[k]/before[k];player.rpgScales[k]=(player.rpgScales[k]||1)*factor;if(player.rpgBonuses)player.rpgBonuses[k]=(player.rpgBonuses[k]||0)*factor;}
+}

@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.19 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.20 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,14 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters with four bespoke articulated rigs, building-scale variants, two phases and a paired fight. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.20 — Survivor identities & build consistency
+
+- Four named survivors with shaped faces, layered clothing, fabric/leather surface detail, articulated coat tails and redesigned armour.
+- **Character → Appearance:** 12 cosmetic categories, including skin tone, face, hair, eyes, facial hair, markings, clothing palettes, jacket silhouettes, headwear, accessories and hide-helmet. Full-body, front, back and face previews. Existing saves migrate automatically.
+- Multiplicative reload/movement upgrades now remain correct after equipment changes and free respec. Armour perks preserve permanent protection; the character panel shows Second Wind recovery correctly.
+- Stowing identical dual weapons preserves their ammunition and reload state. Enemy melee strikes respect walls.
+- See [implementation and verification](docs/SURVIVORS-4.20.md). These are procedural stylized characters, not scanned or bespoke cinematic AAA assets.
 
 ## New in 4.19 — Survivor dossier
 

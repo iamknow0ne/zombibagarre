@@ -1,5 +1,5 @@
 import {configureBoss,bossDamage,bossDefeated,bossContains,updateBoss as stepBoss,beginBossAttack} from './Bosses.js';
-import {initRPG,rpgKill,interactPlace} from './RPG.js';
+import {initRPG,rpgKill,interactPlace,applyExpeditionUpgrade} from './RPG.js';
 import {startCollapse,updateCollapse} from './Collapse.js';
 import {igniteProp,splashWater,updateEnvironment} from './Environment.js';
 import {rollUpgrades,rankOf,perkDamage} from './Upgrades.js';
@@ -88,9 +88,10 @@ export class Simulation {
   }
   setLoadout(keys){
     const p=this.player,next=normalizeLoadout(keys),changed=next.join('|')!==p.equipped.join('|');
-    const hadTwin=p.equipped.length===2&&p.equipped[0]===p.equipped[1]&&p.equipped[0]===next[0];p.equipped=next;
+    const oldTwin=p.equipped.length===2&&p.equipped[0]===p.equipped[1]?p.equipped[0]:null,newTwin=next.length===2&&next[0]===next[1]?next[0]:null;p.twinReserves??={};
+    if(oldTwin&&oldTwin!==newTwin)p.twinReserves[oldTwin]={ammo:p.magazines.offhand,reload:p.reloads.offhand||0,duration:p.reloadDurations.offhand||0,timer:p.weaponTimers.offhand||0};p.equipped=next;
     p.weapon=next[0];
-    if(next.length===2&&next[0]===next[1]&&!hadTwin){p.magazines.offhand=magazineSize(p,next[1]);p.reloads.offhand=0;p.weaponTimers.offhand=WEAPONS[next[1]].interval*.5;}
+    if(newTwin&&oldTwin!==newTwin){const saved=p.twinReserves[newTwin];p.magazines.offhand=saved?.ammo??magazineSize(p,newTwin);p.reloads.offhand=saved?.reload||0;p.reloadDurations.offhand=saved?.duration||0;p.weaponTimers.offhand=saved?.timer??WEAPONS[newTwin].interval*.5;}
     if(changed){p.equippedAt=this.time;p.meleeAttack=null;p.meleeBuffer=null;p.shots={};p.swing=0;p.swingWeapon=null;p.swingCombo=0;p.lastSwing=-99;p.dashCooldown=Math.min(p.dashCooldown,isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax);this.emit('switch');}
     p.reload=p.reloads[p.weapon]||0;return changed;
   }
@@ -136,10 +137,11 @@ export class Simulation {
   }
   chooseUpgrade(id) {
     if (this.state !== 'upgrade' || !this.choices.some(u => u.id === id)) return false;
-    const u = UPGRADES.find(u => u.id === id),rank=rankOf(this.player,id)+1;if(rank>4)return false;u.apply(this.player,rank);this.player.upgradeRanks[id]=rank;if(id==='workshop')for(const key of new Set(this.player.equipped))this.earnMastery(key,Math.round(650*[1,1.2,1.4,1.7][rank-1]));this.upgrades.push(id);
+    const u = UPGRADES.find(u => u.id === id),rank=rankOf(this.player,id)+1;if(rank>4)return false;applyExpeditionUpgrade(this.player,u,rank);this.player.upgradeRanks[id]=rank;if(id==='workshop')for(const key of new Set(this.player.equipped))this.earnMastery(key,Math.round(650*[1,1.2,1.4,1.7][rank-1]));this.upgrades.push(id);
     this.player.health = Math.min(this.player.maxHealth, this.player.health + 25); this.player.grenades++;
     for (const [key, w] of Object.entries(WEAPONS)) this.player.magazines[key] = magazineSize(this.player,key);
     if(this.player.equipped[0]===this.player.equipped[1])this.player.magazines.offhand=magazineSize(this.player,this.player.equipped[0]);
+    for(const [key,reserve]of Object.entries(this.player.twinReserves||{}))Object.assign(reserve,{ammo:magazineSize(this.player,key),reload:0,duration:0,timer:0});
     this.player.reload=0;this.player.reloads={};this.player.weaponTimers={};this.player.invulnerable = 1.5; this.bullets = []; this.hazards = []; this.nextWave(); return true;
   }
   offerUpgrades(){this.choices=rollUpgrades(this.player,this.wave,this.random,this.upgradeOffers);this.upgradeOffers=this.choices.map(u=>u.id);this.emit('upgrade');}
@@ -316,7 +318,7 @@ export class Simulation {
           if (e.type === 'spitter') {
             const angle = Math.atan2(e.targetZ - e.z, e.targetX - e.x);
             this.bullets.push({ id: this.nextId++, x: e.x, z: e.z, vx: Math.cos(angle) * 8, vz: Math.sin(angle) * 8, life: 2.5, damage: e.damage, enemy: true }); this.emit('spit');
-          } else if(e.type==='boss'){this.bossAttack(e);} else if (d < e.radius + p.radius + .7) this.damagePlayer(e.damage);
+          } else if(e.type==='boss'){this.bossAttack(e);} else if (d < e.radius + p.radius + .7&&!this.blocked(e,p)) this.damagePlayer(e.damage);
         }
       } else if (e.attack <= 0 && ((e.type === 'spitter' && d < 13 && !this.blocked(e, p)) || (e.type === 'boss' && d < 9) || d < e.radius + p.radius + .5)) {
         e.windup=e.type==='boss'?1:e.type==='runner'?.3:.55;e.attack=e.type==='boss'? (e.health<e.maxHealth*.5?2.8:3.8) : e.type === 'spitter' ? 2.6 : 1.5; e.targetX = p.x; e.targetZ = p.z;

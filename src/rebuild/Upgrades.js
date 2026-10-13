@@ -46,7 +46,7 @@ export const rankOf=(player,id)=>player.upgradeRanks?.[id]||0;
 export function upgradeOffer(u,player){const rank=rankOf(player,u.id)+1;return {...u,rank,tier:UPGRADE_TIERS[rank-1],description:u.describe(rank)};}
 export function rollUpgrades(player,wave,random,previous=[]){
  const maxRank=wave>=12?4:wave>=7?3:wave>=3?2:1;
- let pool=UPGRADES.filter(u=>rankOf(player,u.id)<maxRank&&(!u.requires||u.requires(player))&&!(u.id==='armour'&&player.resistance>=.6)&&!(u.id==='critical'&&player.crit>=.8)&&!(u.id==='workshop'&&player.equipped.every(k=>(player.mastery[k]||0)>=8000)));
+ let pool=UPGRADES.filter(u=>rankOf(player,u.id)<maxRank&&(!u.requires||u.requires(player))&&!(u.id==='armour'&&player.resistance-(player.rpgBonuses?.resistance||0)>=.6-1e-8)&&!(u.id==='critical'&&player.crit-(player.rpgBonuses?.crit||0)>=.8-1e-8)&&!(u.id==='workshop'&&player.equipped.every(k=>(player.mastery[k]||0)>=8000)));
  // Prefer an unseen trio; keep owned upgrades in circulation so builds can evolve.
  const fresh=pool.filter(u=>!previous.includes(u.id));if(fresh.length>=3)pool=fresh;
  const weighted=pool.map(u=>({u,score:-Math.log(Math.max(.000001,random()))/(rankOf(player,u.id)?2.4:1)})).sort((a,b)=>a.score-b.score);

@@ -1,3 +1,4 @@
+import {buildSurvivor,animateSurvivorDetails} from './SurvivorVisuals.js';
 import {batchCharacter,reuseSceneForAO,CharacterInstances,freezeLocalTransforms,visibleAOOnly} from './RenderBatch.js';
 import {SurfaceMaterials} from './SurfaceMaterials.js';
 import {stepCharacterMotion,hitRecoil} from './CharacterMotion.js';
@@ -456,6 +457,7 @@ export class World {
     for(const {mat,geos,shadow}of batches.values()){const merged=mergeGeometries(geos);if(merged){const m=new T.Mesh(merged,mat);m.castShadow=shadow;m.receiveShadow=true;destination.add(m);}for(const g of geos)g.dispose();}
   }
   character(type,bossKind=null,skinId='scout',appearance=0){
+    if(type==='player'){const hero=buildSurvivor(skinId,appearance);contact(hero,0,0,1.4,1,.55);return hero;}
     const costume=SKINS.find(s=>s.id===skinId)||SKINS[0];const group=new T.Group(),body=new T.Group();group.add(body);group.userData.body=body;group.userData.skin=skinId;
     const player=type==='player',boss=type==='boss',brute=type==='brute',variant=characterVariant(appearance);
     const scale=boss?2.15:brute?1.5:type==='runner'?.85:1;group.scale.setScalar(scale);
@@ -546,7 +548,7 @@ export class World {
     this.camera.far=this.overview&&this.layout.city?900:160;this.camera.near=.1;this.camera.left=-height*this.aspect/2;this.camera.right=height*this.aspect/2;this.camera.top=height/2;this.camera.bottom=-height/2;this.camera.updateProjectionMatrix();
     this.shake=Math.max(0,this.shake-dt*1.8);const s=this.settings.reducedMotion?0:this.shake;
     const cameraDistance=this.overview&&this.layout.city?8:1;this.scene.fog.density=cameraDistance===8?.0009:.009;this.camera.position.set(this.focus.x+26*cameraDistance+Math.sin(t*47)*s*.45,this.focus.y+35*cameraDistance,this.focus.z+32*cameraDistance+Math.sin(t*61)*s*.3);this.camera.lookAt(this.focus);
-    if(this.player.userData.skin!==p.skin){this.removeDynamic(this.player);this.player=this.character('player',null,p.skin);this.player.position.set(p.x,0,p.z);this.player.rotation.y=p.angle;this.scene.add(this.player);}
+    if(this.player.userData.skin!==p.skin||(p.appearanceKey&&this.player.userData.appearanceKey!==p.appearanceKey)){this.removeDynamic(this.player);this.player=this.character('player',null,p.skin,p.appearance);this.player.position.set(p.x,0,p.z);this.player.rotation.y=p.angle;this.scene.add(this.player);}
     dressArmour(this.player,p);this.player.position.lerp(new T.Vector3(p.x,0,p.z),1-Math.exp(-dt*22));this.player.rotation.y+=Math.atan2(Math.sin(p.angle-this.player.rotation.y),Math.cos(p.angle-this.player.rotation.y))*(1-Math.exp(-dt*20));this.animateCharacter(this.player,t,p.moving,p.dash>0,motionDt,p);
     animateWeapons(this.player,p,t,motionDt,{box,sphere,cylinder,batch:(a,b)=>this.batchStatic(a,b),remove:m=>this.removeDynamic(m)});
     updateBladeTrails(this.player,p,motionDt,!!this.settings.reducedMotion);
@@ -635,7 +637,7 @@ export class World {
     });
   }
   animateCharacter(m,t,moving,dash,dt=1/60,state={}){
-    const d=m.userData,player=d.type==='player';d.motion??={phase:player?0:(state.phase||0)*2};const pose=stepCharacterMotion(d.motion,state,dt,{player,runner:d.type==='runner',brute:d.type==='brute'}),{phase,walk,forward,strafe}=pose;d.gait=phase;d.walk=walk;
+    const d=m.userData,player=d.type==='player';d.motion??={phase:player?0:(state.phase||0)*2};const pose=stepCharacterMotion(d.motion,state,dt,{player,runner:d.type==='runner',brute:d.type==='brute'}),{phase,walk,forward,strafe}=pose;d.gait=phase;d.walk=walk;if(player)animateSurvivorDetails(m,t,walk,dash);
     d.legs.forEach((leg,i)=>{const cycle=phase+(i?Math.PI:0),swing=Math.sin(cycle),lift=Math.max(0,swing);leg.rotation.x=swing*walk*.62*forward;leg.rotation.z=swing*walk*strafe*.42;leg.userData.knee.rotation.x=lift*walk*.82+pose.land;});
     d.body.position.y=Math.abs(Math.sin(phase))*walk*.045+Math.sin(t*2)*.014-pose.land*.45;d.body.rotation.y=Math.sin(phase)*walk*.055;d.body.rotation.z=pose.roll+Math.sin(phase*.5)*walk*.022;d.body.rotation.x=pose.pitch;
     d.arms.forEach((arm,i)=>{arm.rotation.x=player?-.6:-.35+(i?1:-1)*Math.sin(phase)*walk*.25;arm.rotation.z=i?.1:-.1;arm.userData.elbow.rotation.x=player?-.85:-.35+Math.sin(phase+i)*walk*.15;});
