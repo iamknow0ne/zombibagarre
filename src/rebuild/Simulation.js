@@ -173,11 +173,12 @@ export class Simulation {
       p.ambushTime=3;p.shield=Math.max(p.shield,p.dashShield||0);p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;const dive=!isMelee(p)&&beginFocusDive(this);p.focusDive=!!dive;p.dash = dive?FOCUS.diveDuration:isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax;
       p.dashX = length > .1 ? mx / Math.hypot(mx, mz) : Math.sin(p.angle); p.dashZ = length > .1 ? mz / Math.hypot(mx, mz) : Math.cos(p.angle); this.emit('dash');
     }
+    p.aiming=!!input.aiming&&!p.vehicleId&&!isMelee(p);
     const beforeMove={x:p.x,z:p.z};
     p.moving = length > .1;
     if(p.vehicleId){p.slideX=p.slideZ=0;this.drive(dt,mx,mz,input);}
     else if (p.dash > 0) { p.slideX=p.dashX*p.speed;p.slideZ=p.dashZ*p.speed;p.dash = Math.max(0,p.dash-dt); this.move(p, p.dashX * 22 * dt, p.dashZ * 22 * dt); }
-    else{const stanceSpeed=isMelee(p)?1.22:1;const drift=weatherMovement(p,mx,mz,p.speed*stanceSpeed,dt,this.weather),x=p.x,z=p.z;this.move(p,drift.x,drift.z);if(Math.abs(p.x-x)<Math.abs(drift.x)*.1)p.slideX=0;if(Math.abs(p.z-z)<Math.abs(drift.z)*.1)p.slideZ=0;}
+    else{const stanceSpeed=isMelee(p)?1.22:1;const drift=weatherMovement(p,mx,mz,p.speed*stanceSpeed*(p.aiming?.78:1),dt,this.weather),x=p.x,z=p.z;this.move(p,drift.x,drift.z);if(Math.abs(p.x-x)<Math.abs(drift.x)*.1)p.slideX=0;if(Math.abs(p.z-z)<Math.abs(drift.z)*.1)p.slideZ=0;}
     p.moveX=dt?(p.x-beforeMove.x)/dt:0;p.moveZ=dt?(p.z-beforeMove.z)/dt:0;p.moving=Math.hypot(p.moveX,p.moveZ)>.08;if(!p.vehicleId&&p.dash<=0){p.footTravel=(p.footTravel||0)+distance(p,beforeMove);if(p.footTravel>1.53){p.footTravel%=1.53;this.emit('footstep',{water:!!waterAt(this.layout,p.x,p.z)});}}
     if(p.dash<=0)p.focusDive=false;
     const w = weaponStats(p);
@@ -246,7 +247,7 @@ export class Simulation {
     if(hand)p.offhandRecoil=.12;const offset=(p.equipped.length>1?(hand?-.35:.35):.2);const originX=p.x+Math.cos(angle)*offset,originZ=p.z-Math.sin(angle)*offset;
     p.aimPitch=aim.perspective?Math.atan2(1.1-aim.y,Math.hypot(aim.x-originX,aim.z-originZ)):0;
     if(w.chain)this.arcAttack(aim,w,{x:originX+Math.sin(angle)*.85,z:originZ+Math.cos(angle)*.85});else for(let i=0;i<w.pellets;i++){
-      const shotAngle=aim.perspective?Math.atan2(aim.x-originX,aim.z-originZ):angle,a=shotAngle+(this.random()-.5)*w.spread*2,headshot=!aim.perspective&&!['flame','launcher','arc'].includes(key)&&this.random()<(key==='marksman'?.32:key==='revolver'?.22:.07);
+      const shotAngle=aim.perspective?Math.atan2(aim.x-originX,aim.z-originZ):angle,a=shotAngle+(this.random()-.5)*w.spread*2*((p.aiming&&aim.perspective)?.55:1),headshot=!aim.perspective&&!['flame','launcher','arc'].includes(key)&&this.random()<(key==='marksman'?.32:key==='revolver'?.22:.07);
       const pitch=aim.perspective?p.aimPitch:0;
       this.bullets.push({perspective:!!aim.perspective,id:this.nextId++,x:originX,z:originZ,vx:Math.sin(a)*w.speed*Math.cos(pitch),vz:Math.cos(a)*w.speed*Math.cos(pitch),life:w.range/w.speed,headshot,damage:w.damage*(headshot?1.65:1)*p.damage*(p.swapBoost>0?1.25:1),enemy:false,tier:w.tier,ricochets:w.ricochet||0,y:1.1,vy:aim.perspective?-Math.sin(pitch)*w.speed:key==='launcher'?3.8:0,gravity:key==='launcher'?8:0,terminal:key==='marksman'&&w.tier===3,cluster:key==='launcher'&&w.tier===3,pierce:(w.pierce||0)+p.pierce,hitIds:[],weapon:key,burn:(w.burn||0)+p.burn,frost:p.frost,explosive:(key==='revolver'&&w.tier===3&&count%4===0?1.6:w.explosive||0)*p.blastRadius});
     }

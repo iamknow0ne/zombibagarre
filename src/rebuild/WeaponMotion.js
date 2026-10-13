@@ -23,13 +23,13 @@ export function meleeTiming(key,combo=0,multiplier=1){
  const profile=MELEE_PROFILES[key]||MELEE_PROFILES.katana,duration=(finisher?profile.finish:profile.duration)*Math.max(.45,multiplier);
  return {duration,contact:duration*(fast?.29:.34),cutEnd:duration*.57};
 }
-// Smooth key poses: guard -> anticipation -> contact -> follow through -> guard.
+// Seven blended key poses: set the weight, wind up, strike, follow through, recover and settle.
 // No full-body spin or instantaneous reset at the end of a combo.
 export function meleePose(key,combo,progress,variant=0){
  const f=clamp01(progress),side=combo===1?-1:1,finisher=combo===2;
  const keys=[
-  [0,0,0,0], [.2,-side*.58,finisher?.32:.12,-.08],
-  [.34,side*.12,finisher?-.15:-.02,.08], [.57,side*.7,finisher?-.35:-.12,.12], [1,0,0,0],
+  [0,0,0,0], [.08,-side*.12,finisher?.08:.025,-.02], [.2,-side*.58,finisher?.32:.12,-.08],
+  [.34,side*.12,finisher?-.15:-.02,.08], [.57,side*.7,finisher?-.35:-.12,.12], [.79,side*.12,finisher?-.06:-.025,-.018], [1,0,0,0],
  ];
  let a=keys[0],b=keys[1];for(let i=1;i<keys.length;i++){if(f<=keys[i][0]){a=keys[i-1];b=keys[i];break;}}
  const u=smooth((f-a[0])/(b[0]-a[0])),lerp=i=>a[i]+(b[i]-a[i])*u;

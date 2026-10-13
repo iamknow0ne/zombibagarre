@@ -51,7 +51,7 @@ export function createWeaponMesh(key,kit,tier=0){
   tube(c,dark,0,.12,(length+.32)/2,key==='launcher'?.115:.041,length-.32);
   tube(c,steel,0,.12,length,key==='launcher'?.14:key==='flame'?.09:.056,.085);tube(c,dark,0,.12,length+.044,key==='launcher'?.11:.035,.006);
   const magazine=new T.Group(),action=new T.Group(),rotor=new T.Group();magazine.position.set(0,-.05,.19);g.add(magazine,action,rotor);g.userData.magazine=magazine;g.userData.magazineBase=magazine.position.clone();g.userData.action=action;g.userData.rotor=rotor;
-  const stock=()=>{box(c,body,0,.105,-.22,.13,.17,.31);box(c,rubber,0,.095,-.39,.17,.24,.055);box(c,steel,0,.14,-.095,.07,.055,.15);};
+  const stock=()=>{const butt=new T.Group();butt.userData={keepGroup:true,hideFirstPerson:true};c.add(butt);box(butt,body,0,.105,-.22,.13,.17,.31);box(butt,rubber,0,.095,-.39,.17,.24,.055);box(butt,steel,0,.14,-.095,.07,.055,.15);kit.batch(butt,butt);};
   if(!['revolver','smg','launcher'].includes(key))stock();
   if(key==='carbine'){
    chamfer(c,body,.18,.17,.27,.46);for(let i=0;i<5;i++){box(c,dark,.094,.12,.36+i*.04,.008,.075,.024);box(c,steel,0,.22,.02+i*.09,.15,.025,.033);}
@@ -69,7 +69,7 @@ export function createWeaponMesh(key,kit,tier=0){
    magazine.position.set(0,.12,.19);tube(magazine,steel,0,0,0,.115,.21);for(let i=0;i<6;i++){const a=i*Math.PI/3;tube(magazine,dark,Math.cos(a)*.083,Math.sin(a)*.083,.112,.025,.009);tube(magazine,trim,Math.cos(a)*.083,Math.sin(a)*.083,-.113,.021,.01);}
    box(c,body,0,-.09,-.055,.125,.23,.14);box(c,trim,0,.245,.21,.08,.03,.32);box(action,steel,0,.225,-.015,.04,.08,.04);g.userData.support=new T.Vector3(-.075,-.025,.015);
   }else if(key==='marksman'){
-   tube(c,dark,0,.31,.23,.065,.4);tube(c,steel,0,.31,.46,.085,.08);tube(c,mat(0x567c77,.8,.08),0,.31,.504,.064,.006);for(const z of [.1,.31])box(c,steel,0,.235,z,.055,.07,.06);
+   tube(c,dark,0,.31,.23,.065,.4);ring(c,steel,0,.31,.027,.065,.012);tube(c,mat(0x547a87,.75,.09),0,.31,.024,.052,.004);tube(c,steel,0,.31,.46,.085,.08);tube(c,mat(0x567c77,.8,.08),0,.31,.504,.064,.006);for(const z of [.1,.31])box(c,steel,0,.235,z,.055,.07,.06);
    box(magazine,dark,0,-.08,0,.12,.18,.16);tube(action,steel,.13,.15,.16,.019,.16);box(action,trim,.14,.13,.1,.035,.1,.035);
    for(const side of [-1,1]){const leg=box(c,steel,side*.068,.03,.65,.025,.025,.39);leg.rotation.y=side*.17;}
   }else if(key==='flame'){

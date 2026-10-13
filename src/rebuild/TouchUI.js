@@ -18,7 +18,7 @@ export class TouchUI {
   $('equipped-hud').innerHTML=p.equipped.map((key,i)=>{const w=weaponStats(p,key),slot=slotKey(p.equipped,key,i);return `<div class="touch-weapon-line"><span>${w.name} <small>${TIER_MARKS[weaponTier(p,key)]}</small></span><b>${w.melee?'MELEE':p.reloads[slot]>0?'↻':p.magazines[slot]}</b></div>`;}).join('');
   const playing=['playing','extracting'].includes(sim.state),melee=MELEE_KEYS.includes(p.weapon);
   const manual=!!world.viewRig?.active;
-  $('touch-auto').disabled=manual;actionIcon($('touch-auto'),'target',manual?'Manual aiming required':`Automatic fire ${auto?'on':'off'}`,auto&&!manual?'ON':'OFF');$('touch-auto').setAttribute('aria-pressed',String(auto&&!manual));
+  const aimOn=manual?p.aiming:auto;$('touch-auto').disabled=manual&&(melee||!!p.vehicleId);actionIcon($('touch-auto'),'target',manual?`Precision aim ${aimOn?'on':'off'}`:`Automatic fire ${auto?'on':'off'}`,manual?(aimOn?'AIM':'HIP'):(auto?'ON':'OFF'));$('touch-auto').setAttribute('aria-pressed',String(!!aimOn));
   $('touch-dash').disabled=!playing||p.dashCooldown>0;actionIcon($('touch-dash'),'dodge',p.dashCooldown>0?`Dodge ready in ${p.dashCooldown.toFixed(1)} seconds`:'Dodge',p.dashCooldown>0?p.dashCooldown.toFixed(1):'');
   $('touch-grenade').disabled=!playing||p.grenades<=0||p.throwAnimation>0;actionIcon($('touch-grenade'),{molotov:'flame',frost:'snow',shock:'bolt'}[p.throwable]||'bomb',`Throw ${THROWABLES[p.throwable||'frag'].short}: ${p.grenades} remaining`,String(p.grenades));
   $('touch-reload').disabled=!playing||melee||p.reload>0;actionIcon($('touch-reload'),melee?'swords':'reload',melee?'Melee weapon: no reload':p.reload>0?'Reloading':'Reload weapon',p.reload>0?'…':'');

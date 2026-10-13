@@ -9,7 +9,7 @@
 [![Play now](https://img.shields.io/badge/PLAY_NOW-IN_YOUR_BROWSER-e38b50?style=for-the-badge&labelColor=182327)](https://iamknow0ne.github.io/zombibagarre/)
 
 [![Build and deployment](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml)
-[![Version](https://img.shields.io/badge/version-4.38.0-e38b50?labelColor=182327)](docs/TRAVERSAL.md)
+[![Version](https://img.shields.io/badge/version-4.39.0-e38b50?labelColor=182327)](docs/PERSPECTIVE-4.39.md)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-b5c7b1?logo=threedotjs&logoColor=white&labelColor=182327)](package.json)
 [![Controls](https://img.shields.io/badge/controls-keyboard_%C2%B7_gamepad_%C2%B7_touch-8bbdc8?labelColor=182327)](#controls)
 
@@ -125,11 +125,13 @@ Meet **Rook, Saint, Torque and Vesper**, explore the factions, and read the Ward
 
 [World art & lore](docs/art/WORLD-DOSSIER.md) · [Survivor & Warden portraits](docs/art/PORTRAITS-4.36.md) · [City sprite and texture atlases](docs/art/CITY-ASSETS.md)
 
-## Latest field report · 4.36
+## Latest field report · 4.39
 
-Illustrated survivor and Warden dossiers, height-aware aiming for the experimental FPS/TPS cameras, faster city collision queries and smaller artwork downloads. The local fixed-scene crowded benchmark improved from **80 to 104 FPS**; results vary by device. The six existing raster delivery assets became **82% smaller**.
+**Get closer to the fight.** TPS/FPS now have precision aiming, a steadier shoulder camera, cover-aware camera retraction and adjustable field of view, sensitivity, shoulder and motion. First-person weapons stay visible near cover. Braced aiming, blended turns and seven-pose melee strokes improve movement and recovery.
 
-The release passed **278 automated tests**, the production build, full campaign checks on all three difficulties and an open-city completion run. See the [release report for measurements, browser QA and remaining limitations](docs/RELEASE-4.36.md).
+**Your level of gore.** A new **0–10 slider** controls blood spray, wall and ground stains, persistence and fragments. **4 matches the original intensity**; 0 removes blood and dismemberment. Rendering budgets remain capped at every level, and combat damage is unchanged.
+
+[Camera controls, verification and limitations](docs/PERSPECTIVE-4.39.md) · [Try Rooftop Training](https://iamknow0ne.github.io/zombibagarre/traversal.html) · [Previous performance and artwork report](docs/RELEASE-4.36.md)
 
 ## Install on Steam Deck
 

@@ -1,0 +1,2 @@
+export const PERSPECTIVE_DEFAULTS={viewFov:70,lookSensitivity:1,cameraMotion:35,shoulder:'right'};
+export function perspectiveSettings(raw={}){const out={...PERSPECTIVE_DEFAULTS};for(const [key,min,max]of [['viewFov',55,90],['lookSensitivity',.4,2.5],['cameraMotion',0,100]])if(typeof raw[key]==='number'&&Number.isFinite(raw[key]))out[key]=Math.max(min,Math.min(max,raw[key]));if(raw.shoulder==='left')out.shoulder='left';return out;}

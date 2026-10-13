@@ -32,6 +32,7 @@ export function animateWeapons(character,state,t,dt,kit){
   if(old?.userData.key!==key||(key&&(old?.userData.tier!==weaponTier(state,key)||old?.userData.relic!==(state.rpgRelic?.base===key?state.rpgRelic.name:null)))){if(old)kit.remove(old);d.weaponRigs[hand]=key?buildWeapon(key,kit,weaponTier(state,key)):null;if(key){const rig=d.weaponRigs[hand],r=state.rpgRelic?.base===key?state.rpgRelic:null;rig.userData.relic=r?.name||null;if(r){kit.box(rig,r.color,0,.08,.22,.07,.07,.35,{emissive:r.color,emissiveIntensity:.5,metalness:.8});}body.add(rig);}}
  }
  const two=keys.length===2,blade=WEAPONS[state.weapon]?.melee,phase=d.gait||0,walk=d.walk||0;
+ d.aimBrace=(d.aimBrace||0)+((state.aiming&&!blade?1:0)-(d.aimBrace||0))*(1-Math.exp(-12*Math.max(0,dt)));const brace=d.aimBrace;
  let totalRecoil=0;d.gripError=0;
  for(let hand=0;hand<keys.length;hand++){
   const key=keys[hand],g=d.weaponRigs[hand],side=hand?-1:1,arm=d.arms[hand?0:1];
@@ -40,11 +41,11 @@ export function animateWeapons(character,state,t,dt,kit){
   const reload=state.reloads[slot]||0,total=state.reloadDurations?.[slot]||WEAPONS[key].reload*state.reloadMultiplier;
   const f=reload>0?1-reload/total:0,r=weaponReloadPose(key,f);
   const equip=1-smooth((t-(state.equippedAt??-99))/.22);
-  g.position.set(side*(two?.38:.16),1.23, two?.31:.20);
+  g.position.set(side*(two?.38:.16),1.23+brace*.045, (two?.31:.20)-brace*.025);
   g.rotation.set((kit.firstPerson?0:state.aimPitch||0)-profile.lift*recoil+r.lower*.55+equip*.48,side*(-r.lower*.28),side*(-r.lower*.3));
   g.position.z-=recoil*profile.kick+(two?0:r.lower*.055+equip*.06);g.position.y-=r.lower*.12+equip*.15;
-  g.position.y+=Math.sin(t*2.4+hand*.6)*.009+Math.sin(phase*2)*walk*.012/(.5+profile.weight);
-  g.rotation.y+=Math.sin(phase)*walk*.018/(.5+profile.weight)+motion.yaw*side;g.rotation.z+=motion.roll*side;g.rotation.x+=motion.pitch;g.position.y+=motion.rise;g.rotation.z-=(d.motion?.pose?.roll||0)*.28;g.rotation.x-=(d.motion?.pose?.pitch||0)*.16;
+  g.position.y+=Math.sin(t*2.4+hand*.6)*.009+Math.sin(phase*2)*walk*.012*(1-brace*.65)/(.5+profile.weight);
+  g.rotation.y+=Math.sin(phase)*walk*.018*(1-brace*.65)/(.5+profile.weight)+motion.yaw*side;g.rotation.z+=motion.roll*side;g.rotation.x+=motion.pitch;g.position.y+=motion.rise;g.rotation.z-=(d.motion?.pose?.roll||0)*.28;g.rotation.x-=(d.motion?.pose?.pitch||0)*.16;
   if(state.dash>0&&!state.focusDive){g.rotation.x+=.5;g.position.z-=.08;}
   if(blade){
    const active=state.swing>0&&state.swingWeapon===key,progress=active?1-state.swing/state.swingDuration:0,pose=meleePose(key,state.swingCombo,progress,state.swingVariant||0);

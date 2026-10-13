@@ -1,20 +1,51 @@
 import * as T from 'three';
-import {perspectiveTarget} from './Ballistics.js';
-import {segmentBoxTime} from './config.js';
+import {perspectiveTarget,boxHit3D,propHeight} from './Ballistics.js';
+import {perspectiveSettings} from './PerspectiveSettings.js';
+import {collisionCandidates} from './SpatialIndex.js';
+import {WEAPONS} from './config.js';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),damp=(a,b,k,dt)=>a+(b-a)*(1-Math.exp(-k*Math.max(0,dt)));
 export function cameraMovement(x,y,yaw){return{x:-x*Math.cos(yaw)-y*Math.sin(yaw),z:x*Math.sin(yaw)-y*Math.cos(yaw)};}
-export function cameraClearance(from,to,obstacles){let fraction=1;for(const b of obstacles){if(b.health<=0||b.kind!=='building'&&b.kind!=='crate'&&b.kind!=='tree')continue;const t=segmentBoxTime(from,to,b,.3);if(t!==null&&from.y+(to.y-from.y)*t<(b.h||(b.kind==='building'?20:2))+.3)fraction=Math.min(fraction,Math.max(0,t-.04));}return fraction;}
+// Sweep a camera-sized volume in all three dimensions, including low cover,
+// vehicles and vertical entries from steep camera angles.
+export function cameraClearance(from,to,obstacles){let fraction=1;for(const b of obstacles){if(b.health<=0||!b.w||!b.d)continue;const padding=.24;const t=boxHit3D({...from,y:from.y+padding},{...to,y:to.y+padding},{...b,w:b.w+padding*2,d:b.d+padding*2,h:propHeight(b)+padding*2});if(t!==null)fraction=Math.min(fraction,Math.max(0,t-.025));}return fraction;}
 export class ViewRig{
- constructor(){this.camera=new T.PerspectiveCamera(65,1,.08,150);this.yaw=Math.PI;this.pitch=.12;this.mode='diorama';this.active=false;this.origin=new T.Vector3();this.target=new T.Vector3();}
- setMode(mode){if(this.mode!==mode){this.mode=mode;this.ready=false;}}
- look(dx,dy){this.yaw-=Math.max(-150,Math.min(150,dx))*.0025;this.pitch=Math.max(-.65,Math.min(.85,this.pitch+Math.max(-150,Math.min(150,dy))*.002));}
- update(sim,aspect,dt){const p=sim.player;if(!this.ready){this.yaw=p.angle||Math.PI;this.ready=true;}this.camera.aspect=aspect;this.camera.updateProjectionMatrix();const vehicle=sim.props.find(v=>v.id===p.vehicleId),first=this.mode==='first'&&!vehicle;
-  this.origin.set(p.x,vehicle?2.4:1.55,p.z);const distance=first?0:vehicle?8:4.8,side=first?0:.65;
-  this.target.set(this.origin.x-Math.sin(this.yaw)*distance-Math.cos(this.yaw)*side,this.origin.y+Math.sin(this.pitch)*distance+(first?0:.7),this.origin.z-Math.cos(this.yaw)*distance+Math.sin(this.yaw)*side);
-  const t=cameraClearance(this.origin,this.target,sim.props);this.target.lerpVectors(this.origin,this.target,t);this.camera.position.copy(this.target);this.camera.lookAt(this.target.x+Math.sin(this.yaw)*10,this.target.y-Math.tan(this.pitch)*10,this.target.z+Math.cos(this.yaw)*10);this.camera.updateMatrixWorld();
+ constructor(){this.camera=new T.PerspectiveCamera(70,1,.06,180);this.yaw=Math.PI;this.pitch=.12;this.mode='diorama';this.active=false;this.origin=new T.Vector3();this.target=new T.Vector3();this.settings=perspectiveSettings();this.aimBlend=0;this.swayX=this.swayY=0;this.hitUntil=0;this.handsScene=new T.Scene();this.handsScene.add(new T.HemisphereLight(0xcadce5,0x494b3b,2));const key=new T.DirectionalLight(0xffe7c5,2);key.position.set(-3,5,3);this.handsScene.add(key);}
+ configure(settings){this.settings={...perspectiveSettings(settings),reducedMotion:!!settings.reducedMotion};}
+ setMode(mode){if(this.mode!==mode){this.mode=mode;this.ready=false;this.aimBlend=0;this.swayX=this.swayY=0;}}
+ look(dx,dy){const sensitivity=this.settings.lookSensitivity*(1-this.aimBlend*.45),x=clamp(dx,-150,150)*sensitivity,y=clamp(dy,-150,150)*sensitivity;this.yaw-=x*.0025;this.pitch=clamp(this.pitch+y*.002,-.95,1.15);this.swayX=clamp(this.swayX+x*.0003,-.045,.045);this.swayY=clamp(this.swayY+y*.0003,-.035,.035);}
+ update(sim,aspect,dt){
+  const p=sim.player,initial=!this.ready;if(initial){this.yaw=Number.isFinite(p.angle)?p.angle:Math.PI;this.ready=true;this.clearance=1;}
+  const vehicle=sim.props.find(v=>v.id===p.vehicleId),first=this.mode==='first'&&!vehicle,blade=!!WEAPONS[p.weapon]?.melee;
+  this.aimBlend=damp(this.aimBlend,p.aiming&&!blade&&!vehicle?1:0,14,dt);this.swayX=damp(this.swayX,0,9,dt);this.swayY=damp(this.swayY,0,9,dt);
+  this.camera.aspect=aspect;this.camera.fov=this.settings.viewFov*(1-this.aimBlend*(p.weapon==='marksman'?.32:first?.22:.16));this.camera.updateProjectionMatrix();
+  const motion=this.settings.reducedMotion?0:this.settings.cameraMotion/100,phase=p.footTravel||sim.time*Math.min(9,Math.hypot(p.moveX||0,p.moveZ||0)),bob=first&&p.moving&&!p.dash?Math.sin(phase*4)*.018*motion*(1-this.aimBlend*.8):0;
+  this.origin.set(p.x,(p.y||0)+(vehicle?2.4:1.55)+bob,p.z);const distance=first?0:vehicle?8:4.5-this.aimBlend*1.1;
+  this.shoulder=damp(this.shoulder??(this.settings.shoulder==='left'?-1:1),this.settings.shoulder==='left'?-1:1,10,dt);
+  const side=first?0:(.65-this.aimBlend*.15)*this.shoulder;
+  this.target.set(this.origin.x-Math.sin(this.yaw)*distance-Math.cos(this.yaw)*side,this.origin.y+Math.sin(this.pitch)*distance+(first?0:.55),this.origin.z-Math.cos(this.yaw)*distance+Math.sin(this.yaw)*side);
+  const nearby=(a,b)=>(sim.obstacles?collisionCandidates(sim,a,b,.24):sim.props).filter(o=>!p.vehicleId||o.id!==p.vehicleId),clear=cameraClearance(this.origin,this.target,nearby(this.origin,this.target));
+  // Retract immediately to avoid clipping; ease only the return out of cover.
+  this.clearance=clear<this.clearance?clear:initial?clear:damp(this.clearance,clear,6,dt);
+  this.target.lerpVectors(this.origin,this.target,this.clearance);this.camera.position.copy(this.target);this.distance=this.camera.position.distanceTo(this.origin);
+  this.camera.lookAt(this.target.x+Math.sin(this.yaw)*10,this.target.y-Math.tan(this.pitch)*10,this.target.z+Math.cos(this.yaw)*10);this.camera.updateMatrixWorld();
+  const forward={x:p.x+Math.sin(this.yaw)*1.5,y:(p.y||0)+1.2,z:p.z+Math.cos(this.yaw)*1.5};this.nearWall=1-cameraClearance({x:p.x,y:(p.y||0)+1.2,z:p.z},forward,nearby(p,forward));
+ }
+ fadeAvatar(player){const alpha=this.active&&this.mode==='third'?clamp((this.distance-.35)/1.1,0,1):1;if(alpha===1&&!player.userData.cameraFaded)return;player.userData.cameraFaded=alpha<1;
+  player.traverse(o=>{if(!o.isMesh||o.userData.cameraOverlay)return;if(!o.userData.cameraMaterials){const clone=m=>{const n=m.clone();n.userData={...n.userData,shared:false};return{material:n,opacity:m.opacity,transparent:m.transparent,depthWrite:m.depthWrite};};const list=(Array.isArray(o.material)?o.material:[o.material]).map(clone);o.userData.cameraMaterials=list;o.material=Array.isArray(o.material)?list.map(a=>a.material):list[0].material;}
+   for(const a of o.userData.cameraMaterials){a.material.opacity=a.opacity*alpha;a.material.transparent=a.transparent||alpha<1;a.material.depthWrite=a.depthWrite&&alpha>.98;}
+  });
  }
  syncHands(player,sim,scene){const visible=this.active&&this.mode==='first'&&!sim.player.vehicleId&&sim.state!=='dead';if(!visible){if(this.hands)this.hands.visible=false;return;}const sources=[...(player.userData.arms||[]),...(player.userData.weaponRigs||[]).filter(Boolean)];
-  if(!this.sources||sources.some((m,i)=>m!==this.sources[i])||sources.length!==this.sources.length){this.hands?.removeFromParent();this.sources=sources;this.hands=new T.Group();this.pairs=[];const arms=new Set(player.userData.arms||[]);const copy=(o,parent)=>{const n=o.isMesh?new T.Mesh(o.geometry,o.material):new T.Group();parent.add(n);this.pairs.push([o,n]);for(const c of o.children)if(!arms.has(o)||!c.isMesh)copy(c,n);};for(const source of sources)copy(source,this.hands);scene.add(this.hands);}
-  for(const [o,n]of this.pairs){n.position.copy(o.position);n.quaternion.copy(o.quaternion);n.scale.copy(o.scale);n.visible=o.visible;}this.hands.visible=true;this.hands.position.copy(this.camera.position);this.hands.quaternion.copy(this.camera.quaternion);this.hands.translateY(-1.5);this.hands.translateZ(-.75);this.hands.rotateY(Math.PI);this.hands.scale.setScalar(.9);
+  if(!this.sources||sources.some((m,i)=>m!==this.sources[i])||sources.length!==this.sources.length){this.hands?.removeFromParent();this.sources=sources;this.hands=new T.Group();this.pairs=[];const arms=new Set(player.userData.arms||[]);const copy=(o,parent)=>{const n=o.isMesh?new T.Mesh(o.geometry,o.material):new T.Group();parent.add(n);this.pairs.push([o,n]);for(const c of o.children)if(!arms.has(o)||c===o.userData.elbow)copy(c,n);};for(const source of sources)copy(source,this.hands);this.handsScene.add(this.hands);}
+  for(const [o,n]of this.pairs){n.position.copy(o.position);n.quaternion.copy(o.quaternion);n.scale.copy(o.scale);n.visible=o.visible&&!o.userData.hideFirstPerson;if(o.isMesh)n.material=o.material;}
+  const p=sim.player,motion=this.settings.reducedMotion?0:this.settings.cameraMotion/100,phase=player.userData.gait||0,walk=player.userData.walk||0,aim=this.aimBlend,wall=this.nearWall||0;
+  this.handsScene.environment=scene.environment;this.handsScene.environmentIntensity=scene.environmentIntensity;
+  this.hands.visible=true;this.hands.position.copy(this.camera.position);this.hands.quaternion.copy(this.camera.quaternion);
+  const dual=p.equipped?.length>1,portrait=clamp(this.camera.aspect/.9,.58,1),scale=(.83-aim*.06)*portrait;
+  this.hands.translateX(((dual?0:.43)-aim*(dual?0:.13))*portrait+Math.sin(phase)*walk*.018*motion*(1-aim*.8)-this.swayX*motion);
+  this.hands.translateY(-(1.23*scale+.34)+aim*.035-wall*.15+Math.sin(phase*2)*walk*.012*motion+this.swayY*motion);
+  this.hands.translateZ(-.80+wall*.20);this.hands.rotateY(Math.PI);this.hands.rotateX(wall*.38);this.hands.scale.setScalar(scale);
  }
- aim(player,sim){if(!sim)return{x:player.x+Math.sin(this.yaw)*20,z:player.z+Math.cos(this.yaw)*20};const origin=this.ready?this.camera.position:{x:player.x,y:1.55,z:player.z};return perspectiveTarget(origin,this.yaw,this.pitch,sim.obstacles||sim.props,sim.enemies);}
+ renderHands(renderer){if(!this.hands?.visible)return;const auto=renderer.autoClear;renderer.autoClear=false;renderer.clearDepth();renderer.render(this.handsScene,this.camera);renderer.autoClear=auto;}
+ aim(player,sim){if(!sim)return{x:player.x+Math.sin(this.yaw)*20,z:player.z+Math.cos(this.yaw)*20};const origin=this.ready?this.camera.position:{x:player.x,y:(player.y||0)+1.55,z:player.z};const aim=perspectiveTarget(origin,this.yaw,this.pitch,sim.obstacles||sim.props,sim.enemies);this.aimTarget=aim;return aim;}
 }

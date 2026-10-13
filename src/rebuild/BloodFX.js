@@ -1,3 +1,4 @@
+import {goreProfile} from './Gore.js';
 import {applyCutaway} from './BuildingCutaway.js';
 import * as T from 'three';
 import {DecalGeometry} from 'three/addons/geometries/DecalGeometry.js';
@@ -35,7 +36,7 @@ function bloodTexture(world,wall,index){
  const tex=new T.CanvasTexture(canvas);tex.colorSpace=T.SRGBColorSpace;tex.userData.shared=true;world.bloodTextures.set(key,tex);return tex;
 }
 export function bloodDecal(world,point,radius=.4,hit=null){
- if(!world.settings.gore||(!hit&&waterAt(world.layout,point.x,point.z)))return null;
+ const gore=goreProfile(world.settings);if(!gore.enabled||(!hit&&waterAt(world.layout,point.x,point.z)))return null;radius*=gore.stain;
  if(!hit&&world.bloodGroundTargets?.length){hit=bloodContact(new T.Vector3(point.x,.65,point.z),new T.Vector3(point.x,-.3,point.z),world.bloodGroundTargets);if(hit)point=hit.point;}
  const localPoint=hit?hit.object.worldToLocal(point.clone()):point;
  if(world.decals.some(m=>m.userData.surface===(hit?.object||null)&&m.userData.hitLocal?.distanceTo(localPoint)<.18))return null;
@@ -49,13 +50,13 @@ export function bloodDecal(world,point,radius=.4,hit=null){
  const mesh=new T.Mesh(geometry,material);mesh.userData.bloodDecal=true;mesh.userData.disposable=true;mesh.userData.age=0;mesh.userData.hitLocal=localPoint.clone();mesh.userData.surface=hit?.object||null;mesh.userData.wall=wall;mesh.userData.baseRadius=radius;mesh.receiveShadow=true;
  if(hit){world.scene.add(mesh);hit.object.attach(mesh);material.clippingPlanes=hit.object.material.clippingPlanes||null;}
  else{mesh.rotation.x=-Math.PI/2;mesh.rotation.z=world.random()*Math.PI*2;mesh.position.set(point.x,.058+world.random()*.004,point.z);world.scene.add(mesh);}
- world.decals.push(mesh);if(world.decals.length>BLOOD_LIMIT)world.removeDynamic(world.decals.shift());return mesh;
+ world.decals.push(mesh);if(world.decals.length>gore.decals)world.removeDynamic(world.decals.shift());return mesh;
 }
 export function bloodSpray(world,e,count=10,power=6,height=1.15){
- if(!world.settings.gore)return;
+ const gore=goreProfile(world.settings);if(!gore.enabled)return;count=Math.ceil(count*gore.spray);
  if(e.kind==='fire'||e.kind==='electric'||e.kind==='frost')return; // Elemental damage does not punch ballistic wounds.
  const r=world.random,origin=new T.Vector3(e.x,height,e.z),direction=Math.atan2(e.dx||0,e.dz||0),directed=Math.hypot(e.dx||0,e.dz||0)>.001;
- const available=Math.max(0,90-world.effects.filter(f=>f.kind==='blood').length);if(!available)return;
+ const available=Math.max(0,gore.droplets-world.effects.filter(f=>f.kind==='blood').length);if(!available)return;
  const roots=[...world.propMeshes.values(),...world.buildingMeshes.values(),...world.wrecks].filter(g=>{if(!g.visible||g.userData.collapsed)return false;g.updateWorldMatrix(true,false);let bounds=surfaceBounds.get(g);if(!bounds){bounds=new T.Box3().setFromObject(g).getBoundingSphere(new T.Sphere());bounds.applyMatrix4(g.matrixWorld.clone().invert());surfaceBounds.set(g,bounds);}return bounds.clone().applyMatrix4(g.matrixWorld).distanceToPoint(origin)<9;});
  for(const root of roots)root.updateWorldMatrix(true,true);
  for(let i=0;i<Math.min(count,available);i++){
@@ -65,7 +66,7 @@ export function bloodSpray(world,e,count=10,power=6,height=1.15){
  }
 }
 export function stepBlood(world,e,dt){
- if(!world.settings.gore){e.life=0;return;}
+ if(!goreProfile(world.settings).enabled){e.life=0;return;}
  const from=e.mesh.position.clone();stepFragment(e,dt,-10);const to=e.mesh.position;let hit=bloodContact(from,to,e.targets||[]);if(!hit&&to.y<.45)hit=bloodContact(from,to,world.bloodGroundTargets||[]);
  if(hit){bloodDecal(world,hit.point,e.stain*(1+Math.min(1,Math.hypot(e.vx,e.vz)/10)),hit);e.life=0;return;}
  if(to.y<world.waterLevel()+.03&&waterAt(world.layout,to.x,to.z)){e.life=0;return;}
@@ -73,10 +74,11 @@ export function stepBlood(world,e,dt){
  const velocity=new T.Vector3(e.vx,e.vy,e.vz);if(velocity.lengthSq())e.mesh.quaternion.setFromUnitVectors(up,velocity.normalize());
 }
 export function ageBlood(world,dt){
+ const gore=goreProfile(world.settings);
  world.decals=world.decals.filter(mesh=>{
   const d=mesh.userData;d.age=(d.age||0)+dt;let attached=false;for(let p=mesh;p;p=p.parent)if(p===world.scene){attached=true;break;}
-  if(!world.settings.gore||!attached||d.age>180){world.removeDynamic(mesh);return false;}
-  mesh.material.color.copy(freshColor).lerp(dryColor,Math.min(1,d.age/45));mesh.material.roughness=.29+Math.min(.66,d.age/60);mesh.material.opacity=.88*Math.min(1,(180-d.age)/20);
+  if(!gore.enabled||!attached||d.age>gore.life){world.removeDynamic(mesh);return false;}
+  mesh.material.color.copy(freshColor).lerp(dryColor,Math.min(1,d.age/45));mesh.material.roughness=.29+Math.min(.66,d.age/60);mesh.material.opacity=.88*Math.min(1,(gore.life-d.age)/20);
   if(d.surface)mesh.material.clippingPlanes=d.surface.material.clippingPlanes||null;else mesh.scale.setScalar(.85+.15*Math.min(1,d.age/2));return true;
  });
 }

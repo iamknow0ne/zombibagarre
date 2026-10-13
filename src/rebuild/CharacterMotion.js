@@ -9,6 +9,9 @@ export function stepCharacterMotion(cache,state,dt,{player=false,runner=false,br
  const accelX=(vx-(cache.vx||0))/dt,accelZ=(vz-(cache.vz||0))/dt;cache.vx=vx;cache.vz=vz;
  const pitchTarget=limit((accelX*Math.sin(angle)+accelZ*Math.cos(angle))*.006,-.13,.15)+(dash?.48:forward*cache.walk*.07),rollTarget=limit(-(accelX*Math.cos(angle)-accelZ*Math.sin(angle))*.004,-.12,.12)-strafe*cache.walk*.08;
  cache.pitch=damp(cache.pitch||0,pitchTarget,12,dt);cache.roll=damp(cache.roll||0,rollTarget,12,dt);cache.land=Math.max(0,(cache.land||0)-dt*3.5);if(cache.wasDash&&!dash)cache.land=.12;cache.wasDash=dash;
- return cache.pose={phase:cache.phase,walk:cache.walk,forward,strafe,pitch:cache.pitch,roll:cache.roll,land:cache.land,footfall:!dash&&speed>.5&&Math.floor(old/Math.PI)!==Math.floor(cache.phase/Math.PI),side:Math.floor(cache.phase/Math.PI)%2?1:-1,speed};
+ cache.smoothForward=damp(cache.smoothForward??forward,forward,12,dt);cache.smoothStrafe=damp(cache.smoothStrafe??strafe,strafe,12,dt);
+ const angleDelta=cache.angle===undefined?0:Math.atan2(Math.sin(angle-cache.angle),Math.cos(angle-cache.angle));cache.angle=angle;
+ cache.turn=damp(cache.turn||0,limit(angleDelta/dt,-4,4)*.025,10,dt);cache.brace=damp(cache.brace||0,state.aiming?1:0,12,dt);
+ return cache.pose={smoothForward:cache.smoothForward,smoothStrafe:cache.smoothStrafe,turn:cache.turn,brace:cache.brace,phase:cache.phase,walk:cache.walk,forward,strafe,pitch:cache.pitch,roll:cache.roll,land:cache.land,footfall:!dash&&speed>.5&&Math.floor(old/Math.PI)!==Math.floor(cache.phase/Math.PI),side:Math.floor(cache.phase/Math.PI)%2?1:-1,speed};
 }
 export function hitRecoil(age,amount=20){if(age<0||age>.24)return 0;const u=age/.24;return Math.sin(Math.PI*u)*Math.exp(-u*3)*Math.min(.22,.05+Math.sqrt(Math.max(0,amount))*.018);}

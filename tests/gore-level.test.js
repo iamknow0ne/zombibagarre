@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as T from 'three';
+import {goreLevel,goreSettings,goreProfile} from '../src/rebuild/Gore.js';
+import {bloodSpray,bloodDecal,ageBlood} from '../src/rebuild/BloodFX.js';
+import {seededRandom} from '../src/rebuild/config.js';
+const ctx=new Proxy({},{get:()=>()=>{}});globalThis.document={createElement:()=>({width:256,height:256,getContext:()=>ctx})};
+const world=level=>({settings:goreSettings({goreLevel:level}),random:seededRandom(9),effects:[],decals:[],layout:{},scene:new T.Scene(),propMeshes:new Map(),buildingMeshes:new Map(),wrecks:[],waterLevel:()=>-.2,removeDynamic:m=>m.removeFromParent()});
+test('legacy gore settings migrate to 4 or 0; invalid levels cannot escape bounds',()=>{assert.deepEqual(goreSettings({gore:true}),{gore:true,goreLevel:4});assert.deepEqual(goreSettings({gore:false}),{gore:false,goreLevel:0});assert.equal(goreLevel({goreLevel:99}),10);assert.equal(goreLevel({goreLevel:-2}),0);for(const n of [NaN,Infinity,'10'])assert.equal(goreLevel({goreLevel:n}),4);});
+test('level 4 matches the old blood budget, lighter levels keep limbs and higher levels scale within caps',()=>{const base=goreProfile({goreLevel:4});assert.equal(base.spray,1);assert.equal(base.stain,1);assert.equal(base.decals,150);assert.equal(base.droplets,90);assert.equal(base.life,180);for(let i=0;i<11;i++){const p=goreProfile({goreLevel:i});assert.equal(p.dismember,i>=4);assert.ok(p.droplets<=180&&p.decals<=222&&p.gibs<=56);if(i>0)assert.ok(p.spray>goreProfile({goreLevel:i-1}).spray);}});
+test('same hit scales blood spray at 0, 1, 4 and 10, with bounded bursts and no stains when off',()=>{for(const [level,expected]of [[0,0],[1,3],[4,12],[10,30]]){const w=world(level);bloodSpray(w,{x:0,z:0,dx:0,dz:1},12);assert.equal(w.effects.length,expected);for(let i=0;i<40;i++)bloodSpray(w,{x:0,z:0},100);assert.ok(w.effects.length<=goreProfile(w.settings).droplets);const stain=bloodDecal(w,new T.Vector3(),1);assert.equal(!!stain,level>0);}});
+test('higher intensity stains persist longer but still expire and clear when disabled',()=>{const w=world(10);bloodDecal(w,new T.Vector3(),1);ageBlood(w,181);assert.equal(w.decals.length,1);ageBlood(w,72);assert.equal(w.decals.length,0);bloodDecal(w,new T.Vector3(),1);w.settings=goreSettings({goreLevel:0});ageBlood(w,0);assert.equal(w.decals.length,0);});
