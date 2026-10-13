@@ -1,7 +1,8 @@
+import {WeaponHold} from './WeaponWheel.js';
 import {cameraMovement} from './ViewRig.js';
 import {TouchControls,touchAimTarget} from './TouchControls.js';
 import {assistedDrive} from './Vehicles.js';
-import {sampleGamepad,worldStick} from './Gamepad.js';
+import {sampleGamepad,worldStick,selectGamepad} from './Gamepad.js';
 import {BINDINGS,CONTROL_DEFAULTS,controllerFamily,handInput,stepRange,directionalControl} from './ControllerConfig.js';
 export class Input {
   constructor(canvas,onAction,settings=CONTROL_DEFAULTS){
@@ -16,7 +17,7 @@ export class Input {
     window.addEventListener('keyup',e=>this.keys.delete(e.code));
     window.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')this.source='touch';});
     window.addEventListener('blur',()=>this.clear());
-    canvas.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;this.source='keyboard';if(document.pointerLockElement===canvas||(this.perspective&&e.buttons===2)){this.lookX=(this.lookX||0)+e.movementX;this.lookY=(this.lookY||0)+e.movementY;}this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
+    canvas.addEventListener('pointermove',e=>{if(e.pointerType==='touch'||this.weaponWheelActive)return;this.source='keyboard';if(document.pointerLockElement===canvas||(this.perspective&&e.buttons===2)){this.lookX=(this.lookX||0)+e.movementX;this.lookY=(this.lookY||0)+e.movementY;}this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
     canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return;this.source='keyboard';if(this.perspective&&this.playing&&!this.lockUnavailable&&canvas.requestPointerLock&&!document.querySelector('dialog[open]')&&document.pointerLockElement!==canvas){try{canvas.requestPointerLock()?.catch?.(()=>{this.lockUnavailable=true;});}catch{this.lockUnavailable=true;}return;}this.firing=e.button===0;canvas.setPointerCapture(e.pointerId);if(e.button===2&&!this.perspective)this.moveRequest={x:e.clientX/innerWidth,y:e.clientY/innerHeight};this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
     canvas.addEventListener('pointerup',()=>{this.firing=false;});canvas.addEventListener('pointercancel',()=>{this.firing=false;});canvas.addEventListener('contextmenu',e=>e.preventDefault());
     canvas.addEventListener('wheel',e=>{e.preventDefault();onAction(e.deltaY>0?'nextWeapon':'prevWeapon');},{passive:false});
@@ -26,23 +27,24 @@ export class Input {
     for(const [id,key]of [['drive-brake','touchBrake'],['drive-reverse','touchReverse']]){const button=document.getElementById(id);button?.addEventListener('pointerdown',e=>{if(this.touchHoldIds[key]!==undefined)return;e.preventDefault();this.source='touch';this.touchHoldIds[key]=e.pointerId;this[key]=true;try{button.setPointerCapture(e.pointerId);}catch{/* The browser may have cancelled the pointer. */}});for(const event of ['pointerup','pointercancel','lostpointercapture'])button?.addEventListener(event,e=>{if(this.touchHoldIds[key]===e.pointerId){delete this.touchHoldIds[key];this[key]=false;}});}
     this.touchControls=new TouchControls(this);
   }
-  clear(){if(typeof document!=='undefined'&&document?.pointerLockElement===this.canvas)document?.exitPointerLock?.();this.perspective=false;this.lookX=this.lookY=0;this.touchControls?.clear();this.touchWorldAim=null;this.touchFiring=false;this.touchHoldIds={};this.touchBrake=this.touchReverse=false;this.padGuard=true;this.padAim=null;this.keys.clear();this.once={};this.firing=false;this.destination=null;this.moveRequest=null;this.stick={x:0,y:0};this.resetStick?.();this.resetAim?.();this.touchAim=null;this.onStopFeedback?.();}
+  clear(){this.weaponHold?.reset();this.onCancelWheel?.();if(typeof document!=='undefined'&&document?.pointerLockElement===this.canvas)document?.exitPointerLock?.();this.perspective=false;this.lookX=this.lookY=0;this.touchControls?.clear();this.touchWorldAim=null;this.touchFiring=false;this.touchHoldIds={};this.touchBrake=this.touchReverse=false;this.padGuard=true;this.padAim=null;this.keys.clear();this.once={};this.firing=false;this.destination=null;this.moveRequest=null;this.stick={x:0,y:0};this.resetStick?.();this.resetAim?.();this.touchAim=null;this.onStopFeedback?.();}
   pollGamepad(sim,now=performance.now()){this.playing=['playing','extracting'].includes(sim.state);
     const dt=Math.min(.05,Math.max(0,(now-(this.padTime??now))/1000));this.padTime=now;
     if(document.hidden||!document.hasFocus()){if(!this.padInactive)this.clear();this.padInactive=true;this.padButtons=[];return;}this.padInactive=false;
     let pads=[];try{pads=Array.from(this.getGamepads?this.getGamepads():navigator.getGamepads?.()||[]).filter(Boolean);}catch{/* Some embedded browsers deny access. */}
-    const raw=pads.find(p=>p.index===this.pad?.index&&p.connected)||pads.find(p=>p.connected&&p.mapping==='standard');
+    const raw=selectGamepad(pads,this.pad||this.rawPad,this.settings);this.onRawGamepad?.(raw);
     const old=this.pad,settings=this.settings||CONTROL_DEFAULTS,b=settings.bindings||BINDINGS;
     const changed=old&&raw&&(old.index!==raw.index||old.id!==raw.id);
-    this.rawPad=raw;this.pad=sampleGamepad(raw,changed?[]:this.padButtons,settings);this.padButtons=this.pad?.buttons||[];
+    this.rawPad=raw;if(this.calibrating){this.pad=null;this.padButtons=[];return;}this.pad=sampleGamepad(raw,changed?[]:this.padButtons,settings);this.padButtons=this.pad?.buttons||[];
     const label=document.getElementById('controller-status');
     this.family=this.pad?controllerFamily(this.pad.id,settings.promptStyle):settings.promptStyle==='auto'?(this.family||'playstation'):settings.promptStyle;const brand=this.family==='playstation'?'PLAYSTATION':this.family==='xbox'?'XBOX':'GAMEPAD';
-    const status=this.pad?`${brand} CONNECTED · CONTROLS IN SETTINGS`:pads.length?'CONTROLLER MAPPING UNSUPPORTED · TRY CHROME OR SAFARI':'CONTROLLER · CONNECT, THEN PRESS A BUTTON';if(label&&label.textContent!==status)label.textContent=status;
+    const status=this.pad?`${brand} CONNECTED · CONTROLS IN SETTINGS`:pads.length?'CONTROLLER DETECTED · CONFIGURE LAYOUT IN SETTINGS':'CONTROLLER · CONNECT, THEN PRESS A BUTTON';if(label&&label.textContent!==status)label.textContent=status;
     if(!this.pad){if(old){this.clear();this.source='keyboard';if(['playing','extracting'].includes(sim.state)){this.onAction('pause');if(label)label.textContent='CONTROLLER DISCONNECTED · GAME PAUSED';}}return;}
     if(changed){this.clear();return;}
     const pad=this.pad,press=pad.pressed,dialog=[...document.querySelectorAll?.('dialog[open]')||[]].at(-1)||document.querySelector('dialog[open]');
     if(pad.buttons.some(Boolean)||Math.hypot(pad.move.x,pad.move.y)>.1||Math.hypot(pad.aim.x,pad.aim.y)>.1)this.source='gamepad';
-    if(dialog||sim.state==='menu'){
+    if(dialog||!this.playing){this.weaponHold?.reset();this.onCancelWheel?.();
+      if(!dialog&&sim.state!=='menu')return;
       const root=dialog||document.getElementById('menu');
       if(this.menuRoot!==root){this.menuRoot=root;this.menuHeld=false;this.menuWaitRelease=true;}
       this.padGuard=true;
@@ -56,7 +58,12 @@ export class Input {
     this.menuRoot=null;this.menuHeld=false;
     if(this.padGuard){if(!pad.buttons.some(Boolean)&&Math.hypot(pad.move.x,pad.move.y)<.1&&Math.hypot(pad.aim.x,pad.aim.y)<.1)this.padGuard=false;else return;}
     for(const action of ['pause','map','arsenal'])if(press[b[action]]||(action==='map'&&press[17])){this.onAction(action);return;}
-    for(const action of (sim.player.vehicleId?[]:['auto','nextWeapon','prevWeapon']))if(press[b[action]])this.onAction(action);
+    if(!sim.player.vehicleId){
+      if(this.weaponWheelActive&&press[1]){this.clear();return;}
+      this.weaponHold??=new WeaponHold();const event=this.weaponHold.update(pad.buttons,b,now);this.onWeaponWheel?.(event,pad);
+      if(this.weaponWheelActive)return;
+      if(press[b.auto])this.onAction('auto');
+    }else{this.weaponHold?.reset();this.onCancelWheel?.();}
     for(const action of (sim.player.vehicleId?['interact']:['dash','reload','interact','grenade']))if(press[b[action]])this.once[action]=true;
     if(Math.hypot(pad.aim.x,pad.aim.y)>.1){
       const a=worldStick({x:pad.aim.x,y:pad.aim.y*(settings.invertAim?-1:1)}),len=Math.hypot(a.x,a.z),range=5+11*Math.min(1,len),angle=Math.atan2(a.x,a.z);
@@ -83,6 +90,7 @@ export class Input {
     if(pad.pressed[0]){if(active?.tagName==='SELECT'){active.selectedIndex=(active.selectedIndex+1)%active.options.length;active.dispatchEvent(new Event('change',{bubbles:true}));active.dispatchEvent(new Event('input',{bubbles:true}));}else if(active?.tagName==='BUTTON'||active?.tagName==='SUMMARY'||active?.type==='checkbox')active.click();}
   }
   consume(world,auto,sim=null,dt=1/60){
+    if(this.weaponWheelActive){this.once={};return {x:0,z:0,auto:false,firing:false,fireHands:[false,false],aim:null};}
     const k=this.keys;let x=(k.has('KeyD')||k.has('ArrowRight')?1:0)-(k.has('KeyA')||k.has('KeyQ')||k.has('ArrowLeft')?1:0)+this.stick.x;
     let y=(k.has('KeyS')||k.has('ArrowDown')?1:0)-(k.has('KeyW')||k.has('KeyZ')||k.has('ArrowUp')?1:0)+this.stick.y;
     const pad=this.padGuard||this.source&&this.source!=='gamepad'?null:this.pad;if(pad){x+=pad.move.x;y+=pad.move.y;}

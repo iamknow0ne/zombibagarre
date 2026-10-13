@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.31 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.32 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -14,6 +14,8 @@ npm run dev
 Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run build` creates the production site in `dist`; `npm run preview` serves that build.
 
 ## What is in this version
+
+- **4.32 · Controller arsenal:** independent hand cycling, hold-to-select weapon wheels at 18% combat speed, D-pad or shoulder presets, raw-controller calibration for browser-exposed Steam Deck layouts, and fullscreen buttons. [Controls, Steam Deck setup and validation](docs/CONTROLS-4.32.md).
 
 - **4.31 · Living world:** ten-minute day/night cycle, regional clear/rain/snow/fog forecasts, snow traction and melting, rain extinguishing exposed fires into steam, wet-enemy electrical synergy, changing street lights, and three night-only contracts. Settings can pin time/weather or reduce weather particles. [Rules and validation](docs/LIVING-WORLD-4.31.md).
 
@@ -259,9 +261,9 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 | Configure two guns or one blade | B / Arsenal |
 | Pause | P / Escape |
 
-### DualSense / standard gamepads
+### DualSense / Steam Deck / gamepads
 
-Connect by USB or Bluetooth, focus the game and press a button. Settings includes remappable combat buttons, L2/R3 and L2/R2 presets, move/aim dead zones, aim response, aim assist, inversion, vibration intensity and button-symbol selection. Reassigning an occupied button swaps the two actions to avoid conflicts. The active input selects keyboard or PlayStation/Xbox/numbered prompts.
+Connect by USB or Bluetooth, focus the game and press a button. Settings includes remappable combat buttons, L2/R3 and L2/R2 firing presets, D-pad and L1/R1 cycling presets, move/aim dead zones, aim response, aim assist, inversion, vibration intensity and button-symbol selection. Reassigning an occupied button swaps the two actions to avoid conflicts. The active input selects keyboard or PlayStation/Xbox/numbered prompts.
 
 | Action | Default DualSense mapping |
 | --- | --- |
@@ -270,11 +272,16 @@ Connect by USB or Bluetooth, focus the game and press a button. Settings include
 | Grenade / dodge | L1 / Cross |
 | Reload / enter or exit car | Square / Triangle |
 | Drive | R2 accelerate, L2 brake/reverse, left stick steer, Circle handbrake |
-| Cycle right weapon | R1 / D-pad Left |
+| Cycle left / right weapon | D-pad Left / Right; tap to cycle, hold for the weapon wheel |
+| Select in weapon wheel | Right stick; release the held button to equip, Circle to cancel |
 | Toggle auto fire / arsenal | L3 / D-pad Up |
 | Map / pause | Create or touchpad click / Options |
 | Menus | D-pad or left stick moves focus; Cross selects; Circle returns; left/right adjusts values |
 | Atlas | Right stick cursor, left stick pan, L2/R2 zoom, Cross mark, Square clear, R3 centre; D-pad reaches filters and destinations |
+
+Saved custom controls are preserved. The previous “Previous right weapon” binding now cycles the left hand. Select **D-PAD WEAPON WHEELS** or **L1 / R1 WEAPON WHEELS** in Settings to choose a complete cycling layout. The shoulder preset moves ordnance to D-pad Down. Firing and cycling presets can be combined.
+
+Fullscreen is available from the main menu, pause menu and Settings. A browser may require a mouse/touch click to authorize entry; Escape or the same button exits. Steam Deck setup and raw-controller calibration are documented [here](docs/CONTROLS-4.32.md).
 
 Manual controller attacks fire only the chosen hand and override auto fire while held. Either attack button swings an equipped blade. A visible aiming reticle and a Triangle prompt above nearby cars clarify the target. Keyboard/mouse fire still fires the equipped guns together. Disconnecting pauses active play. Release controls after closing a menu to prevent accidental attacks.
 

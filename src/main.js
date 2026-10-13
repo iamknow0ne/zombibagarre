@@ -1,8 +1,11 @@
+import {WeaponWheel,cycleHand,WHEEL_TIME_SCALE} from './rebuild/WeaponWheel.js';
+import {installFullscreen} from './rebuild/Fullscreen.js';
+import './rebuild/weapon-wheel.css';
 import {weatherSettings,weatherLabel,updateWeather} from './rebuild/Weather.js';
 import {LoreUI} from './rebuild/LoreUI.js';
 import {displaySettings,WORLD_LORE} from './rebuild/DisplaySettings.js';
 import './rebuild/controller.css';
-import {weaponLock,throwableLock,permittedLoadout,availableWeapons,canDualWield,enforceProgression,testing} from './rebuild/Progression.js';
+import {weaponLock,throwableLock,permittedLoadout,canDualWield,enforceProgression,testing} from './rebuild/Progression.js';
 import {decorateMenus} from './rebuild/MenuPolish.js';
 import {THROWABLES} from './rebuild/Throwables.js';
 import {navigationRoute} from './rebuild/QuestNavigation.js';
@@ -106,7 +109,7 @@ function renderCamp(){
   $('camp-balance').textContent=`${record.scrap} SCRAP AVAILABLE`;
   $('camp-upgrades').replaceChildren(...META_UPGRADES.map(u=>{const rank=record.meta[u.id]||0,cost=metaCost(rank),b=document.createElement('button');b.className='camp-upgrade';b.disabled=rank>=u.max||record.scrap<cost;b.innerHTML=`<small>RANK ${rank} / ${u.max}</small><b>${u.name}</b><p>${u.description}</p><span>${rank>=u.max?'MAXED':`${cost} SCRAP →`}</span>`;b.onclick=()=>{if(record.scrap<cost||rank>=u.max)return;record.scrap-=cost;record.meta[u.id]=rank+1;save('zb-quarantine-record',record);renderCamp();recordUI();};return b;}));
 }
-function cycleWeapon(direction=1){if(!['playing','extracting'].includes(sim.state))return;const keys=availableWeapons(sim),p=sim.player,next=keys[(keys.indexOf(p.equipped[0])+direction+keys.length)%keys.length];sim.setLoadout([next,...p.equipped.slice(1)]);toast(`RIGHT HAND · ${WEAPONS[next].name}`);}
+function cycleWeapon(direction=1){if(!['playing','extracting'].includes(sim.state)||input?.weaponWheelActive)return;const key=cycleHand(sim,0,direction);if(key)toast(`RIGHT HAND · ${WEAPONS[key].name}`);}
 
 function finish(){
   if(resultSaved)return;resultSaved=true;const won=sim.state==='victory';record.score=Math.max(record.score||0,sim.score);record.wins=(record.wins||0)+(won?1:0);const earned=sim.kills*2+Math.max(0,sim.wave-1)*20+sim.district*100+(won?400:0);record.scrap+=earned;$('result-reward').textContent=`+${earned} SCRAP RECOVERED · SPEND IT AT BASE CAMP`;save('zb-quarantine-record',record);
@@ -154,7 +157,7 @@ function hud(){const p=sim.player,w=weaponStats(p);$('weather-hud').textContent=
 }
 function loop(now){input.pollGamepad(sim,now);dualsense?.update(sim,input,now);const delta=Math.min(.1,(now-last)/1000);last=now;
   if(['playing','extracting'].includes(sim.state)){
-    accumulator=Math.min(.15,accumulator+delta);const frame=input.consume(world,auto,sim,delta);
+    accumulator=Math.min(.15,accumulator+delta*(input.weaponWheelActive?WHEEL_TIME_SCALE:1));const frame=input.consume(world,auto,sim,delta);
     if(frame.destination){if(distance(sim.player,frame.destination)<.3)input.destination=null;else{const dest=sim.blocked(sim.player,frame.destination,.48)?sim.navigate(sim.player,frame.destination):frame.destination;if(dest){const d=distance(sim.player,dest)||1;frame.x=(dest.x-sim.player.x)/d;frame.z=(dest.z-sim.player.z)/d;}}}
     let once=true;
     while(accumulator>=1/60){sim.update(1/60,once?frame:{...frame,dash:false,melee:false,grenade:false,reload:false,interact:false,weapon:null});once=false;accumulator-=1/60;}
@@ -164,12 +167,13 @@ function loop(now){input.pollGamepad(sim,now);dualsense?.update(sim,input,now);c
   frameCount++;if(now-lastFps>1000){fps=Math.round(frameCount*1000/(now-lastFps));frameCount=0;lastFps=now;if(import.meta.env.DEV){$('game').dataset.fps=fps;$('game').dataset.diagnostics=JSON.stringify({seed:sim.seed,state:sim.state,x:+sim.player.x.toFixed(2),z:+sim.player.z.toFixed(2),weapon:sim.player.weapon,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,props:sim.obstacles.length,effects:world.effects.length,geometries:world.renderer.info.memory.geometries});}}
   if(now>noticeUntil)$('announcement').classList.remove('show');if(now>toastUntil)$('toast').textContent='';
   $('damage-flash').style.opacity=Math.max(0,parseFloat($('damage-flash').style.opacity||0)-delta*2);
-  const renderDelta=renderSchedule.next(now,sim.state,document.hidden,world.requestRender);if(renderDelta!==null){world.update(sim,renderDelta,sim.state==='menu');world.requestRender=false;}audio.update(sim.time,['playing','extracting'].includes(sim.state),sim.props.find(v=>v.id===sim.player.vehicleId),sim.weather);
+  const renderDelta=renderSchedule.next(now,sim.state,document.hidden,world.requestRender);if(renderDelta!==null){world.update(sim,renderDelta*(input.weaponWheelActive?WHEEL_TIME_SCALE:1),sim.state==='menu');world.requestRender=false;}audio.update(sim.time,['playing','extracting'].includes(sim.state),sim.props.find(v=>v.id===sim.player.vehicleId),sim.weather);
   requestAnimationFrame(loop);
 }
 try{
   await loadingStage(55,'Building Saint-Roch');
   rebuildMap();$('new-map').onclick=reshuffle;$('new-map-mobile').onclick=reshuffle;input=new Input($('game'),action=>{if(action==='pause')togglePause();if(action==='auto'&&['playing','extracting'].includes(sim.state))toggleAuto();if(action==='arsenal')openArsenal();if(action==='map')openMap();if(action==='nextWeapon')cycleWeapon(1);if(action==='prevWeapon')cycleWeapon(-1);},settings);
+  new WeaponWheel(input,()=>sim,toast);installFullscreen();
   haptics=new Haptics(input,settings);dualsense=new DualSense(settings);input.onStopFeedback=()=>{haptics.stop();dualsense.stop();};controllerUI=new ControllerUI(input,settings,haptics,dualsense,()=>save('zb-quarantine-settings',settings),toggleAuto);controllerMap=new ControllerMap(()=>sim,input);input.onMapInput=(pad,dt)=>controllerMap.poll(pad,dt);$('vehicle-world-prompt').onclick=()=>{input.once.interact=true;};window.addEventListener('pagehide',()=>{haptics.stop();dualsense.disconnect();});
   touchUI=new TouchUI(input,settings,()=>save('zb-quarantine-settings',settings));
   rpgUI=new RPGUI({getSim:()=>sim,getWorld:()=>world,input,persist:()=>{rpgProfile=sim.profile;equipped=permittedLoadout(sim,equipped);loadout=equipped[0];if(throwableLock(sim,equippedThrowable))equippedThrowable='frag';updateLoadout();save('zb-rpg-profile',rpgProfile);},onPause:()=>showDialog('pause-dialog'),onEquipRelic:key=>{equipped=[key];loadout=key;updateLoadout();},onMap:()=>{const origin=rpgUI.returnState;rpgUI.returnState='map';rpgUI.dialog.close();openMap();mapReturn=origin;},onIdentity:key=>{skin=key;settings.skin=key;sim.skin=key;sim.player.skin=key;$('skin-select').value=key;save('zb-quarantine-settings',settings);},onLoadout:keys=>{equipped=[...keys];loadout=keys[0];updateLoadout();}});
@@ -207,5 +211,5 @@ try{
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('rpgQA')){const {installRPGQA}=await import('../dev/rpg-qa.js');installRPGQA(input,()=>sim,()=>world);}
   recordUI();world.applySettings(settings);world.update(sim,0,true);await loadingStage(88,'Warming lights, materials and controls');if(world.renderer.compileAsync)await world.renderer.compileAsync(world.scene,world.camera);last=performance.now();requestAnimationFrame(loop);
   // Read-only diagnostics for local QA. No gameplay mutation surface is exposed.
-  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.31.0'})});
+  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.32.0'})});
 }catch(error){console.error(error);$('error-detail').textContent='WebGL is needed to render Saint-Roch. Enable hardware acceleration or try a browser with WebGL support.';$('error').hidden=false;}

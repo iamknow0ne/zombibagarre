@@ -1,16 +1,17 @@
 // Hand 0 is the right/main hand; hand 1 is the left/off hand.
-export const BINDINGS={rightFire:11,leftFire:6,dash:0,reload:2,interact:3,grenade:4,nextWeapon:5,prevWeapon:14,arsenal:12,map:8,auto:10,pause:9};
-export const ACTION_NAMES={rightFire:'Right weapon / melee',leftFire:'Left weapon',dash:'Dodge',reload:'Reload both weapons',interact:'Enter / exit vehicle',grenade:'Throw ordnance',nextWeapon:'Next right weapon',prevWeapon:'Previous right weapon',arsenal:'Open arsenal',map:'Open map',auto:'Toggle auto fire',pause:'Pause'};
-export const CONTROL_DEFAULTS={bindings:{...BINDINGS},moveDeadzone:.2,aimDeadzone:.18,aimSensitivity:1,invertAim:false,aimAssist:true,vibration:70,promptStyle:'auto',autoFire:true,adaptiveTriggers:false,drivingStyle:'assisted',steerSensitivity:1};
+export const BINDINGS={rightFire:11,leftFire:6,dash:0,reload:2,interact:3,grenade:4,nextWeapon:15,leftWeapon:14,arsenal:12,map:8,auto:10,pause:9};
+export const ACTION_NAMES={rightFire:'Right weapon / melee',leftFire:'Left weapon',dash:'Dodge',reload:'Reload both weapons',interact:'Enter / exit vehicle',grenade:'Throw ordnance',nextWeapon:'Right hand · tap cycle / hold wheel',leftWeapon:'Left hand · tap cycle / hold wheel',arsenal:'Open arsenal',map:'Open map',auto:'Toggle auto fire',pause:'Pause'};
+export const CONTROL_DEFAULTS={bindings:{...BINDINGS},gamepadLayout:'auto',moveDeadzone:.2,aimDeadzone:.18,aimSensitivity:1,invertAim:false,aimAssist:true,vibration:70,promptStyle:'auto',autoFire:true,adaptiveTriggers:false,drivingStyle:'assisted',steerSensitivity:1};
 export function controlSettings(value={}){
  const out={...CONTROL_DEFAULTS,...value,bindings:{...BINDINGS}};
- const used=new Set();for(const key of Object.keys(BINDINGS)){const v=value.bindings?.[key]??BINDINGS[key];if(!Number.isInteger(v)||v<0||v>15||used.has(v)){out.bindings={...BINDINGS};break;}out.bindings[key]=v;used.add(v);}
+ const used=new Set();for(const key of Object.keys(BINDINGS)){const v=value.bindings?.[key]??(key==='leftWeapon'?value.bindings?.prevWeapon:undefined)??BINDINGS[key];if(!Number.isInteger(v)||v<0||v>15||used.has(v)){out.bindings={...BINDINGS};break;}out.bindings[key]=v;used.add(v);}
  for(const [key,min,max]of [['moveDeadzone',.05,.4],['aimDeadzone',.05,.4],['aimSensitivity',.4,2],['vibration',0,100],['steerSensitivity',.6,1.4]])out[key]=Number.isFinite(+out[key])?Math.max(min,Math.min(max,+out[key])):CONTROL_DEFAULTS[key];
+ if(!['auto','standard'].includes(out.gamepadLayout))out.gamepadLayout='auto';
  if(!['racing','assisted'].includes(out.drivingStyle))out.drivingStyle=CONTROL_DEFAULTS.drivingStyle;
  if(!['auto','playstation','xbox','generic'].includes(out.promptStyle))out.promptStyle='auto';return out;
 }
 export function rebind(bindings,action,button){const next={...bindings};const other=Object.keys(next).find(k=>k!==action&&next[k]===button);if(other)next[other]=next[action];next[action]=button;return next;}
-export function controllerFamily(id='',override='auto'){return override!=='auto'?override:/xbox|xinput|045e/i.test(id)?'xbox':/dualsense|dualshock|playstation|054c|sony|wireless controller/i.test(id)?'playstation':'generic';}
+export function controllerFamily(id='',override='auto'){return override!=='auto'?override:/xbox|xinput|045e|steam|valve|28de/i.test(id)?'xbox':/dualsense|dualshock|playstation|054c|sony|wireless controller/i.test(id)?'playstation':'generic';}
 const PS=['×','○','□','△','L1','R1','L2','R2','CREATE','OPTIONS','L3','R3','↑','↓','←','→','PS'];
 const XB=['A','B','X','Y','LB','RB','LT','RT','VIEW','MENU','LS','RS','↑','↓','←','→','XBOX'];
 export function buttonName(index,family='playstation'){return (family==='playstation'?PS:family==='xbox'?XB:null)?.[index]??`B${index+1}`;}
