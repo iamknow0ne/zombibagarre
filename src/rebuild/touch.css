@@ -72,3 +72,40 @@
  .touch-layout .upgrade-choice{display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 12px;min-height:0;padding:14px}
  .touch-layout .upgrade-choice .upgrade-number{grid-row:1/5;margin:0;font-size:24px}.touch-layout .upgrade-choice b{margin:0;font-size:23px}.touch-layout .upgrade-choice .choose{padding-top:6px}
 }
+/* Field controls: symbols stay legible at phone size; every target remains 44px+. */
+.action-symbol{display:inline-flex;align-items:center;justify-content:center;pointer-events:none}
+.action-symbol svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.icon-action{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.action-value{position:absolute;right:1px;bottom:0;font:bold 10px/14px var(--mono);padding:0 3px;background:var(--coal);color:var(--bone);border-radius:3px;pointer-events:none}
+.action-value:empty{display:none}
+#field-notices{position:absolute;right:24px;top:250px;width:44px;height:44px;background:#142125e8;border:1px solid var(--line);pointer-events:auto;color:var(--muted)}
+#field-notices[data-pending=true]{color:var(--bone);border-color:#f1814799}
+#field-notices .action-value,.notice-count{background:var(--orange);color:var(--coal);border-radius:8px;min-width:16px;padding:1px 4px;text-align:center;font:bold 10px/14px var(--mono)}
+#field-notices .action-value{top:1px;bottom:auto;right:1px}
+.notice-count{display:inline-block;margin-left:7px;vertical-align:middle}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.field-notice{display:grid;grid-template-columns:28px minmax(0,1fr);column-gap:12px;padding:18px 0;border-bottom:1px solid var(--line)}
+.field-notice>.dossier-icon{grid-row:1/4;color:var(--orange)}
+.field-notice p{grid-column:2;font-size:13px;line-height:1.6;color:var(--muted);margin:8px 0 12px}
+.field-notice button{grid-column:2;justify-self:start;min-height:44px;padding:10px 14px;border:1px solid var(--line);font:11px var(--mono)}
+.touch-layout #touch-controls .touch-action{width:48px;height:48px;min-height:48px;padding:8px;border-radius:50%}
+.touch-layout #touch-reload{left:calc(var(--touch-left) + 56px)}
+.touch-layout #touch-grenade{right:calc(var(--touch-right) + 56px)}
+.touch-layout #touch-controls .touch-tools{right:calc(var(--touch-right) + 52px)}
+.touch-layout #touch-controls .touch-tools button{width:44px;height:44px;padding:7px}
+.touch-layout #touch-auto[aria-pressed=true]{border-color:var(--orange);color:#ffd3a9}
+.touch-layout #touch-auto[aria-pressed=false] .action-symbol{opacity:.6}
+.touch-layout #map-action{width:44px}
+.touch-layout #map-action>span{display:flex}
+.touch-layout #map-action .action-symbol{padding:0}
+.touch-layout #field-notices{top:calc(var(--touch-top) + 48px);right:calc(var(--touch-right) + 104px);border-radius:3px}
+.touch-layout #hud .weapon-hud{width:calc(100% - var(--touch-left) - var(--touch-right) - 156px)}
+.touch-layout .vehicle-readout #vehicle-action{width:48px;height:48px;padding:8px;border-radius:50%}
+.touch-layout .drive-touch button.icon-action{width:52px;min-width:52px;height:52px;padding:10px;border-radius:50%}
+@media (orientation:landscape) and (max-height:600px){.touch-layout #field-notices{right:calc(var(--touch-right) + 52px)}}
+#rpg-dialog.notices-open #rpg-character{display:none}
+#rpg-dialog.notices-open .rpg-layout{grid-template-columns:minmax(0,1fr)}
+.touch-icon-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 8px;padding:14px 0;font:10px var(--mono);color:var(--muted)}
+.touch-icon-legend .icon-action{gap:7px;justify-content:flex-start}.touch-icon-legend .action-symbol svg{width:20px;height:20px;color:var(--bone)}
+.touch-layout.driving #field-notices{right:calc(var(--touch-right) + 52px)}
+.touch-layout .driving-hud{width:calc(100% - var(--touch-left) - var(--touch-right) - 112px)}

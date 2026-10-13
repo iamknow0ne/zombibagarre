@@ -1,5 +1,14 @@
 import {UPGRADES,UPGRADE_TIERS,rankOf} from './Upgrades.js';
 const paths={
+ swap:'M3 7h17l-4-4m4 4-4 4M21 17H4l4-4m-4 4 4 4',
+ dodge:'M2 9h5m-6 5h5m5-10 4 1 3 5-5 3-3 7m3-7 5 5h4M9 9l3-4m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0',
+ bell:'M5 17h14l-2-4V8a5 5 0 0 0-10 0v5Zm5 3a2 2 0 0 0 4 0M12 1v2',
+ pause:'M7 4v16m10-16v16',
+ door:'M3 21V3h11v18H3Zm5-1V4m7 8h8m-3-3 3 3-3 3',
+ brake:'M7 3a10 10 0 0 0 0 18M17 3a10 10 0 0 1 0 18M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm0 3v5m0 2v1',
+ reverse:'M18 20V9a5 5 0 0 0-10 0v8m-4-4 4 4 4-4',
+ talk:'M3 3h18v13H9l-6 5Zm4 5h10M7 12h7',
+
  axe:'M4 22 17 3m-5 2 6-3 4 6-6 5-5-4M3 18l3 3',
  dualgun:'M2 5h8v5H6v8H2Zm12 0h8v13h-4v-8h-4ZM6 8h3m6 0h3',
  tree:'M12 3v6M4 13V9h16v4M12 9v8M2 13h4v4H2Zm8 4h4v4h-4Zm8-4h4v4h-4ZM10 1h4v4h-4Z',
