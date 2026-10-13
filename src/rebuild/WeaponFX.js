@@ -47,6 +47,7 @@ export function projectileMesh(b){
 }
 export function evolutionFX(world,e){const color=WEAPON_FINISHES[e.weapon].accent;for(let i=0;i<18;i++){const a=i/18*Math.PI*2;streak(world,e.x,1,e.z,Math.sin(a)*2,2+world.random()*2,Math.cos(a)*2,color,.65,1);} }
 export function cutWave(world,e){
+ if(e.weapon==='hammer'){const m=world.ring(e.radius,0xd8bc90,.06);m.position.set(e.x,.12,e.z);world.scene.add(m);world.effects.push({mesh:m,life:.35,max:.35,ring:true});world.smoke(e.x,e.z,6,.1);return;}
  const f=WEAPON_FINISHES[e.weapon],g=new T.Group(),count=e.weapon==='dual'?2:1;
  for(let i=0;i<count;i++){const m=new T.Mesh(new T.TorusGeometry(e.radius*.65,.022,4,32,Math.PI*.8),new T.MeshBasicMaterial({color:f.accent,transparent:true,opacity:.7,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide}));m.rotation.set(Math.PI/2,i?-.2:.2,e.angle-.4*Math.PI);g.add(m);}
  g.position.set(e.x,.9,e.z);world.scene.add(g);world.effects.push({mesh:g,kind:'cutwave',life:.24,max:.24,vx:Math.sin(e.angle)*8,vz:Math.cos(e.angle)*8});

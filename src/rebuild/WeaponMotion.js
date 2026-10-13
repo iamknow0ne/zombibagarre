@@ -1,3 +1,4 @@
+import {MELEE_PROFILES} from './MeleeWeapons.js';
 // Shared timing keeps the visible contact, damage, sound and haptics on one clock.
 const clamp01=n=>Math.max(0,Math.min(1,n));
 export const smooth=n=>{n=clamp01(n);return n*n*(3-2*n);};
@@ -19,7 +20,7 @@ export function recoilAt(key,age){
 }
 export function meleeTiming(key,combo=0,multiplier=1){
  const fast=key==='dual',finisher=combo===2;
- const duration=(fast?(finisher?.43:.32):(finisher?.72:.6))*Math.max(.45,multiplier);
+ const profile=MELEE_PROFILES[key]||MELEE_PROFILES.katana,duration=(finisher?profile.finish:profile.duration)*Math.max(.45,multiplier);
  return {duration,contact:duration*(fast?.29:.34),cutEnd:duration*.57};
 }
 // Smooth key poses: guard -> anticipation -> contact -> follow through -> guard.
@@ -33,7 +34,12 @@ export function meleePose(key,combo,progress,variant=0){
  let a=keys[0],b=keys[1];for(let i=1;i<keys.length;i++){if(f<=keys[i][0]){a=keys[i-1];b=keys[i];break;}}
  const u=smooth((f-a[0])/(b[0]-a[0])),lerp=i=>a[i]+(b[i]-a[i])*u;
  const arc=[1,.86,1.12,.92][variant%4],height=[0,.12,-.09,.2][variant%4]*Math.sin(f*Math.PI)**2;
- return {twist:lerp(1)*arc,height:lerp(2)+height,reach:lerp(3)*(variant===3?1.1:1),side,finisher,active:f>=.2&&f<=.62};
+ const pose={twist:lerp(1)*arc,height:lerp(2)+height,reach:lerp(3)*(variant===3?1.1:1),side,finisher,active:f>=.2&&f<=.62};
+ if(key==='spear'){pose.twist*=.2;pose.reach*=2.1;pose.height*=.25;}
+ if(key==='axe'){pose.twist*=1.25;pose.height+=Math.sin(f*Math.PI)**2*.12;}
+ if(key==='hammer'){pose.twist*=.3;pose.height=lerp(2)*1.8+Math.sin(Math.min(1,f/.57)*Math.PI)*.32+height*.4;}
+ if(f===0||f===1){pose.twist=0;pose.height=0;pose.reach=0;}
+ return pose;
 }
 export function reloadPose(progress){
  const f=clamp01(progress);

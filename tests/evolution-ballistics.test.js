@@ -9,7 +9,7 @@ import {buildWeapon} from '../src/rebuild/WeaponRig.js';
 import {circleContact,stepFragment} from '../src/rebuild/Ballistics.js';
 const game=()=>{const s=new Simulation({layout:{bounds:{minX:-30,maxX:30,minZ:-30,maxZ:30},cover:[],spawnPoints:[]}});s.start();s.toSpawn=999;s.spawnTimer=9999;s.events=[];return s;};
 const bullet=(extra={})=>({id:999,x:0,z:0,vx:0,vz:100,life:1,damage:25,pierce:0,weapon:'carbine',hitIds:[],...extra});
-test('all ten weapons have four progressive tiers and mastery is bounded, run-local and shared by matching guns',()=>{
+test('all weapon families have four progressive tiers and mastery is bounded, run-local and shared by matching guns',()=>{
  for(const key of Object.keys(WEAPONS)){const s=game(),p=s.player;assert.ok(WEAPON_FINISHES[key]);let previous=0;for(let tier=0;tier<4;tier++){p.mastery[key]=MASTERY_THRESHOLDS[tier];const w=weaponStats(p,key);assert.equal(w.tier,tier);assert.ok(w.damage>previous);assert.ok(magazineSize(p,key)>=WEAPONS[key].magazine);previous=w.damage;}s.setLoadout([key,key]);assert.equal(weaponTier(p,key),3);s.setLoadout(['smg']);s.setLoadout([key]);assert.equal(weaponTier(p,key),3);s.start(key);assert.equal(weaponTier(s.player,key),0);}
  const p={};assert.deepEqual(addMastery(p,'carbine',1e9),[1,2,3]);assert.equal(p.mastery.carbine,8000);assert.deepEqual(addMastery(p,'carbine',NaN),[]);
 });
@@ -24,8 +24,8 @@ test('signature weapons retain distinct mechanics and actual shot variations cyc
  s.setLoadout(['revolver']);for(let i=0;i<4;i++)s.fireWeapon('revolver',{x:0,z:20});assert.deepEqual(s.events.filter(e=>e.type==='shoot').map(e=>e.variant),[0,1,2,3]);assert.equal(s.bullets.filter(b=>b.explosive>0).length,1);
  for(const key of Object.keys(WEAPONS)){const poses=new Set();for(let v=0;v<4;v++){const pose=WEAPONS[key].melee?meleePose(key,0,.4,v):shotPose(key,.035,v);poses.add(JSON.stringify(pose));}assert.equal(poses.size,4,key);if(!WEAPONS[key].melee)for(const f of [0,1])assert.ok(Math.abs(weaponReloadPose(key,f).magazine)<1e-9);}
 });
-test('all forty weapon models change geometry with tier without creating blades for firearms',()=>{
- const fingerprints=new Set();for(const key of Object.keys(WEAPONS)){let previous=0;for(let tier=0;tier<4;tier++){const g=buildWeapon(key,{batch:()=>{}},tier),bounds=new T.Box3().setFromObject(g);let vertices=0;g.traverse(o=>{if(o.geometry)vertices+=o.geometry.attributes.position.count;});assert.ok(vertices>previous,key+' '+tier);previous=vertices;assert.ok(!bounds.isEmpty());assert.ok(g.userData.tip.z>0);assert.equal(g.userData.key,key);assert.equal(g.userData.tier,tier);fingerprints.add([key,vertices,bounds.getSize(new T.Vector3()).toArray()].join(':'));}}assert.equal(fingerprints.size,40);
+test('all weapon models change geometry with tier without creating blades for firearms',()=>{
+ const fingerprints=new Set();for(const key of Object.keys(WEAPONS)){let previous=0;for(let tier=0;tier<4;tier++){const g=buildWeapon(key,{batch:()=>{}},tier),bounds=new T.Box3().setFromObject(g);let vertices=0;g.traverse(o=>{if(o.geometry)vertices+=o.geometry.attributes.position.count;});assert.ok(vertices>previous,key+' '+tier);previous=vertices;assert.ok(!bounds.isEmpty());assert.ok(g.userData.tip.z>0);assert.equal(g.userData.key,key);assert.equal(g.userData.tier,tier);fingerprints.add([key,vertices,bounds.getSize(new T.Vector3()).toArray()].join(':'));}}assert.equal(fingerprints.size,Object.keys(WEAPONS).length*4);
 });
 test('swept bullets hit nearest enemy before cover and cover shields enemies behind it',()=>{
  for(const behind of [false,true]){const s=game(),e=s.spawnEnemy('brute',0,behind?4.8:1.7),hp=e.health;const wall={id:'wall',kind:'barrier',x:0,z:3.5,w:4,d:.2,health:999,maxHealth:999};s.props=[wall];s.obstacles=s.props;s.bullets=[bullet()];s.updateBullets(.05);assert.equal(e.health<hp,!behind);assert.equal(wall.health<999,behind);}

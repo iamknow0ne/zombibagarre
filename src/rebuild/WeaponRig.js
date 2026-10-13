@@ -23,7 +23,7 @@ export function solveArm(arm,target,orientation,side){
 }
 
 export function animateWeapons(character,state,t,dt,kit){
- const d=character.userData,body=d.body,keys=WEAPONS[state.weapon]?.melee?(state.weapon==='dual'?['dual','dual']:['katana']):normalizeLoadout([state.weapon,...(state.equipped||[]).slice(1)]);
+ const d=character.userData,body=d.body,keys=WEAPONS[state.weapon]?.melee?(state.weapon==='dual'?['dual','dual']:[state.weapon]):normalizeLoadout([state.weapon,...(state.equipped||[]).slice(1)]);
  d.weaponRigs??=[];
  for(let hand=0;hand<2;hand++){
   const key=keys[hand],old=d.weaponRigs[hand];
@@ -46,7 +46,7 @@ export function animateWeapons(character,state,t,dt,kit){
   if(state.dash>0){g.rotation.x+=.5;g.position.z-=.08;}
   if(blade){
    const active=state.swing>0&&state.swingWeapon===key,progress=active?1-state.swing/state.swingDuration:0,pose=meleePose(key,state.swingCombo,progress,state.swingVariant||0);
-   const striking=key==='katana'||hand===(state.swingCombo===1?1:0)||pose.finisher;
+   const striking=key!=='dual'||hand===(state.swingCombo===1?1:0)||pose.finisher;
    const cut=striking?pose.twist:pose.twist*-.4;
    g.position.set(side*(two?.34:.02)+cut*.07,1.24+(striking?pose.height*.75:0),.25+pose.reach*.85);
    g.rotation.set(-.35-(striking?pose.height*1.8:0),side*.15+cut*2.2,side*.14-cut*.5);

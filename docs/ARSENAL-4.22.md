@@ -1,0 +1,11 @@
+# Expanded field armoury / 4.22
+
+Design: extend the existing survivor's armoury, a dense equipment screen with actual model portraits and labeled selections. Coal/bone/amber palette, existing display and mono typography, square 44px controls, 8/12/16 spacing. The throwable selector sits with the main/off-hand slots; descriptions explain effects, common supply charges and controls. No extra phone HUD controls or decorative motion. Functional motion distinguishes spear thrusts, axe sweeps and hammer overhead strikes; existing sword styles remain intact.
+
+Three melee families: HATCHET execution axe (wide sweeps), PILGRIM spear (long narrow thrust), GRAVEMAKER hammer (slow stagger and demolition). Each uses four pose variations, a three-hit combo and four mastery tiers. Three throwable alternatives alongside fragmentation: fire bottle, frost canister and shock charge. All share expedition ordnance supplies, preventing inventory refills by switching types.
+
+Verification (2026-10-13): 190 tests passed across combat, damage feedback, animation contact timing, reach, loadout exclusivity, upgrades, elemental interactions and shared ammunition. The subsequent elemental blood-spray correction passed all five surface blood tests. Production build passed; the existing Three.js bundle-size advisory remains.
+
+Browser QA: all three melee models inspected at contact in the staged range. Fire, frost and shock detonations inspected; frost left three chilled enemies with zero burning enemies after the residual flames faded. Desktop armoury showed all 13 weapons and four throwables. At a 390px mobile preview width, equipped PILGRIM and WHITEOUT, confirmed off-hand disabled, entered a wave, and used the actual HUD button to consume a frost charge (5 → 4). No browser error logs in the mobile preview. These are browser and simulated mobile checks; physical phone and controller haptics were not tested.
+
+Design review: existing field-armoury typography, palette, layout and interaction retained. No new combat HUD buttons. Hierarchy 8/10, product specificity 9/10, responsive usability 8/10, consistency 9/10; generic AI styling risk 1/10. A narrow phone stacks the three labeled selectors and scrolls the existing weapon grid.

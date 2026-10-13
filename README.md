@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.21 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.22 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -17,7 +17,7 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 
 - Open City is the default: a persistent generated city with one of four street-network families, variable nonrectangular boundaries and dimensions, independently destructible building wings, smaller infill houses, parks, canals, road bridges, discoverable supply landmarks and parked vehicles. Roads, plot positions, architecture, water and parking vary by seed. Destruction persists between waves.
 - Seeded procedural district maps in Biome Campaign: four nonrectangular outlines, varying dimensions, cover placement, fuel clusters and boundary-aligned buildings vary each run. **New Map** previews a different route. The same run seed produces the same eight district layouts. These are bounded combat arenas, not infinite terrain.
-- Ten weapons: carbine, shotgun, SMG, heavy revolver, piercing rifle, flamethrower, grenade launcher, electric projector, katana and dual swords. Pair any two firearms, including matching guns, with independent magazines and reloads. Selecting either blade replaces both guns.
+- Thirteen weapons: carbine, shotgun, SMG, heavy revolver, piercing rifle, flamethrower, grenade launcher, electric projector, katana, dual swords, execution axe, war spear and demolition hammer. Pair any two firearms, including matching guns, with independent magazines and reloads. Selecting any melee weapon replaces both guns. Four throwable types share ordnance supplies: fragmentation, fire bottle, frost canister and shock charge.
 - Four damage synergies plus matching-gun akimbo timing, 32 upgrade families with four tiers each, four perk combinations and eight supply pickups. Scrap buys four kinds of permanent upgrades, each with five ranks, at base camp.
 - Burning enemies spread fire to nearby enemies and destructible trees/props. Electricity chains and marks charged targets. Frost slows enemies and gives visible ice feedback.
 - Progressive building damage: bullet and blast scars, shattered panes, three stages of missing wall sections, then final collapse. Explosions damage the nearest wall face, so grenades work against the sides of large buildings.
@@ -27,6 +27,14 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters with four bespoke articulated rigs, building-scale variants, two phases and a paired fight. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.22 — Expanded field armoury
+
+- Three new melee weapons: HATCHET sweeps through crowds, PILGRIM delivers long narrow thrusts, and GRAVEMAKER trades speed for knockback and cover damage.
+- Each has three-hit combos, four pose variations and four mastery tiers with evolving models and signature finishers.
+- Three throwable alternatives: WILDFIRE ignites enemies and flammable scenery; WHITEOUT quenches fire and chills enemies; BLACKOUT deals extra damage to wet enemies and reaches farther in water.
+- Select throwable type in the armoury. All four types use the same supplies and the existing keyboard, touch and controller throw action. Changing type never replenishes ammunition.
+- See [design and verification](docs/ARSENAL-4.22.md).
 
 ## New in 4.21 — Street atlas & quest guidance
 

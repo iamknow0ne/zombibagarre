@@ -14,7 +14,23 @@ export function createWeaponMesh(key,kit,tier=0){
  const bolt=(p,x,y,z)=>tube(p,steel,x,y,z,.016,.014);
  const hose=(p,points,r=.025)=>{const curve=new T.CatmullRomCurve3(points.map(a=>new T.Vector3(...a))),o=new T.Mesh(new T.TubeGeometry(curve,16,r,6,false),rubber);p.add(o);};
  const chamfer=(p,m,w,h,l,z,y=.1)=>{const shape=new T.Shape(),q=.025;shape.moveTo(-w/2+q,-h/2);shape.lineTo(w/2-q,-h/2);shape.lineTo(w/2,-h/2+q);shape.lineTo(w/2,h/2-q);shape.lineTo(w/2-q,h/2);shape.lineTo(-w/2+q,h/2);shape.lineTo(-w/2,h/2-q);shape.lineTo(-w/2,-h/2+q);shape.closePath();const o=new T.Mesh(new T.ExtrudeGeometry(shape,{depth:l,bevelEnabled:false}),m);o.position.set(0,y,z-l/2);o.castShadow=true;p.add(o);return o;};
- if(key==='katana'||key==='dual'){
+ if(['axe','spear','hammer'].includes(key)){
+  const length=key==='spear'?2.1:key==='axe'?1.23:1.12;
+  tube(c,body,0,0,length*.38,.045,length*.95);tube(c,trim,0,0,-.12,.065,.13);
+  for(let i=0;i<9;i++)ring(c,i%2?rubber:trim,0,0,-.08+i*.044,.05,.007);
+  for(const z of [.34,length*.8])tube(c,steel,0,0,z,.06,.08);
+  if(key==='spear'){
+   const shape=new T.Shape();shape.moveTo(0,0);shape.lineTo(-.13,.2);shape.lineTo(0,.7);shape.lineTo(.13,.2);shape.closePath();const blade=new T.Mesh(new T.ExtrudeGeometry(shape,{depth:.025,bevelEnabled:true,bevelSize:.01,bevelThickness:.006,bevelSegments:1}),steel);blade.rotation.x=Math.PI/2;blade.position.z=length-.5;c.add(blade);box(c,trim,0,.018,length-.18,.022,.018,.55);
+  }else if(key==='axe'){
+   const shape=new T.Shape();shape.moveTo(-.04,-.2);shape.lineTo(.23,-.3);shape.quadraticCurveTo(.58,-.34,.63,.02);shape.lineTo(.52,.28);shape.lineTo(.16,.2);shape.lineTo(-.04,.13);shape.closePath();const edge=new T.Mesh(new T.ExtrudeGeometry(shape,{depth:.07,bevelEnabled:true,bevelSize:.02,bevelThickness:.014,bevelSegments:1}),steel);edge.rotation.x=Math.PI/2;edge.position.z=length;edge.position.y=.035;c.add(edge);box(c,body,.14,.075,length,.22,.08,.27);bolt(c,.2,.13,length);
+  }else{
+   chamfer(c,steel,.65,.28,.32,length,0);for(const x of [-.34,.34])box(c,body,x,0,length,.08,.34,.38);box(c,trim,0,.15,length,.2,.04,.3);for(const x of [-.2,.2])bolt(c,x,.17,length);
+  }
+  if(tier>=1)for(const z of [.36,.45,.54])tube(c,trim,0,0,z,.062,.035);
+  if(tier>=2)for(const x of [-.09,.09])box(c,steel,x,0,length-.22,.04,.1,.32);
+  if(tier===3){for(let i=0;i<7;i++)ring(c,hot,0,0,.55+i*.08,.058,.008);box(c,hot,key==='axe'?.4:0,.16,length,.09,.018,.25);}
+  g.userData.tip=new T.Vector3(key==='axe'?.54:0,0,length+(key==='spear'?.2:.18));g.userData.support=new T.Vector3(0,0,-.10);
+ }else if(key==='katana'||key==='dual'){
   const len=key==='dual'?1.08:1.48,width=key==='dual'?.075:.055;
   tube(c,rubber,0,0,.02,.055,.3);for(let i=0;i<7;i++){const wrap=box(c,i%2?trim:body,0,.044,-.1+i*.035,.082,.013,.022);wrap.rotation.y=i%2?.4:-.4;}
   const guard=ring(c,trim,0,0,.2,key==='dual'?.11:.13,.02);guard.scale.y*=key==='dual'?.6:1;

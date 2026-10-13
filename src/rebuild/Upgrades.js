@@ -1,3 +1,4 @@
+import {MELEE_KEYS} from './MeleeWeapons.js';
 // Run-local perk ranks. Every offer describes the incremental benefit of its next tier.
 export const UPGRADE_TIERS=[
  {name:'Common',mark:'I',color:'#c6d0b9'}, {name:'Rare',mark:'II',color:'#79ccec'},
@@ -28,20 +29,20 @@ export const UPGRADES=[
  define('brawler','Point blank','CLOSE RANGE','attack','fist',r=>`Direct weapon hits within 4m deal +${pct(.15*boost[r-1])}% damage.`,(p,b)=>add(p,'closeDamage',.15*b)),
  define('longshot','Distant thunder','LONG RANGE','attack','scope',r=>`Direct weapon hits beyond 10m deal +${pct(.2*boost[r-1])}% damage.`,(p,b)=>add(p,'farDamage',.2*b)),
  define('bloodhound','Blood in the water','FINISHING','attack','drop',r=>`Direct weapon hits against enemies below half health deal +${pct(.2*boost[r-1])}% damage.`,(p,b)=>add(p,'woundedDamage',.2*b)),
- define('cuts','Sword saint','BLADECRAFT','attack','swords',r=>`Blade damage +${pct(.2*boost[r-1])}%. Three-hit finishers heal ${Math.round(3*boost[r-1])} HP on contact.`,(p,b)=>{add(p,'sliceDamage',.2*b);add(p,'finisherHeal',Math.round(3*b));},{requires:p=>p.equipped.some(k=>['katana','dual'].includes(k))}),
+ define('cuts','Sword saint','BLADECRAFT','attack','swords',r=>`Blade damage +${pct(.2*boost[r-1])}%. Three-hit finishers heal ${Math.round(3*boost[r-1])} HP on contact.`,(p,b)=>{add(p,'sliceDamage',.2*b);add(p,'finisherHeal',Math.round(3*b));},{requires:p=>p.equipped.some(k=>MELEE_KEYS.includes(k))}),
  define('pyromaniac','Cinder heart','FIRE SPECIALIST','attack','embers',r=>`Weapon fire damage and burn ticks +${pct(.25*boost[r-1])}%.`,(p,b)=>add(p,'fireDamage',.25*b),{requires:p=>p.burn>0||p.equipped.includes('flame')}),
  define('conductor','High voltage','ARC SPECIALIST','attack','bolt',r=>`Electric weapon damage +${pct(.25*boost[r-1])}%.`,(p,b)=>add(p,'electricDamage',.25*b),{requires:p=>p.equipped.includes('arc')}),
  define('shatter','Brittle bones','FROST SPECIALIST','attack','crystal',r=>`Direct weapon hits against slowed enemies deal +${pct(.2*boost[r-1])}% damage.`,(p,b)=>add(p,'slowDamage',.2*b),{requires:p=>p.frost>0||p.equipped.includes('arc')}),
  define('afterimage','Ghost step','DODGE DEFENCE','survival','ghost',r=>`Dodge-shield allowance +${Math.round(6*boost[r-1])}. Each dodge refills to this allowance.`,(p,b)=>add(p,'dashShield',Math.round(6*b))),
  define('dashpower','Ambush','DODGE ATTACK','attack','arrow',r=>`After a dodge, direct weapon damage +${pct(.15*boost[r-1])}% for 3 seconds.`,(p,b)=>add(p,'dashDamage',.15*b)),
- define('medicreload','Breathe between shots','RELOAD RECOVERY','survival','medical',r=>`Completing a reload heals ${Math.round(2*boost[r-1])} HP.`,(p,b)=>add(p,'reloadHeal',Math.round(2*b)),{requires:p=>!p.equipped.some(k=>['katana','dual'].includes(k))}),
+ define('medicreload','Breathe between shots','RELOAD RECOVERY','survival','medical',r=>`Completing a reload heals ${Math.round(2*boost[r-1])} HP.`,(p,b)=>add(p,'reloadHeal',Math.round(2*b)),{requires:p=>!p.equipped.some(k=>MELEE_KEYS.includes(k))}),
  define('scavenger','Waste nothing','SUPPLY RECOVERY','survival','pack',r=>`Every collected supply heals ${Math.round(3*boost[r-1])} extra HP.`,(p,b)=>add(p,'supplyHeal',Math.round(3*b))),
  define('student','Quick study','MASTERY','utility','book',r=>`Earn ${pct(.15*boost[r-1])}% more mastery from enemy damage.`,(p,b)=>add(p,'masteryBonus',.15*b)),
  define('engineer','Roadside repair','MOTOR POOL','utility','wheel',r=>`At each new wave, repair your occupied vehicle by ${pct(.1*boost[r-1])}% of its maximum hull.`,(p,b)=>add(p,'vehicleRepair',.1*b),{requires:p=>!!p.vehicleId})
 ];
-const projectileLoadout=p=>p.equipped.some(k=>!['katana','dual','arc','launcher'].includes(k));
-const firearmLoadout=p=>p.equipped.some(k=>!['katana','dual'].includes(k));
-for(const u of UPGRADES){if(['piercing','frost'].includes(u.id))u.requires=projectileLoadout;if(u.id==='magazine')u.requires=firearmLoadout;if(u.id==='incendiary')u.requires=p=>p.equipped.some(k=>!['katana','dual','launcher'].includes(k));if(u.id==='longshot')u.requires=p=>p.equipped.some(k=>!['katana','dual','flame'].includes(k));}
+const projectileLoadout=p=>p.equipped.some(k=>![...MELEE_KEYS,'arc','launcher'].includes(k));
+const firearmLoadout=p=>p.equipped.some(k=>!MELEE_KEYS.includes(k));
+for(const u of UPGRADES){if(['piercing','frost'].includes(u.id))u.requires=projectileLoadout;if(u.id==='magazine')u.requires=firearmLoadout;if(u.id==='incendiary')u.requires=p=>p.equipped.some(k=>![...MELEE_KEYS,'launcher'].includes(k));if(u.id==='longshot')u.requires=p=>p.equipped.some(k=>![...MELEE_KEYS,'flame'].includes(k));}
 export const rankOf=(player,id)=>player.upgradeRanks?.[id]||0;
 export function upgradeOffer(u,player){const rank=rankOf(player,u.id)+1;return {...u,rank,tier:UPGRADE_TIERS[rank-1],description:u.describe(rank)};}
 export function rollUpgrades(player,wave,random,previous=[]){
@@ -56,7 +57,7 @@ export function rollUpgrades(player,wave,random,previous=[]){
 export function perkDamage(player,enemy,impact){
  if(!impact.weapon)return 1;let bonus=0;
  if(['boss','brute'].includes(enemy.type))bonus+=player.eliteDamage||0;
- if(impact.kind==='fire')bonus+=player.fireDamage||0;if(impact.kind==='electric')bonus+=player.electricDamage||0;if(impact.kind==='slice')bonus+=player.sliceDamage||0;
+ if(impact.kind==='fire')bonus+=player.fireDamage||0;if(impact.kind==='electric')bonus+=player.electricDamage||0;if(MELEE_KEYS.includes(impact.weapon)||impact.kind==='slice')bonus+=player.sliceDamage||0;
  if(!impact.periodic&&!impact.execution){const d=Math.hypot(player.x-enemy.x,player.z-enemy.z);if(d<4)bonus+=player.closeDamage||0;if(d>10)bonus+=player.farDamage||0;if(enemy.health<enemy.maxHealth*.5)bonus+=player.woundedDamage||0;if(enemy.slow>0)bonus+=player.slowDamage||0;if(player.ambushTime>0)bonus+=player.dashDamage||0;}
  return 1+bonus;
 }

@@ -15,6 +15,11 @@ Object.assign(WEAPONS,{
  katana:{name:'RONIN',label:'KATANA',description:'Three-hit cuts with a heavy finishing sweep. Slices limbs, timber and glass.',damage:95,interval:.6,magazine:1,reload:0,range:3.3,pellets:0,spread:0,speed:0,melee:true},
  dual:{name:'GEMINI',label:'TWIN SWORDS',description:'Fast ninja footwork and alternating cuts. Finish the combo to recover your dodge.',damage:52,interval:.32,magazine:1,reload:0,range:2.7,pellets:0,spread:0,speed:0,melee:true}
 });
+Object.assign(WEAPONS,{
+ axe:{name:'HATCHET',label:'EXECUTION AXE',description:'Wide, weighty cleaves. The third blow tears through a crowd and exposed timber.',damage:132,interval:.82,magazine:1,reload:0,range:2.9,pellets:0,spread:0,speed:0,melee:true},
+ spear:{name:'PILGRIM',label:'WAR SPEAR',description:'Long, precise thrusts. Line up enemies for a piercing three-strike sequence.',damage:82,interval:.52,magazine:1,reload:0,range:4.6,pellets:0,spread:0,speed:0,melee:true},
+ hammer:{name:'GRAVEMAKER',label:'DEMOLITION HAMMER',description:'Slow overhead blows stagger enemies. Heavy finishers crush cover and launch a shockwave at Signature tier.',damage:185,interval:1.05,magazine:1,reload:0,range:2.8,pellets:0,spread:0,speed:0,melee:true}
+});
 export const SKINS=[
  {id:'scout',name:'THE SCOUT',description:'Field jacket · patrol cap',coat:0x7b7954,skin:0xc39b77,hat:0x354b4c},
  {id:'medic',name:'THE MEDIC',description:'Ivory rescue jacket · red beret',coat:0xd0c9b3,skin:0x805b43,hat:0x963e35},

@@ -17,12 +17,12 @@ test('late blade tap buffers exactly one combo follow-up; switching and dodging 
  for(const cancel of ['dash','switch']){const g=game(),e=g.spawnEnemy('boss',0,5);e.bossState='pursuit';e.bossTimer=999;e.bossPhase=2;e.speed=0;e.attack=999;const health=e.health;g.update(1/60,{firing:true,aim:e,auto:false});if(cancel==='dash')g.update(1/60,{dash:true,x:1,auto:false});else g.switchWeapon('carbine');tick(g,30);assert.equal(e.health,health);assert.equal(g.player.meleeAttack,null);}
 });
 test('held attacks complete three distinct strokes, pause resets the combo and fast upgrades preserve contact',()=>{
- for(const key of ['katana','dual'])for(const multiplier of [1,.5]){const s=game();s.switchWeapon(key);s.player.fireMultiplier=multiplier;tick(s,150,{firing:true,aim:{x:0,z:9}});const hits=s.events.filter(e=>e.type==='slice');assert.ok(hits.length>=3);assert.deepEqual(hits.slice(0,3).map(e=>e.combo),[0,1,2]);assert.ok(hits[2].radius>hits[0].radius);tick(s,100);s.update(1/60,{firing:true,aim:{x:0,z:9},auto:false});assert.equal(s.player.swingCombo,0);}
+ for(const key of Object.keys(WEAPONS).filter(k=>WEAPONS[k].melee))for(const multiplier of [1,.5]){const s=game();s.switchWeapon(key);s.player.fireMultiplier=multiplier;tick(s,240,{firing:true,aim:{x:0,z:9}});const hits=s.events.filter(e=>e.type==='slice');assert.ok(hits.length>=3);assert.deepEqual(hits.slice(0,3).map(e=>e.combo),[0,1,2]);assert.ok(hits[2].radius>hits[0].radius);tick(s,100);s.update(1/60,{firing:true,aim:{x:0,z:9},auto:false});assert.equal(s.player.swingCombo,0);}
 });
 test('recoil settles, reload returns to guard, and melee endpoints are continuous',()=>{
  for(const key of Object.keys(WEAPONS).filter(k=>!WEAPONS[k].melee)){assert.equal(recoilAt(key,2),0);assert.equal(recoilAt(key,0),0);assert.ok(recoilAt(key,.02)>0);}
  assert.equal(reloadPose(0).lower,0);assert.equal(reloadPose(1).lower,0);
- for(const k of ['katana','dual'])for(let c=0;c<3;c++){const timing=meleeTiming(k,c);assert.ok(timing.contact<timing.cutEnd&&timing.cutEnd<timing.duration);for(const f of [0,1]){const pose=meleePose(k,c,f);assert.equal(pose.twist,0);assert.equal(pose.height,0);assert.equal(pose.reach,0);}}
+ for(const k of Object.keys(WEAPONS).filter(k=>WEAPONS[k].melee))for(let c=0;c<3;c++){const timing=meleeTiming(k,c);assert.ok(timing.contact<timing.cutEnd&&timing.cutEnd<timing.duration);for(const f of [0,1]){const pose=meleePose(k,c,f);assert.equal(pose.twist,0);assert.equal(pose.height,0);assert.equal(pose.reach,0);}}
 });
 function dummyRig(){const m=new T.Group(),body=new T.Group();m.add(body);m.userData={body,arms:[-1,1].map(side=>{const arm=new T.Group(),elbow=new T.Group(),wrist=new T.Group();arm.position.set(side*.37,1.35,0);elbow.position.y=-.34;wrist.position.y=-.32;body.add(arm);arm.add(elbow);elbow.add(wrist);arm.userData={elbow,wrist};return arm;})};return m;}
 const mesh=(parent)=>{const m=new T.Mesh(new T.BoxGeometry(.01,.01,.01),new T.MeshBasicMaterial());parent.add(m);return m;};
@@ -43,7 +43,7 @@ test('inverse kinematics puts the actual wrist on its target',()=>{
 
 test('switching from either blade to guns removes blade rigs and trails even with no animation time',async()=>{
  const {updateBladeTrails}=await import('../src/rebuild/WeaponRig.js');
- for(const blade of ['katana','dual'])for(const guns of [['carbine'],['smg','flame'],['shotgun','shotgun']]){
+ for(const blade of Object.keys(WEAPONS).filter(k=>WEAPONS[k].melee))for(const guns of [['carbine'],['smg','flame'],['shotgun','shotgun']]){
   const s=game(),m=dummyRig();s.setLoadout([blade]);s.player.swingWeapon=blade;s.player.swingDuration=.6;s.player.swing=.4;animateWeapons(m,s.player,1,1/60,kit);updateBladeTrails(m,s.player,1/60);m.position.x=.1;updateBladeTrails(m,s.player,1/60);assert.ok(m.userData.bladeTrails.some(t=>t?.points.length));
   s.setLoadout(guns);animateWeapons(m,s.player,1,0,kit);updateBladeTrails(m,s.player,0);assert.deepEqual(m.userData.weaponRigs.filter(Boolean).map(g=>g.userData.key),guns);assert.ok(m.userData.bladeTrails.every(t=>!t||(!t.mesh.visible&&!t.points.length&&t.mesh.geometry.drawRange.count===0)));const stale=[];m.traverse(o=>{if(WEAPONS[o.userData.key]?.melee)stale.push(o);});assert.equal(stale.length,0);
  }

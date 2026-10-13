@@ -26,7 +26,7 @@ test('fast droplets hit walls once instead of passing through, and settle onto h
 test('blood dries, stays bounded, respects water and the gore setting, and heat creates no ballistic spray',()=>{
  const w=world();for(let i=0;i<BLOOD_LIMIT+10;i++)bloodDecal(w,new T.Vector3(i,.05,0),.2);assert.equal(w.decals.length,BLOOD_LIMIT);const wet=w.decals[0].material.roughness;ageBlood(w,50);assert.ok(w.decals[0].material.roughness>wet);ageBlood(w,131);assert.equal(w.decals.length,0);
  w.layout.water=[{x:0,z:0,w:5,d:5}];assert.equal(bloodDecal(w,new T.Vector3(0,0,0)),null);w.settings.gore=false;bloodSpray(w,{x:10,z:10},10);assert.equal(w.effects.length,0);
- w.settings.gore=true;bloodSpray(w,{x:10,z:10,kind:'fire'},10);assert.equal(w.effects.length,0);bloodSpray(w,{x:10,z:10,dx:1,dz:0},200);assert.equal(w.effects.length,90);bloodSpray(w,{x:10,z:10},20);assert.equal(w.effects.length,90);
+ w.settings.gore=true;for(const kind of ['fire','electric','frost'])bloodSpray(w,{x:10,z:10,kind},10);assert.equal(w.effects.length,0);bloodSpray(w,{x:10,z:10,dx:1,dz:0},200);assert.equal(w.effects.length,90);bloodSpray(w,{x:10,z:10},20);assert.equal(w.effects.length,90);
  w.layout={};bloodDecal(w,new T.Vector3());w.settings.gore=false;ageBlood(w,0);assert.equal(w.decals.length,0);
 });
 test('pools project onto raised pavement instead of being hidden below it',()=>{

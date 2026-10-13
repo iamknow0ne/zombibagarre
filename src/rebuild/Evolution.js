@@ -14,6 +14,11 @@ export const WEAPON_FINISHES={
  katana:{body:0x253a38,trim:0xc6aa6b,steel:0xdbe3d9,accent:0xb3ece0,signature:'MOONFALL',feature:'Finisher releases a cutting wave',mods:['Braided grip / faster recovery','Damascus edge / wider reach','Moonfall steel / finisher shockwave']},
  dual:{body:0x54342f,trim:0xd8ac7b,steel:0xd4dacf,accent:0xffb991,signature:'ECLIPSE',feature:'Paired finisher releases a crosscut',mods:['Balanced guards / faster recovery','Serrated spines / wider reach','Eclipse pair / finisher crosscut']}
 };
+Object.assign(WEAPON_FINISHES,{
+ axe:{body:0x59362b,trim:0xb68b54,steel:0x9dabaa,accent:0xffb879,signature:'HEADSMAN',feature:'Finishing cleave releases a wide cutting wave',mods:['Wrapped haft / faster recovery','Reinforced beard / extended edge','Headsman crest / execution wave']},
+ spear:{body:0x334b55,trim:0xc9ae70,steel:0xc6ddda,accent:0x9fe4e6,signature:'STARLANCE',feature:'Finisher sends a piercing lance wave',mods:['Counterweight / faster thrust','Leaf blade / longer reach','Starlance core / piercing wave']},
+ hammer:{body:0x494a43,trim:0xba9364,steel:0x899594,accent:0xffd09b,signature:'FAULTLINE',feature:'Finisher sends a stunning ground shockwave',mods:['Leather grip / faster recovery','Steel cheeks / extended reach','Faultline head / ground shockwave']}
+});
 export function weaponTier(player,key){const xp=player?.mastery?.[key]||0;return xp>=8000?3:xp>=3500?2:xp>=1000?1:0;}
 export function masteryProgress(player,key){const xp=Math.max(0,player?.mastery?.[key]||0),tier=weaponTier(player,key),next=MASTERY_THRESHOLDS[tier+1];return{xp,tier,next,progress:next?(xp-MASTERY_THRESHOLDS[tier])/(next-MASTERY_THRESHOLDS[tier]):1};}
 export function addMastery(player,key,amount){if(!WEAPON_FINISHES[key]||!Number.isFinite(amount)||amount<=0)return[];player.mastery??={};const before=weaponTier(player,key);player.mastery[key]=Math.min(8000,(player.mastery[key]||0)+amount);return Array.from({length:weaponTier(player,key)-before},(_,i)=>before+i+1);}

@@ -31,7 +31,7 @@ test('burst aggregation separates criticals, wounds and weapons, expires while p
 test('display toggles clear existing indicators and never mutate damage or gameplay',()=>{
  const o=Object.create(CombatOverlay.prototype);o.feed=new DamageFeed();o.bars=new Map();o.settings={};const hit={type:'damage',enemyId:1,amount:20,dealt:20,health:80,maxHealth:100};o.event(hit);assert.equal(o.feed.hits.length,1);assert.equal(o.bars.size,1);
  o.applySettings({damageNumbers:false,enemyHealthBars:false});o.event(hit);assert.equal(o.feed.hits.length,0);assert.equal(o.bars.size,0);o.applySettings({});o.event(hit);assert.equal(o.feed.hits.length,1);assert.equal(o.bars.size,1);assert.equal(hit.amount,20);
- assert.equal(new Set(Object.values(DAMAGE_STYLES).map(s=>s.label)).size,6);
+ assert.equal(new Set(Object.values(DAMAGE_STYLES).map(s=>s.label)).size,7);
 });
 test('invalid damage cannot corrupt health, feedback or mastery',()=>{const s=game(),e=s.spawnEnemy('walker',0,0),hp=e.health;for(const n of [NaN,Infinity,-5,0])s.damageEnemy(e,n,0,0,{weapon:'carbine'});assert.equal(e.health,hp);assert.equal(s.events.length,0);});
 test('mobile feedback respects reserved HUD and thumb regions and limits visible damage labels',()=>{

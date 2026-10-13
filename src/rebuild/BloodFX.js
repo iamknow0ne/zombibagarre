@@ -51,7 +51,7 @@ export function bloodDecal(world,point,radius=.4,hit=null){
 }
 export function bloodSpray(world,e,count=10,power=6,height=1.15){
  if(!world.settings.gore)return;
- if(e.kind==='fire'||e.kind==='electric')return; // Heat damage does not punch ballistic wounds.
+ if(e.kind==='fire'||e.kind==='electric'||e.kind==='frost')return; // Elemental damage does not punch ballistic wounds.
  const r=world.random,origin=new T.Vector3(e.x,height,e.z),direction=Math.atan2(e.dx||0,e.dz||0),directed=Math.hypot(e.dx||0,e.dz||0)>.001;
  const available=Math.max(0,90-world.effects.filter(f=>f.kind==='blood').length);if(!available)return;
  const roots=[...world.propMeshes.values(),...world.buildingMeshes.values(),...world.wrecks].filter(g=>{if(!g.visible||g.userData.collapsed)return false;g.updateWorldMatrix(true,false);let bounds=surfaceBounds.get(g);if(!bounds){bounds=new T.Box3().setFromObject(g).getBoundingSphere(new T.Sphere());bounds.applyMatrix4(g.matrixWorld.clone().invert());surfaceBounds.set(g,bounds);}return bounds.clone().applyMatrix4(g.matrixWorld).distanceToPoint(origin)<9;});
