@@ -48,6 +48,6 @@ export class CharacterInstances{
 export function freezeLocalTransforms(root){root.traverse(o=>{o.updateMatrix();o.matrixAutoUpdate=false;});}
 export function visibleAOOnly(ao,scene){
  const hidden=[];
- ao.overrideVisibility=()=>{hidden.length=0;scene.traverseVisible(o=>{if(o.isSprite||o.isPoints||o.isLine||(o.isMesh&&o.material?.transparent)){hidden.push(o);o.visible=false;}});};
+ ao.overrideVisibility=()=>{hidden.length=0;scene.traverseVisible(o=>{if(o.isSprite||o.isPoints||o.isLine||(o.isMesh&&(o.material?.transparent||o.material?.alphaTest>0))){hidden.push(o);o.visible=false;}});};
  ao.restoreVisibility=()=>{for(const o of hidden)o.visible=true;hidden.length=0;};
 }

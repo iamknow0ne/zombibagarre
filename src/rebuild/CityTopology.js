@@ -1,3 +1,4 @@
+import {connectStreets} from './StreetGraph.js';
 import {seededRandom,segmentBoxTime} from './config.js';
 export const CITY_FORMS=['old town','river port','valley town','hill districts'];
 export function segmentDistance(p,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(p.x-a.x-dx*t,p.z-a.z-dz*t);}
@@ -9,11 +10,9 @@ export function generateTopology(seed){
  const r=seededRandom(seed^0x16ab53),form=(seed>>>0)%CITY_FORMS.length,phase=(r()-.5)*.55,sx=form===1?1.25:form===2?.78:1,sz=form===2?1.4:form===1?.84:1,size=175+r()*20;
  const boundary=Array.from({length:20},(_,i)=>{const a=i/20*Math.PI*2;let radius=size*(.92+r()*.12);if(form===1&&Math.cos(a)>.25&&Math.sin(a)<-.1)radius*=.64;if(form===3)radius*=.83+.22*Math.cos(3*(a-Math.PI/2));return{x:Math.cos(a)*radius*sx,z:Math.sin(a)*radius*sz};});
  const bounds={minX:Math.floor(Math.min(...boundary.map(p=>p.x))),maxX:Math.ceil(Math.max(...boundary.map(p=>p.x))),minZ:Math.floor(Math.min(...boundary.map(p=>p.z))),maxZ:Math.ceil(Math.max(...boundary.map(p=>p.z)))};
- const roads=[],nodes=[];let id=0;
- const transform=([x,z])=>{if(x||z){const j=seededRandom((seed^Math.imul(Math.round(x*100),739)^Math.imul(Math.round(z*100),193))>>>0);x+=(j()-.5)*9;z+=(j()-.5)*9;}return{x:(x*Math.cos(phase)-z*Math.sin(phase))*sx*1.45,z:(x*Math.sin(phase)+z*Math.cos(phase))*sz*1.45};};
+ let roads=[],nodes=[];let id=0;
+ const transform=([x,z])=>{if(x||z){const j=seededRandom((seed^Math.imul(Math.round(x*100),739)^Math.imul(Math.round(z*100),193))>>>0);x+=(j()-.5)*3;z+=(j()-.5)*3;}return{x:(x*Math.cos(phase)-z*Math.sin(phase))*sx*1.45,z:(x*Math.sin(phase)+z*Math.cos(phase))*sz*1.45};};
  function add(points,width=11,raw=false){const p=raw?points:points.map(transform);for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i],len=Math.hypot(b.x-a.x,b.z-a.z);if(len<2)continue;let fits=true;for(let t=0;t<=1;t+=.05)if(!withinBoundary(boundary,a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t,width/2+3))fits=false;if(!fits)continue;roads.push({id:`road-${id++}`,a,b,width});for(const v of[a,b])if(!nodes.some(n=>Math.hypot(n.x-v.x,n.z-v.z)<1))nodes.push({...v});}}
- // A short clear arrival street anchors existing spawn/extraction and vehicle access.
- add([{x:0,z:-20},{x:0,z:30}],13,true);add([{x:-18,z:0},{x:20,z:0}],12,true);
  if(form===0){
   const n=6+Math.floor(r()*3),angles=Array.from({length:n},(_,i)=>i/n*Math.PI*2+(r()-.5)*.15),ring=rad=>angles.map(a=>[Math.cos(a)*(rad+(r()-.5)*8),Math.sin(a)*(rad+(r()-.5)*8)]),inner=ring(42),outer=ring(87);
   add([...inner,inner[0]],10);add([...outer,outer[0]],12);for(let i=0;i<n;i++){if(i%2===0)add([[0,0],inner[i],outer[i]],12);else add([inner[i],outer[i]],9);}
@@ -31,6 +30,7 @@ export function generateTopology(seed){
    const radius=25+r()*7,n=5+Math.floor(r()*3),ring=Array.from({length:n},(_,i)=>{const a=i/n*Math.PI*2+j*.3;return[c[0]+Math.cos(a)*radius,c[1]+Math.sin(a)*radius];});add([...ring,ring[0]],11);add([[0,0],[c[0]*.52+(r()-.5)*10,c[1]*.5],c,ring[j]],13);add([ring[(j+3)%n],c],9);
   }
  }
+ ({roads,nodes}=connectStreets(roads));
  // Sample the actual centre lines: these points also drive encounters and parking.
  const streetPoints=[];for(const s of roads){const n=Math.ceil(Math.hypot(s.b.x-s.a.x,s.b.z-s.a.z)/5);for(let i=0;i<=n;i++){const t=i/n,x=s.a.x+(s.b.x-s.a.x)*t,z=s.a.z+(s.b.z-s.a.z)*t;if(!streetPoints.some(p=>Math.hypot(p.x-x,p.z-z)<2.5))streetPoints.push({x,z,angle:Math.atan2(s.b.x-s.a.x,s.b.z-s.a.z),width:s.width});}}
  return{form:CITY_FORMS[form],boundary,bounds,roads,nodes,streetPoints};

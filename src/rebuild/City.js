@@ -51,7 +51,9 @@ export function generateCity(seed=73){
   if(Math.hypot(x,z)<20||!rectangleInside(boundary,o,4)||roadDistance(o,roads)<4||roadOverlaps(o,roads,3)||pointBlocked(x,z,4,buildings)||pointBlocked(x,z,3,cover)||water.some(w=>overlap(o,w,2)))continue;cover.push(o);
  }
  for(const w of water)if(w.shape==='ellipse')for(let i=0;i<12;i++){const dz=(i+.5)/12*w.d-w.d/2,half=w.w/2*Math.sqrt(Math.max(0,1-(dz/(w.d/2))**2));waterObstacles.push({x:w.x,z:w.z+dz,w:half*2,d:w.d/12});}
- const fleet=Object.keys(VEHICLES),cars=[{x:3,z:6,angle:0}],parking=streetPoints;
+ const fleet=Object.keys(VEHICLES),parking=streetPoints;
+ const first=parking.filter(p=>Math.hypot(p.x,p.z)>8&&Math.hypot(p.x,p.z)<20).sort((a,b)=>Math.hypot(a.x,a.z)-Math.hypot(b.x,b.z))[0]||parking[0];
+ const cars=[{x:first.x+Math.cos(first.angle)*(first.width/2-1.4),z:first.z-Math.sin(first.angle)*(first.width/2-1.4),angle:first.angle}];
  for(let i=0;i<350&&cars.length<22;i++){const p=parking[Math.floor(r()*parking.length)],c={x:p.x+Math.cos(p.angle)*(p.width/2-1.4),z:p.z-Math.sin(p.angle)*(p.width/2-1.4),angle:p.angle};const v=vehiclePlan(fleet[cars.length%fleet.length],c.x,c.z,c.angle);
   if(!rectangleInside(boundary,v,3)||water.some(w=>overlap(v,w,3))||Math.hypot(c.x,c.z)<18||pointBlocked(c.x,c.z,4,buildings)||pointBlocked(c.x,c.z,4,cover)||cars.some(a=>Math.hypot(a.x-c.x,a.z-c.z)<10))continue;cars.push(c);
  }

@@ -1,7 +1,9 @@
+import {crossingApproaches} from './StreetGraph.js';
+import {roadDistance,withinBoundary} from './CityTopology.js';
 import * as T from 'three';
 import {seededRandom,segmentBoxTime,pointBlocked} from './config.js';
 
-import {buildingStyle} from './City.js';
+import {buildingStyle,waterAt} from './City.js';
 
 // Orthographic sightlines are parallel. Test the feet as well as the torso,
 // with a shoulder-width margin, so roof edges cannot erase the player.
@@ -102,10 +104,16 @@ export function dressStreets(world,kit){
   for(const side of [-1,1]){box(g,0x8b7b5c,x+side*7,.6,z,2.2,.12,.6);box(g,0x8b7b5c,x+side*7,.96,z-.32,2.2,.6,.1);}
  }
  }
+ for(const crossing of crossingApproaches(world.layout.nodes)){
+  const {x,z,angle,width}=crossing;if(world.layout.water.some(w=>Math.abs(x-w.x)<w.w/2+3&&Math.abs(z-w.z)<w.d/2+3))continue;
+  const count=Math.floor((width-2)/.95);for(let i=0;i<count;i++){const offset=(i-(count-1)/2)*.95,stripe=box(g,0xd6cfaf,x+Math.cos(angle)*offset,.028,z-Math.sin(angle)*offset,.48,.014,2.2);stripe.rotation.y=angle;}
+ }
  for(const [index,{x,z}] of world.layout.nodes.entries()){
   if(world.layout.water.some(w=>Math.abs(x-w.x)<w.w/2+8&&Math.abs(z-w.z)<w.d/2+8))continue;
-  if(index%4===0)for(const side of [-1,1])for(let i=-2;i<=2;i++)box(g,0xbebda7,x+i*.85,.026,z+side*6,.5,.02,2.4);
-  const direction=new T.Group();direction.position.set(x+5.6,0,z+5.7);g.add(direction);cylinder(direction,0x3e5557,0,1.9,0,.055,3.8);sign(direction,x<0?'LES SERRES ←':'PORT / CANAL →',0,3.4,0,2.8,.45,'#355758','#ddd3ab');
+  if(!world.layout.nodes[index].junction)continue;
+  const radius=Math.max(...world.layout.nodes[index].arms.map(a=>a.width))*.9+2;
+  const verge=Array.from({length:16},(_,i)=>({x:x+Math.sin(i/16*Math.PI*2)*radius,z:z+Math.cos(i/16*Math.PI*2)*radius})).find(p=>!waterAt(world.layout,p.x,p.z)&&roadDistance(p,world.layout.roads)>1.4&&withinBoundary(world.layout.boundary,p.x,p.z,2)&&!pointBlocked(p.x,p.z,1.5,[...world.layout.buildings,...world.layout.cover]));
+  if(verge){const direction=new T.Group();direction.position.set(verge.x,0,verge.z);g.add(direction);cylinder(direction,0x3e5557,0,1.9,0,.055,3.8);sign(direction,x<0?'LES SERRES ←':'PORT / CANAL →',0,3.4,0,2.8,.45,'#355758','#ddd3ab');}
   // Manholes and kerbside drainage.
   cylinder(g,0x384848,x-2,.022,z+3,.45,.025,.45,16);for(let i=0;i<5;i++)box(g,0x263d40,x-2.3+i*.15,.039,z+3,.06,.015,.6);
  }

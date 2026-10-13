@@ -30,7 +30,7 @@ export class SurfaceMaterials{
   const relief=albedo.clone();relief.colorSpace=T.NoColorSpace;relief.needsUpdate=true;relief.userData.shared=true;const pair={albedo,relief};this.maps.set(kind,pair);return pair;
  }
  material(kind,color){
-  const key=kind+color;if(this.materials.has(key))return this.materials.get(key);const p=SURFACES[kind],{albedo,relief}=this.textures(kind),m=new T.MeshStandardMaterial({color,map:albedo,bumpMap:relief,bumpScale:p.bump,roughness:p.roughness,roughnessMap:relief,metalness:kind==='metal'?.55:kind==='cladding'?.25:0});m.userData.shared=true;this.materials.set(key,m);return m;
+  const key=kind+color;if(this.materials.has(key))return this.materials.get(key);const p=SURFACES[kind],{albedo,relief}=this.textures(kind),m=new T.MeshStandardMaterial({color,map:albedo,bumpMap:relief,bumpScale:p.bump,roughness:p.roughness,roughnessMap:relief,metalness:kind==='metal'?.55:kind==='cladding'?.25:0});m.userData.shared=true;m.userData.surfaceKind=kind;m.userData.surfaceColor=color;m.userData.surfaceBump=p.bump;this.materials.set(key,m);return m;
  }
  apply(mesh,kind,color){surfaceUV(mesh,SURFACES[kind].tile);mesh.material=this.material(kind,color);return mesh;}
  dispose(){for(const m of this.materials.values())m.dispose();for(const p of this.maps.values()){p.albedo.dispose();p.relief.dispose();}this.materials.clear();this.maps.clear();}

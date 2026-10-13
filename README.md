@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.24 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.25 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -26,7 +26,14 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Six randomized fall poses with varied timing and twist, plus severed arms/legs, living legless crawlers, falling corpses, charred burn deaths and electrical spasms. Precision weapons have a higher headshot chance; all hits still use planar aiming. Gore can be disabled.
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters with four bespoke articulated rigs, building-scale variants, two phases and a paired fight. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
-- Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+- Original procedural scene assets, generated environment atlases and synthesized audio; artwork is served with the game, without third-party asset or font requests.
+
+## New in 4.25 — City art and Pixel Diorama
+
+- Settings → Visual style switches between Classic and experimental Pixel Diorama at any time. Generated limestone, brick, slate and cobblestone textures combine with pixel rendering and dynamic lighting. Menus and combat text stay sharp; characters retain their animated 3D equipment and rigs.
+- A shared sprite layer adds window flowers, ivy, pots, grass and small street clutter, with gentle wind and bounded instanced draws. Building-mounted dressing disappears when its owner collapses or fades out of the player's way.
+- Geometric road intersections now become real junctions. Crosswalks follow each approach, junction centres stay free of lane dashes, and the arbitrary starting cross is gone. Starter vehicles park on generated streets. All four town forms remain seeded and varied.
+- [Research and traversal proposal](docs/CITY-ART-4.25.md) and [generated asset prompts](docs/art/CITY-ASSETS.md). Jumping, rooftops and grappling are proposed follow-up systems, not controls enabled in this release.
 
 ## New in 4.24 — Boss impact effects
 
