@@ -83,12 +83,11 @@ export function pointBlocked(x, z, radius = 0, obstacles = COVER) {
   return obstacles.some(o => Math.abs(x - o.x) < o.w / 2 + radius && Math.abs(z - o.z) < o.d / 2 + radius);
 }
 export function segmentBoxTime(a,b,o,padding=0){
-  let lo=0,hi=1;
-  for(const[axis,half]of [['x',o.w/2+padding],['z',o.d/2+padding]]){
-    const delta=b[axis]-a[axis],min=o[axis]-half,max=o[axis]+half;
-    if(Math.abs(delta)<1e-9){if(a[axis]<min||a[axis]>max)return null;}
-    else{let t1=(min-a[axis])/delta,t2=(max-a[axis])/delta;if(t1>t2)[t1,t2]=[t2,t1];lo=Math.max(lo,t1);hi=Math.min(hi,t2);if(lo>hi)return null;}
-  }
+  const hx=o.w/2+padding,hz=o.d/2+padding,minX=o.x-hx,maxX=o.x+hx,minZ=o.z-hz,maxZ=o.z+hz;
+  if(Math.max(a.x,b.x)<minX||Math.min(a.x,b.x)>maxX||Math.max(a.z,b.z)<minZ||Math.min(a.z,b.z)>maxZ)return null;
+  const dx=b.x-a.x,dz=b.z-a.z;let lo=0,hi=1;
+  if(Math.abs(dx)<1e-9){if(a.x<minX||a.x>maxX)return null;}else{const t1=(minX-a.x)/dx,t2=(maxX-a.x)/dx;lo=Math.max(lo,Math.min(t1,t2));hi=Math.min(hi,Math.max(t1,t2));if(lo>hi)return null;}
+  if(Math.abs(dz)<1e-9){if(a.z<minZ||a.z>maxZ)return null;}else{const t1=(minZ-a.z)/dz,t2=(maxZ-a.z)/dz;lo=Math.max(lo,Math.min(t1,t2));hi=Math.min(hi,Math.max(t1,t2));if(lo>hi)return null;}
   return lo;
 }
 export function lineBlocked(a,b,padding=0,obstacles=COVER){return obstacles.some(o=>segmentBoxTime(a,b,o,padding)!==null);}

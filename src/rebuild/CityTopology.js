@@ -37,7 +37,7 @@ export function generateTopology(seed){
 }
 export function boundarySegmentClear(boundary,a,b,radius=0){
  const cross=(a,b,c)=>(b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x);
- for(let i=0;i<boundary.length;i++){const c=boundary[i],d=boundary[(i+1)%boundary.length];if(cross(a,b,c)*cross(a,b,d)<0&&cross(c,d,a)*cross(c,d,b)<0)return false;
+ for(let i=0;i<boundary.length;i++){const c=boundary[i],d=boundary[(i+1)%boundary.length];if(Math.max(c.x,d.x)<Math.min(a.x,b.x)-radius||Math.min(c.x,d.x)>Math.max(a.x,b.x)+radius||Math.max(c.z,d.z)<Math.min(a.z,b.z)-radius||Math.min(c.z,d.z)>Math.max(a.z,b.z)+radius)continue;if(cross(a,b,c)*cross(a,b,d)<0&&cross(c,d,a)*cross(c,d,b)<0)return false;
   if(radius&&Math.min(segmentDistance(a,c,d),segmentDistance(b,c,d),segmentDistance(c,a,b),segmentDistance(d,a,b))<radius)return false;
  }return true;
 }

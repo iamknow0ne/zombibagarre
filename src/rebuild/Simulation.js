@@ -171,7 +171,7 @@ export class Simulation {
     else{const stanceSpeed=isMelee(p)?1.22:1;this.move(p, mx * p.speed * stanceSpeed * dt, mz * p.speed * stanceSpeed * dt);}
     p.moveX=dt?(p.x-beforeMove.x)/dt:0;p.moveZ=dt?(p.z-beforeMove.z)/dt:0;p.moving=Math.hypot(p.moveX,p.moveZ)>.08;if(!p.vehicleId&&p.dash<=0){p.footTravel=(p.footTravel||0)+distance(p,beforeMove);if(p.footTravel>1.53){p.footTravel%=1.53;this.emit('footstep',{water:!!waterAt(this.layout,p.x,p.z)});}}
     const w = weaponStats(p);
-    const target = this.enemies.filter(e => e.health > 0 && distance(p, e) < w.range && !this.blocked(p, e)).sort((a, b) => distance(p, a) - distance(p, b))[0];
+    const target = this.enemies.filter(e => e.health > 0 && distance(p, e) < w.range).sort((a, b) => distance(p, a) - distance(p, b)).find(e=>!this.blocked(p,e));
     let aim = input.aim;
     const manual=input.firing||input.fireHands?.some(Boolean);
     if (input.auto !== false && !manual) aim = target;
@@ -188,7 +188,7 @@ export class Simulation {
     p.attackHeld=attackHeld;
     if(w.melee&&p.meleeBuffer){const buffered=p.meleeBuffer;if(this.time>buffered.until||p.vehicleId)p.meleeBuffer=null;else if(!p.weaponTimers[p.weapon]&&p.dash<=0){p.meleeBuffer=null;this.slice(p.weapon,buffered.aim);}}
     for(const [i,key] of (p.vehicleId?[]:p.equipped).entries()){
-      const slot=slotKey(p.equipped,key,i),gun=weaponStats(p,key);const gunTarget=key===p.weapon?target:this.enemies.filter(e=>e.health>0&&distance(p,e)<gun.range&&!this.blocked(p,e)).sort((a,b)=>distance(p,a)-distance(p,b))[0];
+      const slot=slotKey(p.equipped,key,i),gun=weaponStats(p,key);const gunTarget=key===p.weapon?target:this.enemies.filter(e=>e.health>0&&distance(p,e)<gun.range).sort((a,b)=>distance(p,a)-distance(p,b)).find(e=>!this.blocked(p,e));
       const firing=input.fireHands?!!input.fireHands[i]||(gun.melee&&input.fireHands.some(Boolean)):input.firing;
       const gunAim=firing?input.aim:!manual&&input.auto!==false?gunTarget:null;
       if(gunAim&&((!manual&&input.auto!==false&&gunTarget)||firing)&&!p.weaponTimers[slot]&&!p.reloads[slot]&&p.dash<=0&&p.throwAnimation<=.12){
@@ -367,9 +367,9 @@ export class Simulation {
     let best=null,score=Infinity;
     for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){
       const x=ex+dx,z=ez+dz;if(x<0||x>=cols||z<0||z>=rows)continue;const i=z*cols+x,point={x:(x+.5)*step+bounds.minX,z:(z+.5)*step+bounds.minZ};
-      if(nav.blocked[i]||this.blocked(e,point,e.radius+.04))continue;
-      const rank=nav.costs[i]+distance(e,point)*(.4/step);
-      if(rank<score&&distance(e,point)>.08){score=rank;best=point;}
+      if(nav.blocked[i])continue;
+      const d=distance(e,point),rank=nav.costs[i]+d*(.4/step);
+      if(rank<score&&d>.08&&!this.blocked(e,point,e.radius+.04)){score=rank;best=point;}
     }
     return best;
   }

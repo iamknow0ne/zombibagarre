@@ -1,0 +1,324 @@
+{
+  "baselineDesktop": [
+    {
+      "scene": "city",
+      "quality": "high",
+      "viewport": [
+        1280,
+        720
+      ],
+      "frames": 180,
+      "fps": 26.3,
+      "frameMs": {
+        "mean": 38,
+        "p95": 50.2
+      },
+      "simMs": {
+        "mean": 0.16,
+        "p95": 0.3
+      },
+      "eventsMs": {
+        "mean": 0.01,
+        "p95": 0
+      },
+      "worldMs": {
+        "mean": 17.39,
+        "p95": 36.7
+      },
+      "drawCalls": {
+        "mean": 899,
+        "p95": 899
+      },
+      "triangles": {
+        "mean": 155644,
+        "p95": 155644
+      },
+      "meshes": 8681
+    },
+    {
+      "scene": "combat",
+      "quality": "high",
+      "viewport": [
+        1280,
+        720
+      ],
+      "frames": 180,
+      "fps": 9.6,
+      "frameMs": {
+        "mean": 104.12,
+        "p95": 133.3
+      },
+      "simMs": {
+        "mean": 26.48,
+        "p95": 41.8
+      },
+      "eventsMs": {
+        "mean": 0.18,
+        "p95": 0.5
+      },
+      "worldMs": {
+        "mean": 72.5,
+        "p95": 98
+      },
+      "drawCalls": {
+        "mean": 6960.71,
+        "p95": 7024
+      },
+      "triangles": {
+        "mean": 404402.87,
+        "p95": 410082
+      },
+      "meshes": 10325
+    }
+  ],
+  "optimizedDesktop": [
+    {
+      "scene": "combat",
+      "quality": "high",
+      "viewport": [
+        1280,
+        720
+      ],
+      "frames": 180,
+      "fps": 22.1,
+      "frameMs": {
+        "mean": 45.33,
+        "p95": 75
+      },
+      "simMs": {
+        "mean": 5.65,
+        "p95": 9.9
+      },
+      "eventsMs": {
+        "mean": 0.16,
+        "p95": 0.6
+      },
+      "worldMs": {
+        "mean": 27.49,
+        "p95": 45.5
+      },
+      "drawCalls": {
+        "mean": 1724.28,
+        "p95": 1788
+      },
+      "triangles": {
+        "mean": 310976.49,
+        "p95": 316586
+      },
+      "meshes": 10141,
+      "stages": {
+        "actors": {
+          "mean": 1.34,
+          "p95": 3
+        },
+        "props": {
+          "mean": 0.25,
+          "p95": 0.6
+        },
+        "effects": {
+          "mean": 0.53,
+          "p95": 1
+        },
+        "overlay": {
+          "mean": 1.4,
+          "p95": 2.2
+        },
+        "instances": {
+          "mean": 1.1,
+          "p95": 2.8
+        },
+        "render": {
+          "mean": 22.86,
+          "p95": 41.2
+        }
+      }
+    },
+    {
+      "scene": "city",
+      "quality": "high",
+      "viewport": [
+        1280,
+        720
+      ],
+      "frames": 180,
+      "fps": 31.2,
+      "frameMs": {
+        "mean": 32.08,
+        "p95": 42.5
+      },
+      "simMs": {
+        "mean": 0.16,
+        "p95": 0.3
+      },
+      "eventsMs": {
+        "mean": 0,
+        "p95": 0
+      },
+      "worldMs": {
+        "mean": 7.79,
+        "p95": 12.7
+      },
+      "drawCalls": {
+        "mean": 642,
+        "p95": 642
+      },
+      "triangles": {
+        "mean": 120560,
+        "p95": 120560
+      },
+      "meshes": 8667,
+      "stages": {
+        "actors": {
+          "mean": 0.24,
+          "p95": 0.5
+        },
+        "props": {
+          "mean": 0.26,
+          "p95": 0.5
+        },
+        "effects": {
+          "mean": 0.03,
+          "p95": 0.1
+        },
+        "overlay": {
+          "mean": 0.04,
+          "p95": 0.1
+        },
+        "instances": {
+          "mean": 0,
+          "p95": 0
+        },
+        "render": {
+          "mean": 7.2,
+          "p95": 12
+        }
+      }
+    }
+  ],
+  "baselineMobileSize": [
+    {
+      "scene": "combat",
+      "quality": "balanced",
+      "viewport": [
+        844,
+        390
+      ],
+      "frames": 180,
+      "fps": 14.5,
+      "frameMs": {
+        "mean": 69.12,
+        "p95": 100.1
+      },
+      "simMs": {
+        "mean": 27.06,
+        "p95": 44.2
+      },
+      "eventsMs": {
+        "mean": 0.27,
+        "p95": 1.8
+      },
+      "worldMs": {
+        "mean": 37.31,
+        "p95": 58
+      },
+      "drawCalls": {
+        "mean": 3654.48,
+        "p95": 3704
+      },
+      "triangles": {
+        "mean": 206549.96,
+        "p95": 211060
+      },
+      "meshes": 10325,
+      "stages": {
+        "actors": {
+          "mean": null,
+          "p95": 0
+        },
+        "props": {
+          "mean": null,
+          "p95": 0
+        },
+        "effects": {
+          "mean": null,
+          "p95": 0
+        },
+        "overlay": {
+          "mean": null,
+          "p95": 0
+        },
+        "instances": {
+          "mean": null,
+          "p95": 0
+        },
+        "render": {
+          "mean": null,
+          "p95": 0
+        }
+      }
+    }
+  ],
+  "optimizedMobileSize": [
+    {
+      "scene": "combat",
+      "quality": "balanced",
+      "viewport": [
+        844,
+        390
+      ],
+      "frames": 180,
+      "fps": 27.8,
+      "frameMs": {
+        "mean": 35.92,
+        "p95": 65.1
+      },
+      "simMs": {
+        "mean": 6.04,
+        "p95": 9.8
+      },
+      "eventsMs": {
+        "mean": 0.18,
+        "p95": 0.5
+      },
+      "worldMs": {
+        "mean": 23.45,
+        "p95": 37.6
+      },
+      "drawCalls": {
+        "mean": 1246.48,
+        "p95": 1296
+      },
+      "triangles": {
+        "mean": 206549.96,
+        "p95": 211060
+      },
+      "meshes": 10141,
+      "stages": {
+        "actors": {
+          "mean": 1.55,
+          "p95": 3.9
+        },
+        "props": {
+          "mean": 0.24,
+          "p95": 0.5
+        },
+        "effects": {
+          "mean": 0.71,
+          "p95": 1.8
+        },
+        "overlay": {
+          "mean": 1.5,
+          "p95": 2.8
+        },
+        "instances": {
+          "mean": 1.05,
+          "p95": 2.7
+        },
+        "render": {
+          "mean": 18.39,
+          "p95": 31.4
+        }
+      }
+    }
+  ]
+}
