@@ -41,7 +41,9 @@ jobs:
           XDG_STATE_HOME: ${{ runner.temp }}/bagarre-startup-logs/opengl
           LIBGL_ALWAYS_SOFTWARE: '1'
         run: |
-          timeout 150s xvfb-run -a -s '-screen 0 1280x800x24' "$RUNNER_TEMP/Deck Test/Zombie Bagarre/Launch OpenGL.sh" --smoke-test
+          # Chromium blocks llvmpipe WebGL2 by default. Allow this CI-only Mesa
+          # software driver; the shipped launchers keep normal driver checks.
+          timeout 150s xvfb-run -a -s '-screen 0 1280x800x24' "$RUNNER_TEMP/Deck Test/Zombie Bagarre/Launch OpenGL.sh" --smoke-test --ignore-gpu-blocklist
           grep -q 'SMOKE PASS' "$XDG_STATE_HOME/zombie-bagarre/launch.log"
       - name: Keep startup diagnostics
         if: always()
