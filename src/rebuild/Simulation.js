@@ -1,3 +1,4 @@
+import {weaponLock,permittedLoadout} from './Progression.js';
 import {throwOrdnance,detonateThrowable} from './Throwables.js';
 import {MELEE_PROFILES} from './MeleeWeapons.js';
 import {configureBoss,bossDamage,bossDefeated,bossContains,updateBoss as stepBoss,beginBossAttack} from './Bosses.js';
@@ -18,8 +19,8 @@ import { generateMap, insideMap, segmentInMap } from './Map.js';
 import { WEAPONS, weaponStats, ENEMIES, ARENA, COVER, UPGRADES, seededRandom, clamp, distance, segmentCircle, lineBlocked, pointBlocked, POWERUPS, magazineSize, PROP_HEALTH, segmentBoxTime, TOTAL_WAVES, DISTRICTS } from './config.js';
 
 export class Simulation {
-  constructor({ seed=73,difficulty='standard',meta={},layout=null,mode='campaign',skin='scout',profile=null }={}) {
-    this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.streetEvents=makeStreetEvents(this.layout);this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
+  constructor({ seed=73,difficulty='standard',meta={},layout=null,mode='campaign',skin='scout',profile=null,progression='sandbox' }={}) {
+    this.progression=progression==='hero'?'hero':'sandbox';this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.streetEvents=makeStreetEvents(this.layout);this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
     this.state = 'menu'; this.enemies = []; this.bullets = []; this.pickups = []; this.hazards = [];this.fires=[];
     this.time = 0; this.wave = 0; this.kills = 0; this.score = 0; this.combo = 0; this.comboTimer = 0;
     this.player = this.makePlayer('carbine'); this.upgrades = []; this.upgradeOffers=[]; this.rerolls=2; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);if(profile)initRPG(this,profile);
@@ -31,7 +32,7 @@ export class Simulation {
       melee: 0, throwable: 'frag', grenades: 3, blast: 1, pickupRange: 1.35, lifeSteal: 0, reloadMultiplier: 1, fireMultiplier: 1, moving: false, resistance:0, regen:0, pierce:0, crit:0, magazineBonus:0, burn:0, frost:0, blastRadius:1, shield:0, overdrive:0, doubleScore:0, freeze:0,equipped:[weapon],weaponTimers:{},reloads:{},reloadDurations:{},shots:{},equippedAt:-99,moveX:0,moveZ:0,meleeAttack:null,meleeBuffer:null,attackHeld:false,throwAnimation:0,offhandRecoil:0,swapBoost:0,lastWeapon:null,lastWeaponTime:-100 };
   }
   emit(type, data = {}) { this.events.push({ ...data, type }); }
-  start(weapon = 'carbine') { this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing'; this.nextWave(); }
+  start(weapon = 'carbine') { this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing'; this.nextWave(); }
   pause() { if (['playing', 'extracting'].includes(this.state)) { this.previousState = this.state; this.state = 'paused'; } }
   resume() { if (this.state === 'paused') this.state = this.previousState; }
   nextWave() {
@@ -89,7 +90,7 @@ export class Simulation {
     if(!insideMap(this.layout,body.x,body.z,r))body.z=oldZ;
   }
   setLoadout(keys){
-    const p=this.player,next=normalizeLoadout(keys),changed=next.join('|')!==p.equipped.join('|');
+    const p=this.player,next=permittedLoadout(this,keys),changed=next.join('|')!==p.equipped.join('|');
     const oldTwin=p.equipped.length===2&&p.equipped[0]===p.equipped[1]?p.equipped[0]:null,newTwin=next.length===2&&next[0]===next[1]?next[0]:null;p.twinReserves??={};
     if(oldTwin&&oldTwin!==newTwin)p.twinReserves[oldTwin]={ammo:p.magazines.offhand,reload:p.reloads.offhand||0,duration:p.reloadDurations.offhand||0,timer:p.weaponTimers.offhand||0};p.equipped=next;
     p.weapon=next[0];
@@ -98,7 +99,7 @@ export class Simulation {
     p.reload=p.reloads[p.weapon]||0;return changed;
   }
   equipWeapon(key){if(!WEAPONS[key])return false;return this.setLoadout(toggleLoadout(this.player.equipped,key));}
-  switchWeapon(key){if(!WEAPONS[key])return;const p=this.player;if(p.equipped.includes(key)&&key!==p.equipped[0])this.setLoadout([key,p.equipped[0]]);if(!p.equipped.includes(key)){this.setLoadout(WEAPONS[key].melee||isMelee(p)?[key]:[key,...p.equipped.slice(1)]);}p.weapon=key;p.swing=0;p.swingWeapon=null;p.meleeAttack=null;p.meleeBuffer=null;p.reload=p.reloads[key]||0;p.fire=p.weaponTimers[key]||0;this.emit('switch');}
+  switchWeapon(key){if(!WEAPONS[key]||weaponLock(this,key))return;const p=this.player;if(p.equipped.includes(key)&&key!==p.equipped[0])this.setLoadout([key,p.equipped[0]]);if(!p.equipped.includes(key)){this.setLoadout(WEAPONS[key].melee||isMelee(p)?[key]:[key,...p.equipped.slice(1)]);}p.weapon=key;p.swing=0;p.swingWeapon=null;p.meleeAttack=null;p.meleeBuffer=null;p.reload=p.reloads[key]||0;p.fire=p.weaponTimers[key]||0;this.emit('switch');}
   reload(key=this.player.weapon,slot=key){const p=this.player,w=weaponStats(p,key);if(w.melee)return;if(!p.reloads[slot]&&p.magazines[slot]<magazineSize(p,key)){p.reloads[slot]=w.reload*p.reloadMultiplier;p.reloadDurations[slot]=p.reloads[slot];if(slot===p.weapon){p.reload=p.reloadTotal=p.reloads[slot];}this.emit('reload',{weapon:key,slot});}}
   damagePlayer(amount) {
     const p = this.player; if (p.invulnerable > 0 || !['playing', 'extracting'].includes(this.state)) return;
@@ -144,7 +145,7 @@ export class Simulation {
     for (const [key, w] of Object.entries(WEAPONS)) this.player.magazines[key] = magazineSize(this.player,key);
     if(this.player.equipped[0]===this.player.equipped[1])this.player.magazines.offhand=magazineSize(this.player,this.player.equipped[0]);
     for(const [key,reserve]of Object.entries(this.player.twinReserves||{}))Object.assign(reserve,{ammo:magazineSize(this.player,key),reload:0,duration:0,timer:0});
-    this.player.reload=0;this.player.reloads={};this.player.weaponTimers={};this.player.invulnerable = 1.5; this.bullets = []; this.hazards = []; this.nextWave(); return true;
+    this.player.reload=0;this.player.reloads={};this.player.weaponTimers={};this.player.invulnerable = 1.5; this.bullets = []; this.hazards = []; this.emit('progression',{category:'upgrade',title:u.title.toUpperCase(),detail:`EXPEDITION UPGRADE · ${['I','II','III','IV'][rank-1]}`});this.nextWave(); return true;
   }
   offerUpgrades(){this.choices=rollUpgrades(this.player,this.wave,this.random,this.upgradeOffers);this.upgradeOffers=this.choices.map(u=>u.id);this.emit('upgrade');}
   rerollUpgrades(){if(this.state!=='upgrade'||this.rerolls<=0)return false;this.rerolls--;this.offerUpgrades();return true;}

@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.22 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.23 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 ## Play locally
 
@@ -27,6 +27,14 @@ Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run b
 - Turbulent animated flames, rising smoke and embers, blast lighting and chained fuel explosions. Brick, concrete, wood, metal, glass and earth debris have different sizes, shapes, bounce and surface properties. Canal shots, explosions, falling debris and sinking cars produce spray and fading ripples.
 - Seven enemy types and eight boss encounters with four bespoke articulated rigs, building-scale variants, two phases and a paired fight. Three difficulty settings, pause on focus loss, game-over/retry, extraction/victory and local records.
 - Original procedural scene assets and synthesized audio; no external asset or font downloads at runtime.
+
+## New in 4.23 — Hero training & field-manual polish
+
+- Character → Skill Tree now shows 20 skills across four colored branches, including eight new Arsenal training nodes with level, point and prerequisite requirements. Unlock weapon families, elemental throwables and two-gun loadouts.
+- Select **Hero / Earn your arsenal** from the main menu or Settings for progression locks. **Testing / All equipment** remains the default and bypasses equipment restrictions without spending points. Both modes retain permanent character progress; expeditions keep their existing reset rules.
+- Compact overhead notices celebrate character levels, learned skills, run upgrades and weapon evolution, with sound and controller rumble cues. Disable them under Settings → Combat feedback; reduced motion is respected.
+- Menu entrances, navigation icons, skill illustrations and branch colors follow the survivor dossier style. Armour inventory art distinguishes head/chest/legs, family and tier, with empty-slot silhouettes and an enlarged inspector illustration.
+- See [design and verification](docs/PROGRESSION-4.23.md).
 
 ## New in 4.22 — Expanded field armoury
 

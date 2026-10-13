@@ -50,7 +50,7 @@ test('district and street contracts unlock the second guardian and launcher, wit
 
 test('specializations require their parent and free respec removes new bonuses without erasing expedition perks',async()=>{
  const {SKILLS,skillLock}=await import('../src/rebuild/RPG.js');const s=game({xp:20000});
- assert.equal(Object.keys(SKILLS).length,12);assert.match(skillLock(s.profile,'ambush'),/Ghost step/);assert.equal(spendPoint(s,'ambush'),false);
+ assert.equal(Object.keys(SKILLS).length,20);assert.match(skillLock(s.profile,'ambush'),/Ghost step/);assert.equal(spendPoint(s,'ambush'),false);
  assert.equal(spendPoint(s,'quickstep'),true);assert.equal(spendPoint(s,'ambush'),true);assert.equal(s.player.dashShield,6);assert.equal(s.player.dashDamage,.2);
  s.player.dashShield+=4;s.profile.skills=[];applyProfile(s);assert.equal(s.player.dashShield,4);assert.equal(s.player.dashDamage,0);
  const restored=normalizeProfile({xp:20000,skills:['mender','vampire','winter','pyre','bulwark','lifeline','quickstep','ambush']});assert.equal(restored.skills.length,8);

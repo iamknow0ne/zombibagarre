@@ -1,5 +1,12 @@
 import {UPGRADES,UPGRADE_TIERS,rankOf} from './Upgrades.js';
 const paths={
+ axe:'M4 22 17 3m-5 2 6-3 4 6-6 5-5-4M3 18l3 3',
+ dualgun:'M2 5h8v5H6v8H2Zm12 0h8v13h-4v-8h-4ZM6 8h3m6 0h3',
+ tree:'M12 3v6M4 13V9h16v4M12 9v8M2 13h4v4H2Zm8 4h4v4h-4Zm8-4h4v4h-4ZM10 1h4v4h-4Z',
+ person:'M8 6a4 4 0 1 0 8 0 4 4 0 1 0-8 0ZM3 22v-4a9 9 0 0 1 18 0v4M7 22v-6m10 0v6',
+ settings:'M4 5h16M4 12h16M4 19h16M8 2v6m8 1v6m-6 1v6',
+ map:'M2 5 8 2l8 3 6-3v17l-6 3-8-3-6 3Zm6-3v17m8-14v17',
+
  rounds:'M5 19V8l3-5 3 5v11Zm9 0V8l3-5 3 5v11ZM5 15h6m3 0h6',
  boot:'M7 3h8v10l6 3v4H3v-6h4Zm0 6h8m-8 4h5',
  heart:'M12 20 3 11C-1 3 8 1 12 7c4-6 13-4 9 4Z',
@@ -33,7 +40,7 @@ const paths={
  book:'M12 5C7 1 3 3 2 4v17c4-2 7-2 10 0 3-2 6-2 10 0V4c-4-2-7-2-10 1Zm0 0v16M5 8l4 1m6 0 4-1',
  wheel:'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 7a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM3 7l6 4m6 0 6-4m-9 8v7'
 };
-export const upgradeIcon=key=>`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="${paths[key]}"/></svg>`;
+export const upgradeIcon=key=>`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="${paths[key]||paths.book}"/></svg>`;
 export function renderUpgrades(sim,onChoose,onReroll){
  const $=id=>document.getElementById(id);
  $('upgrade-kicker').textContent=`WAVE ${String(sim.wave).padStart(2,'0')} CLEARED / CHOOSE ONE`;

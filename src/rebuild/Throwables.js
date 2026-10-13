@@ -1,3 +1,4 @@
+import {throwableLock} from './Progression.js';
 import {waterAt} from './City.js';
 import {distance,clamp} from './config.js';
 export const THROWABLES={
@@ -7,7 +8,7 @@ export const THROWABLES={
  shock:{name:'BLACKOUT / SHOCK CHARGE',short:'SHOCK',color:0x92e6df,radius:4.2,damage:90,fuse:.9,description:'Electrical discharge slows enemies and deals 50% extra damage to wet targets. Reaches farther in water.'}
 };
 export function throwOrdnance(sim,aim){
- const p=sim.player;if(p.grenades<=0||p.throwAnimation>0||p.vehicleId||p.dash>0)return false;
+ const p=sim.player;if(throwableLock(sim,p.throwable)||p.grenades<=0||p.throwAnimation>0||p.vehicleId||p.dash>0)return false;
  const key=THROWABLES[p.throwable]?p.throwable:'frag',w=THROWABLES[key],a=aim||{x:p.x+Math.sin(p.angle)*6,z:p.z+Math.cos(p.angle)*6},d=distance(a,p),scale=Math.min(1,10/(d||1));
  p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.grenades--;p.throwAnimation=.5;
  sim.hazards.push({id:sim.nextId++,x:p.x+(a.x-p.x)*scale,z:p.z+(a.z-p.z)*scale,radius:w.radius*p.blastRadius,damage:w.damage*p.blast,timer:w.fuse,duration:w.fuse,flight:.65,originX:p.x,originZ:p.z,thrown:true,friendly:true,throwable:key,source:key});sim.emit('throw',{x:p.x,z:p.z,throwable:key});return true;

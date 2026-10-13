@@ -1,3 +1,4 @@
+import {ProgressionFeed} from './ProgressionFeed.js';
 import {Vector3} from 'three';
 import {DamageFeed,damageStyle,damageText,damageSize} from './Combat.js';
 
@@ -5,27 +6,38 @@ export class CombatOverlay {
  constructor(game){
   this.canvas=document.createElement('canvas');this.canvas.className='combat-feedback';this.canvas.setAttribute('aria-hidden','true');
   Object.assign(this.canvas.style,{position:'fixed',inset:'0',pointerEvents:'none',width:'100%',height:'100%'});
-  game.insertAdjacentElement('afterend',this.canvas);this.ctx=this.canvas.getContext('2d');this.feed=new DamageFeed();this.bars=new Map();this.point=new Vector3();this.settings={};
+  game.insertAdjacentElement('afterend',this.canvas);this.ctx=this.canvas.getContext('2d');this.feed=new DamageFeed();this.progression=new ProgressionFeed();this.bars=new Map();this.point=new Vector3();this.settings={};
  }
- clear(){this.feed.clear();this.bars.clear();this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);}
+ clear(){this.feed.clear();this.progression?.clear();this.bars.clear();this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);}
  destroy(){this.canvas.remove();this.bars.clear();}
  event(hit){
+  if(this.settings.progressionPopups!==false)this.progression?.add(hit);
   if(hit.type!=='damage')return;
   if(this.settings.damageNumbers!==false)this.feed.add(hit);
   if(this.settings.enemyHealthBars!==false){const old=this.bars.get(hit.enemyId);this.bars.set(hit.enemyId,{health:Math.max(0,hit.health),maxHealth:hit.maxHealth,trail:old?.trail??hit.health+hit.dealt,hitAt:this.feed.clock});}
  }
- applySettings(settings){this.settings=settings;if(settings.damageNumbers===false)this.feed.hits=[];if(settings.enemyHealthBars===false)this.bars.clear();}
+ applySettings(settings){this.settings=settings;if(settings.progressionPopups===false)this.progression?.clear();if(settings.damageNumbers===false)this.feed.hits=[];if(settings.enemyHealthBars===false)this.bars.clear();}
  project(x,y,z,camera){const p=this.point.set(x,y,z).project(camera);return p.z>=-1&&p.z<=1&&Math.abs(p.x)<1.1&&Math.abs(p.y)<1.1?{x:(p.x*.5+.5)*this.w,y:(-.5*p.y+.5)*this.h}:null;}
+ drawProgression(sim,camera,place){
+  if(this.settings.progressionPopups===false||!this.progression?.items.length)return;
+  const anchor=this.project(sim.player.x,2.8,sim.player.z,camera);if(!anchor)return;const c=this.ctx;
+  for(const [i,item]of this.progression.items.entries()){
+   const age=this.progression.clock-item.born,width=Math.min(this.w-20,this.mobile?228:280),height=46;
+   const p=place({x:Math.max(width/2+8,Math.min(this.w-width/2-8,anchor.x)),y:anchor.y-34-i*52-(this.settings.reducedMotion?0:Math.min(age,.2)*30)},width,height);if(!p)continue;
+   c.save();c.globalAlpha=Math.min(1,age/.12,(item.life-age)/.4);c.fillStyle='#132529';c.fillRect(p.x-width/2,p.y-height/2,width,height);c.fillStyle=item.color;c.fillRect(p.x-width/2,p.y-height/2,3,height);c.textAlign='center';c.textBaseline='middle';c.font="bold 14px 'Arial Narrow',sans-serif";c.fillText(item.title,p.x,p.y-7,width-18);c.font="9px Consolas,monospace";c.fillText(item.detail||'',p.x,p.y+11,width-18);c.restore();
+  }
+ }
  height(e){return e.crawling?1:(e.enemyType||e.type)==='boss'?(e.bossHeight||6)*.65:(e.enemyType||e.type)==='brute'?3.25:(e.enemyType||e.type)==='runner'?2:2.5;}
  draw(sim,dt,camera){
   const c=this.ctx,w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
   if(this.w!==w||this.h!==h||this.dpr!==dpr){this.w=w;this.h=h;this.dpr=dpr;this.canvas.width=Math.round(w*dpr);this.canvas.height=Math.round(h*dpr);}
-  c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);this.feed.update(dt);
+  c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);this.feed.update(dt);this.progression?.update(dt);
   if(sim.state==='menu')return;
   const ids=new Set(sim.enemies.filter(e=>e.health>0).map(e=>e.id));for(const id of this.bars.keys())if(!ids.has(id))this.bars.delete(id);
   // Shared screen-space occupancy keeps nearby labels apart, including on phones.
   const occupied=[...(this.reserved||[])];this.drawnNumbers=0;this.drawnBars=0;const overlaps=r=>occupied.some(o=>Math.abs(o.x-r.x)<(o.w+r.w)/2+3&&Math.abs(o.y-r.y)<(o.h+r.h)/2+3);
   const place=(p,width,height)=>{for(const [dx,dy]of [[0,0],[-28,-12],[28,-12],[0,-38],[-36,-40],[36,-40]]){const r={x:p.x+dx,y:p.y+dy,w:width,h:height};if(r.x-width/2<4||r.x+width/2>w-4||r.y-height/2<16||r.y+height/2>h-24||overlaps(r))continue;occupied.push(r);return r;}return null;};
+  this.drawProgression(sim,camera,place);
   if(this.settings.enemyHealthBars!==false){let count=0;for(const e of [...sim.enemies].sort((a,b)=>Math.hypot(a.x-sim.player.x,a.z-sim.player.z)-Math.hypot(b.x-sim.player.x,b.z-sim.player.z))){
    if(e.health<=0||e.health>=e.maxHealth||count>=(this.mobile?10:32))continue;const state=this.bars.get(e.id);if(!state||this.feed.clock-state.hitAt>4)continue;
    const p=this.project(e.x,this.height(e),e.z,camera);if(!p||p.y<20||p.y>h-20)continue;count++;
