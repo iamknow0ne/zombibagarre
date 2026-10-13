@@ -1,0 +1,46 @@
+name: Publish tested Steam Deck download
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Build Steam Deck edition run ID
+        required: true
+      tag:
+        description: Existing draft release tag (target must match the tested commit)
+        required: true
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_ID: ${{ inputs.run_id }}
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Verify the draft points to the tested source
+        shell: bash
+        run: |
+          [[ "$RUN_ID" =~ ^[0-9]+$ ]] && [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          gh api "repos/$GH_REPO/actions/runs/$RUN_ID" > run.json
+          gh release view "$RELEASE_TAG" --json targetCommitish,isDraft > release.json
+          python3 - <<'PY'
+          import json
+          run=json.load(open('run.json')); release=json.load(open('release.json'))
+          assert run['name']=='Build Steam Deck edition' and run['conclusion']=='success'
+          assert release['isDraft'] and release['targetCommitish']==run['head_sha']
+          print('Publishing the exact tested source:',run['head_sha'])
+          PY
+      - name: Download and verify the tested artifact
+        run: |
+          gh run download "$RUN_ID" --name Zombie-Bagarre-SteamDeck --dir download
+          cd download
+          sha256sum -c ./*.sha256
+          test -s "Zombie-Bagarre-${RELEASE_TAG#v}-SteamDeck-x86_64.tar.gz"
+      - name: Attach binaries and publish the test release
+        run: |
+          gh release upload "$RELEASE_TAG" download/*.tar.gz download/*.sha256
+          gh release edit "$RELEASE_TAG" --draft=false --prerelease
