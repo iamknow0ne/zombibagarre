@@ -1,0 +1,7 @@
+// Conservative broad phase only: exact collision tests still decide every hit.
+// Stable source order preserves ties and seeded combat outcomes.
+export class SpatialIndex{
+ constructor(items,bounds=o=>({x:o.x,z:o.z,w:o.w,d:o.d}),cell=12){this.items=items;this.cell=cell;this.cells=new Map();this.bounds=bounds;this.dynamic=[];for(let i=0;i<items.length;i++){const o=items[i];if(o.driveable){this.dynamic.push(i);continue;}const b=bounds(o),x0=Math.floor((b.x-b.w/2)/cell),x1=Math.floor((b.x+b.w/2)/cell),z0=Math.floor((b.z-b.d/2)/cell),z1=Math.floor((b.z+b.d/2)/cell);for(let z=z0;z<=z1;z++)for(let x=x0;x<=x1;x++){const key=x+','+z;let list=this.cells.get(key);if(!list)this.cells.set(key,list=[]);list.push(i);}}}
+ segment(a,b,padding=0){const c=this.cell,x0=Math.floor((Math.min(a.x,b.x)-padding)/c),x1=Math.floor((Math.max(a.x,b.x)+padding)/c),z0=Math.floor((Math.min(a.z,b.z)-padding)/c),z1=Math.floor((Math.max(a.z,b.z)+padding)/c);if((x1-x0+1)*(z1-z0+1)>400)return this.items;const found=new Set(this.dynamic);for(let z=z0;z<=z1;z++)for(let x=x0;x<=x1;x++)for(const i of this.cells.get(x+','+z)||[])found.add(i);return [...found].sort((a,b)=>a-b).map(i=>this.items[i]);}
+}
+export function collisionCandidates(sim,a,b,padding=0){const items=sim.obstacles;if(items.length<24)return items;const revision=sim.geometryRevision||0;let cache=sim.collisionIndex;if(!cache||cache.items!==items||cache.revision!==revision){cache=new SpatialIndex(items);cache.revision=revision;sim.collisionIndex=cache;}return cache.segment(a,b,padding);}

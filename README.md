@@ -2,7 +2,7 @@
 
 [Play in your browser](https://iamknow0ne.github.io/zombibagarre/) — share this link with friends. No installation or account is needed.
 
-A single-player 2.5D survival game built with Three.js. Version 4.35 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
+A single-player 2.5D survival game built with Three.js. Version 4.36 includes an open city with connected streets, ponds, fountains, a canal, bridges, drivable cars and a street atlas. Explore on foot or behind the wheel while surviving 32 escalating waves. The separate biome campaign retains eight generated environments: French quarter, docks, gardens, factories, jungle, snowy mountains, badlands and marsh.
 
 Phone controls now use compact icons with ammo/cooldown readouts. The bell opens character notices for skill points, evolved weapons, new armour and ready quest rewards. See [mobile controls and notices](docs/MOBILE-4.33.md).
 
@@ -18,6 +18,13 @@ npm run dev
 ```
 
 Open http://127.0.0.1:3000/. WebGL and a modern browser are required. `npm run build` creates the production site in `dist`; `npm run preview` serves that build.
+
+## New in 4.36 — Illustrated field archive and completion pass
+
+- Original portraits for all four survivors and the four Warden families, with a new boss lore and tactics chapter. Character identity selectors include portraits while the equipped 3D preview remains accurate.
+- Height-aware FPS/TPS firearm aiming, manual headshots, upper-floor and roof impacts, airbursts and proper water contact. Weapon poses and flame jets follow vertical aim.
+- Faster city collision queries, a lighter Balanced shadow budget, and 82% smaller delivery files for the six existing raster assets. A local crowded benchmark improved from 80 to 104 FPS; results vary by device.
+- Full campaign completion checks on all three difficulties and the open-city route, plus browser QA and expanded regression coverage. [Release details, evidence and remaining limits](docs/RELEASE-4.36.md).
 
 ## What is in this version
 

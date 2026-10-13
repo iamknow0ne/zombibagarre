@@ -32,15 +32,15 @@ export function reuseSceneForAO(ao,scene){
 // nodes remain available for animation and dismemberment; corpses stay separate.
 export class CharacterInstances{
  constructor(scene){this.scene=scene;this.batches=new Map();this.actors=new Map();}
- update(characters){
+ update(characters,quality='high'){
   for(const b of this.batches.values())b.count=0;
   for(const [id,entry]of this.actors)if(characters.get(id)!==entry.root)this.actors.delete(id);
   for(const [id,root]of characters){if(root.userData.boss)continue;let entry=this.actors.get(id);
-   if(!entry){const parts=[];let index=0;root.traverse(m=>{if(!m.isMesh||!m.material?.isMeshStandardMaterial||m.material.transparent)return;const key=`${root.userData.type}:${root.userData.variant}:${index++}`;let batch=this.batches.get(key);if(!batch){batch=new T.InstancedMesh(m.geometry.clone(),m.material,512);batch.instanceMatrix.setUsage(T.DynamicDrawUsage);batch.castShadow=m.castShadow;batch.receiveShadow=m.receiveShadow;batch.frustumCulled=false;batch.count=0;this.scene.add(batch);this.batches.set(key,batch);}m.layers.disable(0);parts.push({mesh:m,batch});});entry={root,parts};this.actors.set(id,entry);}
+   if(!entry){const parts=[];let index=0;root.traverse(m=>{if(!m.isMesh||!m.material?.isMeshStandardMaterial||m.material.transparent)return;const key=`${root.userData.type}:${root.userData.variant}:${index++}`;let batch=this.batches.get(key);if(!batch){batch=new T.InstancedMesh(m.geometry.clone(),m.material,512);batch.instanceMatrix.setUsage(T.DynamicDrawUsage);batch.userData.fullShadow=m.castShadow;batch.castShadow=m.castShadow;batch.receiveShadow=m.receiveShadow;batch.frustumCulled=false;batch.count=0;this.scene.add(batch);this.batches.set(key,batch);}m.layers.disable(0);parts.push({mesh:m,batch});});entry={root,parts};this.actors.set(id,entry);}
    root.updateWorldMatrix(true,true);
    for(const {mesh,batch}of entry.parts){let visible=true;for(let p=mesh;p;p=p.parent)if(!p.visible){visible=false;break;}if(!visible||batch.count>=512)continue;batch.setMatrixAt(batch.count++,mesh.matrixWorld);}
   }
-  for(const b of this.batches.values()){b.visible=b.count>0;b.instanceMatrix.needsUpdate=true;}
+  for(const b of this.batches.values()){b.visible=b.count>0;b.castShadow=quality==='high'&&b.userData.fullShadow;b.instanceMatrix.needsUpdate=true;}
  }
  dispose(){for(const {parts}of this.actors.values())for(const {mesh}of parts)mesh.layers.enable(0);for(const b of this.batches.values()){b.removeFromParent();b.geometry.dispose();b.dispose();}this.batches.clear();this.actors.clear();}
 }

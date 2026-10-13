@@ -33,3 +33,9 @@ test('AO only hides visible excluded objects and restores original hidden branch
 test('idle rendering is throttled without dropping gameplay frames or resume/resize updates',async()=>{
  const {RenderSchedule}=await import('../src/rebuild/RenderSchedule.js');const r=new RenderSchedule();assert.equal(r.next(0,'playing'),0);assert.equal(r.next(8,'playing'),.008);assert.equal(r.next(16,'paused'),.008);assert.equal(r.next(32,'paused'),null);assert.equal(r.next(40,'paused',false,true),.024);assert.equal(r.next(100,'paused',true),null);assert.equal(r.next(108,'playing'),.008);assert.equal(r.next(116,'playing'),.008);assert.equal(r.next(124,'menu'),.008);assert.equal(r.next(140,'menu'),null);assert.ok(r.next(160,'menu')>0);
 });
+
+test('balanced enemy shadows use contact shading and high restores articulated shadows',()=>{
+ const scene=new T.Scene(),root=new T.Group();root.userData={type:'walker',variant:0};const mesh=new T.Mesh(new T.BoxGeometry(),new T.MeshStandardMaterial());mesh.castShadow=true;root.add(mesh);scene.add(root);const chars=new Map([[1,root]]),instances=new CharacterInstances(scene);
+ instances.update(chars,'balanced');const batch=[...instances.batches.values()][0];assert.equal(batch.castShadow,false);assert.equal(batch.visible,true);assert.equal(batch.count,1);
+ instances.update(chars,'high');assert.equal(batch.castShadow,true);assert.equal(batch.count,1);instances.update(chars,'low');assert.equal(batch.castShadow,false);instances.dispose();
+});

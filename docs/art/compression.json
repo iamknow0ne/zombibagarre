@@ -1,0 +1,50 @@
+[
+  {
+    "source": "public/art/saint-roch-sprites-v1.png",
+    "runtime": "public/art/saint-roch-sprites-v1.webp",
+    "originalBytes": 1808326,
+    "runtimeBytes": 577138
+  },
+  {
+    "source": "public/art/blackout-key-art-v1.png",
+    "runtime": "public/art/blackout-key-art-v1.webp",
+    "originalBytes": 2957883,
+    "runtimeBytes": 427474
+  },
+  {
+    "source": "public/art/blackout-materials-v1.png",
+    "runtime": "public/art/blackout-materials-v1.webp",
+    "originalBytes": 3740917,
+    "runtimeBytes": 575888
+  },
+  {
+    "source": "public/art/saint-roch-materials-v1.png",
+    "runtime": "public/art/saint-roch-materials-v1.webp",
+    "originalBytes": 2778849,
+    "runtimeBytes": 447196
+  },
+  {
+    "source": "public/art/blackout-sprites-v1.png",
+    "runtime": "public/art/blackout-sprites-v1.webp",
+    "originalBytes": 2085754,
+    "runtimeBytes": 446264
+  },
+  {
+    "source": "public/art/quarantine-key-art-v1.png",
+    "runtime": "public/art/quarantine-key-art-v1.webp",
+    "originalBytes": 3008911,
+    "runtimeBytes": 480700
+  },
+  {
+    "source": "docs/art/wardens-original.png",
+    "runtime": "public/art/wardens-portraits-v1.webp",
+    "originalBytes": 3275640,
+    "runtimeBytes": 530816
+  },
+  {
+    "source": "docs/art/survivors-original.png",
+    "runtime": "public/art/survivors-portraits-v1.webp",
+    "originalBytes": 2580921,
+    "runtimeBytes": 305158
+  }
+]

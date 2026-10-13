@@ -41,7 +41,7 @@ export function animateWeapons(character,state,t,dt,kit){
   const f=reload>0?1-reload/total:0,r=weaponReloadPose(key,f);
   const equip=1-smooth((t-(state.equippedAt??-99))/.22);
   g.position.set(side*(two?.38:.16),1.23, two?.31:.20);
-  g.rotation.set(-profile.lift*recoil+r.lower*.55+equip*.48,side*(-r.lower*.28),side*(-r.lower*.3));
+  g.rotation.set((kit.firstPerson?0:state.aimPitch||0)-profile.lift*recoil+r.lower*.55+equip*.48,side*(-r.lower*.28),side*(-r.lower*.3));
   g.position.z-=recoil*profile.kick+(two?0:r.lower*.055+equip*.06);g.position.y-=r.lower*.12+equip*.15;
   g.position.y+=Math.sin(t*2.4+hand*.6)*.009+Math.sin(phase*2)*walk*.012/(.5+profile.weight);
   g.rotation.y+=Math.sin(phase)*walk*.018/(.5+profile.weight)+motion.yaw*side;g.rotation.z+=motion.roll*side;g.rotation.x+=motion.pitch;g.position.y+=motion.rise;g.rotation.z-=(d.motion?.pose?.roll||0)*.28;g.rotation.x-=(d.motion?.pose?.pitch||0)*.16;

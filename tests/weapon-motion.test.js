@@ -63,3 +63,10 @@ test('shooting dives keep gun grips in reach and barrels level in every directio
   for(const gun of m.userData.weaponRigs.filter(Boolean)){const forward=new T.Vector3(0,0,1).applyQuaternion(gun.getWorldQuaternion(new T.Quaternion()));assert.ok(Math.abs(forward.y)<.05,`${keys}: barrel pitch ${forward.y}`);}
  }
 });
+
+test('perspective weapon grips stay connected while aiming up and down during recoil and reload',()=>{
+ for(const key of Object.keys(WEAPONS).filter(k=>!WEAPONS[k].melee))for(const pitch of [-.65,0,.85])for(const firstPerson of [false,true]){
+  const s=game(),m=dummyRig();s.setLoadout([key]);s.player.aimPitch=pitch;
+  for(let i=0;i<30;i++){const p=s.player,t=i/30;p.shots[key]={time:0,weapon:key,variant:i%4};p.reloads[key]=i>15?(30-i)/30:0;animateWeapons(m,p,t,1/30,{...kit,firstPerson});assert.ok(m.userData.gripError<.03,`${key} pitch ${pitch}: ${m.userData.gripError}`);}
+ }
+});

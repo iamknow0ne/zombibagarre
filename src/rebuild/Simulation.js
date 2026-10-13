@@ -1,3 +1,5 @@
+import {boxHit3D,bodyHit3D,actorHeight,propHeight} from './Ballistics.js';
+import {SpatialIndex,collisionCandidates} from './SpatialIndex.js';
 import {createFocus,stepFocus,endFocus,rewardFocus,beginFocusDive,FOCUS} from './BulletTime.js';
 import {createWeather,updateWeather,addNightReinforcements,weatherMovement} from './Weather.js';
 import {weaponLock,permittedLoadout} from './Progression.js';
@@ -68,11 +70,11 @@ export class Simulation {
     this.spawnEnemy(type, x, z); this.toSpawn--;
   }
   setBuildings(buildings){const previous=new Map(this.props.filter(p=>p.kind==='building').map(p=>[p.id,p]));this.props=this.props.filter(p=>p.kind!=='building').concat(buildings.map(b=>({...b,kind:'building',health:Math.max(1800,Math.round(b.w*b.d*(b.h||8)*1.5)),maxHealth:Math.max(1800,Math.round(b.w*b.d*(b.h||8)*1.5)),damageStage:0,...previous.get(b.id)})));this.obstacles=this.props.filter(p=>p.health>0);this.navigation.clear();}
-  blocked(a,b,padding=0){return lineBlocked(a,b,padding,this.obstacles)||!!(this.layout.boundary&&!segmentInMap(this.layout,a,b,padding));}
+  blocked(a,b,padding=0){return lineBlocked(a,b,padding,collisionCandidates(this,a,b,padding))||!!(this.layout.boundary&&!segmentInMap(this.layout,a,b,padding));}
   damageProp(prop,amount,impact=null){
     if(prop.health<=0)return;
-    prop.health-=amount;this.emit('prop-hit',{id:prop.id,x:impact?.x??prop.x,z:impact?.z??prop.z,kind:prop.kind,material:prop.material,weapon:impact?.weapon,slicing:!!impact?.slicing,thermal:!!impact?.thermal,health:prop.health/(prop.maxHealth||1),amount,explosive:!!impact?.explosive,radius:impact?.radius||0});
-    if(prop.kind==='building'&&prop.health>0){const stage=Math.min(3,Math.floor((1-Math.max(0,prop.health)/prop.maxHealth)*4));if(stage>(prop.damageStage||0)){prop.damageStage=stage;this.emit('building-stage',{id:prop.id,stage,material:prop.material,x:impact?.x??prop.x,z:impact?.z??prop.z});}}
+    prop.health-=amount;this.emit('prop-hit',{id:prop.id,x:impact?.x??prop.x,y:impact?.y,z:impact?.z??prop.z,kind:prop.kind,material:prop.material,weapon:impact?.weapon,slicing:!!impact?.slicing,thermal:!!impact?.thermal,health:prop.health/(prop.maxHealth||1),amount,explosive:!!impact?.explosive,radius:impact?.radius||0});
+    if(prop.kind==='building'&&prop.health>0){const stage=Math.min(3,Math.floor((1-Math.max(0,prop.health)/prop.maxHealth)*4));if(stage>(prop.damageStage||0)){prop.damageStage=stage;this.emit('building-stage',{id:prop.id,stage,material:prop.material,x:impact?.x??prop.x,y:impact?.y,z:impact?.z??prop.z});}}
     if(prop.health<=0){
       if(prop.kind==='building')startCollapse(this,prop);if(prop.kind==='rubble'&&prop.pileKey){const key=prop.pileKey;this.structures=(this.structures||[]).filter(c=>`${c.buildingId}:${Math.floor(c.x/2.4)}:${Math.floor(c.z/2.4)}`!==key);this.rubblePiles?.delete(key);}
       if(this.player.vehicleId===prop.id){this.player.vehicleId=null;this.player.radius=.4;this.player.invulnerable=.5;this.player.health=Math.max(1,this.player.health-30);this.emit('vehicle',{message:'VEHICLE LOST · GET CLEAR'});}this.emit('destroy',{...prop});if(!prop.sunk&&(prop.burning>0||['barrel','car'].includes(prop.kind)))this.addFire(prop.x,prop.z,prop.kind==='car'?2.5:1.5);this.obstacles=this.props.filter(o=>o.health>0);this.geometryRevision++;this.navigation.clear();
@@ -134,11 +136,11 @@ export class Simulation {
     }
   }
   earnMastery(key,amount){for(const tier of addMastery(this.player,key,amount))this.emit('evolution',{weapon:key,tier,name:WEAPON_FINISHES[key].signature,x:this.player.x,z:this.player.z});}
-  blast(x, z, radius, damage, kind = 'explosion', source = 'grenade', weapon=null, tier=0) {
+  blast(x, z, radius, damage, kind = 'explosion', source = 'grenade', weapon=null, tier=0, y=0) {
     if(this.player.blast>1&&this.player.blastRadius>1&&kind==='explosion')damage*=1.25;
-    const water=waterAt(this.layout,x,z);this.emit(kind, { x, z, radius,source,water,weapon,tier });if(water)this.splashWater(x,z,radius*2);
-    for(const prop of this.props)if(prop.health>0){const hit={x:clamp(x,prop.x-prop.w/2,prop.x+prop.w/2),z:clamp(z,prop.z-prop.d/2,prop.z+prop.d/2)},d=distance(hit,{x,z});if(d<radius)this.damageProp(prop,damage*.85*(1-.4*d/radius),{...hit,explosive:kind==='explosion',radius});}
-    for (const e of this.enemies) { const d = distance(e, { x, z }); if(d<radius+e.radius){e.exposed=3;this.damageEnemy(e, damage * (1 - .45 * d / (radius + e.radius)), (e.x - x) * 3, (e.z - z) * 3,{kind:kind==='explosion'?'explosion':'melee',weapon,tier});} }
+    const water=y<.3&&waterAt(this.layout,x,z);this.emit(kind, { x, y, z, radius,source,water,weapon,tier });if(water)this.splashWater(x,z,radius*2);
+    for(const prop of this.props)if(prop.health>0){const hit={x:clamp(x,prop.x-prop.w/2,prop.x+prop.w/2),z:clamp(z,prop.z-prop.d/2,prop.z+prop.d/2)},d=Math.hypot(distance(hit,{x,z}),Math.max(0,y-propHeight(prop)));if(d<radius)this.damageProp(prop,damage*.85*(1-.4*d/radius),{...hit,y:y>0?Math.min(y,propHeight(prop)):undefined,explosive:kind==='explosion',radius});}
+    for (const e of this.enemies) { const d = Math.hypot(distance(e, { x, z }),Math.max(0,y-actorHeight(e))); if(d<radius+e.radius){e.exposed=3;this.damageEnemy(e, damage * (1 - .45 * d / (radius + e.radius)), (e.x - x) * 3, (e.z - z) * 3,{kind:kind==='explosion'?'explosion':'melee',weapon,tier});} }
   }
   chooseUpgrade(id) {
     if (this.state !== 'upgrade' || !this.choices.some(u => u.id === id)) return false;
@@ -183,7 +185,7 @@ export class Simulation {
     let aim = input.aim;
     const manual=input.firing||input.fireHands?.some(Boolean);
     if (input.auto !== false && !manual) aim = target;
-    if (aim&&!p.vehicleId) p.angle = Math.atan2(aim.x - p.x, aim.z - p.z);
+    if (aim&&!p.vehicleId) {p.angle = Math.atan2(aim.x - p.x, aim.z - p.z);p.aimPitch=aim.perspective?Math.atan2(1.1-aim.y,Math.hypot(aim.x-p.x,aim.z-p.z)):0;}
     else if (length > .1&&!p.vehicleId) p.angle = Math.atan2(mx, mz);
     if(p.meleeAttack){
       const attack=p.meleeAttack,age=this.time-attack.started;
@@ -242,11 +244,13 @@ export class Simulation {
     if(WEAPONS[key].melee){this.slice(key,aim);return;}
     const p=this.player,w=weaponStats(p,key),angle=Math.atan2(aim.x-p.x,aim.z-p.z),count=p.shotCounts[slot]=(p.shotCounts[slot]||0)+1;const variant=(count-1)%4;p.shots[slot]={time:this.time,weapon:key,hand,variant,tier:w.tier};p.magazines[slot]--;p.weaponTimers[slot]=w.interval*p.fireMultiplier*(p.overdrive>0?.5:1);
     if(hand)p.offhandRecoil=.12;const offset=(p.equipped.length>1?(hand?-.35:.35):.2);const originX=p.x+Math.cos(angle)*offset,originZ=p.z-Math.sin(angle)*offset;
+    p.aimPitch=aim.perspective?Math.atan2(1.1-aim.y,Math.hypot(aim.x-originX,aim.z-originZ)):0;
     if(w.chain)this.arcAttack(aim,w,{x:originX+Math.sin(angle)*.85,z:originZ+Math.cos(angle)*.85});else for(let i=0;i<w.pellets;i++){
-      const a=angle+(this.random()-.5)*w.spread*2,headshot=!['flame','launcher','arc'].includes(key)&&this.random()<(key==='marksman'?.32:key==='revolver'?.22:.07);
-      this.bullets.push({id:this.nextId++,x:originX,z:originZ,vx:Math.sin(a)*w.speed,vz:Math.cos(a)*w.speed,life:w.range/w.speed,headshot,damage:w.damage*(headshot?1.65:1)*p.damage*(p.swapBoost>0?1.25:1),enemy:false,tier:w.tier,ricochets:w.ricochet||0,y:1.1,vy:key==='launcher'?3.8:0,gravity:key==='launcher'?8:0,terminal:key==='marksman'&&w.tier===3,cluster:key==='launcher'&&w.tier===3,pierce:(w.pierce||0)+p.pierce,hitIds:[],weapon:key,burn:(w.burn||0)+p.burn,frost:p.frost,explosive:(key==='revolver'&&w.tier===3&&count%4===0?1.6:w.explosive||0)*p.blastRadius});
+      const shotAngle=aim.perspective?Math.atan2(aim.x-originX,aim.z-originZ):angle,a=shotAngle+(this.random()-.5)*w.spread*2,headshot=!aim.perspective&&!['flame','launcher','arc'].includes(key)&&this.random()<(key==='marksman'?.32:key==='revolver'?.22:.07);
+      const pitch=aim.perspective?p.aimPitch:0;
+      this.bullets.push({perspective:!!aim.perspective,id:this.nextId++,x:originX,z:originZ,vx:Math.sin(a)*w.speed*Math.cos(pitch),vz:Math.cos(a)*w.speed*Math.cos(pitch),life:w.range/w.speed,headshot,damage:w.damage*(headshot?1.65:1)*p.damage*(p.swapBoost>0?1.25:1),enemy:false,tier:w.tier,ricochets:w.ricochet||0,y:1.1,vy:aim.perspective?-Math.sin(pitch)*w.speed:key==='launcher'?3.8:0,gravity:key==='launcher'?8:0,terminal:key==='marksman'&&w.tier===3,cluster:key==='launcher'&&w.tier===3,pierce:(w.pierce||0)+p.pierce,hitIds:[],weapon:key,burn:(w.burn||0)+p.burn,frost:p.frost,explosive:(key==='revolver'&&w.tier===3&&count%4===0?1.6:w.explosive||0)*p.blastRadius});
     }
-    this.emit('shoot',{x:originX,z:originZ,angle,weapon:key,hand,variant,tier:w.tier,interval:p.weaponTimers[slot]/(this.timeScale||1)});
+    this.emit('shoot',{x:originX,z:originZ,angle,pitch:p.aimPitch||0,weapon:key,hand,variant,tier:w.tier,interval:p.weaponTimers[slot]/(this.timeScale||1)});
   }
   slice(key,aim){
     const p=this.player;if(!WEAPONS[key]?.melee||p.meleeAttack||p.vehicleId||p.dash>0||p.throwAnimation>0)return false;
@@ -290,10 +294,10 @@ export class Simulation {
   }
   arcAttack(aim,w,origin=this.player) {
     const p=this.player;let from=origin;
-    let target=this.enemies.filter(e=>e.health>0&&distance(p,e)<w.range&&!this.blocked(p,e)).sort((a,b)=>distance(a,aim)-distance(b,aim))[0];
+    let target=this.enemies.filter(e=>(!aim.perspective||e.id===aim.targetId)&&e.health>0&&distance(p,e)<w.range&&!this.blocked(p,e)).sort((a,b)=>distance(a,aim)-distance(b,aim))[0];
     const visited=new Set();
     for(let i=0;target&&i<=w.chain;i++){
-      visited.add(target.id);this.emit('arc',{x:from.x,z:from.z,toX:target.x,toZ:target.z,weapon:'arc',tier:w.tier});
+      visited.add(target.id);this.emit('arc',{x:from.x,z:from.z,y:i?actorHeight(from)*.65:1.2,toX:target.x,toZ:target.z,toY:actorHeight(target)*.65,weapon:'arc',tier:w.tier});
       if(target.burning>0)this.emit('combo',{name:'PLASMA ARC',description:'Fire + electricity: +40% arc damage'});
       this.damageEnemy(target,w.damage*p.damage*Math.pow(.83,i)*(target.burning>0?1.4:target.wet>0?1.25:1)*(p.swapBoost>0?1.25:1),0,0,{kind:'electric',weapon:'arc',tier:w.tier});target.slow=Math.max(target.slow||0,.6);target.electrified=.8;this.emit('electrify',{x:target.x,z:target.z});if(p.burn&&!(target.wet>0)){target.burning=p.burn;target.burnWeapon='arc';}
       from=target;target=this.enemies.filter(e=>e.health>0&&!visited.has(e.id)&&distance(from,e)<4.5&&!this.blocked(from,e)).sort((a,b)=>distance(from,a)-distance(from,b))[0];
@@ -380,26 +384,28 @@ export class Simulation {
   }
   detonateBullet(b){
     if(b.detonated)return;b.detonated=true;b.life=0;
-    this.blast(b.x,b.z,b.explosive||1.6,b.damage*(b.terminal?.35:1),'explosion',b.weapon,b.weapon,b.tier||0);
-    if(b.cluster&&!waterAt(this.layout,b.x,b.z))for(let i=0;i<3;i++){const a=i*Math.PI*2/3;this.hazards.push({id:this.nextId++,x:b.x+Math.sin(a)*1.7,z:b.z+Math.cos(a)*1.7,radius:1.5,timer:.2+i*.12,duration:.5,friendly:true,damage:b.damage*.25,source:'cluster',weapon:b.weapon,tier:b.tier});}
+    this.blast(b.x,b.z,b.explosive||1.6,b.damage*(b.terminal?.35:1),'explosion',b.weapon,b.weapon,b.tier||0,b.perspective?Math.max(0,b.y||0):0);
+    if(b.cluster&&(!b.perspective||b.y<3)&&!waterAt(this.layout,b.x,b.z))for(let i=0;i<3;i++){const a=i*Math.PI*2/3;this.hazards.push({id:this.nextId++,x:b.x+Math.sin(a)*1.7,z:b.z+Math.cos(a)*1.7,radius:1.5,timer:.2+i*.12,duration:.5,friendly:true,damage:b.damage*.25,source:'cluster',weapon:b.weapon,tier:b.tier});}
   }
   updateBullets(dt) {
+    const enemyIndex=this.enemies.length>20&&this.bullets.length>4?new SpatialIndex(this.enemies,e=>({x:e.x,z:e.z,w:(e.radius+.35)*2,d:(e.radius+.35)*2})):null;
     for(const b of this.bullets){
       if(b.life<=0)continue;const travel=Math.min(dt,b.life),a={x:b.x,z:b.z},end={x:b.x+b.vx*travel,z:b.z+b.vz*travel};b.life-=travel;
       b.y??=b.enemy?.9:1.1;b.vy??=0;const oldY=b.y;b.y+=b.vy*travel-(b.gravity||0)*travel*travel*.5;b.vy-=(b.gravity||0)*travel;
-      const contacts=this.obstacles.filter(o=>o.health>0).map(o=>({kind:'prop',o,t:segmentBoxTime(a,end,o)})).filter(c=>c.t!==null);
+      const start3={...a,y:oldY},end3={...end,y:b.y},endY=b.y;
+      const contacts=collisionCandidates(this,a,end).filter(o=>o.health>0).map(o=>({kind:'prop',o,t:b.perspective?boxHit3D(start3,end3,o):segmentBoxTime(a,end,o)})).filter(c=>c.t!==null);
       if(b.enemy){const t=circleContact(a,end,this.player,.55);if(t!==null)contacts.push({kind:'player',t});}
-      else for(const e of this.enemies)if(e.health>0&&!b.hitIds.includes(e.id)){const t=circleContact(a,end,e,e.radius+(b.weapon==='flame'?.35:.14));if(t!==null)contacts.push({kind:'enemy',o:e,t});}
-      const samples=Math.max(1,Math.ceil(Math.hypot(end.x-a.x,end.z-a.z)/.25));for(let i=0;i<=samples;i++){const t=i/samples;if(waterAt(this.layout,a.x+(end.x-a.x)*t,a.z+(end.z-a.z)*t)){contacts.push({kind:'water',t});break;}}
-      if(b.gravity&&b.y<=.08)contacts.push({kind:'ground',t:clamp((oldY-.08)/(oldY-b.y||1),0,1)});
+      else for(const e of (enemyIndex?enemyIndex.segment(a,end):this.enemies))if(e.health>0&&!b.hitIds.includes(e.id)){const t=b.perspective?bodyHit3D(start3,end3,e,b.weapon==='flame'?.35:.14):circleContact(a,end,e,e.radius+(b.weapon==='flame'?.35:.14));if(t!==null)contacts.push({kind:'enemy',o:e,t});}
+      const samples=Math.max(1,Math.ceil(Math.hypot(end.x-a.x,end.z-a.z)/.25));for(let i=0;i<=samples;i++){const t=i/samples;if((!b.perspective||oldY+(endY-oldY)*t<=.15)&&waterAt(this.layout,a.x+(end.x-a.x)*t,a.z+(end.z-a.z)*t)){contacts.push({kind:'water',t});break;}}
+      if((b.gravity||b.perspective)&&b.y<=.08)contacts.push({kind:'ground',t:clamp((oldY-.08)/(oldY-b.y||1),0,1)});
       contacts.sort((a,b)=>a.t-b.t);let stopped=false;
       for(const c of contacts){
-        if(c.o?.health<=0)continue;b.x=a.x+(end.x-a.x)*c.t;b.z=a.z+(end.z-a.z)*c.t;
+        if(c.o?.health<=0)continue;b.x=a.x+(end.x-a.x)*c.t;b.z=a.z+(end.z-a.z)*c.t;b.y=oldY+(endY-oldY)*c.t;
         if(c.kind==='water'){if(b.explosive)this.detonateBullet(b);else this.splashWater(b.x,b.z,.45);b.life=0;stopped=true;break;}
-        if(c.kind==='ground'){if(b.explosive||b.terminal)this.detonateBullet(b);b.life=0;stopped=true;break;}
+        if(c.kind==='ground'){if(b.explosive||b.terminal)this.detonateBullet(b);else this.emit('impact',{x:b.x,z:b.z,y:.08,normal:{x:0,z:0},kind:'ground',material:'concrete',weapon:b.weapon,tier:b.tier||0,dx:b.vx,dz:b.vz});b.life=0;stopped=true;break;}
         if(c.kind==='player'){this.damagePlayer(b.damage);b.life=0;stopped=true;break;}
         if(c.kind==='prop'){
-          const o=c.o,n=boxNormal(b,o);this.damageProp(o,b.damage,{x:b.x,z:b.z,weapon:b.weapon});
+          const o=c.o,n=boxNormal(b,o);this.damageProp(o,b.damage,{x:b.x,y:b.perspective?b.y:undefined,z:b.z,weapon:b.weapon});
           if(b.burn)this.igniteProp(o,b.x,b.z,b.y||.9,b.burn+2);
           this.emit('impact',{x:b.x,z:b.z,y:Math.max(.2,b.y),normal:n,weapon:b.weapon,tier:b.tier||0,kind:o.kind,material:o.material,dx:b.vx,dz:b.vz});
           if(b.explosive||b.terminal)this.detonateBullet(b);
@@ -408,7 +414,8 @@ export class Simulation {
         }
         const e=c.o;b.hitIds.push(e.id);
         if(b.explosive){this.detonateBullet(b);stopped=true;break;}
-        let damage=b.damage;const p=this.player,execution=p.crit>0&&p.pierce>0&&e.type!=='boss'&&e.health/e.maxHealth<.2;
+        const headshot=b.perspective?e.type!=='boss'&&!e.crawling&&!['flame','launcher','arc'].includes(b.weapon)&&b.y>=actorHeight(e)*.78:b.headshot;
+        let damage=b.damage*(b.perspective&&headshot?1.65:1);const p=this.player,execution=p.crit>0&&p.pierce>0&&e.type!=='boss'&&e.health/e.maxHealth<.2;
         if(execution)damage=Math.max(damage,e.health+1);
         if(e.lastHitWeapon&&e.lastHitWeapon!==b.weapon&&this.time-(e.lastHitAt||0)<3){
           if(b.weapon==='marksman'&&e.lastHitWeapon==='shotgun'){damage*=1.5;this.emit('combo',{name:'SHATTERSHOT',description:'Shotgun + piercing rifle: +50% damage'});}
@@ -416,14 +423,14 @@ export class Simulation {
         }
         if(b.weapon==='smg'&&e.exposed>0){damage*=1.35;this.emit('combo',{name:'BREACH & CLEAR',description:'Explosive + SMG: +35% damage'});}e.lastHitWeapon=b.weapon;e.lastHitAt=this.time;
         const impulse=b.weapon==='shotgun'?.055:b.weapon==='revolver'?.075:b.weapon==='marksman'?.05:.025;
-        this.damageEnemy(e,damage,b.vx*impulse,b.vz*impulse,{kind:b.weapon==='flame'?'fire':'ballistic',weapon:b.weapon,tier:b.tier,headshot:b.headshot,execution});
+        this.damageEnemy(e,damage,b.vx*impulse,b.vz*impulse,{kind:b.weapon==='flame'?'fire':'ballistic',weapon:b.weapon,tier:b.tier,headshot,execution});
         if(b.burn&&!(e.wet>0)){e.burning=b.burn;e.burnWeapon=b.weapon;}if(b.frost)e.slow=b.frost;
         if(b.weapon==='flame'&&b.tier===3&&this.time>(p.poolAfter||0)){p.poolAfter=this.time+.6;this.addFire(e.x,e.z,1.2);}
         if(p.frost>0&&e.burning>0&&e.slow>0&&!e.shockCooldown){e.shockCooldown=2;this.blast(e.x,e.z,2.2,45*p.damage,'explosion','thermal',b.weapon,b.tier);this.emit('combo',{name:'THERMAL SHOCK',description:'Fire + frost detonation'});}
         if(b.pierce>0){b.pierce--;b.damage*=.86;}
         else{if(b.terminal)this.detonateBullet(b);b.life=0;stopped=true;break;}
       }
-      if(!stopped){b.x=end.x;b.z=end.z;}if(b.life<=0&&(b.explosive||b.terminal)&&!b.detonated)this.detonateBullet(b);
+      if(!stopped){b.x=end.x;b.z=end.z;b.y=endY;}if(b.life<=0&&(b.explosive||b.terminal)&&!b.detonated)this.detonateBullet(b);
     }
     this.bullets=this.bullets.filter(b=>b.life>0);
   }

@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {perspectiveTarget} from './Ballistics.js';
 import {segmentBoxTime} from './config.js';
 export function cameraMovement(x,y,yaw){return{x:-x*Math.cos(yaw)-y*Math.sin(yaw),z:x*Math.sin(yaw)-y*Math.cos(yaw)};}
 export function cameraClearance(from,to,obstacles){let fraction=1;for(const b of obstacles){if(b.health<=0||b.kind!=='building'&&b.kind!=='crate'&&b.kind!=='tree')continue;const t=segmentBoxTime(from,to,b,.3);if(t!==null&&from.y+(to.y-from.y)*t<(b.h||(b.kind==='building'?20:2))+.3)fraction=Math.min(fraction,Math.max(0,t-.04));}return fraction;}
@@ -15,5 +16,5 @@ export class ViewRig{
   if(!this.sources||sources.some((m,i)=>m!==this.sources[i])||sources.length!==this.sources.length){this.hands?.removeFromParent();this.sources=sources;this.hands=new T.Group();this.pairs=[];const arms=new Set(player.userData.arms||[]);const copy=(o,parent)=>{const n=o.isMesh?new T.Mesh(o.geometry,o.material):new T.Group();parent.add(n);this.pairs.push([o,n]);for(const c of o.children)if(!arms.has(o)||!c.isMesh)copy(c,n);};for(const source of sources)copy(source,this.hands);scene.add(this.hands);}
   for(const [o,n]of this.pairs){n.position.copy(o.position);n.quaternion.copy(o.quaternion);n.scale.copy(o.scale);n.visible=o.visible;}this.hands.visible=true;this.hands.position.copy(this.camera.position);this.hands.quaternion.copy(this.camera.quaternion);this.hands.translateY(-1.5);this.hands.translateZ(-.75);this.hands.rotateY(Math.PI);this.hands.scale.setScalar(.9);
  }
- aim(player){return{x:player.x+Math.sin(this.yaw)*20,z:player.z+Math.cos(this.yaw)*20};}
+ aim(player,sim){if(!sim)return{x:player.x+Math.sin(this.yaw)*20,z:player.z+Math.cos(this.yaw)*20};const origin=this.ready?this.camera.position:{x:player.x,y:1.55,z:player.z};return perspectiveTarget(origin,this.yaw,this.pitch,sim.obstacles||sim.props,sim.enemies);}
 }

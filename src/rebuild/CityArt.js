@@ -6,7 +6,7 @@ import {roadDistance,withinBoundary} from './CityTopology.js';
 import {DENSITY} from './DisplaySettings.js';
 import {waterAt} from './City.js';
 const assets=new Map();
-export function cityAsset(name){if(!assets.has(name))assets.set(name,new T.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}art/${name}`).then(t=>{t.colorSpace=T.SRGBColorSpace;t.minFilter=T.LinearMipmapLinearFilter;t.magFilter=T.LinearFilter;t.generateMipmaps=true;t.anisotropy=4;t.userData.shared=true;return t;}));return assets.get(name);}
+export function cityAsset(name){if(!assets.has(name))assets.set(name,new T.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}art/${name}`).then(t=>{t.colorSpace=T.SRGBColorSpace;t.minFilter=T.LinearMipmapLinearFilter;t.magFilter=T.LinearFilter;t.generateMipmaps=true;t.anisotropy=4;t.userData.shared=true;return t;}).catch(error=>{assets.delete(name);throw error;}));return assets.get(name);}
 const cells={plaster:[0,.5],brick:[.5,.5],slate:[0,0],roof:[0,0],paving:[.5,0]};
 export function cityArtPlan(layout){
  if(!layout.city)return [];const r=seededRandom(layout.mapSeed^0x526fa),out=[];
@@ -30,10 +30,10 @@ export function pixelPass(){return new ShaderPass({uniforms:{tDiffuse:{value:nul
  gl_FragColor=vec4(max(c,vec3(0.)),1.);}`});}
 export class CityArt{
  constructor(world){this.world=world;this.groups=[];this.plan=cityArtPlan(world.layout);this.clock={value:0};this.alive=true;this.lastUpdate=-1;
-  if(world.layout.city)cityAsset('saint-roch-sprites-v1.png').then(t=>{if(this.alive){this.buildSprites(t);world.requestRender=true;}}).catch(()=>{if(this.alive)this.failed=true;});
+  if(world.layout.city)cityAsset('saint-roch-sprites-v1.webp').then(t=>{if(this.alive){this.buildSprites(t);world.requestRender=true;}}).catch(()=>{if(this.alive)this.failed=true;});
  }
  setStyle(style,theme='quarantine',clarity='sharp'){const signature=[style,theme,clarity].join(':');if(this.signature===signature)return;this.signature=signature;this.style=style;this.theme=theme;this.clarity=clarity;
-  const name=theme==='cyberpunk'?'blackout-materials-v1.png':style==='pixel'?'saint-roch-materials-v1.png':null;this.atlas=null;this.applyMaterials();if(name)cityAsset(name).then(t=>{if(this.alive&&this.signature===signature){this.atlas=t;this.applyMaterials();this.world.requestRender=true;}}).catch(()=>{if(this.alive)this.failed=true;});
+  const name=theme==='cyberpunk'?'blackout-materials-v1.webp':style==='pixel'?'saint-roch-materials-v1.webp':null;this.atlas=null;this.applyMaterials();if(name)cityAsset(name).then(t=>{if(this.alive&&this.signature===signature){this.atlas=t;this.applyMaterials();this.world.requestRender=true;}}).catch(()=>{if(this.alive)this.failed=true;});
  }
  applyMaterials(){const w=this.world,enabled=!!this.atlas&&(this.style==='pixel'||this.theme==='cyberpunk'),materials=new Set(w.surfaces.materials.values());w.scene.traverse(o=>{if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});
   for(const m of materials){const kind=m.userData.surfaceKind,cell=cells[kind];if(!cell)continue;const key=[this.signature,this.style,this.clarity,enabled].join(':');if(m.userData.artKey===key)continue;m.userData.artKey=key;m.userData.pixelArt=enabled;
