@@ -78,5 +78,16 @@
     "broader perspectives",
     "interiors",
     "region and space travel"
-  ]
+  ],
+  "delivery": {
+    "runtimeCommit": "b9dd004c65662be51cac1e89bd30f79f269b974e",
+    "pagesRun": 38567261359,
+    "pages": "success",
+    "liveMenu": "4.43.0",
+    "release": "https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.43.0",
+    "uploadedDigestMatches": true,
+    "macRun": 38567403722,
+    "macCI": "success",
+    "macCIHardwareBoot": "passed"
+  }
 }

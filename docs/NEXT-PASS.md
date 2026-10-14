@@ -30,4 +30,8 @@ Root: browser profiling, normal playthrough, integration and release. Performanc
 
 ## Next concrete slice
 
-The first Open City service route is implemented and tested in 4.43. Next, validate longer ordinary gameplay and perspective visibility, then build one enterable workshop and an apartment loot quest with safe exits. Keep jumping, dodge and grenade bindings distinct across keyboard, controller and touch. Inspect elevated projectile origins, melee/AOE/contact damage, falling supports and safe recovery. Use two agents for isolated implementation/review work. See [4.43 evidence](RELEASE-4.43.md) and [the traversal scope](TRAVERSAL-INTEGRATION.md).
+The first Open City service route is implemented and tested in 4.43. Next, validate longer ordinary gameplay and perspective visibility, then build one enterable workshop and an apartment loot quest with safe exits. Keep jumping, dodge and grenade bindings distinct across keyboard, controller and touch. Inspect elevated projectile origins, melee/AOE/contact damage, falling supports and safe recovery. Use two agents for isolated implementation/review work. See [4.43 evidence](RELEASE-4.43.md), [the traversal scope](TRAVERSAL-INTEGRATION.md) and [the unimplemented interior plan](INTERIOR-INTEGRATION.md).
+
+## 4.43 delivery checkpoint
+
+Runtime commit `b9dd004c65662be51cac1e89bd30f79f269b974e`: 435 tests passed; production build and final Apple Silicon hardware boot passed. Exact archive SHA-256 is recorded in RELEASE-4.43. The final package is in `release/4.43.0-verified`; older running 4.42 and 4.43 test windows were preserved. The user was actively interacting with the earlier 4.43 test app, so manual testing of the refreshed package was not forced. Pages run 38567261359 and macOS run 38567403722 passed, including hardware boot; uploaded archive digest matches. Apple ID/signing and Steam Deck remain deferred.

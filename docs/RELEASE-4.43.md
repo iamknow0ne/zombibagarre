@@ -44,6 +44,8 @@ SHA-256: `33a5a0843d88928b29a027e0ee8c5f525e00b37f60e629c027873c5aaeda548f`.
 
 The final refreshed package passed its hardware boot test. Extended manual gameplay in that exact refreshed package remains pending; an actively used older test window was not interrupted. [Machine-readable QA summary](qa/traversal-4.43.json).
 
+The [Pages deployment](https://github.com/iamknow0ne/zombibagarre/actions/runs/38567261359) passed for `b9dd004`; the public menu was verified at build 4.43.0. GitHub reports the same archive digest as the locally tested ZIP. The [macOS pipeline](https://github.com/iamknow0ne/zombibagarre/actions/runs/38567403722) also passed, including a real Metal device check and packaged-app hardware boot.
+
 ## Remaining work
 
 A complete human-played 32-wave run, physical controller/phone checks, precise arbitrary-roof collision, elevated enemy access, broader TPS/FPS polish, interiors and region/space travel remain open. See [the continuing work list](NEXT-PASS.md). Apple Developer ID signing/notarization is deferred; the Mac edition remains ad-hoc signed and unnotarized.
