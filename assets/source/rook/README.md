@@ -144,3 +144,8 @@ adds measured palm/thumb/stock contacts, boot-surface heel/toe correction and
 an interruptible development motion controller. These are sidecar code changes;
 the v4 GLB and source asset hashes remain unchanged. The viewer's combat sequence
 and upper-body framing support close contact/transition inspection.
+
+
+## Development v7: continuous sling candidate
+
+V7 adds an attached shoulder sling and fitted waist band using the preserved v6 source. Build with `scripts/art/refine_rook_v7.py`; source support and fitted skin weights are stored alongside the Blender file. V6 remains the viewer default and production is unchanged. See [v7 construction, provenance and QA](../../../docs/art-direction/ROOK-V7-SLING.md) for the final checksum, reproduction steps, browser captures, 33 tests and remaining acceptance gates.

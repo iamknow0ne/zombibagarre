@@ -250,7 +250,7 @@ Next: production character art and animation integration remains a major visual 
 - [x] Resolve newly initialized camera aim before transforming movement; preserve look delta and one-shot dodge when switching TPS/FPS.
 - [x] 599 tests and production build; four actual browser fixture cases align movement with camera forward. Inputs are explicitly simulated.
 - [x] Exact Apple Silicon package signature and automated offline GPU startup passed. Hands-on native session was blocked by the locked desktop; no new gameplay/soak result is claimed.
-- [ ] Publish and verify browser/Mac artifacts. See [4.49.7 evidence](RELEASE-4.49.7.md).
-- [ ] Rook v7 sling/waist-attachment candidate: final visual and deformation acceptance in progress. V6 and the production hero remain preserved.
+- [x] Published runtime `30f85a1`; Pages `38655128767` passed and actual public BUILD 4.49.7 loaded without startup errors. Uploaded Mac archive digest matches the exact tested ZIP. See [4.49.7 evidence](RELEASE-4.49.7.md).
+- [x] Rook v7 sling/waist-attachment candidate: 33 art/motion tests, 120 sampled poses and actual browser front/back/recoil/reload/blade review. Accepted only as a development construction candidate; v6 remains the default, production hero unchanged. See [art evidence](art-direction/ROOK-V7-SLING.md).
 
 Remaining major gates: character likeness/scarf, animation and production adapter (armour, LOD and FPS hands), wider perspective QA, ordinary full expedition and sustained native soak. Hangar/orbit/moon remain downstream.

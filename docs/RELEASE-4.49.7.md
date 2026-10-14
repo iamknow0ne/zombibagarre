@@ -13,7 +13,15 @@ The first movement input after entering or switching TPS/FPS now uses the newly 
 
 ## Development art
 
-A separate Rook sling-attachment candidate is being reviewed. It is excluded from the production bundle. This release does not replace the playable hero or claim completed character likeness, animation, armour integration or LODs.
+A separate [Rook sling-attachment candidate](art-direction/ROOK-V7-SLING.md) passed 33 art/motion tests and bounded browser appearance review. It is excluded from the production bundle. This release does not replace the playable hero or claim completed character likeness, animation, armour integration or LODs.
+
+## Publication
+
+Runtime `30f85a189e42b0cf7b568da5593d130cad38e673`; Pages workflow `38655128767` succeeded. The public menu displayed BUILD 4.49.7 and the browser reported no startup errors. [Menu capture](qa/4.49.7/public-menu.png).
+
+[Mac release](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.49.7) published after verifying asset `642026416` (141,690,491 bytes) matches the tested local archive digest above. It is an Apple Silicon build without Developer ID signing/notarization.
+
+Deferred Steam Deck workflow `38655383323` was cancelled.
 
 ## Remaining work
 
