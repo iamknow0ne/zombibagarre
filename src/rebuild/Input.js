@@ -132,7 +132,8 @@ export class Input {
     if(keyboardHands.some(Boolean)&&!out.aim&&sim)out.aim={x:sim.player.x+Math.sin(sim.player.angle)*18,z:sim.player.z+Math.cos(sim.player.angle)*18};
     this.perspective=!!world.viewRig?.active;out.aiming=this.perspective&&!!(this.aimHeld||this.aimToggle||held('aimHold'));
     if(!sim?.player.traversal||sim.player.vehicleId)out.jump=out.grapple=false;
-    if(this.perspective&&sim){const rig=world.viewRig,look=pad?.aim||(this.source==='touch'&&this.touchFiring?this.touchAim:null);rig.look((this.lookX||0)+(look?.x||0)*18*Math.min(.05,dt)*60*(this.settings?.aimSensitivity||1),(this.lookY||0)+(look?.y||0)*14*Math.min(.05,dt)*60*(this.settings?.invertAim?-1:1));this.lookX=this.lookY=0;Object.assign(out,cameraMovement(x,y,rig.yaw));out.aim=rig.aim(sim.player,sim);out.auto=false;out.destination=null;this.destination=null;this.touchWorldAim=out.aim;}
+    // Aim also initializes a newly selected camera; use its resolved yaw for movement.
+    if(this.perspective&&sim){const rig=world.viewRig,look=pad?.aim||(this.source==='touch'&&this.touchFiring?this.touchAim:null);rig.look((this.lookX||0)+(look?.x||0)*18*Math.min(.05,dt)*60*(this.settings?.aimSensitivity||1),(this.lookY||0)+(look?.y||0)*14*Math.min(.05,dt)*60*(this.settings?.invertAim?-1:1));this.lookX=this.lookY=0;out.aim=rig.aim(sim.player,sim);Object.assign(out,cameraMovement(x,y,rig.yaw));out.auto=false;out.destination=null;this.destination=null;this.touchWorldAim=out.aim;}
     const vehicle=sim?.props.find(v=>v.id===sim.player.vehicleId);
     if(vehicle){
       out.aiming=false;this.aimHeld=this.aimToggle=false;

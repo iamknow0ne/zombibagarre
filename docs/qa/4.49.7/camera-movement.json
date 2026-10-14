@@ -1,0 +1,71 @@
+{
+  "simulated": true,
+  "passed": 4,
+  "total": 4,
+  "scenarios": [
+    {
+      "scenario": "Initial FPS",
+      "priorYaw": 3.141592653589793,
+      "heroAngle": 0,
+      "resolvedYaw": -0.1,
+      "movement": {
+        "x": -0.09983341664682815,
+        "z": 0.9950041652780258
+      },
+      "cameraForward": {
+        "x": -0.09983341664682815,
+        "z": 0.9950041652780257
+      },
+      "dot": 0.9999999999999998,
+      "pass": true
+    },
+    {
+      "scenario": "Initial TPS",
+      "priorYaw": 3.141592653589793,
+      "heroAngle": 0.7,
+      "resolvedYaw": 0.6,
+      "movement": {
+        "x": 0.5646424733950354,
+        "z": 0.8253356149096783
+      },
+      "cameraForward": {
+        "x": 0.5646424733950353,
+        "z": 0.8253356149096784
+      },
+      "dot": 1,
+      "pass": true
+    },
+    {
+      "scenario": "TPS → FPS",
+      "priorYaw": 1.2,
+      "heroAngle": -0.7,
+      "resolvedYaw": -0.7999999999999999,
+      "movement": {
+        "x": -0.7173560908995227,
+        "z": 0.6967067093471655
+      },
+      "cameraForward": {
+        "x": -0.7173560908995227,
+        "z": 0.6967067093471655
+      },
+      "dot": 1,
+      "pass": true
+    },
+    {
+      "scenario": "FPS → TPS",
+      "priorYaw": -1.4,
+      "heroAngle": 1.1,
+      "resolvedYaw": 1,
+      "movement": {
+        "x": 0.8414709848078965,
+        "z": 0.5403023058681398
+      },
+      "cameraForward": {
+        "x": 0.8414709848078965,
+        "z": 0.5403023058681397
+      },
+      "dot": 1,
+      "pass": true
+    }
+  ]
+}

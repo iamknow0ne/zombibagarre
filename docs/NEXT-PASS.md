@@ -244,3 +244,13 @@ Next remains wider perspective/traversal validation and production character art
 - [x] Runtime `1f20ffb` published; Pages `38648564212` passed and public BUILD 4.49.6 confirmed without startup errors. Uploaded Mac archive digest matches the exact hardware-startup-tested ZIP. See [4.49.6 evidence](RELEASE-4.49.6.md).
 
 Next: production character art and animation integration remains a major visual gap; wider perspective/collision checks, ordinary full expedition and sustained native soak remain open. Do not promote the development Rook asset until its likeness, equipment/LOD, aim layers and FPS adapters pass actual gameplay review. Hangar/orbit/moon remain downstream.
+
+## 4.49.7 — perspective first-input correction
+
+- [x] Resolve newly initialized camera aim before transforming movement; preserve look delta and one-shot dodge when switching TPS/FPS.
+- [x] 599 tests and production build; four actual browser fixture cases align movement with camera forward. Inputs are explicitly simulated.
+- [x] Exact Apple Silicon package signature and automated offline GPU startup passed. Hands-on native session was blocked by the locked desktop; no new gameplay/soak result is claimed.
+- [ ] Publish and verify browser/Mac artifacts. See [4.49.7 evidence](RELEASE-4.49.7.md).
+- [ ] Rook v7 sling/waist-attachment candidate: final visual and deformation acceptance in progress. V6 and the production hero remain preserved.
+
+Remaining major gates: character likeness/scarf, animation and production adapter (armour, LOD and FPS hands), wider perspective QA, ordinary full expedition and sustained native soak. Hangar/orbit/moon remain downstream.

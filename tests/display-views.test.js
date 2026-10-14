@@ -11,6 +11,34 @@ test('perspective movement stays relative to screen right and forward through a 
 test('camera retracts before live walls, ignores destroyed walls and passes above low obstacles',()=>{const from={x:0,y:1.5,z:0},to={x:0,y:2,z:8},b={kind:'building',x:0,z:5,w:4,d:2,h:8,health:100};assert.ok(cameraClearance(from,to,[b])<.5);assert.equal(cameraClearance(from,to,[{...b,health:0}]),1);assert.equal(cameraClearance({...from,y:12},{...to,y:12},[b]),1);});
 test('free look is bounded and supplies a stable horizontal attack direction',()=>{const rig=new ViewRig();rig.look(1e6,1e6);assert.ok(rig.pitch<=1.15);for(let i=0;i<30;i++)rig.look(0,-100);assert.ok(rig.pitch>=-.95);const a=rig.aim({x:4,z:7});assert.ok(Math.abs(Math.hypot(a.x-4,a.z-7)-20)<1e-8);});
 test('ambient survivor routes are deterministic, capped and clear of buildings and props',()=>{const layout=generateCity(20261012),plan=pedestrianPlan(layout);assert.deepEqual(plan,pedestrianPlan(layout));assert.ok(plan.length>0&&plan.length<=48);for(const p of plan)assert.equal(lineBlocked(p.a,p.b,.7,[...layout.buildings,...layout.cover]),false);});
-test('touch perspective controls move relative to camera and keep manual fire and dodge',()=>{const i=Object.create(Input.prototype);Object.assign(i,{keys:new Set(),stick:{x:0,y:-1},once:{dash:true},source:'touch',touchAim:{x:.5,y:0},touchFiring:true,pointer:{active:false},settings:{},padGuard:false});const rig=new ViewRig();rig.active=true;rig.yaw=0;const p={x:1,z:2};const out=i.consume({viewRig:rig},true,{player:p,props:[],enemies:[]});assert.ok(out.z>.9);assert.equal(out.dash,true);assert.equal(out.firing,true);assert.equal(out.auto,false);assert.ok(out.aim);});
+test('touch perspective controls move relative to camera and keep manual fire and dodge',()=>{const i=Object.create(Input.prototype);Object.assign(i,{keys:new Set(),stick:{x:0,y:-1},once:{dash:true},source:'touch',touchAim:{x:.5,y:0},touchFiring:true,pointer:{active:false},settings:{},padGuard:false});const rig=new ViewRig();rig.active=true;rig.yaw=0;const p={x:1,z:2,angle:0};const out=i.consume({viewRig:rig},true,{player:p,props:[],enemies:[]});assert.ok(out.z>.9);assert.equal(out.dash,true);assert.equal(out.firing,true);assert.equal(out.auto,false);assert.ok(out.aim);});
 
 test('releasing touch aim stops perspective turning, and stick turn rate is frame-rate independent',()=>{const make=()=>{const i=Object.create(Input.prototype);Object.assign(i,{keys:new Set(),stick:{x:0,y:0},once:{},source:'touch',touchAim:{x:1,y:0},touchFiring:true,pointer:{active:false},settings:{},padGuard:false});const rig=new ViewRig();rig.active=true;return{i,rig};};const sim={player:{x:0,z:0},props:[],enemies:[]},a=make(),b=make();for(let n=0;n<60;n++)a.i.consume({viewRig:a.rig},false,sim,1/60);for(let n=0;n<30;n++)b.i.consume({viewRig:b.rig},false,sim,1/30);assert.ok(Math.abs(a.rig.yaw-b.rig.yaw)<1e-8);a.i.touchFiring=false;const yaw=a.rig.yaw;a.i.consume({viewRig:a.rig},false,sim);assert.equal(a.rig.yaw,yaw);});
+
+test('movement follows the initialized camera heading on the first perspective input sample',()=>{
+ for(const mode of ['first','third'])for(const angle of [0,.7,Math.PI]){
+  const input=Object.create(Input.prototype),rig=new ViewRig();
+  Object.assign(input,{keys:new Set(['KeyW']),stick:{x:0,y:0},once:{},source:'keyboard',pointer:{active:false},settings:{},lookX:40,lookY:0});
+  rig.setMode(mode);rig.active=true;
+  const sim={player:{x:0,z:0,angle,weapon:'carbine'},time:0,props:[],obstacles:[],enemies:[]};
+  const out=input.consume({viewRig:rig},false,sim);
+  assert.ok(Math.abs(rig.yaw-(angle-.1))<1e-12,'initial look is retained');
+  assert.ok(Math.abs(out.x-Math.sin(rig.yaw))<1e-12);
+  assert.ok(Math.abs(out.z-Math.cos(rig.yaw))<1e-12);
+ }
+});
+
+test('switching TPS and FPS between frames uses the new heading for diagonal movement and dodge',()=>{
+ const input=Object.create(Input.prototype),rig=new ViewRig();
+ Object.assign(input,{keys:new Set(['KeyW','KeyD']),stick:{x:0,y:0},once:{},source:'keyboard',pointer:{active:false},settings:{}});
+ const sim={player:{x:0,z:0,angle:1.2,weapon:'carbine',traversal:'campaign'},time:0,props:[],obstacles:[],enemies:[]};
+ rig.setMode('third');rig.active=true;rig.update(sim,16/9,1/60);rig.look(100,0);
+ for(const mode of ['first','third']){
+  sim.player.angle-=.4;rig.setMode(mode);input.once.dash=true;input.lookX=-20;
+  const out=input.consume({viewRig:rig},false,sim),expected=cameraMovement(1,-1,sim.player.angle+.05);
+  assert.ok(Math.abs(out.x-expected.x)<1e-12);assert.ok(Math.abs(out.z-expected.z)<1e-12);
+  assert.equal(out.dash,true);assert.equal(out.auto,false);
+  const next=input.consume({viewRig:rig},false,sim);
+  assert.equal(next.x,out.x);assert.equal(next.z,out.z);assert.equal(next.dash,undefined,'dodge stays a one-shot action');
+ }
+});

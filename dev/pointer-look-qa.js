@@ -31,7 +31,34 @@ function reset(){
  input.clear();Object.assign(input,{playing:true,perspective:true,lockUnavailable:true,source:'keyboard',pointer:{active:false},firing:false,aimHeld:false});
  rig.setMode('first');rig.ready=false;rig.pendingYaw=0;rig.pitch=.12;rig.active=true;rig.update(sim,900/200,0);stage=0;$('results').replaceChildren();draw();
 }
-$('reset').onclick=reset;
+$('reset').onclick=()=>{reset();$('movement-results').replaceChildren();$('movement-state').textContent='Not run';};
+$('movement').onclick=()=>{
+ reset();$('movement-results').replaceChildren();const evidence=[];
+ const scenarios=[
+  {name:'Initial FPS',mode:'first',angle:0,stale:Math.PI},
+  {name:'Initial TPS',mode:'third',angle:.7,stale:Math.PI},
+  {name:'TPS → FPS',mode:'first',previous:'third',angle:-.7,stale:1.2},
+  {name:'FPS → TPS',mode:'third',previous:'first',angle:1.1,stale:-1.4},
+ ];
+ for(const scenario of scenarios){
+  const view=new ViewRig();view.active=true;
+  const scene={...sim,player:{...sim.player,angle:scenario.angle}};
+  if(scenario.previous){view.setMode(scenario.previous);view.update({...scene,player:{...scene.player,angle:scenario.stale}},900/200,0);}
+  else view.yaw=scenario.stale;
+  view.setMode(scenario.mode);
+  const priorYaw=view.yaw;
+  window.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,cancelable:true,code:'KeyW',key:'w'}));
+  send('pointermove',-1,2,40,0);
+  const out=input.consume({viewRig:view,aim:()=>null},false,scene,1/60);
+  window.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true,code:'KeyW',key:'w'}));
+  const direction=view.camera.getWorldDirection(view.target.clone()),length=Math.hypot(direction.x,direction.z);
+  const forward={x:direction.x/length,z:direction.z/length},speed=Math.hypot(out.x,out.z),dot=speed?(out.x*forward.x+out.z*forward.z)/speed:0;
+  const ok=Math.abs(dot-1)<1e-9&&Math.abs(speed-1)<1e-9&&Math.abs(view.yaw-(scenario.angle-.1))<1e-9;
+  const result={scenario:scenario.name,priorYaw,heroAngle:scenario.angle,resolvedYaw:view.yaw,movement:{x:out.x,z:out.z},cameraForward:forward,dot,pass:ok};evidence.push(result);
+  const row=document.createElement('tr');for(const value of [scenario.name,`${out.x.toFixed(5)} / ${out.z.toFixed(5)}`,`${forward.x.toFixed(5)} / ${forward.z.toFixed(5)}`,dot.toFixed(8),ok?'PASS':'FAIL']){const td=document.createElement('td');td.textContent=value;row.append(td);}row.lastChild.className=ok?'pass':'fail';$('movement-results').append(row);
+ }
+ send('pointermove',-1,0);$('movement-state').textContent=JSON.stringify({simulated:true,passed:evidence.filter(row=>row.pass).length,total:evidence.length,scenarios:evidence},null,2);draw();
+};
 $('aim').onclick=()=>{send('pointerdown',2,2);send('mousedown',2,2);send('pointermove',-1,2,8,-3);sample('Right drag',8,-3,false,true);};
 $('fire').onclick=()=>{send('mousedown',0,3);send('pointermove',-1,3,11,4);sample('Aim + fire drag',11,4,true,true);};
 $('release-fire').onclick=()=>{send('mouseup',0,2);send('pointermove',-1,2,5,2);sample('Release fire; keep aiming',5,2,false,true);};
