@@ -21,3 +21,7 @@ In Hero progression, choosing an unlocked gun before learning dual wield now rep
 ## Scope and remaining work
 
 The Apple Silicon test app remains ad-hoc signed, without Developer ID signing or notarization. Steam Deck work remains deferred. Production character-art integration, wider perspective/traversal checks, ordinary full expedition, sustained native soak and hangar/orbit/moon progression remain open. This release does not establish whole-game completion or physical device compatibility.
+
+## Publication
+
+Runtime `5de4869a60abd6f0d25762f2dfcc11a13726aa71` is published. Pages run `38641595937` passed; the actual public menu reports BUILD 4.49.5 with no captured startup errors. [Published landscape capture](qa/4.49.5/published-landscape.png). The [Mac release](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.49.5) contains the exact tested archive: 141,689,709 bytes, GitHub asset `641744684`, matching SHA-256 above. Cancellation of the deferred automatic Steam Deck workflow `38641720509` was requested.

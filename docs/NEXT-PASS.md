@@ -228,6 +228,6 @@ The cropped public menu follow-up is addressed in 4.49.5; see the checkpoint bel
 - [x] Height-aware, scrollable main menu with consistent navigation targets, landscape two-column setup and legible notification badges.
 - [x] Fix unlocked gun selection before dual-wield training; preserve locked-request state, ammo/reload and trained/testing pairs.
 - [x] 593 tests and production build; actual browser menu QA across six sizes, Hero Arsenal selection, keyboard scrolling and compact controller HUD regression.
-- [ ] Publish and verify browser and exact Mac package. See [4.49.5 evidence](RELEASE-4.49.5.md).
+- [x] Publish and verify browser and exact Mac package. Runtime `5de4869`; Pages `38641595937` passed; public BUILD 4.49.5 confirmed without startup errors; uploaded Mac digest matches the hardware-tested archive. See [4.49.5 evidence](RELEASE-4.49.5.md).
 
 Next remains wider perspective/traversal validation and production character art, ordinary expedition and sustained native soak. Hangar/orbit/moon remain downstream. No physical controller/phone result is claimed.
