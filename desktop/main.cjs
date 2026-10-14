@@ -3,7 +3,7 @@ const {readFileSync, mkdtempSync} = require('node:fs');
 const {tmpdir} = require('node:os');
 const path = require('node:path');
 const {pathToFileURL} = require('node:url');
-const {ORIGIN, trustedURL, assetPath, trustedSender} = require('./policy.cjs');
+const {ORIGIN, trustedURL, assetPath, trustedSender, contentPolicy} = require('./policy.cjs');
 const {startupLog, startupWatch, graphicsSwitches} = require('./startup.cjs');
 const smoke = process.argv.includes('--smoke-test');
 const isolated = smoke || process.argv.includes('--test-profile');
@@ -45,7 +45,7 @@ else {
     session.defaultSession.setPermissionRequestHandler((_contents, permission, callback) => callback(['fullscreen','pointerLock'].includes(permission)));
     session.defaultSession.setPermissionCheckHandler((_contents, permission, origin) => trustedURL(origin) && ['fullscreen','pointerLock'].includes(permission));
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => callback({responseHeaders:{...details.responseHeaders,
-      'Content-Security-Policy':["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-src 'none'; frame-ancestors 'none'"]}}));
+      'Content-Security-Policy':[contentPolicy(details.url)]}}));
     if(process.platform==='darwin'){
       app.setAboutPanelOptions({applicationName:'Zombie Bagarre',applicationVersion:app.getVersion(),copyright:'Zombie Bagarre · Quarantine'});
       Menu.setApplicationMenu(Menu.buildFromTemplate([

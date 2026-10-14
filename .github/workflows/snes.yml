@@ -1,0 +1,22 @@
+name: Build original SNES cartridge
+on:
+  push:
+    branches: [main]
+    paths: ['demakes/snes/**', 'scripts/snes-build.py', 'public/retro/zombie-bagarre.*', '.github/workflows/snes.yml']
+  pull_request:
+    paths: ['demakes/snes/**', 'scripts/snes-build.py', 'public/retro/zombie-bagarre.*', '.github/workflows/snes.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cartridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Rebuild pinned SNES source
+        run: |
+          cp public/retro/zombie-bagarre.sfc /tmp/committed.sfc
+          python3 scripts/snes-build.py
+          cmp public/retro/zombie-bagarre.sfc /tmp/committed.sfc
+      - name: Check cartridge integrity
+        run: node --test tests/snes-rom.test.js

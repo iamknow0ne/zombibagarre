@@ -9,7 +9,8 @@
 [![Play now](https://img.shields.io/badge/PLAY_NOW-IN_YOUR_BROWSER-e38b50?style=for-the-badge&labelColor=182327)](https://iamknow0ne.github.io/zombibagarre/)
 
 [![Build and deployment](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml)
-[![Version](https://img.shields.io/badge/version-4.46.0-e38b50?labelColor=182327)](docs/RELEASE-4.46.md)
+[![Version](https://img.shields.io/badge/version-4.47.0-e38b50?labelColor=182327)](docs/RELEASE-4.47.md)
+
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-b5c7b1?logo=threedotjs&logoColor=white&labelColor=182327)](package.json)
 [![Controls](https://img.shields.io/badge/controls-keyboard_%C2%B7_gamepad_%C2%B7_touch-8bbdc8?labelColor=182327)](#controls)
 
@@ -24,6 +25,22 @@ No installation. No account. Single player. Share the Play link with your friend
 <p align="center"><sub>The Cinder King, phase II. Actual v4.36 game rendering, staged in the development encounter workshop.</sub></p>
 
 Explore a ruined town on foot or behind the wheel. Pair two guns, master a blade, slow time and build a survivor who gets stronger between expeditions. Survive **32 waves**, defeat the Wardens and reach extraction.
+
+## A game inside the game
+
+**The Last Checkpoint** is a hidden retro refuge in Open City. Follow the rumour
+in the street atlas, walk up to the central CRT and play the first real SNES
+cartridge. Unlock it at hero level 3, or use Testing mode.
+
+[![The Last Checkpoint retro room](docs/screenshots/retro/last-checkpoint.png)](https://iamknow0ne.github.io/zombibagarre/)
+
+**[Try Night Shift directly](https://iamknow0ne.github.io/zombibagarre/retro/play.html)** ·
+**[Download the SNES ROM](https://iamknow0ne.github.io/zombibagarre/retro/zombie-bagarre.sfc)** ·
+[ROM source and build instructions](demakes/snes/README.md)
+
+A first playable homebrew: one city block, escalating zombie waves, two guns,
+grenades and a dash. Future consoles are dormant exhibits. Physical SNES hardware
+is not yet validated. [Milestone details and QA](docs/RELEASE-4.47.md).
 
 ## Screenshots
 
@@ -43,7 +60,7 @@ Explore a ruined town on foot or behind the wheel. Pair two guns, master a blade
 
 ## Take the high road
 
-**New in 4.46:** Travel from Saint-Roch to **Old Mill Road**, recover guarded medicine and return to Lenoir. Damaged buildings, loot, ammunition and city waves persist across visits during the same expedition. Find the footpath in the map directory; travel on foot. [Release details and limits](docs/RELEASE-4.46.md).
+**New in 4.46:** Travel from Saint-Roch to **Old Mill Road**, recover guarded medicine and return to Lenoir. Damaged buildings, loot, ammunition and city waves persist across visits during the same expedition. Find the footpath in the map directory; travel on foot. [Release details and limits](docs/RELEASE-4.47.md).
 
 **Controls in 4.45:** Remap action keys in **Settings → Keyboard & mouse**, with conflict warnings and reset controls. Settings now have focused submenus and compact phone navigation. Custom keys follow your save and appear in HUD hints. [Release details](docs/RELEASE-4.45.md). The [4.45.1 patch](docs/RELEASE-4.45.1.md) corrects perspective aiming after camera turns and releases temporary avatar-fade materials.
 
@@ -155,11 +172,11 @@ Rendering updates transfer only active enemy, rubble and weather data. **530 reg
 
 ## macOS test app and portable saves
 
-**[Download the Apple Silicon macOS test edition →](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.46.0)** · macOS 13+
+**[Download the Apple Silicon macOS test edition →](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.47.0)** · macOS 13+
 
 **Your survivor can travel with you.** Settings → Your save now exports and restores character progression, equipment, base camp and settings. Restore previews the incoming character and keeps a recovery copy. Storage problems are visible rather than silently discarding progress.
 
-The Apple Silicon macOS app runs offline with GPU acceleration, native menus and backup-file dialogs. This is an ad-hoc signed, unnotarized test edition; a downloaded app may be blocked by Gatekeeper. [Mac installation and local-build guide](docs/MACOS.md) · [Release details and QA](docs/RELEASE-4.46.md).
+The Apple Silicon macOS app runs offline with GPU acceleration, native menus and backup-file dialogs. This is an ad-hoc signed, unnotarized test edition; a downloaded app may be blocked by Gatekeeper. [Mac installation and local-build guide](docs/MACOS.md) · [Release details and QA](docs/RELEASE-4.47.md).
 
 ## Install on Steam Deck
 

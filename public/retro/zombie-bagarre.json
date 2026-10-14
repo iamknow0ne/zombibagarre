@@ -1,0 +1,12 @@
+{
+  "title": "Zombie Bagarre: Night Shift",
+  "edition": "snes",
+  "version": "0.1.0",
+  "format": "LoROM .sfc",
+  "bytes": 262144,
+  "sha256": "942ec81621ba72fe845a3e51933ef47a5c2ca6e4b220706a54dc33158c64b784",
+  "toolchain": "PVSnesLib 4.6.0",
+  "source": "demakes/snes",
+  "originalAssets": true,
+  "hardwareTested": false
+}

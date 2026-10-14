@@ -12,14 +12,14 @@ const enter=(s,type)=>{const p=plan(s,type);Object.assign(s.player,{...p.door,y:
 const ticks=(s,n,input)=>{for(let i=0;i<n;i++)s.update(1/60,input);};
 
 test('100 generated cities use stable distinct dry hosts and reachable street entrances',()=>{
- let pairs=0;
+ let pairs=0,retroRooms=0;
  for(let seed=1;seed<=100;seed++){
   const layout=generateCity(seed),props=[...layout.cover,...layout.buildings.map(b=>({...b,kind:'building'}))].map(p=>({...p,health:100}));
   const s={layout,props,seed,places:makeRPGWorld(layout)};initializeInteriors(s);const first=JSON.stringify(s.interiorState.manifest);initializeInteriors(s);assert.equal(JSON.stringify(s.interiorState.manifest),first);
-  const manifest=s.interiorState.manifest;assert.equal(new Set(manifest.map(p=>p.buildingId)).size,manifest.length);if(manifest.length===2)pairs++;
+  const manifest=s.interiorState.manifest;assert.equal(new Set(manifest.map(p=>p.buildingId)).size,manifest.length);if(manifest.some(p=>p.template==='workshop-v1')&&manifest.some(p=>p.template==='apartment-v1'))pairs++;if(manifest.some(p=>p.template==='retro-room-v1'))retroRooms++;
   for(const p of manifest){assert.ok(insideMap(layout,p.door.x,p.door.z,1));assert.ok(!pointBlocked(p.door.x,p.door.z,1,props));assert.ok(props.some(b=>b.id===p.buildingId));assert.ok(layout.spawnPoints.some(q=>distance(q,p.door)<24&&!lineBlocked(q,p.door,.4,props)&&segmentInMap(layout,q,p.door,.4)));assert.ok(!pointBlocked(p.spawn.x,p.spawn.z,.4,p.obstacles));}
  }
- assert.ok(pairs>=95,`${pairs}/100 cities have both rooms`);
+ assert.ok(pairs>=95,`${pairs}/100 cities have both quest rooms`);assert.ok(retroRooms>=95,`${retroRooms}/100 cities have the retro room`);
 });
 test('noncity and absent valid workshop hosts keep their normal roadside services',()=>{
  const s=game();s.layout.city=false;initializeInteriors(s);assert.deepEqual(s.interiorState.manifest,[]);s.layout.city=true;s.places.find(p=>p.id==='smith').buildingId=null;initializeInteriors(s);assert.deepEqual(s.interiorState.manifest,[]);

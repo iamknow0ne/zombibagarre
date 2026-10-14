@@ -1,3 +1,4 @@
+import {retroRoomPlaces} from './RetroPlaces.js';
 import {travelGate} from './Regions.js';
 import {waterOutline} from './City.js';
 import {questGuide} from './QuestNavigation.js';
@@ -33,6 +34,7 @@ export function drawAtlas(canvas,sim,large=false,view={}){
  const boxes=[],label=(text,x,y,color,size=12,priority=false)=>{size*=ui;ctx.font=`600 ${size}px sans-serif`;const w=ctx.measureText(text).width+12,h=size+10,box={x:x-w/2,y:y-h/2,w,h};if(box.x<5||box.y<30||box.x+w>W-5||box.y+h>H-30)return;if(!priority&&boxes.some(b=>box.x<b.x+b.w+4&&box.x+w+4>b.x&&box.y<b.y+b.h+3&&box.y+h+3>b.y))return;boxes.push(box);ctx.fillStyle='#142125eb';ctx.fillRect(box.x,box.y,w,h);ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,x,y);};
  const inView=q=>X(q.x)>10&&X(q.x)<W-10&&Z(q.z)>10&&Z(q.z)<H-10;
  if(target&&inView(target)){mapSymbol(ctx,X(target.x),Z(target.z),'quest','#edbd73',large?10*ui:5);if(large)label(guide.state==='ready'?'RETURN / REWARD READY':'TRACKED OBJECTIVE',X(target.x),Z(target.z)-26*ui,'#f2ce8a',12,true);}
+ for(const q of retroRoomPlaces(sim)){if(inView(q)){mapSymbol(ctx,X(q.x),Z(q.z),'cache','#b8cf9d',large?8*ui:4);if(large)label(q.name,X(q.x),Z(q.z)+23*ui,'#b8cf9d',11);}}
  const gate=travelGate(sim),supply=sim.layout.country&&!sim.rpg?.countrySupplies?sim.layout.region?.supply:null;for(const [q,name,kind]of [[gate,gate?.name,'travel'],[supply,'MEDICAL SUPPLIES','cache']]){if(q&&inView(q)){mapSymbol(ctx,X(q.x),Z(q.z),kind,'#9bd0bb',large?8*ui:4);if(large)label(name,X(q.x),Z(q.z)+23*ui,'#b8e2ce',11);}}
  for(const q of sim.places||[]){if(!q.revealed||q.used&&q.kind!=='shop'||!inView(q)||target===q)continue;const color=q.kind==='shop'?'#eee6cf':q.kind==='secret'?'#eaa882':'#d5c796';mapSymbol(ctx,X(q.x),Z(q.z),q.kind,color,large?7*ui:3);if(large)label(q.name.split(' / ')[0],X(q.x),Z(q.z)-20*ui,color);}
  for(const j of view.encounters===false?[]:sim.streetEvents||[]){if(!inView(j)||j===target)continue;const color=j.state==='complete'?'#90aa8e':'#dcb785';mapSymbol(ctx,X(j.x),Z(j.z),'encounter',color,large?5*ui:3);if(large&&(view.zoom||1)>1.2)label(j.name,X(j.x),Z(j.z)+19*ui,color,11);}

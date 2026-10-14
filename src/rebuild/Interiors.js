@@ -2,6 +2,8 @@ import {clamp,distance,pointBlocked,lineBlocked} from './config.js';
 import {insideMap,segmentInMap} from './Map.js';
 import {waterAt} from './City.js';
 import {endFocus} from './BulletTime.js';
+import {levelForXP} from './RPG.js';
+import {testing} from './Progression.js';
 
 const RADIUS=.4,REACH=2.2;
 const liveProps=sim=>(sim.props||[]).filter(o=>o.health>0);
@@ -12,6 +14,11 @@ const clearPoint=(sim,p,radius=.65)=>!waterAt(sim.layout,p.x,p.z)&&insideMap(sim
 const clearPath=(sim,a,b)=>!lineBlocked(a,b,RADIUS,liveProps(sim))&&segmentInMap(sim.layout,a,b,RADIUS);
 function safePoint(sim,p){return clearPoint(sim,p)&&!(sim.fires||[]).some(f=>distance(f,p)<(f.radius||1)+RADIUS)&&!(sim.hazards||[]).some(h=>distance(h,p)<(h.radius||1)+RADIUS)&&!(sim.enemies||[]).some(e=>e.health>0&&distance(e,p)<(e.radius||.5)+RADIUS);}
 function makePlan(sim,building,door,template){
+ if(template==='retro-room-v1')return {
+  id:`city:${sim.layout.mapSeed??sim.seed}:1:${building.id}:${template}`,template,name:'The Last Checkpoint',buildingId:building.id,door:{...door},spawn:{x:0,z:3.6},bounds:{minX:-6,maxX:6,minZ:-5.5,maxZ:5},
+  obstacles:[{id:'crt-table',role:'media',x:0,z:-4,w:3.4,d:1.3,h:1.25},{id:'dormant-left',role:'archive',x:-4.35,z:-4,w:2,d:1.3,h:1.25},{id:'dormant-right',role:'archive',x:4.35,z:-4,w:2,d:1.3,h:1.25},{id:'couch',role:'sofa',x:0,z:1,w:3.3,d:1.2,h:.9},{id:'shelf',role:'cartridges',x:-5.4,z:.3,w:.6,d:3,h:1.9},{id:'cooler',role:'cooler',x:5,z:2,w:1,d:1,h:1.7}],
+  objects:[{id:'console-snes',type:'console',consoleId:'snes',x:0,z:-2.65,radius:1.45,display:{x:0,z:-4}},{id:'console-ps1',type:'console',consoleId:'ps1',x:-4.35,z:-2.65,radius:1.4,display:{x:-4.35,z:-4}},{id:'console-genesis',type:'console',consoleId:'genesis',x:4.35,z:-2.65,radius:1.4,display:{x:4.35,z:-4}},{id:'exit',type:'exit',x:0,z:4.2,radius:1.6}]
+ };
  const workshop=template==='workshop-v1';
  return {id:`city:${sim.layout.mapSeed??sim.seed}:1:${building.id}:${template}`,template,name:workshop?"Mara's workshop":'The abandoned apartment',buildingId:building.id,door:{...door},spawn:{x:0,z:3.6},bounds:workshop?{minX:-6,maxX:6,minZ:-5,maxZ:5}:{minX:-5,maxX:5,minZ:-6,maxZ:5},
   obstacles:workshop?[
@@ -28,23 +35,30 @@ function makePlan(sim,building,door,template){
 // Manifest belongs to this expedition, never to the permanent hero save.
 export function initializeInteriors(sim){
  sim.interior=null;sim.interiorState={manifest:[],visited:[],collected:[]};
- if(!sim.layout.city)return sim.interiorState;
+ if(!sim.layout.city||sim.layout.country)return sim.interiorState;
  const smith=sim.places?.find(p=>p.id==='smith'),building=smith&&host(sim,smith);
  if(!building||!clearPoint(sim,smith,1))return sim.interiorState;
  const nx=Math.round(Math.sin(smith.angle||0)),nz=Math.round(Math.cos(smith.angle||0));
  const workshop=makePlan(sim,building,{x:smith.x,z:smith.z,nx,nz},'workshop-v1');sim.interiorState.manifest.push(workshop);
  const occupied=new Set((sim.places||[]).map(p=>p.buildingId).filter(Boolean));
  const buildings=liveProps(sim).filter(p=>p.kind==='building'&&p.primary&&!occupied.has(p.id)).sort((a,b)=>distance(a,smith)-distance(b,smith)||a.id.localeCompare(b.id));
+ let nextTemplate='apartment-v1';
  for(const b of buildings){
   for(const [dx,dz]of [[0,1],[1,0],[0,-1],[-1,0]]){
    const door={x:b.x+dx*(b.w/2+2),z:b.z+dz*(b.d/2+2),nx:dx,nz:dz};
    if(!clearPoint(sim,door,1)||sim.places.some(p=>distance(p,door)<5))continue;
    // Use a real, dry street connection; a geometrically empty courtyard alone is insufficient.
    if(!(sim.layout.spawnPoints||[]).some(p=>distance(p,door)<24&&clearPath(sim,p,door)))continue;
-   sim.interiorState.manifest.push(makePlan(sim,b,door,'apartment-v1'));return sim.interiorState;
+   sim.interiorState.manifest.push(makePlan(sim,b,door,nextTemplate));
+   if(nextTemplate==='retro-room-v1')return sim.interiorState;
+   nextTemplate='retro-room-v1';break;
   }
  }
  return sim.interiorState;
+}
+export function retroConsoleStatus(sim,consoleId){
+ const available=consoleId==='snes',unlocked=available&&(testing(sim)||levelForXP(sim.profile?.xp||0).level>=3);
+ return {available,unlocked,label:consoleId==='snes'?'SNES':consoleId==='ps1'?'PlayStation':consoleId==='genesis'?'Mega Drive / Genesis':'Unknown console',reason:!available?'Archive display · not playable in this version':unlocked?'Ready · play Zombie Bagarre / SNES':'Reach hero level 3 to restore this console'};
 }
 export function nearbyInteriorDoor(sim){
  if(sim.interior||!onFoot(sim))return null;
@@ -88,7 +102,10 @@ export function stepInterior(sim,input={},dt=0){
  }
  pose.moveX=dt?(pose.x-oldX)/dt:0;pose.moveZ=dt?(pose.z-oldZ)/dt:0;pose.moving=Math.hypot(pose.moveX,pose.moveZ)>.05;
  if(pose.moving)pose.angle=Math.atan2(pose.moveX,pose.moveZ);
- if(input.interact){const object=interiorInteraction(sim);if(object)sim.emit('interior-interact',{interiorId:room.plan.id,objectId:object.id,interaction:object.type,merchantId:object.merchantId});}
+ if(input.interact){const object=interiorInteraction(sim);if(object){
+  if(object.type==='console'){const status=retroConsoleStatus(sim,object.consoleId);if(status.unlocked)sim.emit('interior-console',{interiorId:room.plan.id,objectId:object.id,consoleId:object.consoleId});else sim.emit('rpg-notice',{message:status.reason});}
+  else sim.emit('interior-interact',{interiorId:room.plan.id,objectId:object.id,interaction:object.type,merchantId:object.merchantId});
+ }}
 }
 export function endInterior(sim){
  const room=sim.interior;if(!room||sim.state!=='interior'||sim.player.health<=0)return false;
@@ -105,7 +122,7 @@ export function interiorDestination(sim,plan){
 export function nearbyInteriorRecovery(sim){
  if(sim.interior||!onFoot(sim)||!['playing','extracting','paused'].includes(sim.state))return null;
  for(const plan of sim.interiorState?.manifest||[]){
-  if(host(sim,plan))continue;
+  if(!['apartment-v1','workshop-v1'].includes(plan.template)||host(sim,plan))continue;
   if(plan.template==='apartment-v1'&&hasInteriorCase(sim))continue;
   const point=interiorDestination(sim,plan);if(!point||distance(point,sim.player)>REACH||!clearPath(sim,sim.player,point))continue;
   return {plan,...point,type:plan.template==='apartment-v1'?'case':'merchant',...(plan.template==='workshop-v1'?{merchantId:'smith'}:{})};

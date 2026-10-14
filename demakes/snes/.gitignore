@@ -1,0 +1,11 @@
+*.sfc
+*.sym
+*.symfull
+*.log
+*.obj
+*.ps
+hdr.asm
+linkfile
+src/*.obj
+src/*.ps
+src/main.asm

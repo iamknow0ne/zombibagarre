@@ -1,0 +1,22 @@
+{
+  "version": "EmulatorJS 4.2.3",
+  "upstream": "https://github.com/EmulatorJS/EmulatorJS/tree/e150dc0491ae747028919fb82d6598954976ede6",
+  "runtimeBase": "https://cdn.emulatorjs.org/4.2.3/data/",
+  "files": {
+    "LICENSE-EmulatorJS.txt": "a617fab6d251b3302b1cb2c1c94f52d1c584f6fcb2fc218ec1a475bc08053a61",
+    "LICENSE-Snes9x.txt": "70efeee282d82a6e9d26aeed5466d08c632369858371dc6a4644c8dcedc2be78",
+    "NOTICE.md": "984b47a58793475badfd52b8dadfa3124d0505655446a2fd30072926c2ab52ff",
+    "data/compression/extract7z.js": "4ac9933b995a516cb6b3ca4027db860278372a20c21c405d93ceb1998498853a",
+    "data/compression/extractzip.js": "3cc825428724213acd43d30552a78008e0869b2326de17dee240dbff9ee2f629",
+    "data/cores/reports/snes9x.json": "dc7ac963eb7935a7ac78956235ac0b8912ec785c57026336825aa2ed8031b3ad",
+    "data/cores/snes9x-legacy-wasm.data": "7d427a575cefad98ff400493fa1d7e892da63fe7bab68979babd9cea0bfaaf3b",
+    "data/cores/snes9x-wasm.data": "eaa0bcfce67673809886e50387a80a616b719502175db64c090d04c9d75958ee",
+    "data/emulator.min.css": "16406c60b2dc3b04ae9b115e308613e6f567a0cc7068e21d9d0c1e5030fb395e",
+    "data/emulator.min.js": "2ea887d1486001d4fd4fbfa0ba2ad0afb93dee594a7dddbf5adaa0a36e8b605a",
+    "data/loader.js": "69e0903bf1e2f62ced78895e7e511fa26e11316f7eb734925c35e919ba1287b2",
+    "data/version.json": "d8991427000a96fb97daefdb62178071e9bbff911760706148e584ae8d69f9e7",
+    "source/core-builder-b24e5b5.tar.gz": "8b918f49db722fd9982436716a42367e80334ff85d81077fa8e8fc00b7ad4493",
+    "source/emulatorjs-4.2.3-source.tar.gz": "d0b2c4dc4c6e624846287601e1d23ff310a32146794ade6b57a832ba20ee9d6f",
+    "source/snes9x-6ca2343.tar.gz": "fae5c3d1c851afca2e90d1b243571492e3acf17733de0923adc4bb6ab1a5c968"
+  }
+}

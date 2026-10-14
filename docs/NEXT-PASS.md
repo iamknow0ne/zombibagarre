@@ -1,6 +1,6 @@
 # Next gameplay and performance pass
 
-14 October 2026. Apple signing/notarization, Steam Deck troubleshooting and other ports remain deferred. Work is staged into tested releases, not an assertion that the whole game is finished.
+14 October 2026. Apple signing/notarization, Steam Deck troubleshooting and other ports remain deferred, except the newly authorized SNES demake. Work is staged into tested releases, not an assertion that the whole game is finished.
 
 ## Completed milestone — performance and reliability
 
@@ -95,3 +95,16 @@ and physical devices remain open.
 Next: service-roof traversal/collision and wider perspective checks; Rook portrait
 likeness and authored combat animation; full ordinary expedition and sustained
 native soak. Hangar/orbit/moon stay downstream of these first travel gates.
+
+## 4.47 — newly authorized SNES demake / retro room
+
+- [x] Original 256 KiB SNES survival cartridge and reproducible pinned SDK build.
+- [x] The Last Checkpoint interior, atlas rumour, hero-level-3 unlock / sandbox bypass.
+- [x] Lazy local emulator, frozen modern expedition, safe power-off return.
+- [x] Browser boot/combat/retry/return and compact touch layout checks.
+- [ ] Physical SNES, controller and phone verification.
+- [ ] Expand the cartridge with authored stages, boss, music and saved progression.
+- [ ] Add the remaining demakes as real cartridges before enabling their consoles.
+
+See [4.47 evidence](RELEASE-4.47.md). The modern-game art and traversal checklist
+above remains open; the new demake request did not complete those milestones.
