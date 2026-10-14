@@ -33,3 +33,32 @@ test('weapon-overlay render errors restore the world clear state',()=>{
  assert.throws(()=>rig.renderHands(renderer),/context lost/);assert.equal(renderer.autoClear,true);
  renderer.autoClear=false;assert.throws(()=>rig.renderHands(renderer),/context lost/);assert.equal(renderer.autoClear,false);
 });
+
+test('TPS turns resolve the current shoulder origin before shooting, including elevated enemies',()=>{
+ for(const height of [0,7]){
+  const sim=simple(),rig=new ViewRig(),reference=new ViewRig();sim.player.y=height;
+  for(const view of [rig,reference]){view.setMode('third');view.update(sim,16/9,1/60);view.look(150,0);}
+  reference.update(sim,16/9,0);const direction=new T.Vector3();reference.camera.getWorldDirection(direction);const point=reference.camera.position.clone().addScaledVector(direction,15);
+  sim.enemies=[{id:'crosshair-enemy',x:point.x,y:point.y-.9,z:point.z,radius:.4,health:100}];
+  const hit=rig.aim(sim.player,sim);assert.equal(hit.targetId,'crosshair-enemy');assert.ok(rig.camera.position.distanceTo(reference.camera.position)<1e-9);assert.ok(hit.y>=sim.enemies[0].y&&hit.y<=sim.enemies[0].y+1.85);
+  // An intervening wall still wins; syncing the camera must not bypass cover.
+  sim.obstacles=[{x:(rig.camera.position.x+point.x)/2,y:height,z:(rig.camera.position.z+point.z)/2,w:2,d:2,h:5,health:100}];assert.equal(rig.aim(sim.player,sim).targetId,null);
+ }
+});
+test('FPS aiming follows a newly elevated pose before render without advancing paused motion',()=>{
+ const sim=simple(),rig=new ViewRig();rig.setMode('first');rig.update(sim,16/9,1/60);sim.player.aiming=true;rig.look(13,-20);const before={zoom:rig.aimBlend,swayX:rig.swayX,swayY:rig.swayY,pitch:rig.pitch,yaw:rig.yaw};
+ Object.assign(sim.player,{x:8,y:6,z:-3});rig.aim(sim.player,sim);assert.equal(rig.camera.position.x,8);assert.equal(rig.camera.position.y,7.55);assert.equal(rig.camera.position.z,-3);assert.deepEqual({zoom:rig.aimBlend,swayX:rig.swayX,swayY:rig.swayY,pitch:rig.pitch,yaw:rig.yaw},before);
+});
+test('aim synchronization retracts the camera out of newly encountered cover immediately',()=>{
+ const sim=simple(),rig=new ViewRig();rig.setMode('third');rig.update(sim,16/9,1/60);const open=rig.distance;sim.obstacles=[{x:0,z:-2,w:3,d:1,h:5,health:100}];rig.aim(sim.player,sim);assert.ok(rig.distance<open*.5);const close=rig.distance;sim.obstacles=[];rig.aim(sim.player,sim);assert.equal(rig.distance,close,'input sampling must not advance outward easing');rig.update(sim,16/9,1/60);assert.ok(rig.distance>close&&rig.distance<open);
+});
+test('camera fading restores source materials and disposes temporary clones across repeated cover visits',()=>{
+ const rig=new ViewRig(),root=new T.Group(),original=new T.MeshStandardMaterial({transparent:true,opacity:.7,depthWrite:false}),solid=new T.MeshStandardMaterial(),mesh=new T.Mesh(new T.BoxGeometry(),[original,solid]);root.add(mesh);rig.active=true;rig.mode='third';let disposed=0;
+ for(let n=0;n<50;n++){rig.distance=.4;rig.fadeAvatar(root);assert.notEqual(mesh.material[0],original);assert.equal(original.opacity,.7);assert.equal(solid.opacity,1);for(const material of mesh.material)material.addEventListener('dispose',()=>disposed++);rig.distance=5;rig.fadeAvatar(root);assert.equal(mesh.material[0],original);assert.equal(mesh.material[1],solid);assert.equal(mesh.userData.cameraMaterials,undefined);assert.equal(original.depthWrite,false);}
+ assert.equal(disposed,100);assert.equal(root.userData.cameraFaded,false);
+});
+
+test('the first look delta survives camera initialization and a mode switch clears stale pending input',()=>{
+ const sim=simple(),rig=new ViewRig();sim.player.angle=.7;rig.setMode('third');rig.look(40,0);rig.aim(sim.player,sim);assert.ok(Math.abs(rig.yaw-.6)<1e-12);rig.aim(sim.player,sim);assert.ok(Math.abs(rig.yaw-.6)<1e-12,'initial look is consumed only once');
+ rig.setMode('first');rig.look(20,0);rig.setMode('third');rig.aim(sim.player,sim);assert.equal(rig.yaw,.7);
+});

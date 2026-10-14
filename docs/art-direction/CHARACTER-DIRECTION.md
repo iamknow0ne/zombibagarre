@@ -1,6 +1,9 @@
 # Character art direction — from portraits to playable heroes
 
-14 October 2026. Production proposal following the 4.44 source and artwork review. The generated sheet is concept reference, not an implemented model or an in-engine screenshot. No runtime visuals changed in this pass.
+14 October 2026. Production direction following the source and artwork review.
+The generated sheet is concept reference, not an in-engine screenshot. A first
+anatomical/rig asset prototype now exists separately; the playable hero has not
+yet been replaced.
 
 ## Diagnosis
 
@@ -8,7 +11,7 @@ The existing portraits and Quarantine key art promise believable adult anatomy, 
 
 `CharacterMotion.js` supplies useful continuous motion signals, but `World.animateCharacter` primarily rotates separate limb groups with periodic functions. The issue is pose, contact, weight and transitions, rather than a lack of animation frames. Preserve its movement/turn/impact signals as inputs to a richer animation controller.
 
-The existing renderer can support imported animated characters. A whole engine rewrite is not the first step. There are currently no GLB/GLTF/FBX/Blend character assets under `public`.
+The existing renderer can support imported animated characters. A whole engine rewrite is not the first step. The first development GLB lives under `assets/characters`, outside the production asset bundle.
 
 ## Direction
 
@@ -72,6 +75,20 @@ Do not roll out all heroes until Rook passes this gate in actual rendered gamepl
 - Produce an honest before/after recording from the engine. Concept art never counts as this acceptance evidence.
 
 After Rook: apply the proven pipeline to Saint, Torque and Vesper; then prioritize enemies and bosses by screen prominence. Coordinate streets/buildings/props with the same material scale, restrained saturation and warm/cool light hierarchy. Avoid raising character detail while leaving nearby surfaces visibly inconsistent.
+
+## Asset-production checkpoint
+
+An initial CC0 anatomical base, UV-preserving importer, actual deform skeleton,
+wrapped garments and two deformation-study clips have been produced with
+Blender 5.1.2. See the [reproducible asset source and open quality gates](../../assets/source/rook/README.md).
+The standalone `/dev/character-art-qa.html` loads the actual GLB into Three.js
+and presents it beside the original Rook portrait. It supports front/back/profile,
+close/full/gameplay framing, clip playback and normal inspection.
+
+This is a technical foundation, **not the requested finished art upgrade**:
+likeness sculpting, textures, garment cleanup, combat animation, optimization and
+the runtime character adapter still need work. The model stays out of the
+normal game and production download until it passes those checks.
 
 ## Verified technical references
 

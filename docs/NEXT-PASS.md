@@ -30,7 +30,7 @@ Root: browser profiling, normal playthrough, integration and release. Performanc
 
 ## Next concrete slice
 
-Latest user priority: close the visual gap between the lore portraits and playable characters. The source/art review and first Rook reference sheet are saved in [character art direction](art-direction/CHARACTER-DIRECTION.md). Next produce and validate one rigged, textured Rook in actual gameplay before expanding the character pipeline. The reference image is concept only; no new character model has shipped. Do not claim further procedural detail alone satisfies this request.
+Latest user priority: close the visual gap between the lore portraits and playable characters. The source/art review and first Rook reference sheet are saved in [character art direction](art-direction/CHARACTER-DIRECTION.md). A real anatomical/rigged prototype and reproducible Blender source now exist in `assets/characters` and `assets/source/rook`, with a standalone `/dev/character-art-qa.html` viewer and `scripts/art/validate-rook.mjs` check. This is a development asset only: no replacement character has shipped. Next refine Rook's facial likeness, garment construction and PBR maps, then authored combat animation and a rest-pose-aware runtime adapter. Validate the result in actual gameplay before expanding the pipeline. Do not claim the anatomical base or further procedural detail alone satisfies the art request.
 
 The first low-platform city route and two-room workshop/apartment quest are implemented. Longer ordinary-expedition QA, perspective visibility/aiming and region travel remain open after this art milestone. Do not skip directly to procedural planets before travel, return and save semantics work. Indoor combat, indoor TPS/FPS and more room templates are separate extensions. Use two agents for isolated implementation/review work. See [4.44 evidence](RELEASE-4.44.md) and [the interior implementation](INTERIOR-INTEGRATION.md).
 
@@ -47,3 +47,13 @@ Runtime commit `b9dd004c65662be51cac1e89bd30f79f269b974e`: 435 tests passed; pro
 ## 4.45 controls checkpoint
 
 Keyboard rebinding and nine settings submenus are implemented. 483 regression tests and the production build passed; desktop/phone viewport checks and virtual-controller Back navigation were exercised. Mappings are included in backup/restore and rooftop training. See [4.45 evidence](RELEASE-4.45.md). The portrait-faithful Rook asset milestone above remains the next art priority.
+
+## 4.45.1 perspective and art-production checkpoint
+
+488 tests pass after correcting current-frame camera aim, initial look input
+and avatar-fade material lifetime. This closes specific reproduced bugs, not
+the entire perspective QA milestone. See [patch evidence](RELEASE-4.45.1.md).
+The independent art validator imports the real GLB through Three.js and checks
+all 50 meshes are skinned, finite attributes/weights and sampled deformation
+for both clips. Geometry is about 69k triangles with 11 untextured materials;
+mesh batching, LODs, painted materials and production motion remain open.
