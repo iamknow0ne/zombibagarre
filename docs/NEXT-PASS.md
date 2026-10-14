@@ -221,4 +221,13 @@ hardware-tested package. Automatic Steam Deck build cancellation requested.
 
 See [4.49.4 evidence](RELEASE-4.49.4.md). Published runtime `cfec6aa`; Pages `38634225917` passed; public BUILD 4.49.4 confirmed; GitHub Mac digest matches the tested archive. Deferred Steam Deck workflow `38634360316` cancelled. Broader perspective validation, production character art, sustained native soak and ordinary full expedition remain open; hangar/orbit/moon remain downstream. Apple signing, Steam Deck and other ports stay deferred.
 
-Next UI check: the public menu capture at 1280×857 shows cramped/cropped bottom navigation and controller guidance; improve height-aware menu layout while preserving the compact mobile gameplay HUD.
+The cropped public menu follow-up is addressed in 4.49.5; see the checkpoint below.
+
+## 4.49.5 — menu access and Hero Arsenal
+
+- [x] Height-aware, scrollable main menu with consistent navigation targets, landscape two-column setup and legible notification badges.
+- [x] Fix unlocked gun selection before dual-wield training; preserve locked-request state, ammo/reload and trained/testing pairs.
+- [x] 593 tests and production build; actual browser menu QA across six sizes, Hero Arsenal selection, keyboard scrolling and compact controller HUD regression.
+- [ ] Publish and verify browser and exact Mac package. See [4.49.5 evidence](RELEASE-4.49.5.md).
+
+Next remains wider perspective/traversal validation and production character art, ordinary expedition and sustained native soak. Hangar/orbit/moon remain downstream. No physical controller/phone result is claimed.

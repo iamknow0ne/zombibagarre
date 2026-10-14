@@ -69,6 +69,7 @@ import {SaveStore,LEGACY_KEYS,SAVE_KEY} from './rebuild/SaveStore.js';
 import {SaveUI} from './rebuild/SaveUI.js';
 import './rebuild/save.css';
 import './rebuild/settings.css';
+import './rebuild/menu.css';
 import {updateInputLayout} from './rebuild/HUDPresentation.js';
 import {FieldMessages,compactFieldMessage} from './rebuild/FieldMessages.js';
 const fieldMessages=new FieldMessages();
@@ -136,7 +137,7 @@ function renderArsenal(){
   const ordnance=document.createElement('label');ordnance.textContent='THROWABLE / SHARED SUPPLIES';const throwable=document.createElement('select');throwable.id='throwable-select';throwable.setAttribute('aria-label','Equipped throwable');for(const [key,w]of Object.entries(THROWABLES)){const lock=throwableLock(sim,key),option=new Option(w.name+(lock?' / '+lock:''),key);option.disabled=!!lock;throwable.add(option);}throwable.value=arsenalReturn==='menu'?equippedThrowable:sim.player.throwable;ordnance.append(throwable);$('arsenal-slots').append(ordnance);const describe=()=>{$('throwable-description').textContent=THROWABLES[throwable.value].description+' All types use the same ordnance charges. Throw with E / your grenade button. Select here using touch or D-pad.';};throwable.onchange=()=>{equippedThrowable=throwable.value;sim.player.throwable=equippedThrowable;settings.throwable=equippedThrowable;save('zb-quarantine-settings',settings);describe();};describe();
   const combos=weaponSynergies(selected);$('arsenal-synergies').textContent=combos.length?combos.map(s=>`${s.name} — ${s.description}`).join('  /  '):'TRY A PAIR: CINDER + VOLTA · M12 + LONGSHOT · AR-26 + JUDGEMENT · THUMPER + VX-9';
   $('arsenal-grid').replaceChildren(...Object.entries(WEAPONS).map(([key,w],i)=>{const b=document.createElement('button'),progress=masteryProgress(arsenalReturn==='menu'?null:sim.player,key),finish=WEAPON_FINISHES[key],stats=weaponStats(arsenalReturn==='menu'?{}:sim.player,key);b.className='arsenal-choice';b.id=`weapon-choice-${key}`;const lock=weaponLock(sim,key);b.disabled=!!lock;const isSelected=selected.includes(key);b.setAttribute('aria-pressed',String(isSelected));b.innerHTML=`<span class="arsenal-key">${isSelected?`EQUIPPED${selected.filter(k=>k===key).length===2?' ×2':''}`:String(i+1).padStart(2,'0')}</span>${portraits.has(`${key}:${progress.tier}`)?`<img class="weapon-portrait" src="${portraits.get(`${key}:${progress.tier}`)}" alt="${w.name}, ${TIER_NAMES[progress.tier]} model" width="400" height="180">`:`<span class="weapon-symbol ${key}" aria-hidden="true"></span>`}<small>${w.label} / ${TIER_MARKS[progress.tier]} ${TIER_NAMES[progress.tier]}</small><b>${progress.tier===3?finish.signature:w.name}</b><p>${w.description}</p>${lock?`<p class="weapon-lock">${lock} · CHARACTER → SKILLS → ARSENAL</p>`:''}<span class="evolution-track" aria-hidden="true"><i style="width:${progress.progress*100}%"></i></span><span class="evolution-note">${progress.next?`${Math.ceil(progress.next-progress.xp)} DAMAGE TO ${TIER_MARKS[progress.tier+1]} · ${finish.mods[progress.tier]}`:finish.feature}</span><span class="arsenal-spec">${w.melee?'THREE-HIT COMBO <i> / </i> NO AMMO':`${stats.magazine} ROUNDS <i> / </i> ${stats.reload.toFixed(1)}s RELOAD`}<br>${Math.round(criticalChance(arsenalReturn==='menu'?{}:sim.player,key,stats.tier)*100)}% CRIT · ×${(2+(arsenalReturn==='menu'?0:sim.player.critPower||0)).toFixed(2)} DAMAGE</span>`;b.onclick=()=>{
-    applyArsenal(toggleLoadout(selected,key));
+    applyArsenal(toggleLoadout(selected,key,canDualWield(sim)?2:1));
   };return b;}));
   if(focusId)$(focusId)?.focus();
 }
@@ -280,7 +281,7 @@ try{
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('rpgQA')){const {installRPGQA}=await import('../dev/rpg-qa.js');installRPGQA(input,()=>sim,()=>world);}
 
   // Read-only diagnostics for local QA. No gameplay mutation surface is exposed.
-  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.49.4'})});
+  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.49.5'})});
 }catch(error){console.error(error);$('error-detail').textContent='WebGL is needed to render Saint-Roch. Enable hardware acceleration or try a browser with WebGL support.';$('error').hidden=false;}
 
 // Isolated traversal training does not load or write expedition progression.

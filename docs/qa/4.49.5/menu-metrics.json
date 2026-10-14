@@ -1,0 +1,128 @@
+[
+  {
+    "horizontalOverflow": false,
+    "menuClient": 390,
+    "menuScroll": 569,
+    "overlaps": [],
+    "start": {
+      "bottom": 289.9140625,
+      "height": 48,
+      "left": 436,
+      "right": 812,
+      "top": 241.9140625,
+      "width": 376,
+      "x": 436,
+      "y": 241.9140625
+    },
+    "undersized": [],
+    "viewport": [
+      844,
+      390
+    ]
+  },
+  {
+    "horizontalOverflow": false,
+    "menuClient": 844,
+    "menuScroll": 1012,
+    "overlaps": [],
+    "start": {
+      "bottom": 636.765625,
+      "height": 48,
+      "left": 20,
+      "right": 370,
+      "top": 588.765625,
+      "width": 350,
+      "x": 20,
+      "y": 588.765625
+    },
+    "undersized": [],
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  {
+    "horizontalOverflow": false,
+    "menuClient": 568,
+    "menuScroll": 873,
+    "overlaps": [],
+    "start": {
+      "bottom": 542.1015625,
+      "height": 48,
+      "left": 20,
+      "right": 300,
+      "top": 494.1015625,
+      "width": 280,
+      "x": 20,
+      "y": 494.1015625
+    },
+    "undersized": [],
+    "viewport": [
+      320,
+      568
+    ]
+  },
+  {
+    "horizontalOverflow": false,
+    "menuClient": 690,
+    "menuScroll": 885,
+    "overlaps": [],
+    "start": {
+      "bottom": 662.171875,
+      "height": 48,
+      "left": 36,
+      "right": 416,
+      "top": 614.171875,
+      "width": 380,
+      "x": 36,
+      "y": 614.171875
+    },
+    "undersized": [],
+    "viewport": [
+      1280,
+      720
+    ]
+  },
+  {
+    "horizontalOverflow": false,
+    "menuClient": 827,
+    "menuScroll": 874,
+    "overlaps": [],
+    "start": {
+      "bottom": 650.671875,
+      "height": 48,
+      "left": 48,
+      "right": 498,
+      "top": 602.671875,
+      "width": 450,
+      "x": 48,
+      "y": 602.671875
+    },
+    "undersized": [],
+    "viewport": [
+      1280,
+      857
+    ]
+  },
+  {
+    "horizontalOverflow": false,
+    "menuClient": 870,
+    "menuScroll": 874,
+    "overlaps": [],
+    "start": {
+      "bottom": 650.671875,
+      "height": 48,
+      "left": 48,
+      "right": 498,
+      "top": 602.671875,
+      "width": 450,
+      "x": 48,
+      "y": 602.671875
+    },
+    "undersized": [],
+    "viewport": [
+      1440,
+      900
+    ]
+  }
+]

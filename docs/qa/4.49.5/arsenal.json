@@ -1,0 +1,123 @@
+{
+  "report": {
+    "weather": {
+      "seed": 1952057806,
+      "options": {
+        "dayCycle": "living",
+        "weatherMode": "dynamic",
+        "weatherEffects": "full"
+      },
+      "elapsed": 0,
+      "hour": 16.5,
+      "day": 1,
+      "night": false,
+      "daylight": 1,
+      "kind": "clear",
+      "rain": 0,
+      "snow": 0,
+      "fog": 0,
+      "wetness": 0,
+      "snowCover": 0,
+      "physicsTick": 0,
+      "revision": 0,
+      "burning": 0,
+      "wetEnemies": 0,
+      "particles": 0,
+      "drawCalls": 486
+    },
+    "navigation": {
+      "hint": null,
+      "shown": false,
+      "enabled": true
+    },
+    "state": "menu",
+    "x": 0,
+    "z": 3,
+    "profile": {
+      "version": 1,
+      "xp": 6000,
+      "appearance": {},
+      "attributes": {
+        "vigor": 0,
+        "might": 0,
+        "agility": 0,
+        "focus": 0,
+        "fortune": 0
+      },
+      "skills": [
+        "closequarters"
+      ],
+      "owned": [
+        "scout-chest-0"
+      ],
+      "equipment": {
+        "head": null,
+        "chest": "scout-chest-0",
+        "legs": null
+      },
+      "relics": [],
+      "relic": null,
+      "dye": "olive"
+    },
+    "expedition": {
+      "coins": 2400,
+      "claimed": [],
+      "accepted": [],
+      "cases": [],
+      "kills": 0,
+      "contacts": [],
+      "delivery": false,
+      "countrySupplies": false,
+      "runnerKills": 0,
+      "heavyKills": 0,
+      "nightKills": 0,
+      "nightDelivery": 0,
+      "nightDistricts": [],
+      "tracked": null
+    },
+    "places": [
+      {
+        "id": "smith",
+        "revealed": true,
+        "defeated": false
+      },
+      {
+        "id": "medic",
+        "revealed": true,
+        "defeated": false
+      },
+      {
+        "id": "broker",
+        "revealed": true,
+        "defeated": false
+      },
+      {
+        "id": "case-a",
+        "revealed": true,
+        "defeated": false
+      },
+      {
+        "id": "case-b",
+        "revealed": true,
+        "defeated": false
+      },
+      {
+        "id": "confessor",
+        "revealed": false,
+        "defeated": false
+      },
+      {
+        "id": "marshal",
+        "revealed": false,
+        "defeated": false
+      }
+    ],
+    "bosses": []
+  },
+  "selection": {
+    "carbineSelected": "false",
+    "main": "shotgun",
+    "offHandDisabled": true,
+    "shotgunSelected": "true"
+  }
+}

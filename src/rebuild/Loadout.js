@@ -4,9 +4,11 @@ export function normalizeLoadout(keys){
  if(!valid.length)return ['carbine'];
  return WEAPONS[valid[0]].melee?[valid[0]]:valid.filter(k=>!WEAPONS[k].melee).slice(0,2);
 }
-export function toggleLoadout(keys,key){
+export function toggleLoadout(keys,key,maxHands=2){
  if(!WEAPONS[key])return normalizeLoadout(keys);
- if(WEAPONS[key].melee||WEAPONS[keys[0]]?.melee)return [key];
+ // Before dual-wield training, choosing a gun replaces the main hand rather
+ // than adding an off-hand that progression would immediately discard.
+ if(maxHands<2||WEAPONS[key].melee||WEAPONS[keys[0]]?.melee)return [key];
  const next=[...keys],i=next.lastIndexOf(key);
  if(i>=0){if(next.length>1)next.splice(i,1);}
  else if(next.length<2)next.push(key);else next[1]=key;

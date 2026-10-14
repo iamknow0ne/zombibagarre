@@ -9,7 +9,7 @@ import {boxHit3D,bodyHit3D,actorHeight,propHeight,feetHeight,actorSpan,propSpan,
 import {SpatialIndex,collisionCandidates} from './SpatialIndex.js';
 import {createFocus,stepFocus,endFocus,rewardFocus,beginFocusDive,FOCUS} from './BulletTime.js';
 import {createWeather,updateWeather,addNightReinforcements,weatherMovement} from './Weather.js';
-import {weaponLock,permittedLoadout} from './Progression.js';
+import {weaponLock,permittedLoadout,canDualWield} from './Progression.js';
 import {throwOrdnance,detonateThrowable} from './Throwables.js';
 import {MELEE_PROFILES} from './MeleeWeapons.js';
 import {configureBoss,bossDamage,bossDefeated,bossContains,updateBoss as stepBoss,beginBossAttack} from './Bosses.js';
@@ -123,7 +123,7 @@ export class Simulation {
     if(changed){if(isMelee(p))p.focusDive=false;p.equippedAt=this.time;p.meleeAttack=null;p.meleeBuffer=null;p.shots={};p.swing=0;p.swingWeapon=null;p.swingCombo=0;p.lastSwing=-99;p.dashCooldown=Math.min(p.dashCooldown,isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax);this.emit('switch');}
     p.reload=p.reloads[p.weapon]||0;return changed;
   }
-  equipWeapon(key){if(!WEAPONS[key])return false;return this.setLoadout(toggleLoadout(this.player.equipped,key));}
+  equipWeapon(key){if(weaponLock(this,key))return false;return this.setLoadout(toggleLoadout(this.player.equipped,key,canDualWield(this)?2:1));}
   switchWeapon(key){if(!WEAPONS[key]||weaponLock(this,key))return;const p=this.player;if(p.equipped.includes(key)&&key!==p.equipped[0])this.setLoadout([key,p.equipped[0]]);if(!p.equipped.includes(key)){this.setLoadout(WEAPONS[key].melee||isMelee(p)?[key]:[key,...p.equipped.slice(1)]);}p.weapon=key;p.swing=0;p.swingWeapon=null;p.meleeAttack=null;p.meleeBuffer=null;p.reload=p.reloads[key]||0;p.fire=p.weaponTimers[key]||0;this.emit('switch');}
   reload(key=this.player.weapon,slot=key){const p=this.player,w=weaponStats(p,key);if(w.melee)return;if(!p.reloads[slot]&&p.magazines[slot]<magazineSize(p,key)){p.reloads[slot]=w.reload*p.reloadMultiplier;p.reloadDurations[slot]=p.reloads[slot];if(slot===p.weapon){p.reload=p.reloadTotal=p.reloads[slot];}this.emit('reload',{weapon:key,slot});}}
   damagePlayer(amount) {
