@@ -75,3 +75,29 @@ test('fast descending edge catches elevated slabs and destroyed support still dr
  step(p,{},[b],[],.05);assert.equal(p.y,3.5);assert.equal(p.supportId,b.id);
  b.health=0;run(p,{},[b]);assert.equal(p.y,0);assert.equal(p.supportId,null);
 });
+
+
+test('a clear cable cannot leave the actor suspended forever under low headroom',()=>{
+ const p=player({x:0,y:0,z:0}),owner={id:'owner',x:0,z:8,w:2,d:2,h:.3},canopy={id:'canopy',x:0,y:2.15,z:4,w:4,d:12,h:.5};
+ const boxes=[owner,canopy],anchor={id:'low-anchor',supportId:owner.id,x:0,y:2,z:8};
+ assert.equal(grappleAvailability(p,anchor,boxes),null,'cable fits below the canopy');
+ assert.ok(step(p,{grapple:true,anchorId:anchor.id},boxes,[anchor]).some(e=>e.type==='attach'));
+ const events=run(p,{},boxes,[anchor],3);
+ assert.equal(p.grapple,null);assert.equal(p.grounded,true);assert.equal(p.supportId,owner.id);assert.equal(p.y,owner.h);
+ assert.equal(events.filter(e=>e.type==='release'&&e.reason==='blocked').length,1);
+ assert.equal(events.filter(e=>e.type==='blocked').length,1);
+ assert.ok(!events.some(e=>e.type==='reel-complete'),'blocked pull is not reported as reaching the anchor');
+ const before=p.x;run(p,{x:1},boxes,[anchor],.2);assert.ok(p.x>before+.1,'steering returns after the release');
+});
+
+test('clearing a briefly blocked grapple lets the same pull finish normally',()=>{
+ const p=player({x:0,y:0,z:0}),owner={id:'owner',x:0,z:8,w:2,d:2,h:.3},canopy={id:'canopy',x:0,y:2.15,z:4,w:4,d:12,h:.5,health:100};
+ const anchor={id:'low-anchor',supportId:owner.id,x:0,y:2,z:8},boxes=[owner,canopy],events=[];let cleared=false;
+ step(p,{grapple:true,anchorId:anchor.id},boxes,[anchor]);
+ for(let i=0;i<360;i++){
+  if((p.grapple?.blockedTime||0)>.1){canopy.health=0;cleared=true;}
+  events.push(...step(p,{},boxes,[anchor],1/120));
+ }
+ assert.equal(cleared,true);assert.equal(p.grapple,null);assert.equal(p.supportId,owner.id);
+ assert.ok(events.some(e=>e.type==='reel-complete'));assert.ok(!events.some(e=>e.type==='blocked'||e.type==='release'));
+});

@@ -1,0 +1,57 @@
+{
+  "position": {
+    "x": 0,
+    "y": 0.3,
+    "z": 7.995
+  },
+  "grounded": true,
+  "support": "prop-0",
+  "grapple": null,
+  "grappleBlockedFor": 0,
+  "velocityY": 0,
+  "target": null,
+  "camera": {
+    "mode": "diorama",
+    "x": 26,
+    "y": 35,
+    "z": 36
+  },
+  "aim": {
+    "x": 1.969,
+    "y": 2.65,
+    "z": 6.423,
+    "targetId": null
+  },
+  "targetHealth": 10000,
+  "weapon": "carbine",
+  "shots": 0,
+  "magazine": 24,
+  "rewardClaimed": false,
+  "grenades": 3,
+  "lastEvents": [
+    {
+      "type": "traversal-attach",
+      "time": 0.147,
+      "support": null,
+      "message": null
+    },
+    {
+      "type": "traversal-release",
+      "time": 1.922,
+      "support": null,
+      "message": null
+    },
+    {
+      "type": "traversal-blocked",
+      "time": 1.922,
+      "support": null,
+      "message": "Grapple path blocked"
+    },
+    {
+      "type": "traversal-land",
+      "time": 2.014,
+      "support": "prop-0",
+      "message": null
+    }
+  ]
+}

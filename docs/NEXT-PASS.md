@@ -209,3 +209,14 @@ Next remains wider perspective/traversal validation and production character art
 4.49.3 publication verified: runtime `8502f13`, Pages `38624878872` passed,
 public menu BUILD 4.49.3; the uploaded Mac archive digest matches the local
 hardware-tested package. Automatic Steam Deck build cancellation requested.
+
+## 4.49.4 — grapple recovery and render selection
+
+- [x] Recover from sustained blocked-body grapples beneath low cover, while allowing brief collisions to clear normally.
+- [x] Preserve nearest-piece destruction ordering and recent-wound bar selection with less CPU sorting/transform work.
+- [x] 591 automated tests; standard Open City 32-wave simulated campaign; actual browser grapple/landing/firing/movement recovery; production build.
+- [x] Exact Apple Silicon archive signature verification and offline startup with GPU enabled. This pass is startup coverage, not a new native playthrough.
+- [x] Fixed-seed combat/collapse before-after samples retain identical draw/triangle/effect counts. CPU microbenchmarks improve; short samples do not establish overall FPS improvement.
+- [x] Investigated the 100-second GPU geometry rise: late +75 is exactly +54 first-use registrations of existing props plus +21 active lightning geometries; scene owners and actor batches remain flat, with a stable non-scene registration gap. No concrete leak found in this bounded check. Sustained native soak remains open.
+
+See [4.49.4 evidence](RELEASE-4.49.4.md). Publication verification pending. Broader perspective validation, production character art, sustained native soak and ordinary full expedition remain open; hangar/orbit/moon remain downstream. Apple signing, Steam Deck and other ports stay deferred.

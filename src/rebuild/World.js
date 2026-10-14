@@ -1,3 +1,4 @@
+import {nearestVisiblePieces} from './RenderCandidates.js';
 import {RegionVisuals} from './RegionVisuals.js';
 import {disposeObjectResources} from './ResourceDisposal.js';
 import {InteriorView,InteriorDoors} from './InteriorView.js';
@@ -340,7 +341,7 @@ export class World {
     const g=this.buildingMeshes.get(e.id);if(!g)return;
     if(reset){for(const m of [...(g.userData.sections||[]),...(g.userData.glass||[])])m.visible=true;if(g.userData.roofAccessories)g.userData.roofAccessories.visible=true;}
     g.userData.damageStage=e.stage;
-    const pieces=(g.userData.sections||[]).filter(m=>m.visible);pieces.sort((a,b)=>{const av=new T.Vector3(),bv=new T.Vector3();a.getWorldPosition(av);b.getWorldPosition(bv);return Math.hypot(av.x-e.x,av.z-e.z,av.y-(e.y??2))-Math.hypot(bv.x-e.x,bv.z-e.z,bv.y-(e.y??2));});
+    const pieces=nearestVisiblePieces(g.userData.sections||[],{x:e.x,y:e.y??2,z:e.z});
     for(const m of pieces.slice(0,Math.max(0,Math.ceil((g.userData.sections||[]).length*.24*e.stage)-((g.userData.sections||[]).length-pieces.length)))){m.visible=false;if(silent)continue;const p=new T.Vector3();m.getWorldPosition(p);debris(this,{x:p.x,z:p.z,y:p.y,material:g.userData.material||'brick',count:4,power:4,scale:.8});if(this.random()<.35)this.smoke(p.x,p.z,1,p.y);}
     const panes=(g.userData.glass||[]).filter(m=>m.visible);for(const pane of panes.slice(0,e.stage*2)){pane.visible=false;if(silent)continue;const p=new T.Vector3();pane.getWorldPosition(p);this.effect(p.x,p.z,0x98bab9,12,6,'glass',p.y);}
     if(g.userData.roofAccessories&&(g.userData.roof?.visible===false||g.userData.decoratedRoof?.visible===false))g.userData.roofAccessories.visible=false;
@@ -397,7 +398,7 @@ export class World {
     const hole=new T.Mesh(new T.PlaneGeometry(blast?3.4:e.slicing?1.5:.16,blast?3.4:e.slicing?.055:.16),new T.MeshBasicMaterial({map:this.scarTex,color:0xffffff,transparent:true,depthWrite:false,side:T.DoubleSide}));
     hole.position.set(clamp(local.x,-halfW,halfW),e.y??(blast?1.8:1.05+(this.random()-.5)*.5),clamp(local.z,-halfD,halfD));if(Number.isFinite(e.y)&&building.userData.plan&&e.y>=building.userData.plan.h-.05){hole.rotation.x=-Math.PI/2;hole.position.y=building.userData.plan.h+.18;}else if(faceX>faceZ){hole.rotation.y=Math.PI/2;hole.position.x=Math.sign(local.x)*(halfW+.13);}else hole.position.z=Math.sign(local.z)*(halfD+(local.z>0?.28:.18));
     applyCutaway(hole.material,this.cutaway.uniforms);hole.userData.disposable=true;hole.userData.building=e.id;building.add(hole);building.updateWorldMatrix(true,true);const hitPoint=hole.getWorldPosition(new T.Vector3());this.impacts.push(hole);if(this.impacts.length>160)this.removeDynamic(this.impacts.shift());
-    const panes=building.userData.glass.filter(m=>m.visible);panes.sort((a,b)=>{const av=new T.Vector3(),bv=new T.Vector3();a.getWorldPosition(av);b.getWorldPosition(bv);return av.distanceTo(hitPoint)-bv.distanceTo(hitPoint);});
+    const panes=nearestVisiblePieces(building.userData.glass,hitPoint);
     if(panes.length){const pane=panes[0],v=new T.Vector3();pane.getWorldPosition(v);if(v.distanceTo(hitPoint)<(blast?3:Number.isFinite(e.y)?1.1:3)||(!Number.isFinite(e.y)&&this.random()<.25)){pane.visible=false;this.effect(v.x,v.z,0xa7c7bf,14,4,'glass',v.y);this.smoke(v.x,v.z,1);}}
     debris(this,{x:hitPoint.x,z:hitPoint.z,y:hitPoint.y,material:building.userData.material||'brick',count:blast?28:5,power:blast?7:2,scale:blast?1:.4});if(blast){this.smoke(e.x,e.z,12,hitPoint.y);for(const pane of panes.slice(0,4)){pane.visible=false;const p=new T.Vector3();pane.getWorldPosition(p);this.effect(p.x,p.z,0x98bab9,10,7,'glass',p.y);}}
     if(building.userData.plan&&panes.some(p=>!p.visible))this.rebuildBuildingShell(building);

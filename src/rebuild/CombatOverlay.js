@@ -1,3 +1,4 @@
+import {activeHealthBarCandidates} from './RenderCandidates.js';
 import {QuestCompass} from './QuestCompass.js';
 import {ProgressionFeed} from './ProgressionFeed.js';
 import {Vector3} from 'three';
@@ -34,14 +35,14 @@ export class CombatOverlay {
   if(this.w!==w||this.h!==h||this.dpr!==dpr){this.w=w;this.h=h;this.dpr=dpr;this.canvas.width=Math.round(w*dpr);this.canvas.height=Math.round(h*dpr);}
   c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);this.feed.update(dt);this.progression?.update(dt);
   if(sim.state==='menu')return;
-  const ids=new Set(sim.enemies.filter(e=>e.health>0).map(e=>e.id));for(const id of this.bars.keys())if(!ids.has(id))this.bars.delete(id);
+  const healthBars=activeHealthBarCandidates(sim.enemies,this.bars,sim.player,this.feed.clock);
   // Shared screen-space occupancy keeps nearby labels apart, including on phones.
   const occupied=[...(this.reserved||[])];this.drawnNumbers=0;this.drawnBars=0;const overlaps=r=>occupied.some(o=>Math.abs(o.x-r.x)<(o.w+r.w)/2+3&&Math.abs(o.y-r.y)<(o.h+r.h)/2+3);
   const place=(p,width,height)=>{for(const [dx,dy]of [[0,0],[-28,-12],[28,-12],[0,-38],[-36,-40],[36,-40]]){const r={x:p.x+dx,y:p.y+dy,w:width,h:height};if(r.x-width/2<4||r.x+width/2>w-4||r.y-height/2<16||r.y+height/2>h-24||overlaps(r))continue;occupied.push(r);return r;}return null;};
   if(this.settings.questGuidance!==false)this.compass.draw(c,this.questHint,sim,camera,w,h,occupied,this.mobile);
   this.drawProgression(sim,camera,place);
-  if(this.settings.enemyHealthBars!==false){let count=0;for(const e of [...sim.enemies].sort((a,b)=>Math.hypot(a.x-sim.player.x,a.z-sim.player.z)-Math.hypot(b.x-sim.player.x,b.z-sim.player.z))){
-   if(e.health<=0||e.health>=e.maxHealth||count>=(this.mobile?10:32))continue;const state=this.bars.get(e.id);if(!state||this.feed.clock-state.hitAt>4)continue;
+  if(this.settings.enemyHealthBars!==false){let count=0;for(const e of healthBars){
+   if(count>=(this.mobile?10:32))break;const state=this.bars.get(e.id);
    const p=this.project(e.x,(e.y||0)+this.height(e),e.z,camera);if(!p||p.y<20||p.y>h-20)continue;count++;
    const width=(e.enemyType||e.type)==='boss'?88:(e.enemyType||e.type)==='brute'?47:34,height=(e.enemyType||e.type)==='boss'?6:4,y=p.y;
    if(overlaps({x:p.x,y:y+2,w:width,h:height+4}))continue;this.drawnBars++;

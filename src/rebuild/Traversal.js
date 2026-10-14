@@ -50,6 +50,7 @@ export function stepTraversal(p,input,dt,boxes,anchors,bounds,movement={}){
  }
  const steps=Math.ceil(dt/(1/120)),h=dt/steps,oldX=p.x,oldZ=p.z;
  for(let i=0;i<steps;i++){
+  const startX=p.x,startY=p.y,startZ=p.z;let hitCeiling=false;
   p.grappleCooldown=Math.max(0,p.grappleCooldown-h);p.landing=Math.max(0,p.landing-h*3);
   const floor=supportBelow(p,boxes);
   if(p.grounded&&Math.abs(p.y-floor.y)>.065){p.grounded=false;p.supportId=null;}
@@ -68,11 +69,19 @@ export function stepTraversal(p,input,dt,boxes,anchors,bounds,movement={}){
   const beforeY=p.y;let nextY=p.y+p.vy*h;
   // Ascend before lateral collision so feet can clear a ledge. Descend after
   // lateral movement so swept landing selects the surface actually underneath.
-  if(p.vy>0){let ceiling=Infinity;for(const b of boxes)if(alive(b)&&feetHeight(b)>0&&onBox(p,b,-p.radius)&&beforeY+bodyHeight<=feetHeight(b)+.001&&nextY+bodyHeight>=feetHeight(b))ceiling=Math.min(ceiling,feetHeight(b)-bodyHeight);p.y=Math.min(nextY,ceiling);if(ceiling<Infinity){p.vy=0;nextY=p.y;}}
-  if(moveAxis(p,p.vx*h,'x',boxes,bounds,bodyHeight))p.vx=0;
-  if(moveAxis(p,p.vz*h,'z',boxes,bounds,bodyHeight))p.vz=0;
+  if(p.vy>0){let ceiling=Infinity;for(const b of boxes)if(alive(b)&&feetHeight(b)>0&&onBox(p,b,-p.radius)&&beforeY+bodyHeight<=feetHeight(b)+.001&&nextY+bodyHeight>=feetHeight(b))ceiling=Math.min(ceiling,feetHeight(b)-bodyHeight);p.y=Math.min(nextY,ceiling);if(ceiling<Infinity){p.vy=0;nextY=p.y;hitCeiling=true;}}
+  const hitX=moveAxis(p,p.vx*h,'x',boxes,bounds,bodyHeight),hitZ=moveAxis(p,p.vz*h,'z',boxes,bounds,bodyHeight);
+  if(hitX)p.vx=0;if(hitZ)p.vz=0;
   if(p.vy<=0){const support=supportBelow(p,boxes,beforeY+.025);p.y=nextY;if(p.y<=support.y){const falling=p.vy;p.y=support.y;p.vy=0;if(!p.grounded&&falling<-.8){p.landing=clamp(-falling/23,.12,.75);events.push({type:'land',speed:-falling,supportId:support.id});}p.grounded=true;p.supportId=support.id;}}
   else p.grounded=false;
+  // A clear cable is thinner than the actor. If the body wedges beneath an
+  // overhang or against cover, release instead of leaving combat locked forever.
+  // Brief wall slides and normal reel deceleration must not interrupt the pull.
+  if(p.grapple){
+   const stalled=(hitX||hitZ||hitCeiling)&&Math.hypot(p.x-startX,p.y-startY,p.z-startZ)<h*.2;
+   p.grapple.blockedTime=stalled?(p.grapple.blockedTime||0)+h:0;
+   if(p.grapple.blockedTime>=.35){p.grapple=null;p.grappleCooldown=.35;events.push({type:'release',reason:'blocked'});events.push({type:'blocked',message:'Grapple path blocked'});}
+  }
  }
  p.moveX=(p.x-oldX)/dt;p.moveZ=(p.z-oldZ)/dt;p.moving=p.grounded&&Math.hypot(p.moveX,p.moveZ)>.08;
  if(!movement.preserveFacing&&Math.hypot(p.moveX,p.moveZ)>.15)p.angle=Math.atan2(p.moveX,p.moveZ);

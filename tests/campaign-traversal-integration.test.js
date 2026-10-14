@@ -34,3 +34,14 @@ test('campaign descending edge lands above solid support and retains elevated bu
  s.fireWeapon('carbine',{x:7,y:1.1,z:0});assert.ok(Math.abs(s.bullets.at(-1).y-(box.h+1.1))<1e-8);
  s.pause();const position={x:p.x,y:p.y,z:p.z};step(s,20,{x:1,jump:true});assert.deepEqual({x:p.x,y:p.y,z:p.z},position);s.resume();step(s,90,{x:1});assert.equal(p.y,0);assert.equal(p.supportId,null);assert.equal(p.supportY,0);
 });
+
+
+test('blocked full-body grapple returns campaign movement and firing without another release input',()=>{
+ const l={cover:[{kind:'platform',x:0,z:8,w:2,d:2,h:.3},{kind:'platform',x:0,y:2.15,z:4,w:4,d:12,h:.5}],bounds:{minX:-20,maxX:20,minZ:-20,maxZ:20},traversal:{anchors:[{id:'low-anchor',supportId:'prop-0',x:0,y:2,z:8}]}};
+ const s=new Simulation({layout:l});s.start();s.toSpawn=999;s.spawnTimer=1e6;Object.assign(s.player,{x:0,z:0});
+ s.update(1/60,{grapple:true,auto:false});assert.ok(s.player.grapple);
+ step(s,180);assert.equal(s.player.grapple,null);assert.equal(s.player.grounded,true);assert.equal(s.player.y,.3);
+ const shots=s.player.shotCounts.carbine||0;
+ s.update(1/60,{firing:true,aim:{x:0,y:1.4,z:15},auto:false});
+ assert.ok(s.player.shotCounts.carbine>shots,'the stuck grapple no longer blocks the equipped weapon');
+});

@@ -48,3 +48,15 @@ test('mobile feedback respects reserved HUD and thumb regions and limits visible
   o.mobile=false;o.draw(sim,0,{});assert.ok(o.drawnNumbers>10,'desktop retains its existing density');
  }finally{for(const [key,descriptor]of saved){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}}
 });
+test('health bars retain mobile and desktop budgets while skipping offscreen wounded enemies',()=>{
+ const saved=['innerWidth','innerHeight','devicePixelRatio'].map(k=>[k,Object.getOwnPropertyDescriptor(globalThis,k)]);
+ try{
+  Object.assign(globalThis,{innerWidth:1600,innerHeight:900,devicePixelRatio:1});
+  const o=Object.create(CombatOverlay.prototype),noop=()=>{};o.compass=new QuestCompass();o.canvas={};o.ctx=new Proxy({},{get:(t,k)=>t[k]??noop});o.feed=new DamageFeed();o.bars=new Map();o.settings={damageNumbers:false};
+  const enemies=Array.from({length:45},(_,id)=>({id,x:id,z:0,health:50,maxHealth:100,type:'walker'})),sim={state:'playing',enemies,player:{x:0,z:0}};
+  for(const e of enemies)o.event({type:'damage',enemyId:e.id,health:50,maxHealth:100,dealt:50});
+  let projections=0;o.project=x=>{projections++;return x<2?null:{x:40+(x%10)*140,y:180+Math.floor(x/10)*100};};
+  o.mobile=true;o.draw(sim,0,{});assert.equal(o.drawnBars,10);assert.equal(projections,12,'offscreen bars do not consume the visible budget');
+  projections=0;o.mobile=false;o.draw(sim,0,{});assert.equal(o.drawnBars,32);assert.equal(projections,34);
+ }finally{for(const [key,descriptor]of saved){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}}
+});

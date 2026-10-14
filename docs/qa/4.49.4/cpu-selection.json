@@ -1,0 +1,70 @@
+{
+  "kind": "CPU-only local microbenchmark; no FPS claim",
+  "results": [
+    {
+      "name": "building impact piece ordering",
+      "pieces": 200,
+      "matchingOrder": true,
+      "rounds": 9,
+      "framesPerRound": 500,
+      "baselineMs": 0.51515,
+      "optimizedMs": 0.06668,
+      "speedup": 7.73
+    },
+    {
+      "name": "health-bar candidates",
+      "enemies": 60,
+      "activeBars": 12,
+      "matchingOrder": true,
+      "rounds": 9,
+      "framesPerRound": 500,
+      "baselineMs": 0.0231,
+      "optimizedMs": 0.00282,
+      "speedup": 8.18
+    },
+    {
+      "name": "health-bar candidates",
+      "enemies": 60,
+      "activeBars": 60,
+      "matchingOrder": true,
+      "rounds": 9,
+      "framesPerRound": 500,
+      "baselineMs": 0.02439,
+      "optimizedMs": 0.00928,
+      "speedup": 2.63
+    },
+    {
+      "name": "health-bar candidates",
+      "enemies": 300,
+      "activeBars": 30,
+      "matchingOrder": true,
+      "rounds": 9,
+      "framesPerRound": 500,
+      "baselineMs": 0.15483,
+      "optimizedMs": 0.01589,
+      "speedup": 9.74
+    },
+    {
+      "name": "health-bar candidates",
+      "enemies": 600,
+      "activeBars": 60,
+      "matchingOrder": true,
+      "rounds": 9,
+      "framesPerRound": 500,
+      "baselineMs": 0.34475,
+      "optimizedMs": 0.03283,
+      "speedup": 10.5
+    },
+    {
+      "name": "health-bar candidates",
+      "enemies": 600,
+      "activeBars": 0,
+      "matchingOrder": true,
+      "rounds": 9,
+      "framesPerRound": 500,
+      "baselineMs": 0.3309,
+      "optimizedMs": 0.00002,
+      "speedup": 15098.53
+    }
+  ]
+}

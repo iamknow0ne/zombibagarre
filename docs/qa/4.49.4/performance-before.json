@@ -1,0 +1,157 @@
+[
+  {
+    "scene": "combat",
+    "quality": "balanced",
+    "totalFrames": 240,
+    "checkpoints": [
+      {
+        "frame": 0,
+        "effects": 37,
+        "geometries": 617,
+        "textures": 30
+      }
+    ],
+    "seed": 20261012,
+    "viewport": [
+      1280,
+      720
+    ],
+    "frames": 180,
+    "fps": 60.2,
+    "frameMs": {
+      "mean": 16.62,
+      "p95": 25.4
+    },
+    "simMs": {
+      "mean": 3.53,
+      "p95": 5.4
+    },
+    "eventsMs": {
+      "mean": 0.12,
+      "p95": 0.3
+    },
+    "worldMs": {
+      "mean": 11.84,
+      "p95": 15.4
+    },
+    "drawCalls": {
+      "mean": 1068.23,
+      "p95": 1160
+    },
+    "triangles": {
+      "mean": 398615.82,
+      "p95": 403644
+    },
+    "meshes": 9777,
+    "resources": {
+      "geometries": 643,
+      "textures": 32
+    },
+    "peakEffects": 340,
+    "peakStructures": 0,
+    "stages": {
+      "actors": {
+        "mean": 0.89,
+        "p95": 1.3
+      },
+      "props": {
+        "mean": 0.15,
+        "p95": 0.3
+      },
+      "effects": {
+        "mean": 0.52,
+        "p95": 1.2
+      },
+      "overlay": {
+        "mean": 1.01,
+        "p95": 1.4
+      },
+      "instances": {
+        "mean": 0.7,
+        "p95": 1.1
+      },
+      "render": {
+        "mean": 8.56,
+        "p95": 11.5
+      }
+    }
+  },
+  {
+    "scene": "collapse",
+    "quality": "balanced",
+    "totalFrames": 240,
+    "checkpoints": [
+      {
+        "frame": 0,
+        "effects": 0,
+        "geometries": 273,
+        "textures": 28
+      }
+    ],
+    "building": "building-1-0",
+    "seed": 20261012,
+    "viewport": [
+      1280,
+      720
+    ],
+    "frames": 180,
+    "fps": 97.3,
+    "frameMs": {
+      "mean": 10.28,
+      "p95": 17.1
+    },
+    "simMs": {
+      "mean": 1.68,
+      "p95": 2.9
+    },
+    "eventsMs": {
+      "mean": 0.1,
+      "p95": 0.3
+    },
+    "worldMs": {
+      "mean": 7.75,
+      "p95": 11.9
+    },
+    "drawCalls": {
+      "mean": 689.32,
+      "p95": 898
+    },
+    "triangles": {
+      "mean": 142741.11,
+      "p95": 148418
+    },
+    "meshes": 8594,
+    "resources": {
+      "geometries": 306,
+      "textures": 31
+    },
+    "peakEffects": 420,
+    "peakStructures": 250,
+    "stages": {
+      "actors": {
+        "mean": 0.16,
+        "p95": 0.3
+      },
+      "props": {
+        "mean": 0.2,
+        "p95": 0.4
+      },
+      "effects": {
+        "mean": 1.48,
+        "p95": 3.3
+      },
+      "overlay": {
+        "mean": 0.06,
+        "p95": 0.1
+      },
+      "instances": {
+        "mean": 0,
+        "p95": 0
+      },
+      "render": {
+        "mean": 5.84,
+        "p95": 9
+      }
+    }
+  }
+]
