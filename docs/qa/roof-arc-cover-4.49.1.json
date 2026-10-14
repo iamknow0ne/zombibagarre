@@ -1,0 +1,31 @@
+{
+  "position": {
+    "x": -20.332,
+    "y": 3.41,
+    "z": 31.034
+  },
+  "grounded": true,
+  "support": "prop-131",
+  "grapple": null,
+  "velocityY": 0,
+  "target": null,
+  "camera": {
+    "mode": "first",
+    "x": -20.332,
+    "y": 4.96,
+    "z": 31.034
+  },
+  "aim": {
+    "x": -23.608,
+    "y": 1.584,
+    "z": 31.034,
+    "targetId": 1
+  },
+  "targetHealth": 1000,
+  "weapon": "arc",
+  "shots": 2,
+  "magazine": 14,
+  "rewardClaimed": false,
+  "grenades": 3,
+  "lastEvents": []
+}

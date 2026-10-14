@@ -28,6 +28,15 @@ Measure fixed seed, scene, quality, viewport, frame count, CPU stage time, draw 
 
 Root: browser profiling, normal playthrough, integration and release. Performance subagent: rendering/effects/resource lifetimes. Gameplay subagent: simulation, progression and adversarial regression tests.
 
+## 4.49.1 perspective cover correction
+
+- [x] Reproduce and fix electric shots starting beyond a close roof parapet.
+- [x] 578 tests, build and actual FPS browser reproduction: two shots consumed,
+  target health remains 1,000; clear elevated arcs and normal chains still pass.
+- [ ] Validate and publish the exact Mac/browser patch artifacts.
+
+See [patch evidence](RELEASE-4.49.1.md). The wider perspective gate remains open.
+
 ## 4.49 service roof and movement checkpoint
 
 - [x] One curated existing-building roof with shared collision/render deck, parapets and HVAC; safe mapped approach, grapple ascent and exit gap.

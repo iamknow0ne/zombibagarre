@@ -290,7 +290,9 @@ export class Simulation {
     const p=this.player,w=weaponStats(p,key),angle=Math.atan2(aim.x-p.x,aim.z-p.z),count=p.shotCounts[slot]=(p.shotCounts[slot]||0)+1;const variant=(count-1)%4;p.shots[slot]={time:this.time,weapon:key,hand,variant,tier:w.tier};p.magazines[slot]--;p.weaponTimers[slot]=w.interval*p.fireMultiplier*(p.overdrive>0?.5:1);
     if(hand)p.offhandRecoil=.12;const offset=(p.equipped.length>1?(hand?-.35:.35):.2);const originX=p.x+Math.cos(angle)*offset,originZ=p.z-Math.sin(angle)*offset,originY=feetHeight(p)+1.1;
     const targetY=aimHeight(aim,originY);p.aimPitch=Math.atan2(originY-targetY,Math.hypot(aim.x-originX,aim.z-originZ));
-    if(w.chain)this.arcAttack(aim,w,{x:originX+Math.sin(angle)*.85,y:originY,z:originZ+Math.cos(angle)*.85});else for(let i=0;i<w.pellets;i++){
+    // Arc occlusion starts at the same physical muzzle as projectile weapons.
+    // Advancing its origin past the barrel can skip a nearby roof parapet.
+    if(w.chain)this.arcAttack(aim,w,{x:originX,y:originY,z:originZ});else for(let i=0;i<w.pellets;i++){
       const shotAngle=aim.perspective?Math.atan2(aim.x-originX,aim.z-originZ):angle,a=shotAngle+(this.random()-.5)*w.spread*2*((p.aiming&&aim.perspective)?.55:1),headshot=!aim.perspective&&!['flame','launcher','arc'].includes(key)&&this.random()<(key==='marksman'?.32:key==='revolver'?.22:.07);
       const pitch=p.aimPitch;
       this.bullets.push({perspective:!!aim.perspective,id:this.nextId++,x:originX,z:originZ,vx:Math.sin(a)*w.speed*Math.cos(pitch),vz:Math.cos(a)*w.speed*Math.cos(pitch),life:w.range/w.speed,headshot,damage:w.damage*(headshot?1.65:1)*p.damage*(p.swapBoost>0?1.25:1),enemy:false,tier:w.tier,ricochets:w.ricochet||0,y:originY,vy:-Math.sin(pitch)*w.speed+(key==='launcher'&&!aim.perspective?3.8:0),gravity:key==='launcher'?8:0,terminal:key==='marksman'&&w.tier===3,cluster:key==='launcher'&&w.tier===3,pierce:(w.pierce||0)+p.pierce,hitIds:[],weapon:key,burn:(w.burn||0)+p.burn,frost:p.frost,explosive:(key==='revolver'&&w.tier===3&&count%4===0?1.6:w.explosive||0)*p.blastRadius});
