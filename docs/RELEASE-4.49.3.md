@@ -24,3 +24,11 @@ The macOS package also includes the compact phone/controller HUD from [4.49.2](R
 Archive SHA-256: `4b4eec5eb7e917dbfd5d3663ac4ce560f5f15d87b066907518bc5c080d245567`.
 
 Physical phone/controller verification, sustained native performance/memory soak, broader perspective QA, ordinary 32-wave playthrough and character-art production integration remain open. No overall FPS improvement or whole-game completion is claimed. Hangar/orbit/moon remain downstream; Steam Deck and Apple signing are deferred.
+
+## Publication
+
+Runtime commit `8502f13a440e0f79df1ccaf01245a0cac15893ba` is published. Pages run
+`38624878872` passed; the public menu displays **BUILD 4.49.3**, with no captured
+browser startup errors. The public Mac archive is 141,689,294 bytes; GitHub's
+asset digest matches the exact hardware-tested ZIP above. The automatically
+triggered Steam Deck build `38625120109` was cancelled to preserve deferral.

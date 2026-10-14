@@ -205,3 +205,7 @@ bundled emulator and displayed the correct SNES title screen on 14 October 2026.
 - [x] Package includes the 4.49.2 mobile HUD fix. See [4.49.3 evidence](RELEASE-4.49.3.md).
 
 Next remains wider perspective/traversal validation and production character art, then the hangar/orbit/moon slices. This checkpoint does not close those gates. No active tool goal was present when this follow-up started; the repository checklist remains the source of remaining work.
+
+4.49.3 publication verified: runtime `8502f13`, Pages `38624878872` passed,
+public menu BUILD 4.49.3; the uploaded Mac archive digest matches the local
+hardware-tested package. Automatic Steam Deck build cancellation requested.
