@@ -58,3 +58,14 @@ one rendered scene, one 44px action, visible diagnostic results, no decorative
 motion. Internal review: slop 1/10; distinctiveness 6/10. Optional future fixture
 improvements are an in-scene cycle counter, a compact resource trend and a
 freeze-on-settle inspection control; these are not player-facing features.
+
+## Published checkpoint
+
+Runtime commit `2b16066`; Pages run `38603232939` passed and the actual public
+menu displayed **BUILD 4.48.1**. The uploaded Mac ZIP is 141,685,833 bytes and
+GitHub's digest matches the exact hardware-tested archive above. No separate
+hosted Mac run was required for this patch; the preceding 4.48 run
+`38601576344` also completed successfully, including its Metal startup check.
+The automatically triggered Steam Deck job was cancelled because that platform
+remains deferred. Source tree and release checklist are recorded; final character
+art, production GLB animation and broader gameplay roadmap remain unfinished.

@@ -35,6 +35,8 @@ settling and final ankle orientation after recoil, melee and traversal layers.
 559 tests and production build pass; a real WebGL 30-cycle corpse check returns
 to its geometry baseline after every removal. See [patch evidence](RELEASE-4.48.1.md).
 The detailed character production/animation gate below remains open.
+Patch `2b16066` is published; Pages `38603232939` passed and the public menu
+shows 4.48.1. The Mac archive digest matches the locally hardware-tested package.
 
 4.48 visual checkpoint: live survivor clothing/proportion/gait refinements and
 six rebuilt ordinary enemies are implemented; 553 tests, production build and
