@@ -36,6 +36,9 @@ Apple Silicon GPU startup pass. Browser rifle/paired-blade animation sequences
 have zero reported grip errors. See [4.48 evidence](RELEASE-4.48.md). Rook v3 is
 still a separate development asset; authored combat animation, material/LOD
 optimization and a production adapter remain the next substantial art gate.
+Runtime commit `c538ec1` is published: Pages `38601520008` passed and the public
+menu displays 4.48.0. The Mac download digest matches the hardware-tested local
+archive. Independent Mac CI `38601576344` is queued; check its result next.
 
 Latest user priority: close the visual gap between the lore portraits and playable characters. The source/art review and first Rook reference sheet are saved in [character art direction](art-direction/CHARACTER-DIRECTION.md). A real anatomical/rigged prototype and reproducible Blender source now exist in `assets/characters` and `assets/source/rook`, with a standalone `/dev/character-art-qa.html` viewer and `scripts/art/validate-rook.mjs` check. This is a development asset only: no replacement character has shipped. Next refine Rook's facial likeness, garment construction and PBR maps, then authored combat animation and a rest-pose-aware runtime adapter. Validate the result in actual gameplay before expanding the pipeline. Do not claim the anatomical base or further procedural detail alone satisfies the art request.
 

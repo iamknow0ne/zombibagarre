@@ -66,3 +66,12 @@ and a rest-pose-aware gameplay adapter before replacing the live survivor.
 
 Physical phone/controller tests, a new full human expedition, target-device
 FPS comparisons and final art/animation parity are not claimed by this release.
+
+## Published checkpoint
+
+Runtime commit `c538ec1`; Pages run `38601520008` passed. The public game was
+opened and reached its menu showing **BUILD 4.48.0**. The uploaded Mac archive
+is 141,685,639 bytes and its GitHub digest matches the exact locally tested ZIP
+above. Independent macOS CI run `38601576344` was queued at handoff; it is not
+counted as a passed check. The tag-triggered Steam Deck job was cancelled
+because that platform remains deferred.
