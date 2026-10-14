@@ -108,3 +108,10 @@ native soak. Hangar/orbit/moon stay downstream of these first travel gates.
 
 See [4.47 evidence](RELEASE-4.47.md). The modern-game art and traversal checklist
 above remains open; the new demake request did not complete those milestones.
+
+Runtime commit `8a47128` and release `v4.47.0` are published, including the ROM
+and the hardware-startup-tested, ad-hoc signed Apple Silicon app. SNES CI run
+`38596857384` passed: the canonical Mac rebuild matches the released ROM exactly;
+both Mac and Linux clean rebuilds are repeatable. Linux linker layout differs,
+so its diagnostic ROM is not substituted into the tested release. The emulator
+bundle hash check brings regression coverage to 545 tests.

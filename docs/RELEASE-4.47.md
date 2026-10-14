@@ -57,6 +57,11 @@ traversal or space chapter roadmap.
 ROM: `public/retro/zombie-bagarre.sfc`; source/build instructions:
 [SNES project](../demakes/snes/README.md). Pinned SDK builder:
 `scripts/snes-build.py`. A path-filtered CI workflow rebuilds and compares the ROM.
+CI run `38596857384` passed on macOS and Linux. The canonical macOS build must
+match the published bytes; each host also requires two identical clean builds.
+The Linux linker swaps equal-sized sections, so cross-host byte identity is not
+claimed and Linux output is retained only as a diagnostic artifact. See the
+SNES project's rebuild notes. Runtime assets are unchanged by these CI fixes.
 
 The emulator is loaded only on console use, bundled for offline use, and has no
 native IPC access. Third-party licenses and source snapshots travel in
