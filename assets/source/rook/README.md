@@ -137,3 +137,10 @@ remain selectable. The 19.6 MB model is still excluded from the production
 build, pending likeness, complete animation, LOD and gameplay-adapter gates.
 See the v4 section of [validation evidence](../../../docs/art-direction/ROOK-VALIDATION.md)
 for measured improvements, tests, screenshots and remaining limitations.
+
+
+The subsequent [motion/contact checkpoint](../../../docs/art-direction/ROOK-MOTION-CHECKPOINT.md)
+adds measured palm/thumb/stock contacts, boot-surface heel/toe correction and
+an interruptible development motion controller. These are sidecar code changes;
+the v4 GLB and source asset hashes remain unchanged. The viewer's combat sequence
+and upper-body framing support close contact/transition inspection.

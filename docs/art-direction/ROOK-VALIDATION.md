@@ -143,3 +143,10 @@ transitions, attacks/dodges/aim layers, collision clearance, LODs and the
 production character/equipment/customization adapter. No live hero replacement,
 Mac package update or new physical-device verification is claimed for this
 asset-only checkpoint. The public game remains 4.48.1.
+
+
+The subsequent [motion/contact checkpoint](ROOK-MOTION-CHECKPOINT.md) improves
+palm/thumb/stock alignment, heel/toe gait and interruptible transitions without
+changing the v4 GLB. The art suite now contains 24 passing tests. Earlier
+screenshots above remain historical evidence; the linked checkpoint contains
+the new browser captures and explicitly lists remaining production gates.

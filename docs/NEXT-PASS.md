@@ -30,15 +30,18 @@ Root: browser profiling, normal playthrough, integration and release. Performanc
 
 ## Next concrete slice
 
-Detailed Rook v4 now has corrected jacket-seam weights and six rest-pose-aware
-development motion studies (ready, walk, rifle, recoil, reload, guard). The
-actual-browser pass corrected rifle scale, idle elbows and magazine attachment.
-16 art tests, 559 gameplay tests and the production build pass; see
-[v4 evidence and limits](art-direction/ROOK-VALIDATION.md#development-v4--articulated-motion-14-october-2026).
-This is an asset-only checkpoint, not a shipped hero replacement. Public game
-and Mac remain 4.48.1. Next: precise hand/stock contact and grounded locomotion
-transitions, closer portrait likeness/garment detail, then LOD and the production
-adapter; verify saved equipment and FPS hands before enabling it in gameplay.
+Detailed Rook v4 now has corrected jacket-seam weights, measured palm/thumb/
+stock contacts and heel/toe gait correction using actual boot vertices. A new
+transition controller preserves interrupted poses and offers a 9.84-second
+walk/equip/recoil/reload/ready sequence. 24 art tests and the production build
+pass; actual browser grip/gait/reload/sequence controls were reviewed. See
+[motion checkpoint](art-direction/ROOK-MOTION-CHECKPOINT.md) and
+[v4 asset evidence](art-direction/ROOK-VALIDATION.md).
+This is a development checkpoint, not a shipped hero replacement. Public game
+and Mac remain 4.48.1. Next: portrait likeness and garment/material detail; actual
+travel-speed locomotion with start/stop/strafe, crossfade foot locking and aim
+layers; then LOD and the production adapter. Verify saved equipment and FPS
+hands before enabling it in gameplay.
 
 
 4.48.1 follow-up audit: corrected enemy geometry ownership during corpse
