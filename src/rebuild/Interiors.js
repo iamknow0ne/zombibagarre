@@ -4,6 +4,7 @@ import {waterAt} from './City.js';
 import {endFocus} from './BulletTime.js';
 import {levelForXP} from './RPG.js';
 import {testing} from './Progression.js';
+import {safeRegionPoint} from './Regions.js';
 
 const RADIUS=.4,REACH=2.2;
 const liveProps=sim=>(sim.props||[]).filter(o=>o.health>0);
@@ -12,7 +13,9 @@ const onFoot=sim=>sim.player.health>0&&!sim.player.vehicleId&&Math.abs(sim.playe
 const collected=(sim,plan,object)=>sim.interiorState.collected.includes(`${plan.id}:${object.id}`);
 const clearPoint=(sim,p,radius=.65)=>!waterAt(sim.layout,p.x,p.z)&&insideMap(sim.layout,p.x,p.z,radius)&&!pointBlocked(p.x,p.z,radius,liveProps(sim));
 const clearPath=(sim,a,b)=>!lineBlocked(a,b,RADIUS,liveProps(sim))&&segmentInMap(sim.layout,a,b,RADIUS);
-function safePoint(sim,p){return clearPoint(sim,p)&&!(sim.fires||[]).some(f=>distance(f,p)<(f.radius||1)+RADIUS)&&!(sim.hazards||[]).some(h=>distance(h,p)<(h.radius||1)+RADIUS)&&!(sim.enemies||[]).some(e=>e.health>0&&distance(e,p)<(e.radius||.5)+RADIUS);}
+// Exterior threats pause while indoors. Check their projected return path too,
+// so leaving a room cannot resume a frozen bullet or burning wall into the hero.
+const safePoint=(sim,p)=>safeRegionPoint(sim,p,.65);
 function makePlan(sim,building,door,template){
  if(template==='retro-room-v1')return {
   id:`city:${sim.layout.mapSeed??sim.seed}:1:${building.id}:${template}`,template,name:'The Last Checkpoint',buildingId:building.id,door:{...door},spawn:{x:0,z:3.6},bounds:{minX:-6,maxX:6,minZ:-5.5,maxZ:5},

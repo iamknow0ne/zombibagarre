@@ -1,0 +1,39 @@
+Window: "Zombie Bagarre — Quarantine", App: zombie-bagarre.
+0 fenêtre standard Zombie Bagarre — Quarantine, Secondary Actions: Raise
+	1 container Zombie Bagarre — Quarantine
+		2 container
+			3 Contenu HTML Zombie Bagarre — Quarantine, URL: bagarre://game/
+				4 container
+					5 texte TAKE A BREATH
+					6 en-tête The dead can wait., Value: 2
+						7 texte The dead can wait.
+					8 texte Your character is saved. Cities, loot and regional progress last until this expedition ends or the game closes.
+					9 container Run details
+						10 texte 18:27 · DUSK · RAIN
+						11 texte WAVE 3 / 32 · 12 HOSTILES
+						12 texte SCORE 5,480 · 33 KILLS · 00:48
+						13 texte AR-26 / MODIFIED · 1489 DAMAGE TO EVOLVE
+						14 texte DEAD AIR · 49 m · OPTIONAL ENCOUNTER
+						15 triangle d'expansion RECENT FIELD MESSAGES
+							16 texte RECENT FIELD MESSAGES
+					17 bouton WORLD DOSSIER
+					18 bouton ARSENAL
+					19 bouton STREET MAP
+					20 bouton CHARACTER & JOURNAL 2
+						21 texte CHARACTER & JOURNAL
+						22 texte 2
+					23 bouton d'activation/de désactivation Description: Enter fullscreen, Value: 0
+					24 bouton QUIT GAME
+					25 bouton BACK TO THE FIGHT
+					26 bouton SETTINGS
+					27 bouton END RUN & RETURN TO MENU
+	28 Bouton de fermeture
+	29 Bouton de réduction ou d’agrandissement
+	30 bouton de minimisation
+31 menu bar
+	32 Zombie Bagarre
+	33 Edit
+	34 View
+	35 Window
+
+The focused UI element is 25 bouton BACK TO THE FIGHT

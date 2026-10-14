@@ -74,3 +74,18 @@ test('entry through normal interaction short-circuits outdoor movement and attac
 test('dead room occupants cannot collect or exit back into a live expedition',()=>{
  const s=game();enter(s,'apartment-v1');s.rpg.accepted.push('workshop-tools');Object.assign(s.interior.pose,{x:3,z:-3.8});s.player.health=0;assert.equal(collectInteriorCase(s),false);assert.equal(endInterior(s),false);s.update(1/60,{interact:true});assert.equal(s.state,'dead');assert.equal(s.interior,null);
 });
+test('interior exits avoid frozen incoming rounds, rockets and burning surfaces before outdoor simulation resumes',()=>{
+ for(const danger of ['enemy-round','rocket','burning-wall']){
+  const s=game(),room=enter(s),d=room.door;
+  if(danger==='burning-wall')s.props.push({id:'burning-wall',x:d.x+1.25,z:d.z,w:1,d:1,health:100,burning:4});
+  else s.bullets.push({x:d.x-3,y:1,z:d.z,vx:20,vz:0,life:1,enemy:danger==='enemy-round',weapon:danger==='rocket'?'launcher':'carbine',radius:.15});
+  const point=resolveExteriorExit(s);assert.ok(point,danger);assert.ok(distance(point,d)>1,danger);
+  assert.equal(endInterior(s),true,danger);assert.deepEqual({x:s.player.x,y:s.player.y,z:s.player.z},point);
+ }
+});
+test('harmless outgoing rounds and spent hazards do not displace an interior exit',()=>{
+ const s=game(),room=enter(s),d=room.door;
+ s.bullets.push({x:d.x-3,y:1,z:d.z,vx:20,vz:0,life:1,enemy:false,weapon:'carbine'});
+ s.hazards.push({x:d.x,z:d.z,radius:2,done:true});
+ assert.deepEqual(resolveExteriorExit(s),{x:d.x,y:0,z:d.z});
+});

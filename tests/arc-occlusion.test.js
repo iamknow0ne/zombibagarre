@@ -28,3 +28,24 @@ test('secondary chain respects its own cover without cancelling a legitimate fir
  const s=clearGame(),first=enemy(s,0,6),second=enemy(s,2,6);s.props=s.obstacles=[{id:'divider',kind:'barrier',x:1,z:6,y:0,w:.2,d:3,h:3,health:100}];
  s.fireWeapon('arc',{...bodyPoint(first),perspective:true,targetId:first.id});assert.ok(first.health<1000);assert.equal(second.health,1000);assert.equal(s.events.filter(e=>e.type==='arc').length,1);
 });
+
+
+test('perspective arc strikes the exposed crosshair contact above low cover, including raised targets',()=>{
+ for(const height of [0,6]){
+  const s=clearGame();s.player.y=height;const target=enemy(s,0,8,height),rig=new ViewRig();rig.setMode('first');rig.pitch=Math.atan2(1.55-1.7,8);
+  const cover={id:'low-cover',kind:'barrier',x:0,y:height,z:4,w:2,d:.3,h:1.3,health:1000};s.props=s.obstacles=[cover];
+  const aim=rig.aim(s.player,s);assert.equal(aim.targetId,target.id);assert.equal(combatBlocked(s,muzzlePoint(s.player),bodyPoint(target)),true,'the torso is behind cover');
+  s.fireWeapon('arc',aim);assert.ok(target.health<1000,'an exposed crosshair contact must remain hittable');
+  const beam=s.events.find(e=>e.type==='arc');assert.ok(beam);assert.equal(beam.toX,aim.x);assert.equal(beam.toY,aim.y);assert.equal(beam.toZ,aim.z);
+  assert.equal(combatBlocked(s,{x:beam.x,y:beam.y,z:beam.z},{x:beam.toX,y:beam.toY,z:beam.toZ}),false,'visible lightning follows the tested clear segment');
+  target.health=1000;cover.h=1.5;s.events=[];assert.equal(rig.aim(s.player,s).targetId,target.id,'camera still sees over the taller cover');
+  s.fireWeapon('arc',aim);assert.equal(target.health,1000,'the lower muzzle remains blocked even though the camera can see the target');assert.equal(s.events.some(e=>e.type==='arc'),false);
+ }
+});
+
+test('chain beam endpoints use the same heights as their collision checks',()=>{
+ const s=clearGame(),first=enemy(s,0,6),second=enemy(s,2,6);
+ s.fireWeapon('arc',{...bodyPoint(first),perspective:true,targetId:first.id});
+ const beam=s.events.filter(e=>e.type==='arc')[1];assert.ok(beam);
+ assert.equal(beam.y,bodyPoint(first).y);assert.equal(beam.toY,bodyPoint(second).y);
+});

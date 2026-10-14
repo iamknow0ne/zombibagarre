@@ -346,10 +346,14 @@ export class Simulation {
   }
   arcAttack(aim,w,origin=this.player) {
     const p=this.player;let from=origin===p?muzzlePoint(p):origin;
-    let target=this.enemies.filter(e=>(!aim.perspective||e.id===aim.targetId)&&e.health>0&&bodyDistance(p,e)<w.range&&!combatBlocked(this,from,bodyPoint(e))).sort((a,b)=>distance(a,aim)-distance(b,aim))[0];
+    // In perspective modes the crosshair may hit an exposed head above cover.
+    // Check and render that actual contact, rather than silently aiming at the torso.
+    const firstContact=e=>aim.perspective?{x:aim.x,y:aim.y,z:aim.z}:bodyPoint(e);
+    let target=this.enemies.filter(e=>(!aim.perspective||e.id===aim.targetId)&&e.health>0&&bodyDistance(p,e)<w.range&&!combatBlocked(this,from,firstContact(e))).sort((a,b)=>distance(a,aim)-distance(b,aim))[0];
     const visited=new Set();
     for(let i=0;target&&i<=w.chain;i++){
-      visited.add(target.id);this.emit('arc',{x:from.x,z:from.z,y:i?bodyPoint(from,.65).y:from.y,toX:target.x,toZ:target.z,toY:bodyPoint(target,.65).y,weapon:'arc',tier:w.tier});
+      const start=i?bodyPoint(from):from,end=i?bodyPoint(target):firstContact(target);
+      visited.add(target.id);this.emit('arc',{x:start.x,z:start.z,y:start.y,toX:end.x,toZ:end.z,toY:end.y,weapon:'arc',tier:w.tier});
       if(target.burning>0)this.emit('combo',{name:'PLASMA ARC',description:'Fire + electricity: +40% arc damage'});
       this.damageEnemy(target,w.damage*p.damage*Math.pow(.83,i)*(target.burning>0?1.4:target.wet>0?1.25:1)*(p.swapBoost>0?1.25:1),0,0,{kind:'electric',weapon:'arc',tier:w.tier});target.slow=Math.max(target.slow||0,.6);target.electrified=.8;this.emit('electrify',{x:target.x,z:target.z});if(p.burn&&!(target.wet>0)){target.burning=p.burn;target.burnWeapon='arc';}
       from=target;target=this.enemies.filter(e=>e.health>0&&!visited.has(e.id)&&bodyDistance(from,e)<4.5&&!combatBlocked(this,bodyPoint(from),bodyPoint(e))).sort((a,b)=>distance(from,a)-distance(from,b))[0];

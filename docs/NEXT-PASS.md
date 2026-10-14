@@ -195,3 +195,13 @@ bundled emulator and displayed the correct SNES title screen on 14 October 2026.
 - [x] 579 tests pass; production build passes. Actual DOM measurements at 844×390: no overlapping HUD buttons and all visible button targets at least 44×44, with both touch and simulated DualSense.
 - [ ] Physical phone and controller verification remains with the user. Browser fixture input does not establish hardware behavior.
 - Browser-only patch; macOS download remains the tested 4.49.1 edition.
+
+## 4.49.3 — perspective/arrival reliability and Mac refresh
+
+- [x] Arc crosshair contact above cover, with physical muzzle blockage preserved and matching rendered chain segments.
+- [x] Safe shelter exits avoid frozen incoming projectiles and burning surfaces through the shared regional arrival checks.
+- [x] 583 tests, four automated 32-wave campaign routes, production build and real browser reproductions.
+- [x] Exact Apple Silicon archive hardware startup; separate temporary-profile native UI session cleared two waves, selected upgrades, used Focus/dodge, tracked a quest and quit cleanly. Short gameplay check only (48 seconds simulation time); sustained soak and full ordinary expedition remain open.
+- [x] Package includes the 4.49.2 mobile HUD fix. See [4.49.3 evidence](RELEASE-4.49.3.md).
+
+Next remains wider perspective/traversal validation and production character art, then the hangar/orbit/moon slices. This checkpoint does not close those gates. No active tool goal was present when this follow-up started; the repository checklist remains the source of remaining work.

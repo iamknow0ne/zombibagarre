@@ -1,6 +1,6 @@
-import {nearbyInteriorRecovery} from '../src/rebuild/Interiors.js';
+import {nearbyInteriorRecovery,resolveExteriorExit} from '../src/rebuild/Interiors.js';
 export function installInteriorQA(input,getSim,getWorld){
- let frozen=null;const snapshot=s=>JSON.stringify({time:s.time,wave:s.wave,spawnTimer:s.spawnTimer,weather:s.weather,health:s.player.health,enemies:s.enemies.map(e=>[e.id,e.x,e.z,e.health]),bullets:s.bullets});
+ let frozen=null,exitThreat=null;const snapshot=s=>JSON.stringify({time:s.time,wave:s.wave,spawnTimer:s.spawnTimer,weather:s.weather,health:s.player.health,enemies:s.enemies.map(e=>[e.id,e.x,e.z,e.health]),bullets:s.bullets});
  window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==parent||event.data?.type!=='interior-qa')return;
   const action=event.data.action;window.focus();
@@ -14,9 +14,15 @@ export function installInteriorQA(input,getSim,getWorld){
   if(action==='destroy-host'){const plan=sim.interior?.plan||sim.interiorState?.manifest.find(p=>p.template==='apartment-v1');const host=sim.props.find(p=>p.id===plan?.buildingId);if(host){host.health=0;sim.geometryRevision++;}return;}
   if(action==='recovery'){const plan=sim.interiorState?.manifest.find(p=>p.template==='apartment-v1');if(plan){sim.player.x=plan.door.x;sim.player.z=plan.door.z;const recovery=nearbyInteriorRecovery(sim);if(recovery){sim.player.x=recovery.x;sim.player.z=recovery.z;}}return;}
   document.querySelectorAll('dialog[open]').forEach(d=>d.close());sim.resume();input.clear();
+  if(action==='threatened-exit'&&sim.interior){
+   const d=sim.interior.plan.door,exit=sim.interior.plan.objects.find(o=>o.type==='exit');
+   Object.assign(sim.interior.pose,{x:exit.x,z:exit.z,moving:false});sim.player.invulnerable=0;
+   sim.bullets.push({id:sim.nextId++,x:d.x-3,y:1,z:d.z,vx:20,vy:0,vz:0,life:1,damage:5,enemy:true});
+   exitThreat={door:{x:d.x,z:d.z},health:sim.player.health,arrival:resolveExteriorExit(sim)};return;
+  }
   if(['workshop-door','apartment-door'].includes(action)&&!sim.interior){const plan=sim.interiorState?.manifest.find(p=>p.template===(action==='workshop-door'?'workshop-v1':'apartment-v1'));if(!plan)return;sim.player.x=plan.door.x;sim.player.z=plan.door.z;sim.player.y=0;sim.player.grounded=true;sim.player.vehicleId=null;sim.player.invulnerable=999;sim.spawnTimer=999;sim.toSpawn=999;sim.enemies=[];return;}
   const object=sim.interior?.plan.objects.find(o=>o.id===({mara:'mara',case:'tool-case',exit:'exit'}[action]));
   if(object){Object.assign(sim.interior.pose,{x:object.x,z:object.z,moving:false});return;}
  });
- setInterval(()=>{const sim=getSim(),world=getWorld();parent.postMessage({type:'interior-report',value:{state:sim.state,room:sim.interior?.plan.template||null,pose:sim.interior?.pose,rooms:sim.interiorState?.manifest.map(p=>({id:p.id,template:p.template})),collected:sim.interiorState?.collected,accepted:sim.rpg.accepted,claimed:sim.rpg.claimed,crowns:sim.rpg.coins,xp:sim.profile.xp,exteriorFrozen:frozen===null?null:frozen===snapshot(sim),drawCalls:world.renderer.info.render.calls,geometries:world.renderer.info.memory.geometries,textures:world.renderer.info.memory.textures}},location.origin);},500);
+ setInterval(()=>{const sim=getSim(),world=getWorld();parent.postMessage({type:'interior-report',value:{state:sim.state,room:sim.interior?.plan.template||null,pose:sim.interior?.pose,rooms:sim.interiorState?.manifest.map(p=>({id:p.id,template:p.template})),collected:sim.interiorState?.collected,accepted:sim.rpg.accepted,claimed:sim.rpg.claimed,crowns:sim.rpg.coins,xp:sim.profile.xp,exitThreat:exitThreat&&{...exitThreat,player:{x:sim.player.x,z:sim.player.z},healthNow:sim.player.health},exteriorFrozen:frozen===null?null:frozen===snapshot(sim),drawCalls:world.renderer.info.render.calls,geometries:world.renderer.info.memory.geometries,textures:world.renderer.info.memory.textures}},location.origin);},500);
 }
