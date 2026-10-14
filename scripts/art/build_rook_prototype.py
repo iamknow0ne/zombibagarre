@@ -20,9 +20,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from makehuman_rook import build_base, mesh_from_faces, mesh_from_proxy
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--study', choices=['v1', 'v2'], default='v2')
+parser.add_argument('--study', choices=['v1', 'v2', 'v3'], default='v2')
 options = parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
-textured = options.study == 'v2'
+textured = options.study in {'v2', 'v3'}
 stem = 'rook-prototype-' + options.study
 SYSTEM = ROOT / 'assets/source/rook/system-assets'
 
@@ -347,6 +347,10 @@ else:
         orb('Iris / '+side,(center.x,front-.001,center.z),(.0045,.0015,.0045),iris,'head')
         orb('Pupil / '+side,(center.x,front-.0022,center.z),(.002,.0008,.002),pupil,'head')
 
+if options.study == 'v3':
+    from refine_rook_v3 import refine
+    refine(globals())
+
 # Animation study: real skin deformation, intentionally not a final locomotion
 # library. Arms remain in the reference A-pose for a clean garment stress test.
 def animate(name, frames, duration, walking=False):
@@ -404,4 +408,11 @@ scene.view_settings.view_transform='AgX'
 scene.render.filepath=str(ROOT/'docs/art-direction'/(stem+'.png'))
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'assets/source/rook'/(stem+'.blend')))
 bpy.ops.render.render(write_still=True)
+if options.study == 'v3':
+    camera.location=(.55,-2.8,1.76)
+    camera.rotation_euler=(Vector((0,-.025,1.66))-camera.location).to_track_quat('-Z','Y').to_euler()
+    camera.data.ortho_scale=.53
+    scene.render.resolution_x=1000;scene.render.resolution_y=1000
+    scene.render.filepath=str(ROOT/'docs/art-direction'/(stem+'-face.png'))
+    bpy.ops.render.render(write_still=True)
 print('ROOK_PROTOTYPE_COMPLETE',out/(stem+'.glb'))

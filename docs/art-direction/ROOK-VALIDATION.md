@@ -48,3 +48,37 @@ render were corrected before retaining this asset.
 Facial likeness, detailed tailoring, complete material maps and natural combat
 animation still fail the production art gate. The preview deliberately makes
 that gap visible rather than using cinematic lighting to conceal it.
+
+## Development v3 — 14 October 2026
+
+V3 passes the same structural, UV/material and actual Three.js deformation
+validator: **10 skinned meshes, 29,518 vertices, 46,546
+triangles, 163 joints, 15 embedded textures, two deformation studies**. Report:
+[rook-validation-v3.json](rook-validation-v3.json). SHA-256:
+`f695e7e9cdea6f936e70357c88e180f297fafc55646c79dc10ec91fba6fd8ad1`. The validator regression suite remains **7/7 passing**.
+
+V2 remains intact. V3 reduces triangle count by 32% and batches matching
+materials from 31 meshes to 10. More material maps increase the self-contained
+GLB from approximately 14 MB to 19.6 MB (decimal); this is not a mobile-optimized
+asset or a measured frame-time improvement.
+
+Browser GLTFLoader review confirmed the actual mapped v3 export, front/face,
+full body, rear and profile views, and both breathing/walk clip playback. The
+viewer reports **11 draw calls / 46,548 triangles** including the floor and
+**17 renderer textures** including shadow resources. Console warnings/errors
+were empty. This is the neutral development viewer, not main-game QA.
+
+![V3 actual GLB face beside the original portrait](rook-prototype-browser-v3-face.png)
+
+The retained build corrects scalp-through-cap clipping found in the first
+render and dark exported albedo found in browser review. Pigment stubble,
+stronger brows, tapered swept locks, a lower cap and fine normal/roughness maps
+are visible changes. Likeness is still approximate: the face and hair require
+further artistic work, garment construction remains basic, and the existing
+A-pose walk is not a production locomotion clip. The new maps are generated
+tileable surface studies, **not sculpt-baked garment atlases**. Hidden body
+and scalp geometry were removed for this fixed outfit; do not reuse it as an
+undressed customization base. No gameplay replacement or hardware-performance
+claim is made.
+
+Reproduce: `node scripts/art/validate-rook.mjs assets/characters/rook-prototype-v3.glb`.

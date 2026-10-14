@@ -109,3 +109,16 @@ The face still reads as the generic base, and clothing/leather remain too plain.
 This is progress on material/export correctness, not portrait fidelity. Keep
 likeness sculpting, distinctive swept hair/stubble, jacket tailoring, baked
 normal/roughness maps and grounded animation as explicit next art requirements.
+
+## Development study v3
+
+V3 adds skin pigment/stubble, stronger brows, tapered swept locks, cap shaping
+and garment seams, with portable tileable normal/roughness maps. The retained
+export has 10 material batches and 46,546 triangles, down from v2's 31 and
+68,466. Its additional material maps increase download size; the deformation
+rig and the two study clips are unchanged.
+
+The actual GLB was checked in the neutral Three.js development viewer and
+remains visibly short of the original portrait. This is a reviewable incremental
+art pass, not a replacement production hero. Detailed evidence and remaining
+gates are recorded in [ROOK-VALIDATION.md](ROOK-VALIDATION.md).

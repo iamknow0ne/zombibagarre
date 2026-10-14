@@ -15,3 +15,25 @@ export function stepCharacterMotion(cache,state,dt,{player=false,runner=false,br
  return cache.pose={smoothForward:cache.smoothForward,smoothStrafe:cache.smoothStrafe,turn:cache.turn,brace:cache.brace,phase:cache.phase,walk:cache.walk,forward,strafe,pitch:cache.pitch,roll:cache.roll,land:cache.land,footfall:!dash&&speed>.5&&Math.floor(old/Math.PI)!==Math.floor(cache.phase/Math.PI),side:Math.floor(cache.phase/Math.PI)%2?1:-1,speed};
 }
 export function hitRecoil(age,amount=20){if(age<0||age>.24)return 0;const u=age/.24;return Math.sin(Math.PI*u)*Math.exp(-u*3)*Math.min(.22,.05+Math.sqrt(Math.max(0,amount))*.018);}
+
+// Local ankle path with an explicit planted interval. The thigh/shin solve keeps
+// feet near the floor instead of lifting both feet with a sine-driven knee.
+// Pure visual pose: it does not move the simulation or change attack timing.
+export function survivorLegPose(phase,walk,forward=1,strafe=0,{stride=.165,lift=.075}={}){
+ const weight=limit(walk,0,1),cycle=((phase/(Math.PI*2))%1+1)%1,stance=cycle<.6;
+ const flight=stance?0:(cycle-.6)/.4;
+ const along=stance?1-cycle/.3:-Math.cos(flight*Math.PI);
+ const up=stance?0:Math.sin(flight*Math.PI)**2*lift;
+ const z=along*stride*forward,x=along*stride*strafe,y=-.59+up;
+ const lower=.29,upper=.33,radius=Math.hypot(x,y),distance=Math.min(upper+lower-.001,Math.hypot(radius,z));
+ const knee=Math.acos(limit((distance*distance-upper*upper-lower*lower)/(2*upper*lower),-1,1));
+ const hip=Math.atan2(-z,radius)-Math.atan2(lower*Math.sin(knee),upper+lower*Math.cos(knee));
+ return {hip:hip*weight,knee:knee*weight,ankle:-(hip+knee)*weight,roll:Math.atan2(x,-y)*weight,planted:stance,footLift:up*weight};
+}
+
+export const SURVIVOR_MOTION={
+ scout:{stride:.165,lift:.075,breath:1,weight:1},
+ medic:{stride:.15,lift:.065,breath:.8,weight:.85},
+ biker:{stride:.145,lift:.065,breath:.85,weight:1.3},
+ ronin:{stride:.175,lift:.08,breath:.65,weight:.8},
+};

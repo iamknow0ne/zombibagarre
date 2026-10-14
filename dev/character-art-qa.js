@@ -2,7 +2,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 
-const $=id=>document.getElementById(id),models={v1:new URL('../assets/characters/rook-prototype-v1.glb',import.meta.url),v2:new URL('../assets/characters/rook-prototype-v2.glb',import.meta.url)},motion=matchMedia('(prefers-reduced-motion: reduce)');
+const $=id=>document.getElementById(id),models={v3:new URL('../assets/characters/rook-prototype-v3.glb',import.meta.url),v1:new URL('../assets/characters/rook-prototype-v1.glb',import.meta.url),v2:new URL('../assets/characters/rook-prototype-v2.glb',import.meta.url)},motion=matchMedia('(prefers-reduced-motion: reduce)');
 let renderer,controls,mixer,content,action,clips=[],playing=false,turning=false,disposed=false,contextLost=false,loadRevision=0,raf=0,last=0,lastReport=0,height=1.8,width=.8,direction='front',normalMaterial;
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(38,1,.02,100),pivot=new T.Group(),originalMaterials=new Map();scene.background=new T.Color(0x243332);scene.add(pivot);
 const floorGeometry=new T.PlaneGeometry(40,40),floorMaterial=new T.MeshStandardMaterial({color:0x293a38,roughness:1}),floor=new T.Mesh(floorGeometry,floorMaterial);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;floor.position.y=-.012;scene.add(floor);
@@ -28,7 +28,7 @@ function clearModel(){if(mixer){mixer.stopAllAction();if(content)mixer.uncacheRo
 function surfaceMode(){if(!content)return;const normal=$('surface').value==='normal';normalMaterial??=new T.MeshNormalMaterial();content.traverse(o=>{if(o.isMesh){if(!originalMaterials.has(o))originalMaterials.set(o,o.material);o.material=normal?normalMaterial:originalMaterials.get(o);}});}
 function selectClip(){if(!mixer)return;const clip=$('clip').value===''?null:clips[Number($('clip').value)];mixer.stopAllAction();action=clip?mixer.clipAction(clip):null;if(action){action.reset();action.play();}playing=!!action&&!motion.matches;mixer.update(0);syncButtons();}
 async function loadModel(){
- const revision=++loadRevision,modelURL=models[$('study').value]||models.v2;clearModel();$('error-panel').hidden=true;$('clip').disabled=true;$('clip').replaceChildren(new Option('Loading clips…',''));status('LOADING ROOK PROTOTYPE');
+ const revision=++loadRevision,modelURL=models[$('study').value]||models.v3;clearModel();$('error-panel').hidden=true;$('clip').disabled=true;$('clip').replaceChildren(new Option('Loading clips…',''));status('LOADING ROOK PROTOTYPE');
  try{
   const gltf=await new GLTFLoader().loadAsync(modelURL.href,event=>{if(revision!==loadRevision||disposed)return;if(event.total>0)status(`LOADING MODEL · ${Math.round(event.loaded/event.total*100)}%`);});
   if(disposed||revision!==loadRevision){disposeModel(gltf.scene);return;}

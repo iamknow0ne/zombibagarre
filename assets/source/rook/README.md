@@ -90,3 +90,32 @@ files are included in the normal production build.
   customization, FPS hands, portraits/interiors and resource ownership.
 - Compare the model at real game distance and close range against the existing
   portrait and current hero. Do not substitute a Blender render for gameplay QA.
+
+## Development v3 refinement
+
+Rebuild with:
+
+```sh
+/Applications/Blender.app/Contents/MacOS/Blender --background --python scripts/art/build_rook_prototype.py -- --study v3
+node scripts/art/validate-rook.mjs assets/characters/rook-prototype-v3.glb
+```
+
+The v3-only module `scripts/art/refine_rook_v3.py` adds localized facial
+sculpt deltas, UV-rasterized beard/brow pigment, tapered swept locks, a lower
+cap, pocket welts and garment seams. It generates deterministic 512px tileable
+normal/roughness maps for canvas, wool, leather and trousers, and albedo maps
+for wool/leather/trousers. `textures/v3/` also contains the derived skin texture
+from the pinned CC0 source. The project-authored canvas image remains the
+jacket/cap albedo. No new external assets or program code are downloaded.
+
+Hidden skin/scalp is removed for this fixed clothing set. Geometry modifiers
+are applied before joining matching material batches; the common deform rig
+and source weight groups remain. V1/v2 output files and paths are preserved.
+The viewer defaults to v3 and retains both earlier studies for comparison.
+
+Outputs are `rook-prototype-v3.glb`, `rook-prototype-v3.blend`, full/face neutral
+Blender renders and a real browser face capture under `docs/art-direction`.
+See the validator evidence for precise counts and limits. The 19.6 MB GLB is
+larger despite lower triangle/draw counts because of the extra material maps.
+V3 is still an incremental development study: it does not satisfy portrait
+likeness, final garment/animation, customization, mobile LOD or gameplay gates.
