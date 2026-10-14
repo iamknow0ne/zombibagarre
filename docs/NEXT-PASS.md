@@ -33,7 +33,7 @@ Root: browser profiling, normal playthrough, integration and release. Performanc
 - [x] Fix body-overlapping platform edge landings using matching solid collision footprints.
 - [x] Remove per-mesh temporary arrays from building cutaway AO; retain nested/failed-pass restoration and clear retained references.
 - [x] 563 tests, four full automated campaign routes, production build, real browser landing/cutaway inspection, exact packaged Mac hardware startup.
-- [ ] Publish and verify the 4.48.2 browser and Mac artifacts.
+- [x] Publish and verify the 4.48.2 browser and Mac artifacts: runtime `3247ee9`, Pages `38613075915` passed, public menu reports BUILD 4.48.2 and uploaded archive digest matches the locally tested ZIP.
 
 See [patch evidence](RELEASE-4.48.2.md). No whole-game FPS improvement, ordinary
 full playthrough, physical device validation or final art completion is claimed.
@@ -48,7 +48,7 @@ pass; actual browser grip/gait/reload/sequence controls were reviewed. See
 [motion checkpoint](art-direction/ROOK-MOTION-CHECKPOINT.md) and
 [v4 asset evidence](art-direction/ROOK-VALIDATION.md).
 This is a development checkpoint, not a shipped hero replacement. Public game
-and Mac move to 4.48.2 with the runtime patch below. Next: portrait likeness and garment/material detail; actual
+and Mac move to 4.48.2 with the runtime patch above. Next: portrait likeness and garment/material detail; actual
 travel-speed locomotion with start/stop/strafe, crossfade foot locking and aim
 layers; then LOD and the production adapter. Verify saved equipment and FPS
 hands before enabling it in gameplay.

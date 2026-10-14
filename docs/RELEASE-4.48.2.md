@@ -44,3 +44,14 @@ reported in this check.
   playthrough, detailed character production integration or physical phone/controller QA.
 - macOS remains an ad-hoc signed, unnotarized Apple Silicon test edition.
   Apple Developer ID and Steam Deck work remain deferred.
+
+## Release artifact
+
+Runtime commit `3247ee9fbcc227f2265b88d2a484851b32aea3ef`. The public
+[v4.48.2 Mac test download](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.48.2)
+is 141,686,637 bytes. GitHub reports the same SHA-256 as the exact archive
+that passed the local hardware startup check. The automatically triggered
+Steam Deck build was cancelled to respect the deferred platform scope.
+
+Pages run `38613075915` completed successfully. The public game loaded to its
+menu and displayed **BUILD 4.48.2**. [Public menu capture](screenshots/traversal/public-4.48.2.png).
