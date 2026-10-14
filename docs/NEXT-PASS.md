@@ -33,7 +33,8 @@ Root: browser profiling, normal playthrough, integration and release. Performanc
 - [x] Reproduce and fix electric shots starting beyond a close roof parapet.
 - [x] 578 tests, build and actual FPS browser reproduction: two shots consumed,
   target health remains 1,000; clear elevated arcs and normal chains still pass.
-- [ ] Validate and publish the exact Mac/browser patch artifacts.
+- [x] Exact Mac package hardware startup passed; uploaded archive hash verified.
+  Runtime `f400484`, Pages `38620125402` passed, public menu shows BUILD 4.49.1.
 
 See [patch evidence](RELEASE-4.49.1.md). The wider perspective gate remains open.
 
@@ -68,11 +69,16 @@ a three-strike katana study, both-direction dodge, rifle/reload and travel motio
 review and production build pass. See [motion evidence](art-direction/ROOK-MOTION-CHECKPOINT.md)
 and [v5 limits](art-direction/ROOK-V5-CANDIDATE.md). It is not the production hero.
 
-Next: replace the flat garment panels with properly constructed pockets/collar
-and surface-bound seams; continue facial likeness. Then terrain/turning, aim
-layers, LOD and production integration, including saved armour and FPS hands.
-A separate perspective audit is checking elevated weapon occlusion; do not mark
-that gate complete merely because the roof route works.
+The preserved v6 candidate now has shaped pockets/flaps, rolled collars, cuffs
+and surface-bound seams, with 5,200 fewer triangles and unchanged draw count.
+The actual browser caught and verified a fix for inverted panel normals. Final
+v6 passes 28 motion and 5 preservation/attachment tests. See [v6 evidence](art-direction/ROOK-V6-GARMENT.md).
+
+Next: facial likeness, strap attachment and scarf/cuff refinement; then
+terrain/turning, aim layers, LOD and production integration, including saved
+armour and FPS hands. The electric muzzle/parapet bug is fixed in 4.49.1; wider
+perspective QA, ordinary expedition and native sustained-session testing remain
+open. Hangar/orbit/moon remain downstream of these gates.
 
 
 4.48.1 follow-up audit: corrected enemy geometry ownership during corpse

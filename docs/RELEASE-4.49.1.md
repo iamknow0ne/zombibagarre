@@ -30,3 +30,13 @@ unchanged. See [character evidence](art-direction/ROOK-MOTION-CHECKPOINT.md).
 This patch does not close the broader perspective/playthrough/character-art
 milestones. Physical phone/controller tests, Apple signing/notarization and
 Steam Deck work remain deferred or unverified as recorded in NEXT-PASS.
+
+## Publication verified
+
+Runtime commit `f40048496ceb2ee74ae01094e59f4e8fda25eaba` is published.
+Pages run `38620125402` passed; the actual public menu shows BUILD 4.49.1
+and captured no browser errors. GitHub's Mac asset digest and size match the
+exact hardware-tested archive. [Mac test download](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.49.1).
+The automatically triggered Steam Deck run was cancelled to preserve deferral.
+
+![Published menu](screenshots/traversal/public-4.49.1.png)

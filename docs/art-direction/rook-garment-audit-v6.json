@@ -1,0 +1,780 @@
+{
+  "scope": "Distance change between actual deformed garment vertices and their original barycentric coat support; not cloth collision, visual approval or raster decode.",
+  "rigidSeamsNegativeControl": false,
+  "raisedWristHeights": [
+    1.5411133788720834,
+    1.5411138496592574
+  ],
+  "outerNormals": [
+    {
+      "part": "Rook v6 / right pocket body",
+      "vertices": 99,
+      "minOutwardDot": 0.43367273867345224,
+      "meanOutwardDot": 0.8637489783096213
+    },
+    {
+      "part": "Rook v6 / right pocket flap",
+      "vertices": 54,
+      "minOutwardDot": 0.3823141248240014,
+      "meanOutwardDot": 0.801073856943841
+    },
+    {
+      "part": "Rook v6 / right rolled collar",
+      "vertices": 72,
+      "minOutwardDot": 0.24441803325650374,
+      "meanOutwardDot": 0.7747748576730115
+    },
+    {
+      "part": "Rook v6 / left pocket body",
+      "vertices": 99,
+      "minOutwardDot": 0.43367273867345224,
+      "meanOutwardDot": 0.8637498132162328
+    },
+    {
+      "part": "Rook v6 / left pocket flap",
+      "vertices": 54,
+      "minOutwardDot": 0.3823125415177526,
+      "meanOutwardDot": 0.8010759509355553
+    },
+    {
+      "part": "Rook v6 / left rolled collar",
+      "vertices": 72,
+      "minOutwardDot": 0.24441803325650374,
+      "meanOutwardDot": 0.7747739891347398
+    },
+    {
+      "part": "Rook v6 / centre overlap",
+      "vertices": 100,
+      "minOutwardDot": 0.4910580836231123,
+      "meanOutwardDot": 0.7844083592035783
+    }
+  ],
+  "vertices": 2492,
+  "frames": 120,
+  "maxDrift": 0.007451232679959941,
+  "meanDrift": 0.00017083549949032306,
+  "parts": [
+    {
+      "part": "Rook v6 / right pocket body",
+      "vertices": 198,
+      "maxDrift": 0.0004462730119032522,
+      "meanDrift": 0.000022310289147301376,
+      "worstSample": "both-shoulders-raised",
+      "worstPosition": [
+        -0.1457701,
+        1.4052134,
+        0.1550041
+      ]
+    },
+    {
+      "part": "Rook v6 / right pocket flap",
+      "vertices": 108,
+      "maxDrift": 0.0011549423765784307,
+      "meanDrift": 0.000076877803017994,
+      "worstSample": "reverse:0.275",
+      "worstPosition": [
+        -0.1774025,
+        1.3660595,
+        0.1585753
+      ]
+    },
+    {
+      "part": "Rook v6 / right rolled collar",
+      "vertices": 144,
+      "maxDrift": 0.003278634889533184,
+      "meanDrift": 0.00009673282748066568,
+      "worstSample": "both-shoulders-raised",
+      "worstPosition": [
+        -0.0929515,
+        1.5303893,
+        0.0996494
+      ]
+    },
+    {
+      "part": "Rook v6 / left pocket body",
+      "vertices": 198,
+      "maxDrift": 0.0012016926272347146,
+      "meanDrift": 0.00005799780992130022,
+      "worstSample": "fire:0.075",
+      "worstPosition": [
+        0.119681,
+        1.3921609,
+        0.1737382
+      ]
+    },
+    {
+      "part": "Rook v6 / left pocket flap",
+      "vertices": 108,
+      "maxDrift": 0.003022400594748993,
+      "meanDrift": 0.00028405196965943777,
+      "worstSample": "fire:0.075",
+      "worstPosition": [
+        0.1574682,
+        1.3759023,
+        0.1730116
+      ]
+    },
+    {
+      "part": "Rook v6 / left rolled collar",
+      "vertices": 144,
+      "maxDrift": 0.0034645484956264717,
+      "meanDrift": 0.0002654848721364657,
+      "worstSample": "fire:0.075",
+      "worstPosition": [
+        0.0824895,
+        1.4861128,
+        0.1413418
+      ]
+    },
+    {
+      "part": "Rook v6 / centre overlap",
+      "vertices": 200,
+      "maxDrift": 0.0003899301912019676,
+      "meanDrift": 0.0000137233801863425,
+      "worstSample": "slash:0.503",
+      "worstPosition": [
+        0.0108727,
+        0.9794335,
+        0.1690078
+      ]
+    },
+    {
+      "part": "Rook v6 / sleeve cuff -1",
+      "vertices": 54,
+      "maxDrift": 0.007451232679959941,
+      "meanDrift": 0.0007478031548873299,
+      "worstSample": "slash:0.431",
+      "worstPosition": [
+        -0.4657227,
+        1.0994564,
+        0.2257306
+      ]
+    },
+    {
+      "part": "Rook v6 / sleeve cuff 1",
+      "vertices": 54,
+      "maxDrift": 0.005518806464402516,
+      "meanDrift": 0.0004966548769869271,
+      "worstSample": "dodge:0.206",
+      "worstPosition": [
+        0.4657227,
+        1.0994564,
+        0.2257306
+      ]
+    },
+    {
+      "part": "Rook v6 / Canvas / seam thread",
+      "vertices": 1284,
+      "maxDrift": 0.0073370821318383544,
+      "meanDrift": 0.00019371953828800038,
+      "worstSample": "slash:0.431",
+      "worstPosition": [
+        -0.4655364,
+        1.099337,
+        0.2258469
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "pose": "rifle:0.000",
+      "maxDrift": 0.0054285241006949685,
+      "meanDrift": 0.00021550686982427908
+    },
+    {
+      "pose": "rifle:0.200",
+      "maxDrift": 0.00543214338311856,
+      "meanDrift": 0.00021548701617828204
+    },
+    {
+      "pose": "rifle:0.400",
+      "maxDrift": 0.005435194515342764,
+      "meanDrift": 0.00021547037548049606
+    },
+    {
+      "pose": "rifle:0.600",
+      "maxDrift": 0.005437224496824095,
+      "meanDrift": 0.0002154592380164392
+    },
+    {
+      "pose": "rifle:0.800",
+      "maxDrift": 0.005437935680599722,
+      "meanDrift": 0.00021545532281600163
+    },
+    {
+      "pose": "rifle:1.000",
+      "maxDrift": 0.005437224496824095,
+      "meanDrift": 0.0002154592380164392
+    },
+    {
+      "pose": "rifle:1.200",
+      "maxDrift": 0.005435194515342764,
+      "meanDrift": 0.00021547037548049606
+    },
+    {
+      "pose": "rifle:1.400",
+      "maxDrift": 0.00543214338311856,
+      "meanDrift": 0.00021548701617828204
+    },
+    {
+      "pose": "rifle:1.600",
+      "maxDrift": 0.0054285241006949685,
+      "meanDrift": 0.00021550686982427908
+    },
+    {
+      "pose": "rifle:1.800",
+      "maxDrift": 0.005424882779360693,
+      "meanDrift": 0.00021552686801402872
+    },
+    {
+      "pose": "rifle:2.000",
+      "maxDrift": 0.00542177843982412,
+      "meanDrift": 0.00021554382195223024
+    },
+    {
+      "pose": "rifle:2.200",
+      "maxDrift": 0.005419695250073412,
+      "meanDrift": 0.00021555515498758863
+    },
+    {
+      "pose": "rifle:2.400",
+      "maxDrift": 0.005418962026431613,
+      "meanDrift": 0.00021555913609362838
+    },
+    {
+      "pose": "rifle:2.600",
+      "maxDrift": 0.005419695250073412,
+      "meanDrift": 0.00021555515498758863
+    },
+    {
+      "pose": "rifle:2.800",
+      "maxDrift": 0.00542177843982412,
+      "meanDrift": 0.00021554382195223024
+    },
+    {
+      "pose": "rifle:3.000",
+      "maxDrift": 0.005424882779360693,
+      "meanDrift": 0.00021552686801402872
+    },
+    {
+      "pose": "rifle:3.200",
+      "maxDrift": 0.0054285241006949685,
+      "meanDrift": 0.00021550686982427908
+    },
+    {
+      "pose": "fire:0.000",
+      "maxDrift": 0.0054285241006949685,
+      "meanDrift": 0.00021550686982427908
+    },
+    {
+      "pose": "fire:0.075",
+      "maxDrift": 0.005488875946582273,
+      "meanDrift": 0.0002201449160097689
+    },
+    {
+      "pose": "fire:0.150",
+      "maxDrift": 0.005435197590611474,
+      "meanDrift": 0.00021547075486545565
+    },
+    {
+      "pose": "fire:0.225",
+      "maxDrift": 0.005437224496824095,
+      "meanDrift": 0.0002154592380164392
+    },
+    {
+      "pose": "fire:0.300",
+      "maxDrift": 0.005437935680599722,
+      "meanDrift": 0.00021545532281600163
+    },
+    {
+      "pose": "fire:0.375",
+      "maxDrift": 0.005437224496824095,
+      "meanDrift": 0.0002154592380164392
+    },
+    {
+      "pose": "fire:0.450",
+      "maxDrift": 0.005491458159121812,
+      "meanDrift": 0.00022011666551573602
+    },
+    {
+      "pose": "fire:0.525",
+      "maxDrift": 0.005438092678315689,
+      "meanDrift": 0.00021626735086118748
+    },
+    {
+      "pose": "fire:0.600",
+      "maxDrift": 0.0054285241006949685,
+      "meanDrift": 0.00021550686982427908
+    },
+    {
+      "pose": "fire:0.675",
+      "maxDrift": 0.005424882779360693,
+      "meanDrift": 0.00021552686801402872
+    },
+    {
+      "pose": "fire:0.750",
+      "maxDrift": 0.00542177843982412,
+      "meanDrift": 0.00021554382195223024
+    },
+    {
+      "pose": "fire:0.825",
+      "maxDrift": 0.005451448624728218,
+      "meanDrift": 0.00021918753527173254
+    },
+    {
+      "pose": "fire:0.900",
+      "maxDrift": 0.005448875005419341,
+      "meanDrift": 0.00021911419631922194
+    },
+    {
+      "pose": "fire:0.975",
+      "maxDrift": 0.005419695250073412,
+      "meanDrift": 0.00021555515498758863
+    },
+    {
+      "pose": "fire:1.050",
+      "maxDrift": 0.00542177843982412,
+      "meanDrift": 0.00021554382195223024
+    },
+    {
+      "pose": "fire:1.125",
+      "maxDrift": 0.005424882779360693,
+      "meanDrift": 0.00021552686801402872
+    },
+    {
+      "pose": "fire:1.200",
+      "maxDrift": 0.0054285241006949685,
+      "meanDrift": 0.00021550686982427908
+    },
+    {
+      "pose": "reload:0.000",
+      "maxDrift": 0.0054285241006949685,
+      "meanDrift": 0.00021550686982427908
+    },
+    {
+      "pose": "reload:0.200",
+      "maxDrift": 0.00543214338311856,
+      "meanDrift": 0.00019531032284620474
+    },
+    {
+      "pose": "reload:0.400",
+      "maxDrift": 0.005435194515342764,
+      "meanDrift": 0.0001762879007944093
+    },
+    {
+      "pose": "reload:0.600",
+      "maxDrift": 0.005437224496824095,
+      "meanDrift": 0.00016900127312240068
+    },
+    {
+      "pose": "reload:0.800",
+      "maxDrift": 0.005437935680599722,
+      "meanDrift": 0.000139582047967121
+    },
+    {
+      "pose": "reload:1.000",
+      "maxDrift": 0.005437224496824095,
+      "meanDrift": 0.0001196721245256163
+    },
+    {
+      "pose": "reload:1.200",
+      "maxDrift": 0.005435194515342764,
+      "meanDrift": 0.00012502657823360459
+    },
+    {
+      "pose": "reload:1.400",
+      "maxDrift": 0.00543214338311856,
+      "meanDrift": 0.00012290064225890042
+    },
+    {
+      "pose": "reload:1.600",
+      "maxDrift": 0.0054285241006949685,
+      "meanDrift": 0.00013286772186101934
+    },
+    {
+      "pose": "reload:1.800",
+      "maxDrift": 0.005424882779360693,
+      "meanDrift": 0.00015606789847657208
+    },
+    {
+      "pose": "reload:2.000",
+      "maxDrift": 0.00542177843982412,
+      "meanDrift": 0.0001589571616104036
+    },
+    {
+      "pose": "reload:2.200",
+      "maxDrift": 0.005419695250073412,
+      "meanDrift": 0.00016455184489801562
+    },
+    {
+      "pose": "reload:2.400",
+      "maxDrift": 0.005418962026431613,
+      "meanDrift": 0.00017082809608016554
+    },
+    {
+      "pose": "reload:2.600",
+      "maxDrift": 0.005419695250073412,
+      "meanDrift": 0.0001739875851449663
+    },
+    {
+      "pose": "reload:2.800",
+      "maxDrift": 0.00542177843982412,
+      "meanDrift": 0.0001849403338586903
+    },
+    {
+      "pose": "reload:3.000",
+      "maxDrift": 0.005424882779360693,
+      "meanDrift": 0.00020178532735299403
+    },
+    {
+      "pose": "reload:3.200",
+      "maxDrift": 0.0054285241006949685,
+      "meanDrift": 0.00021550686982427908
+    },
+    {
+      "pose": "slash:0.000",
+      "maxDrift": 0.005280490449412525,
+      "meanDrift": 0.00013355603196205722
+    },
+    {
+      "pose": "slash:0.072",
+      "maxDrift": 0.005541874089094812,
+      "meanDrift": 0.0001338195130648799
+    },
+    {
+      "pose": "slash:0.144",
+      "maxDrift": 0.006330246921988381,
+      "meanDrift": 0.00013365564829516359
+    },
+    {
+      "pose": "slash:0.216",
+      "maxDrift": 0.0067285276661437285,
+      "meanDrift": 0.00014118155875376227
+    },
+    {
+      "pose": "slash:0.287",
+      "maxDrift": 0.006763803316630899,
+      "meanDrift": 0.00014350879408278334
+    },
+    {
+      "pose": "slash:0.359",
+      "maxDrift": 0.0070723671111812825,
+      "meanDrift": 0.00015368896616292977
+    },
+    {
+      "pose": "slash:0.431",
+      "maxDrift": 0.007451232679959941,
+      "meanDrift": 0.00017768371403587322
+    },
+    {
+      "pose": "slash:0.503",
+      "maxDrift": 0.007395021869643106,
+      "meanDrift": 0.00018322644399697003
+    },
+    {
+      "pose": "slash:0.575",
+      "maxDrift": 0.007281311607957827,
+      "meanDrift": 0.00017878134425236648
+    },
+    {
+      "pose": "slash:0.647",
+      "maxDrift": 0.007147538630266013,
+      "meanDrift": 0.0001762336598098532
+    },
+    {
+      "pose": "slash:0.719",
+      "maxDrift": 0.007180150421566141,
+      "meanDrift": 0.00017499349985818224
+    },
+    {
+      "pose": "slash:0.791",
+      "maxDrift": 0.007065168982243774,
+      "meanDrift": 0.00017151324800785105
+    },
+    {
+      "pose": "slash:0.862",
+      "maxDrift": 0.006503693200739354,
+      "meanDrift": 0.0001628746335470346
+    },
+    {
+      "pose": "slash:0.934",
+      "maxDrift": 0.005713237143918352,
+      "meanDrift": 0.00015010087366883255
+    },
+    {
+      "pose": "slash:1.006",
+      "maxDrift": 0.005351507200784606,
+      "meanDrift": 0.00013970442353593968
+    },
+    {
+      "pose": "slash:1.078",
+      "maxDrift": 0.0052946039696609055,
+      "meanDrift": 0.00013449991196247591
+    },
+    {
+      "pose": "slash:1.150",
+      "maxDrift": 0.005280490449412525,
+      "meanDrift": 0.00013355603196205722
+    },
+    {
+      "pose": "reverse:0.000",
+      "maxDrift": 0.005280490449412525,
+      "meanDrift": 0.00013355603196205722
+    },
+    {
+      "pose": "reverse:0.069",
+      "maxDrift": 0.0053218579977949085,
+      "meanDrift": 0.00013887369551561656
+    },
+    {
+      "pose": "reverse:0.138",
+      "maxDrift": 0.0055592300802392025,
+      "meanDrift": 0.00015810901163713158
+    },
+    {
+      "pose": "reverse:0.206",
+      "maxDrift": 0.005826668396837827,
+      "meanDrift": 0.00017575593678272354
+    },
+    {
+      "pose": "reverse:0.275",
+      "maxDrift": 0.005807337040378575,
+      "meanDrift": 0.00017767670157672487
+    },
+    {
+      "pose": "reverse:0.344",
+      "maxDrift": 0.006568709050457996,
+      "meanDrift": 0.00017028892679400842
+    },
+    {
+      "pose": "reverse:0.413",
+      "maxDrift": 0.0073048365628516545,
+      "meanDrift": 0.0001657866955587834
+    },
+    {
+      "pose": "reverse:0.481",
+      "maxDrift": 0.007362638685065757,
+      "meanDrift": 0.00016558172495991346
+    },
+    {
+      "pose": "reverse:0.550",
+      "maxDrift": 0.00714821359721861,
+      "meanDrift": 0.00015769849793067858
+    },
+    {
+      "pose": "reverse:0.619",
+      "maxDrift": 0.007053374220314072,
+      "meanDrift": 0.00015490496675159228
+    },
+    {
+      "pose": "reverse:0.688",
+      "maxDrift": 0.006977839848928595,
+      "meanDrift": 0.00015347074126793013
+    },
+    {
+      "pose": "reverse:0.756",
+      "maxDrift": 0.006698019234038259,
+      "meanDrift": 0.00014718807094370127
+    },
+    {
+      "pose": "reverse:0.825",
+      "maxDrift": 0.0064293466750185765,
+      "meanDrift": 0.00013945885547525307
+    },
+    {
+      "pose": "reverse:0.894",
+      "maxDrift": 0.006012110861407054,
+      "meanDrift": 0.00013649906709128158
+    },
+    {
+      "pose": "reverse:0.963",
+      "maxDrift": 0.005585843181347184,
+      "meanDrift": 0.00013490939726648753
+    },
+    {
+      "pose": "reverse:1.031",
+      "maxDrift": 0.005330733002766291,
+      "meanDrift": 0.00013379663687781082
+    },
+    {
+      "pose": "reverse:1.100",
+      "maxDrift": 0.005280490449412525,
+      "meanDrift": 0.00013355603196205722
+    },
+    {
+      "pose": "thrust:0.000",
+      "maxDrift": 0.005280490449412525,
+      "meanDrift": 0.00013355603196205722
+    },
+    {
+      "pose": "thrust:0.078",
+      "maxDrift": 0.00541140743217168,
+      "meanDrift": 0.00013353219465624103
+    },
+    {
+      "pose": "thrust:0.156",
+      "maxDrift": 0.005878270475613505,
+      "meanDrift": 0.0001368866458090524
+    },
+    {
+      "pose": "thrust:0.234",
+      "maxDrift": 0.006263795125819904,
+      "meanDrift": 0.00015126620410017708
+    },
+    {
+      "pose": "thrust:0.313",
+      "maxDrift": 0.006412510516798123,
+      "meanDrift": 0.0001658494053215953
+    },
+    {
+      "pose": "thrust:0.391",
+      "maxDrift": 0.006475360364137527,
+      "meanDrift": 0.0001647630964683748
+    },
+    {
+      "pose": "thrust:0.469",
+      "maxDrift": 0.006811942317684077,
+      "meanDrift": 0.0001694463541920309
+    },
+    {
+      "pose": "thrust:0.547",
+      "maxDrift": 0.006745396828342699,
+      "meanDrift": 0.0001841438398505956
+    },
+    {
+      "pose": "thrust:0.625",
+      "maxDrift": 0.0067549106057663184,
+      "meanDrift": 0.00018259365291193054
+    },
+    {
+      "pose": "thrust:0.703",
+      "maxDrift": 0.006770514982679899,
+      "meanDrift": 0.000179529134804289
+    },
+    {
+      "pose": "thrust:0.781",
+      "maxDrift": 0.006767981341540873,
+      "meanDrift": 0.00017928439555204518
+    },
+    {
+      "pose": "thrust:0.859",
+      "maxDrift": 0.0066992690003587554,
+      "meanDrift": 0.00017660383385896723
+    },
+    {
+      "pose": "thrust:0.938",
+      "maxDrift": 0.00648242673014475,
+      "meanDrift": 0.00016060138101213714
+    },
+    {
+      "pose": "thrust:1.016",
+      "maxDrift": 0.006088936597288517,
+      "meanDrift": 0.0001452459839727472
+    },
+    {
+      "pose": "thrust:1.094",
+      "maxDrift": 0.005635190313589982,
+      "meanDrift": 0.0001373438239667436
+    },
+    {
+      "pose": "thrust:1.172",
+      "maxDrift": 0.005341014569303509,
+      "meanDrift": 0.00013404181070369252
+    },
+    {
+      "pose": "thrust:1.250",
+      "maxDrift": 0.005280490449412525,
+      "meanDrift": 0.00013355603196205722
+    },
+    {
+      "pose": "dodge:0.000",
+      "maxDrift": 0.006800714962929028,
+      "meanDrift": 0.00012867025278623742
+    },
+    {
+      "pose": "dodge:0.069",
+      "maxDrift": 0.006514563538401636,
+      "meanDrift": 0.00013573241711728508
+    },
+    {
+      "pose": "dodge:0.138",
+      "maxDrift": 0.006066909468950042,
+      "meanDrift": 0.00015868570881085234
+    },
+    {
+      "pose": "dodge:0.206",
+      "maxDrift": 0.006049839770287225,
+      "meanDrift": 0.00016186467752316906
+    },
+    {
+      "pose": "dodge:0.275",
+      "maxDrift": 0.0060514921756840015,
+      "meanDrift": 0.0001612960556564643
+    },
+    {
+      "pose": "dodge:0.344",
+      "maxDrift": 0.006061262421966677,
+      "meanDrift": 0.00015942474158304722
+    },
+    {
+      "pose": "dodge:0.413",
+      "maxDrift": 0.006094468507200085,
+      "meanDrift": 0.0001556661740167761
+    },
+    {
+      "pose": "dodge:0.481",
+      "maxDrift": 0.0061688074781051415,
+      "meanDrift": 0.00015030513162530388
+    },
+    {
+      "pose": "dodge:0.550",
+      "maxDrift": 0.006287933763079787,
+      "meanDrift": 0.00014402297777884208
+    },
+    {
+      "pose": "dodge:0.619",
+      "maxDrift": 0.0064343800115558595,
+      "meanDrift": 0.00013831454039135748
+    },
+    {
+      "pose": "dodge:0.688",
+      "maxDrift": 0.006581113905761171,
+      "meanDrift": 0.00013402574364508132
+    },
+    {
+      "pose": "dodge:0.756",
+      "maxDrift": 0.006701820262433334,
+      "meanDrift": 0.00013117056459234944
+    },
+    {
+      "pose": "dodge:0.825",
+      "maxDrift": 0.006773210326870814,
+      "meanDrift": 0.00012945371520594966
+    },
+    {
+      "pose": "dodge:0.894",
+      "maxDrift": 0.006798260715495026,
+      "meanDrift": 0.0001287548217316808
+    },
+    {
+      "pose": "dodge:0.963",
+      "maxDrift": 0.006800714962929028,
+      "meanDrift": 0.00012867025278623742
+    },
+    {
+      "pose": "dodge:1.031",
+      "maxDrift": 0.006800714962929028,
+      "meanDrift": 0.00012867025278623742
+    },
+    {
+      "pose": "dodge:1.100",
+      "maxDrift": 0.006800714962929028,
+      "meanDrift": 0.00012867025278623742
+    },
+    {
+      "pose": "both-shoulders-raised",
+      "maxDrift": 0.003278634889533184,
+      "meanDrift": 0.00006163557119298472
+    }
+  ]
+}
