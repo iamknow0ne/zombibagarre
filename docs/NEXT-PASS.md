@@ -28,6 +28,19 @@ Measure fixed seed, scene, quality, viewport, frame count, CPU stage time, draw 
 
 Root: browser profiling, normal playthrough, integration and release. Performance subagent: rendering/effects/resource lifetimes. Gameplay subagent: simulation, progression and adversarial regression tests.
 
+## 4.49 service roof and movement checkpoint
+
+- [x] One curated existing-building roof with shared collision/render deck, parapets and HVAC; safe mapped approach, grapple ascent and exit gap.
+- [x] Shared structural health, support removal on collapse, nearby enemy pressure and single-hit blast/melee ownership.
+- [x] Detailed Rook development travel locomotion, forward/backward/strafe/stop, planted-foot anchors and following-camera review; 29 art tests pass.
+- [x] 575 gameplay tests, 29 art tests, four full automated campaigns, production build and exact packaged Mac hardware startup.
+- [ ] Publish and verify browser/Mac 4.49 after final release checks.
+
+This closes the first accurate service-roof route, not all rooftops or elevated
+enemy encounters. See [4.49 evidence](RELEASE-4.49.md). Flat-ground development
+locomotion is implemented; production animation, aiming layers, equipment/LOD
+and portrait likeness remain open.
+
 ## 4.48.2 reliability checkpoint
 
 - [x] Fix body-overlapping platform edge landings using matching solid collision footprints.
@@ -48,9 +61,9 @@ pass; actual browser grip/gait/reload/sequence controls were reviewed. See
 [motion checkpoint](art-direction/ROOK-MOTION-CHECKPOINT.md) and
 [v4 asset evidence](art-direction/ROOK-VALIDATION.md).
 This is a development checkpoint, not a shipped hero replacement. Public game
-and Mac move to 4.48.2 with the runtime patch above. Next: portrait likeness and garment/material detail; actual
-travel-speed locomotion with start/stop/strafe, crossfade foot locking and aim
-layers; then LOD and the production adapter. Verify saved equipment and FPS
+and Mac advance through the runtime checkpoints above. Next: portrait likeness
+and garment/material detail; terrain/turning and aim layers for the new travel
+motion; then LOD and the production adapter. Verify saved equipment and FPS
 hands before enabling it in gameplay.
 
 

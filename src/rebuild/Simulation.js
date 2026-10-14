@@ -2,7 +2,7 @@ import {initializeRegions,captureRegion,requestRegionTravel,collectCountrySupply
 import {generateCountryRoad} from './CountryRoad.js';
 import {stepInterior} from './Interiors.js';
 import {prepareTraversalLayout,campaignTraversalBoxes} from './CampaignTraversal.js';
-import {stepTraversal,grappleAvailability} from './Traversal.js';
+import {stepTraversal,grappleAvailability,TRAVERSAL} from './Traversal.js';
 import {bodyPoint,aimHeight,muzzlePoint,bodyDistance,blastDistance,meleeReaches,meleeSpan,nearGround,combatBlocked,propBlastPoint} from './CombatHeight.js';
 import {advanceThrowable} from './ThrowableFlight.js';
 import {boxHit3D,bodyHit3D,actorHeight,propHeight,feetHeight,actorSpan,propSpan,verticalGap,heightGap} from './Ballistics.js';
@@ -83,11 +83,13 @@ export class Simulation {
     if (distance({ x, z }, this.player) < 7) { x = -x; z = -z; }
     this.spawnEnemy(type, x, z); this.toSpawn--;
   }
-  setBuildings(buildings){const previous=new Map(this.props.filter(p=>p.kind==='building').map(p=>[p.id,p]));this.props=this.props.filter(p=>p.kind!=='building').concat(buildings.map(b=>({...b,kind:'building',health:Math.max(1800,Math.round(b.w*b.d*(b.h||8)*1.5)),maxHealth:Math.max(1800,Math.round(b.w*b.d*(b.h||8)*1.5)),damageStage:0,...previous.get(b.id)})));this.obstacles=this.props.filter(p=>p.health>0);this.navigation.clear();}
+  setBuildings(buildings){const previous=new Map(this.props.filter(p=>p.kind==='building').map(p=>[p.id,p]));this.props=this.props.filter(p=>p.kind!=='building').concat(buildings.map(b=>({...b,kind:'building',health:Math.max(1800,Math.round(b.w*b.d*(b.h||8)*1.5)),maxHealth:Math.max(1800,Math.round(b.w*b.d*(b.h||8)*1.5)),damageStage:0,...previous.get(b.id)})));this.syncRoofParts();this.obstacles=this.props.filter(p=>p.health>0);this.navigation.clear();}
+  syncRoofParts(owner=null){const owners=new Map(this.props.filter(p=>p.kind==='building').map(p=>[p.id,p]));for(const part of this.props)if(part.roofPart&&(!owner||part.ownerId===owner.id)){const building=owners.get(part.ownerId);part.health=building?.health||0;part.maxHealth=building?.maxHealth||part.maxHealth;}}
   blocked(a,b,padding=0){return lineBlocked(a,b,padding,collisionCandidates(this,a,b,padding))||!!(this.layout.boundary&&!segmentInMap(this.layout,a,b,padding));}
   damageProp(prop,amount,impact=null){
     if(prop.health<=0)return;
-    prop.health-=amount;this.emit('prop-hit',{id:prop.id,x:impact?.x??prop.x,y:impact?.y,z:impact?.z??prop.z,kind:prop.kind,material:prop.material,weapon:impact?.weapon,slicing:!!impact?.slicing,thermal:!!impact?.thermal,health:prop.health/(prop.maxHealth||1),amount,explosive:!!impact?.explosive,radius:impact?.radius||0});
+    if(prop.roofPart){const owner=this.props.find(o=>o.id===prop.ownerId&&o.kind==='building');if(owner&&owner.health>0)this.damageProp(owner,amount,impact);return;}
+    prop.health-=amount;if(prop.serviceRoof)this.syncRoofParts(prop);this.emit('prop-hit',{id:prop.id,x:impact?.x??prop.x,y:impact?.y,z:impact?.z??prop.z,kind:prop.kind,material:prop.material,weapon:impact?.weapon,slicing:!!impact?.slicing,thermal:!!impact?.thermal,health:prop.health/(prop.maxHealth||1),amount,explosive:!!impact?.explosive,radius:impact?.radius||0});
     if(prop.kind==='building'&&prop.health>0){const stage=Math.min(3,Math.floor((1-Math.max(0,prop.health)/prop.maxHealth)*4));if(stage>(prop.damageStage||0)){prop.damageStage=stage;this.emit('building-stage',{id:prop.id,stage,material:prop.material,x:impact?.x??prop.x,y:impact?.y,z:impact?.z??prop.z});}}
     if(prop.health<=0){
       if(prop.kind==='building')startCollapse(this,prop);if(prop.kind==='rubble'&&prop.pileKey){const key=prop.pileKey;this.structures=(this.structures||[]).filter(c=>`${c.buildingId}:${Math.floor(c.x/2.4)}:${Math.floor(c.z/2.4)}`!==key);this.rubblePiles?.delete(key);}
@@ -158,7 +160,9 @@ export class Simulation {
   blast(x, z, radius, damage, kind = 'explosion', source = 'grenade', weapon=null, tier=0, y=0) {
     if(this.player.blast>1&&this.player.blastRadius>1&&kind==='explosion')damage*=1.25;
     const water=y<.3&&waterAt(this.layout,x,z);this.emit(kind, { x, y, z, radius,source,water,weapon,tier });if(water)this.splashWater(x,z,radius*2);
-    for(const prop of this.props)if(prop.health>0){const hit=propBlastPoint({x,y,z},prop),d=Math.hypot(hit.x-x,hit.y-y,hit.z-z);if(d<radius)this.damageProp(prop,damage*.85*(1-.4*d/radius),{...hit,y:hit.y,explosive:kind==='explosion',radius});}
+    // A roof is one structure with several colliders, not seven independent blast multipliers.
+    const struck=new Map();for(const prop of this.props)if(prop.health>0){const hit=propBlastPoint({x,y,z},prop),d=Math.hypot(hit.x-x,hit.y-y,hit.z-z);if(d<radius){const amount=damage*.85*(1-.4*d/radius),id=prop.roofPart?prop.ownerId:(prop.id??prop);if(!struck.has(id)||struck.get(id).amount<amount)struck.set(id,{prop,amount,hit});}}
+    for(const {prop,amount,hit}of struck.values())this.damageProp(prop,amount,{...hit,explosive:kind==='explosion',radius});
     for (const e of this.enemies) { const d = blastDistance({x,y,z},e); if(d<radius+e.radius){e.exposed=3;this.damageEnemy(e, damage * (1 - .45 * d / (radius + e.radius)), (e.x - x) * 3, (e.z - z) * 3,{kind:kind==='explosion'?'explosion':'melee',weapon,tier});} }
   }
   chooseUpgrade(id) {
@@ -267,7 +271,7 @@ export class Simulation {
   moveTraversal(dt,input,mx,mz){
     const p=this.player,boxes=campaignTraversalBoxes(this),anchors=this.layout.traversal?.anchors||[],bounds=this.layout.bounds||ARENA;
     const options=anchors.filter(a=>!p.grounded||a.supportId!==p.supportId).map(a=>({...a,reason:grappleAvailability(p,a,boxes)})).sort((a,b)=>Number(!!a.reason)-Number(!!b.reason)||distance(a,p)-distance(b,p));
-    const selected=options.find(a=>a.id===this.traversalTarget?.id&&!a.reason)||options[0];this.traversalTarget=selected?{...selected,available:!selected.reason}:null;
+    const selected=options.find(a=>a.id===this.traversalTarget?.id&&!a.reason)||options.find(a=>!a.reason)||options.find(a=>Math.hypot(a.x-p.x,a.y-feetHeight(p)-1.2,a.z-p.z)<=TRAVERSAL.range+3);this.traversalTarget=selected?{...selected,available:!selected.reason}:null;
     const old={x:p.x,y:p.y,z:p.z},speed=p.speed*(isMelee(p)?1.22:1)*(p.aiming?.78:1);let velocity;
     if(p.dash>0){p.slideX=p.dashX*p.speed;p.slideZ=p.dashZ*p.speed;p.dash=Math.max(0,p.dash-dt);velocity={x:p.dashX*22,z:p.dashZ*22};}
     else if(p.grounded){const drift=weatherMovement(p,mx,mz,speed,dt,this.weather);velocity={x:dt?drift.x/dt:0,z:dt?drift.z/dt:0};}
@@ -309,7 +313,7 @@ export class Simulation {
     let hits=0;
     for(const e of this.enemies)if(e.health>0&&distance(e,p)<range+e.radius&&inArc(e.x,e.z)&&meleeReaches(p,e)&&!combatBlocked(this,muzzlePoint(p),bodyPoint(e))){this.damageEnemy(e,damage,Math.sin(angle)*profile.force,Math.cos(angle)*profile.force,{kind:profile.kind,weapon:key,tier:w.tier,finisher,part:profile.kind==='slice'?(finisher?'legs':key==='dual'?'arm':null):null});if(key==='hammer'&&e.type!=='boss')e.slow=Math.max(e.slow||0,finisher?1.2:.6);hits++;}
     if(finisher&&hits>0)p.health=Math.min(p.maxHealth,p.health+(p.finisherHeal||0));
-    for(const o of this.props)if(o.health>0&&verticalGap(meleeSpan(p),propSpan(o))===0){const x=clamp(p.x,o.x-o.w/2,o.x+o.w/2),z=clamp(p.z,o.z-o.d/2,o.z+o.d/2);if(Math.hypot(x-p.x,z-p.z)<range&&inArc(x,z)){this.damageProp(o,damage*(key==='hammer'?1.2:['crate','planter'].includes(o.kind)?2:.3),{x,y:Math.max(propSpan(o).min,Math.min(propSpan(o).max,feetHeight(p)+1)),z,slicing:profile.kind==='slice'});hits++;}}
+    const struckProps=new Set();for(const o of this.props)if(o.health>0&&verticalGap(meleeSpan(p),propSpan(o))===0){const x=clamp(p.x,o.x-o.w/2,o.x+o.w/2),z=clamp(p.z,o.z-o.d/2,o.z+o.d/2);if(Math.hypot(x-p.x,z-p.z)<range&&inArc(x,z)){const structuralId=o.roofPart?o.ownerId:(o.id??o);if(struckProps.has(structuralId))continue;struckProps.add(structuralId);this.damageProp(o,damage*(key==='hammer'?1.2:['crate','planter'].includes(o.kind)?2:.3),{x,y:Math.max(propSpan(o).min,Math.min(propSpan(o).max,feetHeight(p)+1)),z,slicing:profile.kind==='slice'});hits++;}}
     if(finisher){p.dashCooldown=Math.max(0,p.dashCooldown-.45);p.invulnerable=Math.max(p.invulnerable,.12);}
     if(finisher&&w.tier===3){for(const e of this.enemies)if(e.health>0&&distance(e,p)>=range+e.radius&&distance(e,p)<range+2.6&&inArc(e.x,e.z)&&meleeReaches(p,e)&&!combatBlocked(this,muzzlePoint(p),bodyPoint(e))){this.damageEnemy(e,damage*.55,Math.sin(angle)*profile.force,Math.cos(angle)*profile.force,{kind:profile.kind,weapon:key,tier:3,finisher:true});if(key==='hammer'&&e.type!=='boss')e.slow=Math.max(e.slow||0,1.2);}this.emit('cut-wave',{x:p.x,z:p.z,angle,weapon:key,radius:range+2.6});}
     this.emit('slice',{x:p.x,z:p.z,angle,weapon:key,combo:attack.combo,variant:attack.variant,tier:w.tier,radius:range,hits});
@@ -350,11 +354,11 @@ export class Simulation {
     }
   }
   updateEnemies(dt) {
-    const p = this.player,support=p.grounded&&p.supportId?this.props.find(o=>o.id===p.supportId&&o.traversalSupport&&o.health>0):null;
+    const p = this.player,standingSupport=p.grounded&&p.supportId?this.props.find(o=>o.id===p.supportId&&o.traversalSupport&&o.health>0):null,support=standingSupport?.roofPart?this.props.find(o=>o.id===standingSupport.ownerId&&o.health>0):standingSupport;
     // A low service platform buys space, not permanent immunity. Melee enemies
     // can batter its reachable edge with their normal telegraphed attack rhythm.
     const supportContact=e=>{
-      if(!support||support.health<=0||!['walker','runner','brute','armored','volatile'].includes(e.type)||Math.abs(feetHeight(p)-propSpan(support).max)>.15||verticalGap(actorSpan(e),propSpan(support))>0)return null;
+      if(!support||support.health<=0||!['walker','runner','brute','armored','volatile'].includes(e.type)||Math.abs(feetHeight(p)-propSpan(standingSupport).max)>.15||verticalGap(actorSpan(e),propSpan(support))>0)return null;
       const hit=propBlastPoint(bodyPoint(e),support);
       if(Math.hypot(hit.x-e.x,hit.z-e.z)>e.radius+.75||combatBlocked(this,bodyPoint(e),hit,support.id))return null;
       return hit;

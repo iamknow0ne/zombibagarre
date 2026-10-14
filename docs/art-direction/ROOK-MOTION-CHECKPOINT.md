@@ -78,3 +78,35 @@ Equip fading is a review aid, not an authored holster/draw animation. Melee
 attacks, dodges, aim layers, LOD, equipment/customization, FPS hands and the
 production adapter remain open. No physical controller/phone or new Mac
 hardware test is claimed.
+
+## Travel-space locomotion follow-up
+
+The development viewer now moves the model through space at 0–3 m/s, rather
+than showing only an in-place walk. It exposes forward/backward/left/right
+commands, acceleration, stopping and a metre grid with a following camera.
+Planted feet retain travel-space anchors; swing feet anticipate the requested
+velocity. Actual deformed boot vertices correct sole clearance. Stop settles
+the feet while idle breathing continues. The external placement is applied
+once; a regression checks world-space feet after moving the viewer parent.
+
+**29 art tests pass** across the structural, rig, motion, controller and new
+locomotion checks. The five new checks cover acceleration, stop, directions,
+0–3 m/s, frame-rate equivalence, actual v4 boot support and placement. Sampled
+settled foot support is within 1 mm and planted ankle targets within 2 mm in
+these tests; this is not a claim of perfect animation in every situation.
+
+Browser review exercised all four directions, stopping, following-camera travel
+and model rendering. Backward gait and settled stop were inspected; console
+errors were empty. The viewer preserves the coal/bone/rust inspection palette,
+44 px controls and a conditional travel row, with no decorative motion. Internal
+UI review: slop 1/10, distinctiveness 6/10; useful future improvements are a
+foot-contact overlay, compact timeline event marks and a collapsible control
+strip for larger close-ups.
+
+![Actual backward travel study](rook-travel-study.png)
+
+Seeking reconstructs the currently selected velocity from rest, not a recording
+of previous direction changes. This remains flat-ground development motion:
+fast strafing uses crossing steps, with no finished sprint, terrain adaptation,
+turn-in-place, melee/dodge animation or gameplay adapter. Likeness and garments
+remain unfinished. The production game still uses its existing stylized hero.

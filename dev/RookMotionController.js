@@ -1,15 +1,16 @@
 import * as T from 'three';
 import {createRookMotionStudy,ROOK_MOTION_MODES} from './RookMotionStudy.js';
+import {createRookLocomotion} from './RookLocomotion.js';
 
 const ease=t=>{t=T.MathUtils.clamp(t,0,1);return t*t*(3-2*t);};
 const DEMO=Object.freeze([{mode:'walk',duration:2.24},{mode:'rifle',duration:1.6},{mode:'fire',duration:1.2},{mode:'reload',duration:3.2},{mode:'ready',duration:1.6}]);
 const DEMO_DURATION=DEMO.reduce((sum,step)=>sum+step.duration,0);
-export const ROOK_CONTROLLER_MODES=Object.freeze([...ROOK_MOTION_MODES,{id:'demo',label:'Combat motion sequence',duration:DEMO_DURATION}]);
+export const ROOK_CONTROLLER_MODES=Object.freeze([...ROOK_MOTION_MODES,{id:'locomotion',label:'Travel locomotion',duration:12},{id:'demo',label:'Combat motion sequence',duration:DEMO_DURATION}]);
 
 // Development-only transition layer. Bind matrices and the GLB are never changed.
 export function createRookMotionController(content,{transitionDuration=.32}={}){
  if(!Number.isFinite(transitionDuration)||transitionDuration<0)throw new TypeError('Transition duration must be a nonnegative finite number.');
- let study=createRookMotionStudy(content),bones=[],skins=[],source=null,weaponState=null,disposed=false,targetDiagnostics=null;
+ let study=createRookMotionStudy(content),locomotion=createRookLocomotion(),bones=[],skins=[],source=null,weaponState=null,disposed=false,targetDiagnostics=null;
  content.traverse(o=>{if(o.isBone)bones.push(o);if(o.isSkinnedMesh)skins.push(o);});
  let selectedMode='bind',activeMode='bind',time=0,poseTime=0,blendTime=transitionDuration,fromMode='bind',demoIndex=0,demoStepTime=0;
  const requireLive=()=>{if(disposed)throw new Error('Rook motion controller is disposed.');};
@@ -28,13 +29,14 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
  }
  function select(mode){
   requireLive();if(!ROOK_CONTROLLER_MODES.some(m=>m.id===mode))throw new RangeError(`Unknown Rook motion ${mode}.`);
-  selectedMode=mode;time=0;demoIndex=0;demoStepTime=0;start(mode==='demo'?DEMO[0].mode:mode);
+  selectedMode=mode;time=0;demoIndex=0;demoStepTime=0;locomotion.reset();start(mode==='demo'?DEMO[0].mode:mode==='locomotion'?'walk':mode);
   // Do not apply the new target until update: selecting/interrupting cannot pop.
   return diagnostics();
  }
  function sample(){
   if(activeMode==='bind'){study.reset();refresh();weaponState=localWeapon();targetDiagnostics=study.diagnostics();return;}
-  study.pose(activeMode,poseTime);targetDiagnostics=study.diagnostics();const targetWeapon=localWeapon();
+  const travel=selectedMode==='locomotion'?locomotion.frame():null;
+  study.pose(activeMode,poseTime,{locomotion:travel});targetDiagnostics=study.diagnostics();const targetWeapon=localWeapon();
   const progress=transitionDuration===0?1:Math.min(1,blendTime/transitionDuration),weight=ease(progress);
   if(source&&progress<1){
    for(let i=0;i<bones.length;i++){const b=bones[i],from=source.bones[i];targetQuaternion.copy(b.quaternion);b.position.lerpVectors(from.p,b.position,weight);b.quaternion.slerpQuaternions(from.q,targetQuaternion,weight).normalize();b.scale.lerpVectors(from.s,b.scale,weight);}
@@ -47,6 +49,9 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
    const fade=targetWeapon.opacity===0?ease(progress/.35):before.opacity<1?ease((progress-.65)/.35):weight;
    w.opacity=T.MathUtils.lerp(before.opacity,targetWeapon.opacity,fade);weaponState=w;
   }else{source=null;weaponState=targetWeapon;refresh();}
+  // Correct feet after the visual crossfade as well as in the settled sampler;
+  // interpolation alone would pull planted feet away from their ground anchors.
+  if(travel){study.applyLocomotionFeet(travel);targetDiagnostics.footContacts=study.diagnostics().footContacts;}
  }
  function advance(dt){poseTime+=dt;blendTime+=dt;sample();}
  function update(dt=0){
@@ -54,6 +59,7 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
   if(selectedMode==='demo')dt=Math.min(dt,Math.max(0,DEMO_DURATION-time));
   if(dt===0){refresh();return diagnostics();}
   time+=dt;
+  if(selectedMode==='locomotion'){locomotion.update(dt);advance(dt);return diagnostics();}
   if(selectedMode!=='demo'){advance(dt);return diagnostics();}
   let remaining=dt;
   // Split at exact showcase boundaries so 30/60/120Hz and a single large step
@@ -72,7 +78,7 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
    // a crossfade. Playback through the same point can include a transition.
    time=value;demoIndex=0;let local=value;while(demoIndex<DEMO.length-1&&local>=DEMO[demoIndex].duration){local-=DEMO[demoIndex++].duration;}
    activeMode=DEMO[demoIndex].mode;demoStepTime=local;poseTime=local;
-  }else{time=value;poseTime=value;}
+  }else{time=value;poseTime=value;if(selectedMode==='locomotion')locomotion.seek(value);}
   source=null;blendTime=transitionDuration;sample();return diagnostics();
  }
  function getWeaponPose(){
@@ -80,13 +86,15 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
   return{position:wrist.add(weaponState.offset.clone().applyQuaternion(q)),quaternion:q,scaleVector:weaponState.scale.clone(),visible:weaponState.opacity>1e-4,opacity:weaponState.opacity,reload:weaponState.reload};
  }
  function getSocket(side){requireLive();refresh();return study.getSocket(side);}
+ function setLocomotion(input){requireLive();return locomotion.set(input);}
+ function getTravelPose(){requireLive();const p=selectedMode==='locomotion'?locomotion.frame().position:{x:0,z:0};return new T.Vector3(p.x,0,p.z);}
  function reset(){
-  requireLive();study.reset();refresh();selectedMode=activeMode=fromMode='bind';time=poseTime=0;blendTime=transitionDuration;demoIndex=demoStepTime=0;source=null;weaponState=localWeapon();targetDiagnostics=study.diagnostics();return diagnostics();
+  requireLive();study.reset();refresh();selectedMode=activeMode=fromMode='bind';time=poseTime=0;blendTime=transitionDuration;demoIndex=demoStepTime=0;source=null;weaponState=localWeapon();targetDiagnostics=study.diagnostics();locomotion.reset();return diagnostics();
  }
  function diagnostics(){
   const progress=transitionDuration===0?1:Math.min(1,blendTime/transitionDuration);
-  return{...(targetDiagnostics||{}),reachErrorScope:'settled target sample; not a claim about blended hand contacts',mode:activeMode,selectedMode,time,poseTime,demoTime:selectedMode==='demo'?time:undefined,duration:ROOK_CONTROLLER_MODES.find(m=>m.id===selectedMode)?.duration||0,transition:{active:!!source&&progress<1,progress,duration:transitionDuration,from:fromMode,to:activeMode},demoComplete:selectedMode==='demo'&&time>=DEMO_DURATION,disposed,bones:bones.length};
+  return{...(targetDiagnostics||{}),reachErrorScope:'settled target sample; not a claim about blended hand contacts',mode:activeMode,selectedMode,time,poseTime,demoTime:selectedMode==='demo'?time:undefined,locomotion:selectedMode==='locomotion'?locomotion?.frame():undefined,duration:ROOK_CONTROLLER_MODES.find(m=>m.id===selectedMode)?.duration||0,transition:{active:!!source&&progress<1,progress,duration:transitionDuration,from:fromMode,to:activeMode},demoComplete:selectedMode==='demo'&&time>=DEMO_DURATION,disposed,bones:bones.length};
  }
- function dispose(){if(disposed)return;reset();disposed=true;source=weaponState=study=content=targetDiagnostics=null;bones=[];skins=[];}
- return{modes:ROOK_CONTROLLER_MODES,select,update,seek,reset,dispose,getWeaponPose,getSocket,diagnostics};
+ function dispose(){if(disposed)return;reset();disposed=true;source=weaponState=study=content=targetDiagnostics=locomotion=null;bones=[];skins=[];}
+ return{modes:ROOK_CONTROLLER_MODES,select,update,seek,reset,dispose,getWeaponPose,getSocket,setLocomotion,getTravelPose,diagnostics};
 }

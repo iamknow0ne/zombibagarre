@@ -22,6 +22,8 @@ export function dressBuilding(world,g,b,kit){
  }
 
  const roofAccessories=new T.Group();roofAccessories.userData.keepGroup=true;g.add(roofAccessories);g.userData.roofAccessories=roofAccessories;
+ // Authored service roofs have one shared visual/collision plan.
+ if(!b.serviceRoof){
  // Roof fixtures remain attached to the structure through collapse.
  if((style==='hotel'||style==='tenement')&&(!b.roof||['hip','gable'].includes(b.roof))){
   const roofMaterial=world.surfaces.material('slate',style==='hotel'?0x829aa6:0xb39579);
@@ -52,6 +54,7 @@ export function dressBuilding(world,g,b,kit){
  if(['flat','terrace'].includes(b.roof)){
   for(const side of [-1,1]){box(roofAccessories,trim,side*b.w/2,b.h+.4,0,.18,.65,b.d);box(roofAccessories,trim,0,b.h+.4,side*b.d/2,b.w,.65,.18);}
   if(b.roof==='terrace'){box(roofAccessories,b.color,-b.w*.12,b.h+1,0,b.w*.46,1.8,b.d*.42);box(roofAccessories,0x465c62,-b.w*.12,b.h+1.94,0,b.w*.48,.15,b.d*.44);box(roofAccessories,0x3b555c,-b.w*.12,b.h+1,b.d*.215,b.w*.29,.95,.03);}
+ }
  }
  // Window trims, shutters, balconies and occasional boarded openings.
  for(let side=0;side<4;side++){

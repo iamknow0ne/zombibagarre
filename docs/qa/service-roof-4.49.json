@@ -1,0 +1,42 @@
+{
+  "position": {
+    "x": -16.695,
+    "y": 3.41,
+    "z": 37.298
+  },
+  "grounded": true,
+  "support": "prop-131",
+  "grapple": null,
+  "velocityY": 0,
+  "target": null,
+  "camera": {
+    "mode": "third",
+    "x": -16.045,
+    "y": 6.049,
+    "z": 41.798
+  },
+  "aim": null,
+  "targetHealth": null,
+  "rewardClaimed": false,
+  "grenades": 3,
+  "lastEvents": [
+    {
+      "type": "traversal-attach",
+      "time": 0.008,
+      "support": null,
+      "message": null
+    },
+    {
+      "type": "traversal-reel-complete",
+      "time": 0.7,
+      "support": null,
+      "message": null
+    },
+    {
+      "type": "traversal-land",
+      "time": 1.099,
+      "support": "prop-131",
+      "message": null
+    }
+  ]
+}

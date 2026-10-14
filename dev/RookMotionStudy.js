@@ -97,20 +97,36 @@ export function createRookMotionStudy(content){
   return modelQ().multiply(new T.Quaternion().setFromRotationMatrix(new T.Matrix4().makeBasis(x,y,z))).multiply(handFrames[side].basis.clone().invert());
  }
  function palmPosition(side){return wp(bone('wrist'+side)).add(handFrames[side].palmOffset.clone().applyQuaternion(bone('wrist'+side).getWorldQuaternion(new T.Quaternion())));}
- function pose(id,time=0){
+ function locomotionFoot(side,frame){
+  const planned=frame.feet[side],sign=side==='L'?1:-1,foot=point('foot'+side),pole=point('upperleg01'+side).add(V(sign*.025,-.3,.55));
+  foot.x=planned.x;foot.z=planned.z;foot.y+=planned.clearance;
+  solve(chains['leg'+side],foot,pole);footPose(side,planned.pitch);
+  for(let correction=0;correction<3;correction++){foot.y+=soleRest[side]+planned.clearance-soleHeight(side);solve(chains['leg'+side],foot,pole);footPose(side,planned.pitch);}
+  const actual=content.worldToLocal(wp(bone('foot'+side)));
+  footContacts[side]={...planned,soleHeight:soleHeight(side),floor:soleRest[side],actualX:actual.x,actualZ:actual.z,anchorError:Math.hypot(actual.x-planned.x,actual.z-planned.z)};
+ }
+ function applyLocomotionFeet(frame){
+  if(!frame?.feet?.L||!frame?.feet?.R)throw new TypeError('Locomotion foot plan requires left and right targets.');
+  content.updateWorldMatrix(true,true);for(const skin of skins)skin.updateMatrixWorld(true);
+  for(const side of ['L','R'])locomotionFoot(side,frame);
+  content.updateWorldMatrix(true,true);for(const skin of skins)skin.skeleton.update();return diagnostics();
+ }
+ function pose(id,time=0,{locomotion=null}={}){
   const spec=ROOK_MOTION_MODES.find(m=>m.id===id);if(!spec)throw new RangeError(`Unknown Rook motion ${id}.`);if(!Number.isFinite(time))throw new TypeError('Rook motion time must be finite.');
   reset();mode=id;sampleTime=time;maxReachError=0;clampedTargets=0;
   // SkinnedMesh.updateMatrixWorld refreshes its inverse bind transform when
   // the viewer has moved the loaded root; updateWorldMatrix alone does not.
   for(const skin of skins)skin.updateMatrixWorld(true);
-  const t=loop(time,spec.duration),phase=t*Math.PI*2,walking=id==='walk',armed=['rifle','fire','reload'].includes(id),guard=id==='guard';
-  const breath=Math.sin(phase)*.003,drop=walking?-.025:armed?-.035:guard?-.055:-.012;
-  const root=bone('root'),targetRoot=worldPoint(point('root').add(V(walking?.012*Math.sin(phase):id==='ready'?.008:0,drop+(walking?.006*Math.cos(phase*2):breath),0)));
+  const t=locomotion?locomotion.phase:loop(time,spec.duration),phase=t*Math.PI*2,walking=id==='walk',armed=['rifle','fire','reload'].includes(id),guard=id==='guard',gaitWeight=locomotion?clamp(locomotion.speed/.4,0,1):1;
+  const breath=Math.sin(locomotion?time/3.2*Math.PI*2:phase)*.003,drop=walking?-.025-(locomotion?.speed||0)*.025:armed?-.035:guard?-.055:-.012;
+  const root=bone('root'),targetRoot=worldPoint(point('root').add(V(walking?.012*Math.sin(phase)*gaitWeight:id==='ready'?.008:0,drop+(walking?.006*Math.cos(phase*2)*gaitWeight+breath*(1-gaitWeight):breath),0)));
   root.position.copy(root.parent.worldToLocal(targetRoot));root.updateWorldMatrix(false,true);
-  turn(bone('spine05'),V(0,1,0),walking?.035*Math.sin(phase):armed?-.09:guard?.18:.018*Math.sin(phase));
-  turn(bone('spine02'),V(1,0,0),walking?.035:armed?.04:guard?.06:0);
-  turn(bone('head'),V(0,1,0),walking?-.035*Math.sin(phase):armed?.09:guard?-.18:-.01*Math.sin(phase));
+  turn(bone('spine05'),V(0,1,0),walking?.035*Math.sin(phase)*gaitWeight:armed?-.09:guard?.18:.018*Math.sin(phase));
+  turn(bone('spine02'),V(1,0,0),walking?(locomotion?.velocity.z??1)*.035:armed?.04:guard?.06:0);
+  if(locomotion)turn(bone('spine05'),V(0,0,1),-locomotion.velocity.x*.025);
+  turn(bone('head'),V(0,1,0),walking?-.035*Math.sin(phase)*gaitWeight:armed?.09:guard?-.18:-.01*Math.sin(phase));
   for(const s of ['L','R']){
+   if(locomotion){locomotionFoot(s,locomotion);continue;}
    const sign=s==='L'?1:-1,foot=point('foot'+s),hip=point('upperleg01'+s),u=(t+(s==='L'?0:.5))%1;let clearance=0,pitch=0;
    foot.x=sign*(guard?.23:armed?.19:.175);
    if(walking){if(u<.6){foot.z+=.15-.3*(u/.6);pitch=u<.12?-.16*(1-ease(u/.12)):.25*ease((u-.40)/.20);}else{const flight=(u-.6)/.4;foot.z+=-.15+.3*ease(flight);clearance=.095*Math.sin(Math.PI*flight)**2;foot.y+=clearance;pitch=T.MathUtils.lerp(.25,-.16,ease(flight));}}
@@ -141,8 +157,8 @@ export function createRookMotionStudy(content){
   }
   for(const s of ['L','R']){
    const sign=s==='L'?1:-1;
-   let hand=armed?(s==='L'?left:right):guard?V(sign*.14,s==='L'?1.30:1.23,.32):walking?V(sign*.255,1.00,.09-sign*.09*Math.cos(phase)):V(sign*.245,s==='L'?.99:1.025,s==='L'?.055:.10);
-   if(!armed&&!guard)hand.y+=walking?.018*Math.cos(phase):breath;
+   let hand=armed?(s==='L'?left:right):guard?V(sign*.14,s==='L'?1.30:1.23,.32):walking?V(sign*.255+(locomotion?.velocity.x||0)*.018*Math.cos(phase),1.00,.09-sign*.09*Math.cos(phase)*gaitWeight*(locomotion?Math.sign(locomotion.velocity.z)*Math.max(.25,Math.abs(locomotion.velocity.z)/(locomotion.speed||1)):1)):V(sign*.245,s==='L'?.99:1.025,s==='L'?.055:.10);
+   if(!armed&&!guard)hand.y+=walking?.018*Math.cos(phase)*gaitWeight+breath*(1-gaitWeight):breath;
    const orientation=armed?handFrame(s,s==='R'?V(0,-1,.10):V(-1,.06,.12),s==='R'?V(1,0,0):V(0,1,0)):null;
    if(armed)hand=worldPoint(hand).sub(handFrames[s].palmOffset.clone().applyQuaternion(orientation)),hand=content.worldToLocal(hand);
    solve(chains['arm'+s],hand,V(sign*(armed||guard?.46:.26),armed?1.12:guard?1.05:1.17,armed?.035:guard?-.02:-.16));
@@ -165,5 +181,5 @@ export function createRookMotionStudy(content){
   return{position:worldPoint(weaponPosition),quaternion:q,scaleVector:V(-CARBINE_SCALE,CARBINE_SCALE,CARBINE_SCALE),visible:['rifle','fire','reload'].includes(mode),reload:mode==='reload'?loop(sampleTime,3.2):0};
  }
  function diagnostics(){const contactError=['rifle','fire'].includes(mode)?Math.max(...['L','R'].map(s=>palmPosition(s).distanceTo(worldPoint(contactTargets[s==='L'?'left':'right'])))):0;return{palmContactError:contactError,soleSampleCounts:{left:soles.L.length,right:soles.R.length},footContacts,mode,time:sampleTime,bones:rest.size,maxReachError,clampedTargets,modelSpace:'Y-up, +Z facing; anatomical L is +X',imageDecodeValidated:false};}
- return{modes:ROOK_MOTION_MODES,pose,reset,diagnostics,getSocket,getWeaponPose};
+ return{modes:ROOK_MOTION_MODES,pose,reset,diagnostics,getSocket,getWeaponPose,applyLocomotionFeet};
 }

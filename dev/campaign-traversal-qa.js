@@ -17,23 +17,24 @@ function setup(){
  sim=new Simulation({seed:73,mode:'city',environment:settings});sim.start('carbine');sim.toSpawn=999;sim.spawnTimer=99999;sim.player.invulnerable=999;sim.enemies=[];sim.events=[];
  const anchors=sim.layout.traversal.anchors,centre={x:(anchors[0].x+anchors[1].x)/3,z:(anchors[0].z+anchors[1].z+3)/3};
  world=new World($('game'),settings,0,sim.layout);world.applySettings(settings);world.portrait=25;world.inspectionTarget=centre;world.focus.set(centre.x,0,centre.z);world.update(sim,0);
+ if(scene.startsWith('roof')){const roof=sim.layout.traversal.roofs[0];if(!roof)throw new Error('No service roof for this seed.');const a=roof.anchor,start=scene==='roof-manual'?a:roof.approach;Object.assign(sim.player,{x:start.x,z:start.z,y:scene==='roof-manual'?roof.top:0,grounded:true,supportId:scene==='roof-manual'?a.supportId:null,supportY:scene==='roof-manual'?roof.top:0,angle:Math.atan2(-roof.approach.nx,-roof.approach.nz)});centre.x=a.x;centre.z=a.z;world.focus.set(a.x,0,a.z);}
  if(scene==='edge'){const a=anchors[0],support=sim.props.find(p=>p.id===a.supportId);Object.assign(sim.player,{x:a.x+support.w/2+.1,z:a.z,y:support.h+.1,vy:-5,grounded:false,supportId:null,supportY:0,angle:-Math.PI/2});centre.x=a.x;centre.z=a.z;world.focus.set(a.x,0,a.z);}
  if(scene==='shooting'){const a=anchors[0],support=sim.props.find(p=>p.id===a.supportId);Object.assign(sim.player,{x:a.x,z:a.z,y:support.h,grounded:true,supportId:support.id,supportY:support.h,angle:Math.atan2(-a.x,3-a.z)});target=sim.spawnEnemy('walker',0,3);target.health=target.maxHealth=10000;target.speed=0;target.attack=999;centre.x=(a.x+target.x)/2;centre.z=(a.z+target.z)/2;world.focus.set(centre.x,0,centre.z);}
- applyCamera();$('aim-target').disabled=!target;$('fire-burst').disabled=!['manual','shooting'].includes(scene);
+ applyCamera();$('aim-target').disabled=!target;$('fire-burst').disabled=!['manual','shooting','roof-manual'].includes(scene);
  document.querySelectorAll('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.scene===scene)));$('error').hidden=true;
  running=true;lastFrame=performance.now();report();
 }
 function actionInput(){
  const input={auto:false};
  if(scene==='edge')return {...input,x:-1,z:0};
- if(scene==='manual'||scene==='shooting'){
+ if(['manual','shooting','roof-manual'].includes(scene)){
   input.x=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
   input.z=Number(keys.has('KeyS')||keys.has('ArrowDown'))-Number(keys.has('KeyW')||keys.has('ArrowUp'));
   if(world.viewRig.active){const move=cameraMovement(input.x,input.z,world.viewRig.yaw);Object.assign(input,move);}
   if(target||firing||sim.time<burstUntil){lastAim=world.aim(pointer.x,pointer.y,sim);input.aim=lastAim;input.firing=firing||sim.time<burstUntil;}
   Object.assign(input,once);for(const key of Object.keys(once))delete once[key];return input;
  }
- if(stage===0){stage=1;if(scene==='jump')input.jump=true;else{sim.traversalTarget=sim.layout.traversal.anchors[0];input.grapple=true;}}
+ if(stage===0){stage=1;if(scene==='jump')input.jump=true;else{sim.traversalTarget=scene.startsWith('roof')?sim.layout.traversal.roofs[0].anchor:sim.layout.traversal.anchors[0];input.grapple=true;}}
  if(scene==='release'&&stage===1&&sim.time>=.35){input.grapple=true;stage=2;}
  if(scene==='grapple2'&&stage===2&&sim.player.grappleCooldown<=0){sim.traversalTarget=sim.layout.traversal.anchors[1];input.grapple=true;stage=3;}
  return input;
@@ -42,15 +43,15 @@ function advance(dt){
  sim.update(dt,actionInput());
  for(const event of sim.events){
   world.onEvent(event);if(event.type.startsWith('traversal-')||event.type==='progression'||event.type==='destroy'){events.push({type:event.type,time:round(sim.time),support:event.supportId||null,message:event.message||event.title||null});if(events.length>12)events.shift();}
-  if(event.type==='traversal-land'&&!['manual','shooting'].includes(scene)){
+  if(event.type==='traversal-land'&&!['manual','shooting','roof-manual'].includes(scene)){
    if(scene==='grapple2'&&stage===1)stage=2;
-   else if(scene==='destroy'&&stage===1){const support=sim.props.find(p=>p.id===sim.player.supportId);if(support){sim.damageProp(support,support.health+1);stage=2;events.push({type:'fixture-damage',time:round(sim.time),support:support.id});}}
+   else if(['destroy','roof-destroy'].includes(scene)&&stage===1){const support=sim.props.find(p=>p.id===sim.player.supportId);if(support){sim.damageProp(support,support.health+1);stage=2;events.push({type:'fixture-damage',time:round(sim.time),support:support.id});}}
    else{freezeAt=sim.time+.12;freezeReason='landing';}
   }
  }
  sim.events=[];
- if(autoFreeze&&!['manual','shooting'].includes(scene)&&$('freeze').value==='midair'&&sim.time>=.22){freezeAt=Math.min(freezeAt,.22);freezeReason='mid-air';}
- if(autoFreeze&&!['manual','shooting'].includes(scene)&&sim.time>=8){freezeAt=8;freezeReason='8s safety stop';}
+ if(autoFreeze&&!['manual','shooting','roof-manual'].includes(scene)&&$('freeze').value==='midair'&&sim.time>=.22){freezeAt=Math.min(freezeAt,.22);freezeReason='mid-air';}
+ if(autoFreeze&&!['manual','shooting','roof-manual'].includes(scene)&&sim.time>=8){freezeAt=8;freezeReason='8s safety stop';}
  if(sim.time>=freezeAt)running=false;
 }
 function report(){
@@ -64,7 +65,7 @@ for(const b of document.querySelectorAll('[data-scene]'))b.onclick=()=>{scene=b.
 $('replay').onclick=()=>{try{setup();}catch(e){fail(e);}};$('freeze').onchange=$('replay').onclick;
 $('pause').onclick=()=>{running=!running;if(running){freezeAt=Infinity;freezeReason='';autoFreeze=false;}report();};
 $('step').onclick=()=>{running=false;freezeAt=Infinity;autoFreeze=false;for(let i=0;i<12;i++)advance(1/120);running=false;world.update(sim,.1);report();};
-$('game').addEventListener('keydown',e=>{if(!['manual','shooting'].includes(scene))return;const action={KeyJ:'jump',KeyG:'grapple',Space:'dash'}[e.code];if(action&&!e.repeat)once[action]=true;if(action||/^(Key[WASD]|Arrow)/.test(e.code)){e.preventDefault();keys.add(e.code);}});
+$('game').addEventListener('keydown',e=>{if(!['manual','shooting','roof-manual'].includes(scene))return;const action={KeyJ:'jump',KeyG:'grapple',Space:'dash'}[e.code];if(action&&!e.repeat)once[action]=true;if(action||/^(Key[WASD]|Arrow)/.test(e.code)){e.preventDefault();keys.add(e.code);}});
 function applyCamera(){
  settings.viewMode=$('camera').value;world.applySettings(settings);world.viewRig.ready=false;
  if(settings.viewMode==='diorama'){world.portrait=25;world.inspectionTarget={x:world.focus.x,z:world.focus.z};}else{world.portrait=false;world.inspectionTarget=null;}

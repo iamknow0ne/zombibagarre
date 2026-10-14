@@ -1,6 +1,7 @@
 import {RegionVisuals} from './RegionVisuals.js';
 import {disposeObjectResources} from './ResourceDisposal.js';
 import {InteriorView,InteriorDoors} from './InteriorView.js';
+import {buildServiceRoof} from './ServiceRoofVisuals.js';
 import {buildServicePlatform} from './PlatformVisuals.js';
 import {worldRayTarget} from './WorldAim.js';
 import {TraversalVisuals,applyTraversalPose} from './TraversalVisuals.js';
@@ -186,6 +187,7 @@ export class World {
   }
   buildProps(){const g=this.static,rng=this.random;
     for(const [index,o]of this.layout.cover.entries()){
+      if(o.roofPart)continue;
       const old=this.static,group=new T.Group();this.scene.add(group);this.static=group;this.propMeshes.set(`prop-${index}`,group);
       if(o.kind==='platform')buildServicePlatform(group,o,{box,surfaces:this.surfaces,sign});else if(o.kind==='car')this.car(o);else if(o.kind==='barrier')this.barrier(o);else if(o.kind==='planter'){if(this.district>=4||o.wild)this.wildTree(o.x,o.z);else this.tree(o.x,o.z);}else if(o.kind==='rock'){const rock=sphere(group,this.district===6?0x967553:0x718080,o.x,.85,o.z,1.3,1.3,1.3);rock.rotation.y=rng()*6;contact(group,o.x,o.z,3.5,3.5,.4);}else if(o.kind==='barrel'){
         cylinder(group,0x89462f,o.x,.55,o.z,.43,1.1,.43,16);for(const y of [.15,.85])cylinder(group,0x4b4940,o.x,y,o.z,.455,.075,.455,16);
@@ -235,8 +237,11 @@ export class World {
         if(y>2){const pane=box(face,b.factory?0xc1955b:0x48626b,x,y,.18*signSide,1.05,1.35,.035);pane.userData.glass=true;g.userData.glass.push(pane);}
       }
     }
+    if(b.serviceRoof){const plan=this.layout.traversal?.roofs?.find(r=>r.buildingId===b.id);if(plan)buildServiceRoof(g,b,plan,{box,surfaces:this.surfaces});}
+    else{
     const roof=box(g,0x3b4b52,0,b.h+.15,0,b.w+.3,.32,b.d+.3);this.surfaces.apply(roof,'roof',0x57626a);roof.userData.breakablePart=true;g.userData.roof=roof;g.userData.sections.push(roof);
     box(g,0x65736c,-b.w*.2,b.h+.5,0,3,.7,2);if(b.factory)cylinder(g,0x7e7060,b.w*.25,b.h+2.5,0,.9,5);
+    }
     for(const side of [-1,1]){box(g,0xb4ac96,0,b.h-.18,side*(b.d/2+.16),b.w,.18,.35);box(g,0x5c6b60,side*(b.w/2-.3),b.h/2,b.d/2+.24,.09,b.h,.09);}
     for(let y=3;y<b.h;y+=2.8)box(g,0xb0aa94,0,y,b.d/2+.18,b.w,.12,.25);
     const canopy=box(g,0x4a685b,0,2.05,b.d/2+.65,b.w*.72,.14,1.1);canopy.rotation.x=.12;
@@ -356,7 +361,7 @@ export class World {
         continue;
       }
       const root=this.propMeshes.get(prop.id);if(root){root.visible=!destroyed;if(prop.driveable&&!destroyed)this.syncVehicle(prop,sim.player,0,sim.time||0);}
-      if(!destroyed||prop.kind==='rubble'||prop.sunk)continue;
+      if(!destroyed||prop.kind==='rubble'||prop.sunk||prop.roofPart)continue;
       const key=JSON.stringify([prop.kind,prop.x,prop.z,prop.angle,prop.rotation,prop.w,prop.d]);let wreck=wrecksById.get(prop.id);
       if(wreck&&wreck.userData.regionState!==key){this.removeDynamic(wreck);this.wrecks.splice(this.wrecks.indexOf(wreck),1);wreck=null;}
       if(!wreck){let seed=2166136261;for(const c of `${this.layout.mapSeed}:${prop.id}`)seed=Math.imul(seed^c.charCodeAt(0),16777619);wreck=this.propWreck(prop,seededRandom(seed>>>0));}

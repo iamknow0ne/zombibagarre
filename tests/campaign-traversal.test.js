@@ -8,10 +8,10 @@ import {initTraversal,stepTraversal} from '../src/rebuild/Traversal.js';
 const overlaps=(a,b)=>Math.abs(a.x-b.x)<(a.w+(b.w||0))/2&&Math.abs(a.z-b.z)<(a.d+(b.d||0))/2;
 test('seeded service route is deterministic, dry, inside the city and clear of scenery/services',()=>{
  for(const seed of [0,1,2,3,7,19,31,73,140,2026]){
-  const original=generateCity(seed),count=original.cover.length,layout=prepareTraversalLayout(original),platforms=layout.cover.slice(count);
+  const original=generateCity(seed),count=original.cover.length,layout=prepareTraversalLayout(original),platforms=layout.cover.slice(count).filter(p=>!p.roofPart);
   assert.equal(original.cover.length,count);assert.equal(original.traversal,undefined);
   assert.deepEqual(prepareTraversalLayout(original),layout);assert.equal(platforms.length,2,`seed ${seed}`);
-  assert.equal(layout.traversal.anchors.length,2);assert.equal(layout.traversal.reward.claimed,false);
+  assert.ok(layout.traversal.anchors.length>=2);assert.equal(layout.traversal.reward.claimed,false);
   for(const [i,p] of platforms.entries()){
    assert.equal(p.h,1.1);assert.equal(p.kind,'platform');assert.equal(p.maxHealth,600);
    assert.ok(Math.hypot(p.x,p.z-3)>=8&&Math.hypot(p.x,p.z-3)<=35);
@@ -40,7 +40,7 @@ test('campaign collision boxes preserve base and solidity and catch falls onto u
 
 test('the generated route can be grappled and landed using the actual collision plan',()=>{
  const layout=prepareTraversalLayout(generateCity(73)),props=layout.cover.map((p,i)=>({...p,id:`prop-${i}`,health:p.maxHealth||100}));props.push(...layout.buildings.map(b=>({...b,health:100})));const boxes=campaignTraversalBoxes({props}),p=initTraversal({radius:.4},{x:0,y:0,z:3});
- for(const anchor of layout.traversal.anchors){const events=stepTraversal(p,{grapple:true,anchorId:anchor.id},1/120,boxes,layout.traversal.anchors,layout.bounds);assert.ok(events.some(e=>e.type==='attach'));
+ for(const anchor of layout.traversal.anchors.slice(0,2)){const events=stepTraversal(p,{grapple:true,anchorId:anchor.id},1/120,boxes,layout.traversal.anchors,layout.bounds);assert.ok(events.some(e=>e.type==='attach'));
   for(let i=0;i<600;i++)stepTraversal(p,{},1/120,boxes,layout.traversal.anchors,layout.bounds);
   assert.equal(p.supportId,anchor.supportId);assert.equal(p.y,1.1);assert.equal(p.grapple,null);
  }

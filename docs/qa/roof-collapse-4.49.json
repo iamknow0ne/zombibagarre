@@ -1,0 +1,57 @@
+{
+  "position": {
+    "x": -16.695,
+    "y": 0,
+    "z": 37.304
+  },
+  "grounded": true,
+  "support": null,
+  "grapple": null,
+  "velocityY": 0,
+  "target": {
+    "id": "service-roof-anchor",
+    "available": false,
+    "reason": "Anchor lost"
+  },
+  "camera": {
+    "mode": "diorama",
+    "x": 9.305,
+    "y": 35,
+    "z": 68.913
+  },
+  "aim": null,
+  "targetHealth": null,
+  "rewardClaimed": false,
+  "grenades": 3,
+  "lastEvents": [
+    {
+      "type": "traversal-reel-complete",
+      "time": 0.699,
+      "support": null,
+      "message": null
+    },
+    {
+      "type": "traversal-land",
+      "time": 1.1,
+      "support": "prop-131",
+      "message": null
+    },
+    {
+      "type": "fixture-damage",
+      "time": 1.1,
+      "support": "prop-131"
+    },
+    {
+      "type": "destroy",
+      "time": 1.1,
+      "support": null,
+      "message": null
+    },
+    {
+      "type": "traversal-land",
+      "time": 1.632,
+      "support": null,
+      "message": null
+    }
+  ]
+}
