@@ -9,7 +9,7 @@
 - [x] Audit vehicle, throwable and camera transitions; cover reproduced bugs. Continue the broader quest/control audit in subsequent slices.
 - [ ] Complete a normal expedition through user-facing controls. First boss beaten, wave 5 reached, earned SMG unlock checked; full 32-wave human run remains pending.
 - [x] Run 364-test regression suite, four campaign routes, and browser portrait/landscape checks. Physical controller/phone validation remains open.
-- [ ] Publish tested browser and unsigned macOS update with measured results and limitations.
+- [x] Publish 4.42 browser and ad-hoc macOS update with measured results and limitations. Commit cc5358e; Pages and Mac CI passed; exact uploaded archive digest verified.
 
 ## Following milestones
 
@@ -29,4 +29,4 @@ Root: browser profiling, normal playthrough, integration and release. Performanc
 
 ## Next concrete slice
 
-Complete main-world traversal design and collision/combat integration before introducing interiors. Keep jumping, dodge and grenade bindings distinct across keyboard, controller and touch. Inspect elevated projectile origins, melee/AOE/contact damage, falling supports and safe recovery. Use two agents for isolated implementation/review work. See [4.42 evidence](RELEASE-4.42.md).
+Complete main-world traversal design and collision/combat integration before introducing interiors. Keep jumping, dodge and grenade bindings distinct across keyboard, controller and touch. Inspect elevated projectile origins, melee/AOE/contact damage, falling supports and safe recovery. Use two agents for isolated implementation/review work. See [4.42 evidence](RELEASE-4.42.md) and [the next integration plan](TRAVERSAL-INTEGRATION.md).

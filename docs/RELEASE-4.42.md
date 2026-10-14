@@ -34,6 +34,8 @@ Initial 1280×720 browser probes showed unchanged draw calls and a small reducti
 - Desktop and 390×844 / 844×390 crowded HUD fixtures were inspected. Active effects moved above the weapon panel to stop overlapping destination text. The scripted touch dodge retained its held movement stick and travelled 5.75 m. Physical phone multitouch remains unverified.
 - The exact Mac package booted with its normal hardware backend on an Apple Silicon M4 Max. A disposable-profile gameplay check covered combat, a wave upgrade, dodge, grenade use, Focus, weapon evolution and tracked map guidance. No personal save was changed.
 
+Both [Pages deployment](https://github.com/iamknow0ne/zombibagarre/actions/runs/38560900979) and [Mac CI](https://github.com/iamknow0ne/zombibagarre/actions/runs/38560966684) passed for `cc5358e`. This Mac runner exposed a Metal device and passed the packaged-app hardware boot, in addition to the local exact-release-archive test.
+
 **[macOS test download](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.42.0)** · Apple Silicon · macOS 13+ · ad-hoc signed, not notarized. Apple ID / Developer ID work is deferred.
 
 Archive: `Zombie-Bagarre-4.42.0-macOS-arm64.zip` (133,441,009 bytes).
