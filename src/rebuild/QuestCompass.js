@@ -36,7 +36,7 @@ export class QuestCompass{
  constructor(){this.hero=new Vector3();this.turn=new Vector3();this.drawn=false;}
  draw(ctx,hint,sim,camera,width,height,reserved,mobile){
   this.drawn=false;if(!hint||!['playing','extracting'].includes(sim.state))return;
-  this.hero.set(sim.player.x,.15,sim.player.z).project(camera);
+  this.hero.set(sim.player.x,(sim.player.y||0)+.15,sim.player.z).project(camera);
   this.turn.set(hint.next.x,.15,hint.next.z).project(camera);
   if(Math.abs(this.hero.x)>1||Math.abs(this.hero.y)>1||Math.abs(this.hero.z)>1)return;
   const anchor={x:(this.hero.x*.5+.5)*width,y:(-.5*this.hero.y+.5)*height};

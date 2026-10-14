@@ -7,12 +7,22 @@ import {insideMap} from './Map.js';
 import {pointBlocked} from './config.js';
 import {glyph} from './ControllerConfig.js';
 export function moveMapCursor(cursor,stick,dt){return {x:Math.max(.02,Math.min(.98,cursor.x+stick.x*dt*.65)),y:Math.max(.02,Math.min(.98,cursor.y+stick.y*dt*.65))};}
+// Capture is optional: cancelled native pointers can reject it. Window release
+// and zero-button movement still end a drag, without placing a stray marker.
+export function bindMapPointerPan(map){
+ const canvas=map.canvas;let drag=null;
+ const end=(e,cancel=false)=>{if(!drag||(e?.pointerId!==undefined&&e.pointerId!==drag.id))return;if(drag.moved||cancel)map.ignoreDragClickUntil=performance.now()+300;drag=null;};
+ canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||drag)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY,moved:false};try{canvas.setPointerCapture(e.pointerId);}catch{/* Continue without capture; global release/cancel remains installed. */}});
+ canvas.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id||e.pointerType==='touch')return;if(e.buttons===0){end(e,true);return;}const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!drag.moved&&Math.hypot(dx,dy)<5)return;drag.moved=true;const rect=canvas.getBoundingClientRect(),b=map.getSim().layout.bounds,span=(Math.max(b.maxX-b.minX,b.maxZ-b.minZ)+12)/map.view.zoom;map.view.x-=dx/rect.width*span;map.view.z-=dy/rect.height*span;drag.x=e.clientX;drag.y=e.clientY;map.clampView();map.draw();});
+ for(const target of [canvas,window]){target.addEventListener('pointerup',e=>end(e));target.addEventListener('pointercancel',e=>end(e,true));}
+ canvas.addEventListener('lostpointercapture',e=>end(e,true));window.addEventListener('blur',()=>end(null,true));map.dialog.addEventListener('close',()=>end(null,true));
+}
 export class ControllerMap{
  constructor(getSim,input){this.getSim=getSim;this.input=input;this.canvas=document.getElementById('city-atlas');this.dialog=document.getElementById('map-dialog');this.view={zoom:1};this.cursor={x:.5,y:.5};
   this.canvas.tabIndex=0;this.canvas.setAttribute('aria-label','City street map. Drag to pan, pinch to zoom, tap to mark. Right stick moves cursor; Cross places marker.');
   this.canvas.onclick=e=>{if(e.pointerType!=='touch'&&performance.now()>(this.ignoreTouchClickUntil||0)&&performance.now()>(this.ignoreDragClickUntil||0))this.mark(atlasPoint(this.canvas,getSim().layout,e,this.view));};
   this.canvas.addEventListener('touch-map-tap',e=>this.mark(atlasPoint(this.canvas,getSim().layout,e.detail,this.view)));bindTouchMap(this);
-  window.addEventListener('resize',()=>{if(this.dialog.open)this.draw();});let drag=null;this.canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return;drag={x:e.clientX,y:e.clientY,moved:false};this.canvas.setPointerCapture(e.pointerId);});this.canvas.addEventListener('pointermove',e=>{if(!drag||e.pointerType==='touch')return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!drag.moved&&Math.hypot(dx,dy)<5)return;drag.moved=true;const rect=this.canvas.getBoundingClientRect(),b=this.getSim().layout.bounds,span=(Math.max(b.maxX-b.minX,b.maxZ-b.minZ)+12)/this.view.zoom;this.view.x-=dx/rect.width*span;this.view.z-=dy/rect.height*span;drag.x=e.clientX;drag.y=e.clientY;this.clampView();this.draw();});for(const type of ['pointerup','pointercancel'])this.canvas.addEventListener(type,()=>{if(drag?.moved)this.ignoreDragClickUntil=performance.now()+300;drag=null;});this.canvas.addEventListener('wheel',e=>{e.preventDefault();this.zoom(e.deltaY<0?.25:-.25);},{passive:false});
+  window.addEventListener('resize',()=>{if(this.dialog.open)this.draw();});bindMapPointerPan(this);this.canvas.addEventListener('wheel',e=>{e.preventDefault();this.zoom(e.deltaY<0?.25:-.25);},{passive:false});
   this.canvas.addEventListener('keydown',e=>{const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(d){e.preventDefault();this.cursor=moveMapCursor(this.cursor,{x:d[0],y:d[1]},.045);this.draw();}if(e.key==='Enter'){e.preventDefault();this.markCursor();}});
   document.getElementById('atlas-mission-peek').onclick=()=>{document.querySelector('[aria-label="Map contract"]')?.focus();};document.getElementById('map-objective').onclick=()=>this.objective();document.getElementById('map-clear').onclick=()=>this.clear();document.getElementById('map-center').onclick=()=>this.center();
   document.getElementById('map-zoom-in').onclick=()=>this.zoom(.5);document.getElementById('map-zoom-out').onclick=()=>this.zoom(-.5);

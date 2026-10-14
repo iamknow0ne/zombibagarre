@@ -5,7 +5,9 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {desktopTarget} from './desktop-target.mjs';
+import {desktopOutputDir} from './desktop-output.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const outputDir=desktopOutputDir(process.argv.slice(2),root);
 const pkg=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
 const {platform,arch,name,executableName}=desktopTarget(process.argv.slice(2));
 const stage=path.join(root,'.desktop-build',platform+'-'+arch,'app');
@@ -34,7 +36,7 @@ if(platform==='darwin'){
    // when a real signing identity and notarization are configured.
    optionsForFile:()=>({entitlements:['com.apple.security.cs.allow-jit'],hardenedRuntime:false})}});
 }
-const [output]=await packager({dir:stage,out:path.join(root,'release'),name,executableName,platform,arch,
+const [output]=await packager({dir:stage,out:outputDir,name,executableName,platform,arch,
   electronVersion:pkg.devDependencies.electron,asar:true,overwrite:true,prune:false,appBundleId:'games.zombibagarre.quarantine',appVersion:pkg.version,...macOptions});
 if(platform==='linux'){
  await cp(path.join(root,'desktop','launch.sh'),path.join(output,'launch.sh'));
@@ -44,17 +46,17 @@ if(platform==='linux'){
  await cp(path.join(root,'docs','STEAM-DECK.md'),path.join(output,'START-HERE.md'));
  await chmod(path.join(output,'launch.sh'),0o755);await chmod(path.join(output,'Install Zombie Bagarre.sh'),0o755);
  await chmod(path.join(output,'Launch OpenGL.sh'),0o755);
- const name=`Zombie-Bagarre-${pkg.version}-SteamDeck-x86_64.tar.gz`,archive=path.join(root,'release',name);
+ const name=`Zombie-Bagarre-${pkg.version}-SteamDeck-x86_64.tar.gz`,archive=path.join(outputDir,name);
  execFileSync('tar',['-czf',archive,'-C',path.dirname(output),path.basename(output)],{stdio:'inherit'});
  const digest=createHash('sha256').update(await readFile(archive)).digest('hex');
- await writeFile(path.join(root,'release',name+'.sha256'),`${digest}  ${name}\n`);
+ await writeFile(path.join(outputDir,name+'.sha256'),`${digest}  ${name}\n`);
  console.log(`Steam Deck download: ${archive}`);
 }
 if(platform==='darwin'){
  const app=path.join(output,'Zombie Bagarre.app');
  execFileSync('/usr/bin/codesign',['--verify','--deep','--strict','--verbose=2',app],{stdio:'inherit'});
  await cp(path.join(root,'docs','MACOS.md'),path.join(output,'START-HERE.md'));
- const archiveName=`Zombie-Bagarre-${pkg.version}-macOS-${arch}.zip`,archive=path.join(root,'release',archiveName);
+ const archiveName=`Zombie-Bagarre-${pkg.version}-macOS-${arch}.zip`,archive=path.join(outputDir,archiveName);
  // ditto preserves macOS app symlinks and resource metadata.
  await rm(archive,{force:true});execFileSync('/usr/bin/ditto',['-c','-k','--sequesterRsrc','--keepParent',output,archive],{stdio:'inherit'});
  const digest=createHash('sha256').update(await readFile(archive)).digest('hex');

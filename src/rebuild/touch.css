@@ -109,3 +109,17 @@
 .touch-icon-legend .icon-action{gap:7px;justify-content:flex-start}.touch-icon-legend .action-symbol svg{width:20px;height:20px;color:var(--bone)}
 .touch-layout.driving #field-notices{right:calc(var(--touch-right) + 52px)}
 .touch-layout .driving-hud{width:calc(100% - var(--touch-left) - var(--touch-right) - 112px)}
+
+/* Traversal extends the field kit by one contextual row; combat controls stay put. */
+#traversal-actions{position:absolute;bottom:108px;left:50%;transform:translateX(-50%);display:flex;gap:8px;pointer-events:none}
+#traversal-actions button{display:flex;align-items:center;gap:6px;min-height:44px;padding:8px 10px;background:var(--coal);border:1px solid var(--line);color:var(--bone);font:9px var(--mono);touch-action:none;pointer-events:auto}
+#traversal-actions .action-symbol{display:inline-flex;width:22px;height:22px}
+#traversal-actions .action-symbol svg{width:100%;height:100%}
+#traversal-actions button:disabled{cursor:default;opacity:.45}
+#traversal-actions button.attached{border-color:var(--orange);color:var(--orange)}
+.touch-layout #traversal-actions{left:auto;right:var(--touch-right);bottom:calc(var(--touch-bottom) + 212px);transform:none}
+.touch-layout #traversal-actions button{width:48px;height:48px;justify-content:center;padding:8px;border-radius:50%;opacity:var(--touch-opacity);border-color:#b6c0ae80}
+.touch-layout #traversal-actions button:disabled{opacity:.4}
+.touch-layout #traversal-actions button.attached{border-color:var(--orange)}
+.touch-layout #traversal-actions .action-value{display:none}
+@media(orientation:landscape) and (max-height:600px){.touch-layout #traversal-actions{bottom:calc(var(--touch-bottom) + 184px)}}

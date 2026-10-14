@@ -2,7 +2,7 @@
 
 14 October 2026. Apple signing/notarization, Steam Deck troubleshooting and other ports remain deferred. Work is staged into tested releases, not an assertion that the whole game is finished.
 
-## Active milestone — performance and reliability
+## Completed milestone — performance and reliability
 
 - [x] Capture fixed-seed city and combat frame-time baselines; add destruction/weather/long-session coverage.
 - [x] Fix measured rendering hot paths or resource growth without lowering visible quality.
@@ -13,7 +13,8 @@
 
 ## Following milestones
 
-- [ ] Integrate jumping/grappling with main-world collision, combat and all input modes.
+- [x] Integrate the first low-platform Open City traversal route with height-aware combat and keyboard/controller/touch inputs (4.43).
+- [ ] Extend traversal to curated service roofs with accurate parapet/accessory collision and elevated enemy threats.
 - [ ] Finish perspective-mode aiming, collision and visibility validation.
 - [ ] Ship one useful enterable workshop and apartment loot quest, with stable identifiers and safe exits.
 - [ ] Add region travel/save boundaries, then the country road and hidden hangar chapter.
@@ -29,4 +30,4 @@ Root: browser profiling, normal playthrough, integration and release. Performanc
 
 ## Next concrete slice
 
-Complete main-world traversal design and collision/combat integration before introducing interiors. Keep jumping, dodge and grenade bindings distinct across keyboard, controller and touch. Inspect elevated projectile origins, melee/AOE/contact damage, falling supports and safe recovery. Use two agents for isolated implementation/review work. See [4.42 evidence](RELEASE-4.42.md) and [the next integration plan](TRAVERSAL-INTEGRATION.md).
+The first Open City service route is implemented and tested in 4.43. Next, validate longer ordinary gameplay and perspective visibility, then build one enterable workshop and an apartment loot quest with safe exits. Keep jumping, dodge and grenade bindings distinct across keyboard, controller and touch. Inspect elevated projectile origins, melee/AOE/contact damage, falling supports and safe recovery. Use two agents for isolated implementation/review work. See [4.43 evidence](RELEASE-4.43.md) and [the traversal scope](TRAVERSAL-INTEGRATION.md).

@@ -12,10 +12,18 @@ export function stepFragment(e,dt,ground=.065){
 // Swept volumes keep fast rounds from tunnelling through cover or bodies.
 export const actorHeight=e=>e.bossHeight||(e.crawling?.65:e.type==='brute'?2.5:1.85);
 export const propHeight=o=>o.h||({car:1.8,barrier:1.1,barrel:1.3,crate:1.5,rock:2.2,tree:6,planter:4,building:12}[o.kind]||1.5);
+// Actor coordinates describe their feet; prop coordinates describe the bottom
+// of their collision box. Missing height remains the original ground plane.
+export const feetHeight=e=>Number.isFinite(e?.y)?e.y:0;
+export const actorSpan=e=>({min:feetHeight(e),max:feetHeight(e)+actorHeight(e)});
+export const propSpan=o=>({min:feetHeight(o),max:feetHeight(o)+propHeight(o)});
+export const verticalGap=(a,b)=>Math.max(0,a.min-b.max,b.min-a.max);
+export const heightGap=(y,span)=>Math.max(0,span.min-y,y-span.max);
+
 function interval(a,d,min,max){if(Math.abs(d)<1e-9)return a>=min&&a<=max?[-Infinity,Infinity]:null;const t1=(min-a)/d,t2=(max-a)/d;return[Math.min(t1,t2),Math.max(t1,t2)];}
 function overlap(ranges){if(ranges.some(r=>!r))return null;const enter=Math.max(0,...ranges.map(r=>r[0])),exit=Math.min(1,...ranges.map(r=>r[1]));return enter<=exit?enter:null;}
-export function boxHit3D(a,b,o){return overlap([interval(a.x,b.x-a.x,o.x-o.w/2,o.x+o.w/2),interval(a.z,b.z-a.z,o.z-o.d/2,o.z+o.d/2),interval(a.y,b.y-a.y,0,propHeight(o))]);}
-export function bodyHit3D(a,b,e,padding=0){const dx=b.x-a.x,dz=b.z-a.z,x=a.x-e.x,z=a.z-e.z,r=e.radius+padding,A=dx*dx+dz*dz,B=2*(x*dx+z*dz),C=x*x+z*z-r*r;let horizontal;if(A<1e-12)horizontal=C<=0?[-Infinity,Infinity]:null;else{const disc=B*B-4*A*C;if(disc<0)return null;const root=Math.sqrt(disc);horizontal=[(-B-root)/(2*A),(-B+root)/(2*A)];}return overlap([horizontal,interval(a.y,b.y-a.y,0,actorHeight(e))]);}
+export function boxHit3D(a,b,o){const span=propSpan(o);return overlap([interval(a.x,b.x-a.x,o.x-o.w/2,o.x+o.w/2),interval(a.z,b.z-a.z,o.z-o.d/2,o.z+o.d/2),interval(a.y,b.y-a.y,span.min,span.max)]);}
+export function bodyHit3D(a,b,e,padding=0){const span=actorSpan(e),dx=b.x-a.x,dz=b.z-a.z,x=a.x-e.x,z=a.z-e.z,r=e.radius+padding,A=dx*dx+dz*dz,B=2*(x*dx+z*dz),C=x*x+z*z-r*r;let horizontal;if(A<1e-12)horizontal=C<=0?[-Infinity,Infinity]:null;else{const disc=B*B-4*A*C;if(disc<0)return null;const root=Math.sqrt(disc);horizontal=[(-B-root)/(2*A),(-B+root)/(2*A)];}return overlap([horizontal,interval(a.y,b.y-a.y,span.min,span.max)]);}
 export function perspectiveTarget(origin,yaw,pitch,props=[],enemies=[],range=90){const end={x:origin.x+Math.sin(yaw)*Math.cos(pitch)*range,y:origin.y-Math.sin(pitch)*range,z:origin.z+Math.cos(yaw)*Math.cos(pitch)*range};let t=1,targetId=null;
  for(const o of props){if(o.health<=0)continue;const hit=boxHit3D(origin,end,o);if(hit!==null&&hit<t){t=hit;targetId=null;}}
  for(const e of enemies){if(e.health<=0)continue;const hit=bodyHit3D(origin,end,e,.04);if(hit!==null&&hit<t){t=hit;targetId=e.id;}}

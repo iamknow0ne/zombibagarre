@@ -1,4 +1,4 @@
-import {BINDINGS} from './ControllerConfig.js';
+import {BINDINGS,rebind} from './ControllerConfig.js';
 // Profiles alter presentation only. No difficulty, enemy, loot or input changes.
 export const DECK_PROFILES={
   balanced:{quality:'balanced',lightingDetail:'standard',foliageDetail:'standard',environmentDetail:'standard',populationDetail:'sparse',weatherEffects:'full',resolutionScale:1,frameLimit:60},
@@ -6,7 +6,7 @@ export const DECK_PROFILES={
   battery:{quality:'low',lightingDetail:'low',foliageDetail:'sparse',environmentDetail:'minimal',populationDetail:'off',weatherEffects:'subtle',resolutionScale:.85,frameLimit:30},
 };
 export function desktopDefaults(bridge){
-  return bridge?.steamDeck?{...DECK_PROFILES.balanced,bindings:{...BINDINGS,rightFire:7},promptStyle:'xbox',drivingStyle:'assisted'}:{};
+  return bridge?.steamDeck?{...DECK_PROFILES.balanced,bindings:rebind(BINDINGS,'rightFire',7),promptStyle:'xbox',drivingStyle:'assisted'}:{};
 }
 export function renderPixelRatio(settings,dpr=1){
   const cap=settings.quality==='high'?2:settings.quality==='low'?1:1.35;

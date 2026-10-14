@@ -21,7 +21,7 @@ export class CombatOverlay {
  project(x,y,z,camera){const p=this.point.set(x,y,z).project(camera);return p.z>=-1&&p.z<=1&&Math.abs(p.x)<1.1&&Math.abs(p.y)<1.1?{x:(p.x*.5+.5)*this.w,y:(-.5*p.y+.5)*this.h}:null;}
  drawProgression(sim,camera,place){
   if(this.settings.progressionPopups===false||!this.progression?.items.length)return;
-  const anchor=this.project(sim.player.x,2.8,sim.player.z,camera);if(!anchor)return;const c=this.ctx;
+  const anchor=this.project(sim.player.x,(sim.player.y||0)+2.8,sim.player.z,camera);if(!anchor)return;const c=this.ctx;
   for(const [i,item]of this.progression.items.slice(0,this.mobile?1:3).entries()){
    const age=this.progression.clock-item.born,width=Math.min(this.w-20,this.mobile?176:280),height=this.mobile?36:46;
    const p=place({x:Math.max(width/2+8,Math.min(this.w-width/2-8,anchor.x)),y:anchor.y-34-i*52-(this.settings.reducedMotion?0:Math.min(age,.2)*30)},width,height);if(!p)continue;
@@ -42,7 +42,7 @@ export class CombatOverlay {
   this.drawProgression(sim,camera,place);
   if(this.settings.enemyHealthBars!==false){let count=0;for(const e of [...sim.enemies].sort((a,b)=>Math.hypot(a.x-sim.player.x,a.z-sim.player.z)-Math.hypot(b.x-sim.player.x,b.z-sim.player.z))){
    if(e.health<=0||e.health>=e.maxHealth||count>=(this.mobile?10:32))continue;const state=this.bars.get(e.id);if(!state||this.feed.clock-state.hitAt>4)continue;
-   const p=this.project(e.x,this.height(e),e.z,camera);if(!p||p.y<20||p.y>h-20)continue;count++;
+   const p=this.project(e.x,(e.y||0)+this.height(e),e.z,camera);if(!p||p.y<20||p.y>h-20)continue;count++;
    const width=(e.enemyType||e.type)==='boss'?88:(e.enemyType||e.type)==='brute'?47:34,height=(e.enemyType||e.type)==='boss'?6:4,y=p.y;
    if(overlaps({x:p.x,y:y+2,w:width,h:height+4}))continue;this.drawnBars++;
    if(this.feed.clock-state.hitAt>.22)state.trail+=(e.health-state.trail)*(1-Math.exp(-dt*6));
@@ -52,7 +52,7 @@ export class CombatOverlay {
   if(this.settings.damageNumbers===false)return;
   for(const hit of [...this.feed.hits].sort((a,b)=>Number(b.critical)-Number(a.critical)||b.amount-a.amount)){
    if(this.mobile&&this.drawnNumbers>=10)break;
-   const p=this.project(hit.x,this.height(hit)+.2,hit.z,camera);if(!p)continue;
+   const p=this.project(hit.x,(hit.y||0)+this.height(hit)+.2,hit.z,camera);if(!p)continue;
    const age=this.feed.clock-hit.born,reduced=this.settings.reducedMotion,emphasis=hit.critical&&this.settings.criticalCallouts!==false;
    const size=damageSize(hit.amount,emphasis)*(w<520?.84:1),pulse=reduced?1:1+Math.max(0,1-(this.feed.clock-hit.pulse)/.16)*(emphasis?.22:.10);
    const text=damageText(hit.amount),style=damageStyle(hit),label=hit.execution?'EXECUTE':hit.finisher?(emphasis?'CRIT · CUT':'FINISHER'):hit.headshot?(emphasis?'CRIT · HEAD':'HEADSHOT'):emphasis?'CRIT ×2':hit.kind==='fire'?'BURN':hit.kind==='electric'?'SHOCK':hit.kind==='slice'?'SLICE':hit.kind==='explosion'?'BLAST':'';

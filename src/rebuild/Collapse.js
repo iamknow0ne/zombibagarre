@@ -1,3 +1,4 @@
+import {actorSpan,verticalGap} from './Ballistics.js';
 import {seededRandom,clamp,segmentBoxTime} from './config.js';
 import {waterAt} from './City.js';
 
@@ -51,7 +52,7 @@ export function updateCollapse(sim,dt){
      c.w*=.62;c.d*=.62;
     }c.vy=speed*.14;c.vx*=.48;c.vz*=.48;c.spinX*=.25;c.spinZ*=.25;
     if(speed>2&&impactBudget-->0&&!wet)sim.emit('structural-impact',{x:c.x,z:c.z,y:c.y,material:c.material,power:clamp(speed/3,1,5),size:Math.sqrt(c.w*c.d)});
-    if(speed>3&&!c.struck&&!roof){c.struck=true;const radius=Math.max(.8,Math.min(2.5,Math.hypot(c.w,c.d)*.45));for(const e of sim.enemies)if(e.health>0&&Math.hypot(e.x-c.x,e.z-c.z)<radius)sim.damageEnemy(e,speed*8,0,0,{kind:'impact'});if(Math.hypot(sim.player.x-c.x,sim.player.z-c.z)<radius)sim.damagePlayer(Math.min(45,speed*2));}
+    if(speed>3&&!c.struck&&!roof){c.struck=true;const radius=Math.max(.8,Math.min(2.5,Math.hypot(c.w,c.d)*.45));for(const e of sim.enemies)if(e.health>0&&verticalGap(actorSpan(e),{min:bed,max:bed+.9})===0&&Math.hypot(e.x-c.x,e.z-c.z)<radius)sim.damageEnemy(e,speed*8,0,0,{kind:'impact'});if(verticalGap(actorSpan(sim.player),{min:bed,max:bed+.9})===0&&Math.hypot(sim.player.x-c.x,sim.player.z-c.z)<radius)sim.damagePlayer(Math.min(45,speed*2));}
     if(speed<2||c.bounces>=3||c.age>10){
      c.sleep=true;c.vx=c.vy=c.vz=0;c.rx=c.restX;c.rz=c.restZ;
      // Wall sections lie down after impact; floor sections retain their broad shape.

@@ -1,10 +1,10 @@
-// Opt-in traversal physics. The campaign stays planar until combat and AI support
-// height. All positions are feet coordinates; collision boxes share the render plan.
-import {boxHit3D} from './Ballistics.js';
+// Shared traversal physics for the trainer and height-aware campaign movement.
+// All positions are feet coordinates; collision boxes share the render plan.
+import {boxHit3D,feetHeight,propSpan} from './Ballistics.js';
 export const TRAVERSAL={gravity:24,jumpSpeed:9.4,speed:6.2,airControl:7,range:23,grappleSpeed:14,bodyHeight:1.75};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const alive=b=>b.health===undefined||b.health>0;
-const top=b=>(b.y||0)+b.h;
+const top=b=>propSpan(b).max;
 const onBox=(p,b,margin=0)=>Math.abs(p.x-b.x)<b.w/2-margin&&Math.abs(p.z-b.z)<b.d/2-margin;
 export function initTraversal(p,spawn={x:0,y:0,z:7}){
  Object.assign(p,spawn,{traversal:true,vy:0,vx:0,vz:0,grounded:true,supportId:null,grapple:null,grappleCooldown:0,jumpBuffer:0,coyote:.1,landing:0,moveX:0,moveZ:0,moving:false,dash:0});return p;
@@ -15,23 +15,31 @@ export function supportBelow(p,boxes,ceiling=p.y+.06){
 export function grappleAvailability(p,anchor,boxes){
  if(!anchor)return 'No anchor selected';
  const owner=boxes.find(b=>b.id===anchor.supportId);if(!owner||!alive(owner))return 'Anchor lost';
- const from={x:p.x,y:p.y+1.2,z:p.z};
+ const from={x:p.x,y:feetHeight(p)+1.2,z:p.z};
  if(Math.hypot(anchor.x-from.x,anchor.y-from.y,anchor.z-from.z)>TRAVERSAL.range)return 'Move closer';
- for(const b of boxes){if(!alive(b))continue;const base=b.y||0;const hit=boxHit3D({...from,y:from.y-base},{...anchor,y:anchor.y-base},{...b,h:b.h});if(hit!==null&&hit<.995)return 'Anchor obstructed';}
+ for(const b of boxes){if(!alive(b))continue;const hit=boxHit3D(from,anchor,b);if(hit!==null&&hit<.995)return 'Anchor obstructed';}
  return null;
 }
-function moveAxis(p,delta,axis,boxes,bounds){
+function moveAxis(p,delta,axis,boxes,bounds,bodyHeight){
  if(!delta)return false;const other=axis==='x'?'z':'x',size=axis==='x'?'w':'d',cross=axis==='x'?'d':'w',r=p.radius,old=p[axis];
  let next=clamp(old+delta,bounds[axis==='x'?'minX':'minZ']+r,bounds[axis==='x'?'maxX':'maxZ']-r);
- for(const b of boxes){if(!alive(b)||p.y>=top(b)-.015||p.y+TRAVERSAL.bodyHeight<=(b.y||0)+.01||Math.abs(p[other]-b[other])>=b[cross]/2+r-.001)continue;
+ for(const b of boxes){if(!alive(b)||p.y>=top(b)-.015||p.y+bodyHeight<=feetHeight(b)+.01||Math.abs(p[other]-b[other])>=b[cross]/2+r-.001)continue;
   const lo=b[axis]-b[size]/2-r,hi=b[axis]+b[size]/2+r;
   if(delta>0&&old<=lo+.001&&next>lo)next=Math.min(next,lo);
   else if(delta<0&&old>=hi-.001&&next<hi)next=Math.max(next,hi);
  }
  p[axis]=next;return Math.abs(next-old-delta)>.001;
 }
-export function stepTraversal(p,input,dt,boxes,anchors,bounds){
+// Optional movement config keeps trainer defaults while allowing the campaign
+// to preserve RPG speed, combat facing and externally calculated dodge/weather
+// velocity. desiredVelocity is authoritative; traction affects normal steering
+// only while grounded. Grappling retains control of its own pull velocity.
+export function stepTraversal(p,input,dt,boxes,anchors,bounds,movement={}){
  const events=[];dt=clamp(dt,0,.05);if(!dt)return events;
+ const nonnegative=(value,fallback)=>Number.isFinite(value)&&value>=0?value:fallback;
+ const speed=nonnegative(movement.speed,TRAVERSAL.speed),traction=nonnegative(movement.traction,24),airControl=nonnegative(movement.airControl,TRAVERSAL.airControl);
+ const bodyHeight=Number.isFinite(movement.bodyHeight)&&movement.bodyHeight>0?movement.bodyHeight:TRAVERSAL.bodyHeight;
+ const velocity=movement.desiredVelocity,driven=Number.isFinite(velocity?.x)&&Number.isFinite(velocity?.z);
  if(input.jump)p.jumpBuffer=.14;
  if(input.grapple){
   if(p.grapple){p.grapple=null;p.grappleCooldown=.25;events.push({type:'release'});}
@@ -53,18 +61,18 @@ export function stepTraversal(p,input,dt,boxes,anchors,bounds){
     if(d<.55){p.grapple=null;p.vx=p.vz=0;p.vy=0;p.grappleCooldown=.35;events.push({type:'reel-complete'});}
     else{const speed=Math.min(TRAVERSAL.grappleSpeed,Math.max(3,d*4)),blend=1-Math.exp(-9*h);p.vx+=(dx/d*speed-p.vx)*blend;p.vz+=(dz/d*speed-p.vz)*blend;p.vy+=(dy/d*speed-p.vy)*blend;}
    }
-  }else{const blend=1-Math.exp(-(p.grounded?24:TRAVERSAL.airControl)*h);p.vx+=(mx*TRAVERSAL.speed-p.vx)*blend;p.vz+=(mz*TRAVERSAL.speed-p.vz)*blend;p.vy-=TRAVERSAL.gravity*h;}
+  }else{if(driven){p.vx=velocity.x;p.vz=velocity.z;}else{const blend=1-Math.exp(-(p.grounded?traction:airControl)*h);p.vx+=(mx*speed-p.vx)*blend;p.vz+=(mz*speed-p.vz)*blend;}p.vy-=TRAVERSAL.gravity*h;}
   const beforeY=p.y;let nextY=p.y+p.vy*h;
   // Ascend before lateral collision so feet can clear a ledge. Descend after
   // lateral movement so swept landing selects the surface actually underneath.
-  if(p.vy>0){let ceiling=Infinity;for(const b of boxes)if(alive(b)&&(b.y||0)>0&&onBox(p,b,-p.radius)&&beforeY+TRAVERSAL.bodyHeight<=b.y+.001&&nextY+TRAVERSAL.bodyHeight>=b.y)ceiling=Math.min(ceiling,b.y-TRAVERSAL.bodyHeight);p.y=Math.min(nextY,ceiling);if(ceiling<Infinity){p.vy=0;nextY=p.y;}}
-  if(moveAxis(p,p.vx*h,'x',boxes,bounds))p.vx=0;
-  if(moveAxis(p,p.vz*h,'z',boxes,bounds))p.vz=0;
+  if(p.vy>0){let ceiling=Infinity;for(const b of boxes)if(alive(b)&&feetHeight(b)>0&&onBox(p,b,-p.radius)&&beforeY+bodyHeight<=feetHeight(b)+.001&&nextY+bodyHeight>=feetHeight(b))ceiling=Math.min(ceiling,feetHeight(b)-bodyHeight);p.y=Math.min(nextY,ceiling);if(ceiling<Infinity){p.vy=0;nextY=p.y;}}
+  if(moveAxis(p,p.vx*h,'x',boxes,bounds,bodyHeight))p.vx=0;
+  if(moveAxis(p,p.vz*h,'z',boxes,bounds,bodyHeight))p.vz=0;
   if(p.vy<=0){const support=supportBelow(p,boxes,beforeY+.025);p.y=nextY;if(p.y<=support.y){const falling=p.vy;p.y=support.y;p.vy=0;if(!p.grounded&&falling<-.8){p.landing=clamp(-falling/23,.12,.75);events.push({type:'land',speed:-falling,supportId:support.id});}p.grounded=true;p.supportId=support.id;}}
   else p.grounded=false;
  }
  p.moveX=(p.x-oldX)/dt;p.moveZ=(p.z-oldZ)/dt;p.moving=p.grounded&&Math.hypot(p.moveX,p.moveZ)>.08;
- if(Math.hypot(p.moveX,p.moveZ)>.15)p.angle=Math.atan2(p.moveX,p.moveZ);
+ if(!movement.preserveFacing&&Math.hypot(p.moveX,p.moveZ)>.15)p.angle=Math.atan2(p.moveX,p.moveZ);
  return events;
 }
 export function coursePlan(){

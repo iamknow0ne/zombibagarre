@@ -25,7 +25,7 @@ test('two thumbs own separate pointers; releasing aim preserves movement, cancel
 });
 test('touch assist respects direction, dead targets and cover without snapping behind the player',()=>{
  const sim={player:{x:0,z:0},enemies:[{id:1,x:7.76,z:-6.3,health:10},{id:2,x:-7.76,z:6.3,health:10}],blocked:()=>false};
- assert.deepEqual(touchAimTarget({x:1,y:0},sim),{x:7.76,z:-6.3});sim.blocked=()=>true;assert.notDeepEqual(touchAimTarget({x:1,y:0},sim),{x:7.76,z:-6.3});assert.deepEqual(touchAimTarget({x:1,y:0},sim,false),touchAimTarget({x:1,y:0},sim,true));
+ assert.deepEqual(touchAimTarget({x:1,y:0},sim),{x:7.76,y:1.11,z:-6.3,targetId:1});sim.blocked=()=>true;assert.equal(touchAimTarget({x:1,y:0},sim).targetId,undefined);assert.deepEqual(touchAimTarget({x:1,y:0},sim,false),touchAimTarget({x:1,y:0},sim,true));
 });
 test('touch aiming attacks both guns, overrides auto fire, retains grenade direction, and clear stops attacks',()=>{
  const sim=new Simulation({layout:{cover:[]}});sim.start();sim.setLoadout(['carbine','smg']);sim.spawnEnemy('brute',6,-2);const input=Object.create(Input.prototype);Object.assign(input,{source:'touch',settings:touchSettings(),keys:new Set(),once:{grenade:true},stick:{x:.5,y:0},touchAim:{x:1,y:0},touchFiring:true,pointer:{active:false}});

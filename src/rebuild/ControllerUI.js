@@ -1,4 +1,5 @@
 import {ControllerSetup} from './ControllerSetup.js';
+import {TraversalControlsUI} from './TraversalControlsUI.js';
 import {usesTouchLayout,writeHUD} from './HUDPresentation.js';
 import {ControllerDiagram} from './ControllerDiagram.js';
 import {weaponTier,TIER_MARKS} from './Evolution.js';
@@ -26,7 +27,8 @@ export class ControllerUI{
   $('reset-controller').onclick=()=>{this.setup.stop('Controller controls reset.');delete settings.rawMapping;Object.assign(settings,CONTROL_DEFAULTS,{bindings:{...BINDINGS}});haptics.stop();dualsense.stop();onAuto(settings.autoFire);this.renderBindings();this.syncValues();onSave();};
   $('test-vibration').onclick=()=>{const source=input.source;input.source='gamepad';haptics.event({type:'shoot',weapon:'shotgun'});input.source=source;};
   $('connect-dualsense').disabled=!navigator.hid;$('connect-dualsense').onclick=async()=>{await dualsense.connect();this.syncValues();onSave();};$('disconnect-dualsense').onclick=()=>dualsense.disconnect();
-  this.renderBindings();this.syncValues();
+  this.renderBindings();this.syncValues();this.traversal=new TraversalControlsUI(input,settings);
+  const traversalNote=document.createElement('p');traversalNote.className='control-note';traversalNote.textContent='Traversal areas: J jumps, G grapples or releases the cable. The default controller uses R1 / RB to jump and R2 / RT to grapple. These are separate from dodge and ordnance. Presets may move them; the diagram and bindings above always show your current layout.';$('controller-bindings').after(traversalNote);
   for(const dialog of document.querySelectorAll('dialog')){const hint=document.createElement('div');hint.className='controller-menu-hint';dialog.append(hint);}
  }
  syncValues(){for(const key of Object.keys(CONTROL_DEFAULTS).filter(k=>k!=='bindings')){const el=$('control-'+key);if(el.type==='checkbox')el.checked=!!this.settings[key];else el.value=this.settings[key];const value=$('value-'+key);if(value)value.textContent=key==='vibration'?this.settings[key]+'%':this.settings[key].toFixed(2);}this.diagram?.update();}
@@ -34,6 +36,7 @@ export class ControllerUI{
  prompt(action,fallback){return this.input.source==='gamepad'&&this.input.pad?glyph(this.settings.bindings[action],this.input.family):`<kbd>${fallback}</kbd>`;}
  update(sim,world,auto){
   const input=this.input,pad=input.source==='gamepad'&&input.pad,p=sim.player,touch=usesTouchLayout(input);
+  this.traversal.update(sim,touch);
   if($('settings-dialog').open)this.diagram.update();
   document.body.classList.toggle('using-gamepad',!!pad);
   if(this.lastFamily!==input.family){this.lastFamily=input.family;this.renderBindings();}

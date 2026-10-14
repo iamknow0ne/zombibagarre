@@ -1,6 +1,6 @@
 # Main-world traversal: next playable slice
 
-14 October 2026 · implementation plan from two independent code audits, not a completed feature.
+14 October 2026 · Initial low-platform route implemented in 4.43. This document retains the broader integration gates; arbitrary roofs and elevated enemy access remain future work. See [verified scope and limits](RELEASE-4.43.md).
 
 ## Delivery boundary
 

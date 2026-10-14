@@ -11,14 +11,14 @@ export function plume(world,x,y,z,size=.35,life=.5,color=0x888a80){
  if(!world.smokeTex)world.smoke(x,z,0);const m=new T.Sprite(new T.SpriteMaterial({map:world.smokeTex,color,transparent:true,opacity:.3,depthWrite:false}));m.position.set(x,y,z);m.scale.setScalar(size);m.material.rotation=world.random()*6;m.userData.disposableMaterial=true;world.scene.add(m);world.effects.push({mesh:m,kind:'smoke',vx:(world.random()-.5)*.5,vy:.4+world.random()*.5,vz:(world.random()-.5)*.5,life,max:life});
 }
 export function ejectCasing(world,e,delay=0){
- const r=world.random,m=new T.Mesh(casingGeo,brass);m.scale.setScalar(e.weapon==='shotgun'?1.4:1);m.position.set(e.x,1.25,e.z);m.rotation.set(r()*3,r()*6,1.2);m.visible=!delay;world.scene.add(m);world.effects.push({mesh:m,kind:'casing',delay,life:2.7,max:2.7,vx:Math.cos(e.angle||0)*(1.1+r()),vz:-Math.sin(e.angle||0)*(1.1+r()),vy:1.8+r(),spin:9+r()*8,bounce:.36,drag:.2,gravity:9.81});
+ const r=world.random,m=new T.Mesh(casingGeo,brass);m.scale.setScalar(e.weapon==='shotgun'?1.4:1);m.position.set(e.x,(e.y??1.1)+.15,e.z);m.rotation.set(r()*3,r()*6,1.2);m.visible=!delay;world.scene.add(m);world.effects.push({mesh:m,kind:'casing',delay,life:2.7,max:2.7,vx:Math.cos(e.angle||0)*(1.1+r()),vz:-Math.sin(e.angle||0)*(1.1+r()),vy:1.8+r(),spin:9+r()*8,bounce:.36,drag:.2,gravity:9.81});
 }
 export function weaponShot(world,e){
- const r=world.random,tier=e.tier||0,profile=WEAPON_FINISHES[e.weapon],color=profile.accent,pitch=e.pitch||0,sy=-Math.sin(pitch),sx=Math.sin(e.angle)*Math.cos(pitch),sz=Math.cos(e.angle)*Math.cos(pitch),x=e.x+sx*.9,z=e.z+sz*.9,y=1.2+sy*.9;
+ const r=world.random,tier=e.tier||0,profile=WEAPON_FINISHES[e.weapon],color=profile.accent,pitch=e.pitch||0,sy=-Math.sin(pitch),sx=Math.sin(e.angle)*Math.cos(pitch),sz=Math.cos(e.angle)*Math.cos(pitch),x=e.x+sx*.9,z=e.z+sz*.9,y=(e.y??1.1)+.1+sy*.9;
  if(e.weapon==='flame'){
   world.flame(x,z,3+tier,y,e.angle,false,false,pitch);if(tier===3)world.flame(x,z,2,y,e.angle,false,true,pitch);if(tier>=2)for(let i=0;i<2;i++)streak(world,x,y,z,sx*(8+r()*4),sy*10+r()*.7,sz*(8+r()*4),0xa6dfff,.1,.8);if((e.variant||0)%3===0)plume(world,x,y+.05,z,.5,.65,0x6a6255);
  }else if(e.weapon==='arc'){
-  world.lightning({x:x-sz*.12,z:z+sx*.12,toX:x+sz*.12,toZ:z-sx*.12,tier});for(let i=0;i<2+tier;i++)streak(world,x,y,z,(r()-.5)*3,r()*2,(r()-.5)*3,color,.12,.7);
+  world.lightning({x:x-sz*.12,z:z+sx*.12,toX:x+sz*.12,toZ:z-sx*.12,y,toY:y,tier});for(let i=0;i<2+tier;i++)streak(world,x,y,z,(r()-.5)*3,r()*2,(r()-.5)*3,color,.12,.7);
  }else{
   const heavy=['shotgun','revolver','launcher'].includes(e.weapon),count=heavy?6+tier*2:2+tier;
   for(let i=0;i<count;i++){const spread=(r()-.5)*(heavy?.9:.35),a=e.angle+spread,speed=3+r()*5;streak(world,x,y,z,Math.sin(a)*speed*Math.cos(pitch),sy*speed+(r()-.3)*2,Math.cos(a)*speed*Math.cos(pitch),color,.08+r()*.08,heavy?1.1:.65);}

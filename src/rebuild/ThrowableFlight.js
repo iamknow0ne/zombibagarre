@@ -1,13 +1,13 @@
-import {boxHit3D,propHeight} from './Ballistics.js';
+import {boxHit3D,propHeight,propSpan} from './Ballistics.js';
 import {waterAt} from './City.js';
 import {collisionCandidates} from './SpatialIndex.js';
 
 const RADIUS=.12,GROUND=.16,GRAVITY=11/(.65*.65);
 export function createThrowableFlight(h){
- return {x:h.originX,y:1.36,z:h.originZ,vx:(h.x-h.originX)/h.flight,vz:(h.z-h.originZ)/h.flight,vy:4.3/h.flight,grounded:false,supportId:null};
+ return {x:h.originX,y:(h.originY||0)+1.36,z:h.originZ,vx:(h.x-h.originX)/h.flight,vz:(h.z-h.originZ)/h.flight,vy:4.3/h.flight+((h.targetY||0)-(h.originY||0))/h.flight,grounded:false,supportId:null};
 }
 function faceAt(point,box){
- const faces=[['x',box.x-box.w/2,-1],['x',box.x+box.w/2,1],['z',box.z-box.d/2,-1],['z',box.z+box.d/2,1],['y',propHeight(box),1]];
+ const faces=[['x',box.x-box.w/2,-1],['x',box.x+box.w/2,1],['z',box.z-box.d/2,-1],['z',box.z+box.d/2,1],['y',propSpan(box).max,1],['y',propSpan(box).min,-1]];
  const [axis,edge,sign]=faces.sort((a,b)=>Math.abs(point[a[0]]-a[1])-Math.abs(point[b[0]]-b[1]))[0];
  return {axis,edge,sign};
 }
@@ -20,7 +20,7 @@ export function advanceThrowable(sim,h,dt){
  while(remaining>1e-8){
   const step=Math.min(1/120,remaining),a={x:p.x,y:p.y,z:p.z},b={x:p.x+p.vx*step,y:p.y+p.vy*step-GRAVITY*step*step*.5,z:p.z+p.vz*step};let contact=null;
   for(const o of collisionCandidates(sim,a,b,RADIUS)){
-   if(o.health<=0)continue;const box={...o,w:o.w+RADIUS*2,d:o.d+RADIUS*2,h:propHeight(o)+RADIUS},t=boxHit3D(a,b,box);
+   if(o.health<=0)continue;const box={...o,w:o.w+RADIUS*2,d:o.d+RADIUS*2,y:(o.y||0)-RADIUS,h:propHeight(o)+RADIUS*2},t=boxHit3D(a,b,box);
    if(t!==null&&(!contact||t<contact.t))contact={t,o,box};
   }
   if(b.y<=GROUND&&p.vy<0){const t=Math.max(0,Math.min(1,(a.y-GROUND)/(a.y-b.y||1)));if(!contact||t<contact.t)contact={t,ground:true};}

@@ -1,5 +1,8 @@
+import {prepareTraversalLayout,campaignTraversalBoxes} from './CampaignTraversal.js';
+import {stepTraversal,grappleAvailability} from './Traversal.js';
+import {bodyPoint,aimHeight,muzzlePoint,bodyDistance,blastDistance,meleeReaches,meleeSpan,nearGround,combatBlocked,propBlastPoint} from './CombatHeight.js';
 import {advanceThrowable} from './ThrowableFlight.js';
-import {boxHit3D,bodyHit3D,actorHeight,propHeight} from './Ballistics.js';
+import {boxHit3D,bodyHit3D,actorHeight,propHeight,feetHeight,actorSpan,propSpan,verticalGap,heightGap} from './Ballistics.js';
 import {SpatialIndex,collisionCandidates} from './SpatialIndex.js';
 import {createFocus,stepFocus,endFocus,rewardFocus,beginFocusDive,FOCUS} from './BulletTime.js';
 import {createWeather,updateWeather,addNightReinforcements,weatherMovement} from './Weather.js';
@@ -25,24 +28,24 @@ import { WEAPONS, weaponStats, ENEMIES, ARENA, COVER, UPGRADES, seededRandom, cl
 
 export class Simulation {
   constructor({ seed=73,difficulty='standard',meta={},layout=null,mode='campaign',skin='scout',profile=null,progression='sandbox',environment={} }={}) {
-    this.progression=progression==='hero'?'hero':'sandbox';this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.streetEvents=makeStreetEvents(this.layout);this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
+    this.progression=progression==='hero'?'hero':'sandbox';this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.layout=prepareTraversalLayout(this.layout);this.streetEvents=makeStreetEvents(this.layout);this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
     this.focus=createFocus();this.timeScale=1;this.focusEnabled=environment?.bulletTime!==false;this.weather=createWeather(seed,environment);this.state = 'menu'; this.enemies = []; this.bullets = []; this.pickups = []; this.hazards = [];this.fires=[];
     this.time = 0; this.wave = 0; this.kills = 0; this.score = 0; this.combo = 0; this.comboTimer = 0;
-    this.player = this.makePlayer('carbine'); this.upgrades = []; this.upgradeOffers=[]; this.rerolls=2; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);if(profile)initRPG(this,profile);
+    this.player = this.makePlayer('carbine'); this.upgrades = []; this.upgradeOffers=[]; this.rerolls=2; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:(o.maxHealth||PROP_HEALTH[o.kind]||600),maxHealth:o.driveable?vehicleSpec(o).health:(o.maxHealth||PROP_HEALTH[o.kind]||600)}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);if(profile)initRPG(this,profile);
   }
   makePlayer(weapon) {
-    return { skin:this.skin,vehicleId:null,swing:0,swingCombo:0,swingWeapon:null,x: 0, z: 3, angle: Math.PI, radius: .4, health: 100, maxHealth: 100, speed: 5.2, damage: 1,
+    return { skin:this.skin,traversal:this.layout.traversal?'campaign':false,grounded:true,vy:0,vx:0,vz:0,supportId:null,grapple:null,grappleCooldown:0,jumpBuffer:0,coyote:.1,landing:0,vehicleId:null,swing:0,swingCombo:0,swingWeapon:null,x: 0, y:0, z: 3, angle: Math.PI, radius: .4, health: 100, maxHealth: 100, speed: 5.2, damage: 1,
       weapon, upgradeRanks:{}, ambushTime:0, mastery:{},shotCounts:{},swingCount:0, magazines: Object.fromEntries(Object.entries(WEAPONS).map(([k, v]) => [k, v.magazine])), reload: 0, reloadTotal: 0,
       fire: 0, invulnerable: 0, dash: 0, focusDive:false, diveDuration:FOCUS.diveDuration, dashCooldown: 0, dashMax: 2.7, dashX: 0, dashZ: -1,
       melee: 0, throwable: 'frag', grenades: 3, blast: 1, pickupRange: 1.35, lifeSteal: 0, reloadMultiplier: 1, fireMultiplier: 1, moving: false, resistance:0, regen:0, pierce:0, crit:0, magazineBonus:0, burn:0, frost:0, blastRadius:1, shield:0, overdrive:0, doubleScore:0, freeze:0,equipped:[weapon],weaponTimers:{},reloads:{},reloadDurations:{},shots:{},equippedAt:-99,moveX:0,moveZ:0,meleeAttack:null,meleeBuffer:null,attackHeld:false,throwAnimation:0,offhandRecoil:0,swapBoost:0,lastWeapon:null,lastWeaponTime:-100 };
   }
   emit(type, data = {}) { this.events.push({ ...data, type }); }
-  start(weapon = 'carbine') { this.focus=createFocus();this.timeScale=1; this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave(); }
+  start(weapon = 'carbine') { this.traversalRewardClaimed=false;this.traversalTarget=null;this.focus=createFocus();this.timeScale=1; this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave(); }
   pause() { if (['playing', 'extracting'].includes(this.state)) { this.previousState = this.state; this.state = 'paused';endFocus(this,true); } }
   resume() { if (this.state === 'paused') this.state = this.previousState; }
   nextWave() {
     this.wave++;this.state='playing';const p=this.player;p.shield=Math.max(p.shield,p.waveShield||0);if(this.wave>1)p.grenades+=p.waveGrenades||0;const vehicle=this.props.find(v=>v.id===p.vehicleId);if(vehicle)vehicle.health=Math.min(vehicle.maxHealth,vehicle.health+vehicle.maxHealth*(p.vehicleRepair||0));const district=Math.floor((this.wave-1)/4);
-    if(district!==this.district&&!this.layout.city){this.district=district;this.player.vehicleId=null;this.player.radius=.4;this.player.x=0;this.player.z=3;this.layout=generateMap(this.seed,district);this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.navigation.clear();this.pickups=[];this.fires=[];this.structures=[];this.rubblePiles=new Map();this.wetGround=[];this.emit('district',{district});}
+    if(district!==this.district&&!this.layout.city){this.district=district;this.player.vehicleId=null;this.player.radius=.4;this.player.y=0;this.player.grapple=null;this.player.x=0;this.player.z=3;this.layout=generateMap(this.seed,district);this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:(o.maxHealth||PROP_HEALTH[o.kind]||600),maxHealth:o.driveable?vehicleSpec(o).health:(o.maxHealth||PROP_HEALTH[o.kind]||600)}));this.obstacles=this.props;this.navigation.clear();this.pickups=[];this.fires=[];this.structures=[];this.rubblePiles=new Map();this.wetGround=[];this.emit('district',{district});}
     this.toSpawn=this.wave%4===0?Math.min(12,6+district*2):12+(this.wave-1)*3;
     this.waveBaseCount=this.toSpawn;this.nightReinforced=false;this.spawnTimer=1;this.waveKills=0;this.waveTotal=this.toSpawn+(this.wave%4===0?1:0);
     if(this.layout.city)this.district=district;
@@ -79,8 +82,8 @@ export class Simulation {
     if(prop.health<=0){
       if(prop.kind==='building')startCollapse(this,prop);if(prop.kind==='rubble'&&prop.pileKey){const key=prop.pileKey;this.structures=(this.structures||[]).filter(c=>`${c.buildingId}:${Math.floor(c.x/2.4)}:${Math.floor(c.z/2.4)}`!==key);this.rubblePiles?.delete(key);}
       if(this.player.vehicleId===prop.id){this.player.vehicleId=null;this.player.radius=.4;this.player.invulnerable=.5;this.player.health=Math.max(1,this.player.health-30);this.emit('vehicle',{message:'VEHICLE LOST · GET CLEAR'});}this.emit('destroy',{...prop});if(!prop.sunk&&(prop.burning>0||['barrel','car'].includes(prop.kind)))this.addFire(prop.x,prop.z,prop.kind==='car'?2.5:1.5);this.obstacles=this.props.filter(o=>o.health>0);this.geometryRevision++;this.navigation.clear();
-      if(!prop.sunk&&(prop.kind==='barrel'||prop.kind==='car'))this.hazards.push({id:this.nextId++,x:prop.x,z:prop.z,radius:prop.kind==='car'?4.5:3.6,timer:.45,duration:.45,friendly:true,environment:true,source:prop.kind,damage:prop.kind==='car'?230:180});
-      if(prop.kind==='crate')this.pickups.push({id:this.nextId++,x:prop.x,z:prop.z,life:60,type:Object.keys(POWERUPS)[Math.floor(this.random()*8)]});
+      if(!prop.sunk&&(prop.kind==='barrel'||prop.kind==='car'))this.hazards.push({id:this.nextId++,x:prop.x,z:prop.z,radius:prop.kind==='car'?4.5:3.6,timer:.45,duration:.45,friendly:true,environment:true,source:prop.kind,y:feetHeight(prop),damage:prop.kind==='car'?230:180});
+      if(prop.kind==='crate')this.pickups.push({id:this.nextId++,x:prop.x,y:feetHeight(prop),z:prop.z,life:60,type:Object.keys(POWERUPS)[Math.floor(this.random()*8)]});
     }
   }
   move(body, dx, dz) {
@@ -130,23 +133,23 @@ export class Simulation {
       if(cripple&&!e.crawling){e.crawling=true;e.speed*=.38;e.damage*=.7;e.radius=Math.min(e.radius,.4);this.emit('dismember',{id:e.id,x:e.x,z:e.z,part:'legs',angle:e.angle});}
       else if(!e.missingArm&&(impact.part==='arm'||(e.health<e.maxHealth*.6&&this.random()<.13))){e.missingArm=true;e.damage*=.7;this.emit('dismember',{id:e.id,x:e.x,z:e.z,part:'arm',angle:e.angle});}
     }
-    this.emit('damage',{enemyId:e.id,x:e.x,z:e.z,enemyType:e.type,bossHeight:e.bossHeight,crawling:!!e.crawling,amount,dealt,health:Math.max(0,e.health),maxHealth:e.maxHealth,weapon:impact.weapon,kind:impact.kind,tier:impact.tier,critical:crit.critical,headshot:!!impact.headshot,finisher:!!impact.finisher,execution:!!impact.execution,periodic:!!impact.periodic,killed:e.health<=0});
+    this.emit('damage',{enemyId:e.id,x:e.x,y:feetHeight(e),z:e.z,enemyType:e.type,bossHeight:e.bossHeight,crawling:!!e.crawling,amount,dealt,health:Math.max(0,e.health),maxHealth:e.maxHealth,weapon:impact.weapon,kind:impact.kind,tier:impact.tier,critical:crit.critical,headshot:!!impact.headshot,finisher:!!impact.finisher,execution:!!impact.execution,periodic:!!impact.periodic,killed:e.health<=0});
     if(amount>=1)this.emit('hit' , { x:e.x,z:e.z,enemyId:e.id,amount,enemyType:e.type,weapon:impact.weapon,tier:impact.tier||0,dx,dz,kind:impact.kind,crawling:!!e.crawling,headshot:!!impact.headshot });
     if (e.health <= 0) {
       bossDefeated(this,e);rpgKill(this,e);rewardFocus(this,{...impact,critical:crit.critical});this.kills++; this.waveKills++; this.combo++; this.comboTimer = 3.5;
       this.score += Math.round(e.score * (1 + Math.min(4, Math.floor(this.combo / 5)) * .25) * (this.player.doubleScore>0?2:1));
       this.player.health = Math.min(this.player.maxHealth, this.player.health+this.player.lifeSteal*(this.player.regen>0?2:1));
-      if(e.type==='volatile')this.hazards.push({id:this.nextId++,x:e.x,z:e.z,radius:2.4,timer:.7,duration:.7,friendly:false,damage:24});
+      if(e.type==='volatile')this.hazards.push({id:this.nextId++,x:e.x,y:feetHeight(e),z:e.z,radius:2.4,timer:.7,duration:.7,friendly:false,damage:24});
       this.emit('kill', { x:e.x,z:e.z,enemyType:e.type,enemyId:e.id,bossKind:e.bossKind,bossProfile:e.bossProfile,bossHeight:e.bossHeight,angle:e.angle,slicePart:impact.part||['head','arm','legs'][Math.floor(this.random()*3)],variant:Math.floor(this.random()*6),fallSpeed:.65+this.random()*.8,twist:(this.random()-.5)*1.5,violent:amount>70,death:impact.kind==='slice'?'sliced':impact.headshot?'headshot':impact.kind==='explosion'?'exploded':impact.kind==='fire'||e.burning>0?'burned':impact.kind==='electric'?'electrocuted':'shot',crawling:!!e.crawling,missingArm:!!e.missingArm,dx,dz });
       if (this.kills % 4 === 0 || e.type === 'brute') { const types=Object.keys(POWERUPS); const type=this.player.health<45?'health':types[Math.floor(this.random()*types.length)];this.pickups.push({ id: this.nextId++, x:e.x,z:e.z,life:40,type }); }
     }
   }
-  earnMastery(key,amount){for(const tier of addMastery(this.player,key,amount))this.emit('evolution',{weapon:key,tier,name:WEAPON_FINISHES[key].signature,x:this.player.x,z:this.player.z});}
+  earnMastery(key,amount){for(const tier of addMastery(this.player,key,amount))this.emit('evolution',{weapon:key,tier,name:WEAPON_FINISHES[key].signature,x:this.player.x,y:feetHeight(this.player),z:this.player.z});}
   blast(x, z, radius, damage, kind = 'explosion', source = 'grenade', weapon=null, tier=0, y=0) {
     if(this.player.blast>1&&this.player.blastRadius>1&&kind==='explosion')damage*=1.25;
     const water=y<.3&&waterAt(this.layout,x,z);this.emit(kind, { x, y, z, radius,source,water,weapon,tier });if(water)this.splashWater(x,z,radius*2);
-    for(const prop of this.props)if(prop.health>0){const hit={x:clamp(x,prop.x-prop.w/2,prop.x+prop.w/2),z:clamp(z,prop.z-prop.d/2,prop.z+prop.d/2)},d=Math.hypot(distance(hit,{x,z}),Math.max(0,y-propHeight(prop)));if(d<radius)this.damageProp(prop,damage*.85*(1-.4*d/radius),{...hit,y:y>0?Math.min(y,propHeight(prop)):undefined,explosive:kind==='explosion',radius});}
-    for (const e of this.enemies) { const d = Math.hypot(distance(e, { x, z }),Math.max(0,y-actorHeight(e))); if(d<radius+e.radius){e.exposed=3;this.damageEnemy(e, damage * (1 - .45 * d / (radius + e.radius)), (e.x - x) * 3, (e.z - z) * 3,{kind:kind==='explosion'?'explosion':'melee',weapon,tier});} }
+    for(const prop of this.props)if(prop.health>0){const hit=propBlastPoint({x,y,z},prop),d=Math.hypot(hit.x-x,hit.y-y,hit.z-z);if(d<radius)this.damageProp(prop,damage*.85*(1-.4*d/radius),{...hit,y:hit.y,explosive:kind==='explosion',radius});}
+    for (const e of this.enemies) { const d = blastDistance({x,y,z},e); if(d<radius+e.radius){e.exposed=3;this.damageEnemy(e, damage * (1 - .45 * d / (radius + e.radius)), (e.x - x) * 3, (e.z - z) * 3,{kind:kind==='explosion'?'explosion':'melee',weapon,tier});} }
   }
   chooseUpgrade(id) {
     if (this.state !== 'upgrade' || !this.choices.some(u => u.id === id)) return false;
@@ -174,25 +177,26 @@ export class Simulation {
     if (input.reload) p.equipped.forEach((key,i)=>this.reload(key,slotKey(p.equipped,key,i)));
     let mx = input.x || 0, mz = input.z || 0, length = Math.hypot(mx, mz);
     if (length > 1) { mx /= length; mz /= length; }
-    if(input.interact){if(!this.profile||!interactPlace(this))this.interactVehicle();if(this.state==='paused')return;}
+    if(input.interact&&nearGround(p)){if(!this.profile||!interactPlace(this))this.interactVehicle();if(this.state==='paused')return;}
     if (input.dash && !p.vehicleId&& p.dashCooldown === 0) {
-      p.ambushTime=3;p.shield=Math.max(p.shield,p.dashShield||0);p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;const dive=!isMelee(p)&&beginFocusDive(this);p.focusDive=!!dive;p.dash = dive?FOCUS.diveDuration:isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax;
+      p.grapple=null;p.jumpBuffer=0;p.ambushTime=3;p.shield=Math.max(p.shield,p.dashShield||0);p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;const dive=!isMelee(p)&&beginFocusDive(this);p.focusDive=!!dive;p.dash = dive?FOCUS.diveDuration:isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax;
       p.dashX = length > .1 ? mx / Math.hypot(mx, mz) : Math.sin(p.angle); p.dashZ = length > .1 ? mz / Math.hypot(mx, mz) : Math.cos(p.angle); this.emit('dash');
     }
     p.aiming=!!input.aiming&&!p.vehicleId&&!isMelee(p);
     const beforeMove={x:p.x,z:p.z};
     p.moving = length > .1;
     if(p.vehicleId){p.slideX=p.slideZ=0;this.drive(dt,mx,mz,input);}
+    else if(p.traversal==='campaign'){this.moveTraversal(dt,input,mx,mz);}
     else if (p.dash > 0) { p.slideX=p.dashX*p.speed;p.slideZ=p.dashZ*p.speed;p.dash = Math.max(0,p.dash-dt); this.move(p, p.dashX * 22 * dt, p.dashZ * 22 * dt); }
     else{const stanceSpeed=isMelee(p)?1.22:1;const drift=weatherMovement(p,mx,mz,p.speed*stanceSpeed*(p.aiming?.78:1),dt,this.weather),x=p.x,z=p.z;this.move(p,drift.x,drift.z);if(Math.abs(p.x-x)<Math.abs(drift.x)*.1)p.slideX=0;if(Math.abs(p.z-z)<Math.abs(drift.z)*.1)p.slideZ=0;}
-    p.moveX=dt?(p.x-beforeMove.x)/dt:0;p.moveZ=dt?(p.z-beforeMove.z)/dt:0;p.moving=Math.hypot(p.moveX,p.moveZ)>.08;if(!p.vehicleId&&p.dash<=0){p.footTravel=(p.footTravel||0)+distance(p,beforeMove);if(p.footTravel>1.53){p.footTravel%=1.53;this.emit('footstep',{water:!!waterAt(this.layout,p.x,p.z)});}}
+    p.moveX=dt?(p.x-beforeMove.x)/dt:0;p.moveZ=dt?(p.z-beforeMove.z)/dt:0;p.moving=Math.hypot(p.moveX,p.moveZ)>.08;if(!p.vehicleId&&p.dash<=0&&(!p.traversal||p.grounded)){p.footTravel=(p.footTravel||0)+distance(p,beforeMove);if(p.footTravel>1.53){p.footTravel%=1.53;this.emit('footstep',{water:!!waterAt(this.layout,p.x,p.z)});}}
     if(p.dash<=0)p.focusDive=false;
     const w = weaponStats(p);
-    const target = this.enemies.filter(e => e.health > 0 && distance(p, e) < w.range).sort((a, b) => distance(p, a) - distance(p, b)).find(e=>!this.blocked(p,e));
+    const target = this.enemies.filter(e => e.health > 0 && distance(p, e) < w.range).sort((a, b) => distance(p, a) - distance(p, b)).find(e=>!combatBlocked(this,muzzlePoint(p),bodyPoint(e)));
     let aim = input.aim;
     const manual=input.firing||input.fireHands?.some(Boolean);
     if (input.auto !== false && !manual) aim = target;
-    if (aim&&!p.vehicleId) {p.angle = Math.atan2(aim.x - p.x, aim.z - p.z);p.aimPitch=aim.perspective?Math.atan2(1.1-aim.y,Math.hypot(aim.x-p.x,aim.z-p.z)):0;}
+    if (aim&&!p.vehicleId) {p.angle = Math.atan2(aim.x - p.x, aim.z - p.z);p.aimPitch=Math.atan2(feetHeight(p)+1.1-aimHeight(aim,feetHeight(p)+1.1),Math.hypot(aim.x-p.x,aim.z-p.z));}
     else if (length > .1&&!p.vehicleId) p.angle = Math.atan2(mx, mz);
     if(p.meleeAttack){
       const attack=p.meleeAttack,age=this.time-attack.started;
@@ -201,11 +205,11 @@ export class Simulation {
       if(age>=attack.timing.duration)p.meleeAttack=null;
     }
     const attackHeld=!!(input.melee||input.firing||input.fireHands?.some(Boolean));
-    if(w.melee&&attackHeld&&!p.attackHeld&&p.weaponTimers[p.weapon]>0&&p.weaponTimers[p.weapon]<=.18){p.meleeBuffer={until:this.time+.2,aim:input.aim||aim};}
+    if(w.melee&&!p.grapple&&attackHeld&&!p.attackHeld&&p.weaponTimers[p.weapon]>0&&p.weaponTimers[p.weapon]<=.18){p.meleeBuffer={until:this.time+.2,aim:input.aim||aim};}
     p.attackHeld=attackHeld;
-    if(w.melee&&p.meleeBuffer){const buffered=p.meleeBuffer;if(this.time>buffered.until||p.vehicleId)p.meleeBuffer=null;else if(!p.weaponTimers[p.weapon]&&p.dash<=0){p.meleeBuffer=null;this.slice(p.weapon,buffered.aim);}}
-    for(const [i,key] of (p.vehicleId?[]:p.equipped).entries()){
-      const slot=slotKey(p.equipped,key,i),gun=weaponStats(p,key);const gunTarget=key===p.weapon?target:this.enemies.filter(e=>e.health>0&&distance(p,e)<gun.range).sort((a,b)=>distance(p,a)-distance(p,b)).find(e=>!this.blocked(p,e));
+    if(w.melee&&p.meleeBuffer){const buffered=p.meleeBuffer;if(this.time>buffered.until||p.vehicleId||p.grapple)p.meleeBuffer=null;else if(!p.weaponTimers[p.weapon]&&p.dash<=0){p.meleeBuffer=null;this.slice(p.weapon,buffered.aim);}}
+    for(const [i,key] of (p.vehicleId||p.grapple?[]:p.equipped).entries()){
+      const slot=slotKey(p.equipped,key,i),gun=weaponStats(p,key);const gunTarget=key===p.weapon?target:this.enemies.filter(e=>e.health>0&&distance(p,e)<gun.range).sort((a,b)=>distance(p,a)-distance(p,b)).find(e=>!combatBlocked(this,muzzlePoint(p),bodyPoint(e)));
       const firing=input.fireHands?!!input.fireHands[i]||(gun.melee&&input.fireHands.some(Boolean)):input.firing;
       const gunAim=firing?input.aim:!manual&&input.auto!==false?gunTarget:null;
       if(gunAim&&((!manual&&input.auto!==false&&gunTarget)||firing)&&!p.weaponTimers[slot]&&!p.reloads[slot]&&(p.dash<=0||p.focusDive)&&p.throwAnimation<=.12){
@@ -213,7 +217,7 @@ export class Simulation {
       }
     }
     p.fire=p.weaponTimers[p.weapon]||0;p.reload=p.reloads[p.weapon]||0;
-    if(input.melee&&!p.vehicleId&&p.melee<=0){const blade=p.equipped.find(k=>WEAPONS[k].melee);if(blade){if(!p.weaponTimers[blade])this.slice(blade,input.aim||aim);p.melee=.2;}}
+    if(input.melee&&!p.vehicleId&&!p.grapple&&p.melee<=0){const blade=p.equipped.find(k=>WEAPONS[k].melee);if(blade){if(!p.weaponTimers[blade])this.slice(blade,input.aim||aim);p.melee=.2;}}
     if(input.grenade)throwOrdnance(this,input.aim||aim);
     if (this.state === 'playing' && this.toSpawn > 0 && !this.enemies.some(e=>e.type==='boss'&&e.bossState==='arrival')) {
       this.spawnTimer -= dt;
@@ -227,12 +231,12 @@ export class Simulation {
       if(h.bossOwner){const owner=this.enemies.find(e=>e.id===h.bossOwner);if(!owner||owner.health<=0||owner.phasePending||owner.bossState==='transition'){h.done=true;continue;}}
       if(h.thrown)advanceThrowable(this,h,dt);
       h.timer -= dt;
-      if (h.timer <= 0 && !h.done) { h.done = true; if (h.friendly) { if(h.throwable)detonateThrowable(this,h);else this.blast(h.x,h.z,h.radius,h.damage,'explosion',h.source||'grenade',h.weapon,h.tier||0);if(h.environment&&distance(p,h)<h.radius)this.damagePlayer(h.damage*.3); } else { if(!h.charge){this.emit('slam', h);if(h.bossOwner?bossContains(h,p):distance(p,h)<h.radius+p.radius)this.damagePlayer(h.damage);} } }
+      if (h.timer <= 0 && !h.done) { h.done = true; if (h.friendly) { if(h.throwable)detonateThrowable(this,h);else this.blast(h.x,h.z,h.radius,h.damage,'explosion',h.source||'grenade',h.weapon,h.tier||0,h.y||0);if(h.environment&&blastDistance({x:h.x,y:h.y||0,z:h.z},p)<h.radius)this.damagePlayer(h.damage*.3); } else { if(!h.charge){this.emit('slam', h);if(h.bossOwner?bossContains(h,p):blastDistance({x:h.x,y:h.y||0,z:h.z},p)<h.radius+p.radius)this.damagePlayer(h.damage);} } }
     }
     this.hazards = this.hazards.filter(h => !h.done);
     for (const item of this.pickups) {
       item.life -= dt;
-      if ((item.type!=='health'||p.health<p.maxHealth) && distance(p,item)<p.pickupRange) { this.collect(item.type); item.life=0; }
+      if ((item.type!=='health'||p.health<p.maxHealth) && Math.hypot(distance(p,item),feetHeight(p)-feetHeight(item))<p.pickupRange) { this.collect(item.type); item.life=0; }
     }
     this.pickups = this.pickups.filter(i => i.life > 0);
     updateStreetEvents(this,dt);updateNightQuests(this);
@@ -244,24 +248,41 @@ export class Simulation {
     }
     if(!['playing','extracting'].includes(this.state)||p.vehicleId)endFocus(this,true);
     if (this.state === 'extracting') {
-      if (distance(p, { x: 0, z: -10 }) < 3) this.extraction += dt; else this.extraction = Math.max(0, this.extraction - dt * .5);
+      if (nearGround(p)&&distance(p, { x: 0, z: -10 }) < 3) this.extraction += dt; else this.extraction = Math.max(0, this.extraction - dt * .5);
       if (this.extraction >= 4) { this.state = 'victory'; this.score += 5000 + Math.round(p.health * 10); this.emit('victory'); }
+    }
+  }
+  moveTraversal(dt,input,mx,mz){
+    const p=this.player,boxes=campaignTraversalBoxes(this),anchors=this.layout.traversal?.anchors||[],bounds=this.layout.bounds||ARENA;
+    const options=anchors.filter(a=>!p.grounded||a.supportId!==p.supportId).map(a=>({...a,reason:grappleAvailability(p,a,boxes)})).sort((a,b)=>Number(!!a.reason)-Number(!!b.reason)||distance(a,p)-distance(b,p));
+    const selected=options.find(a=>a.id===this.traversalTarget?.id&&!a.reason)||options[0];this.traversalTarget=selected?{...selected,available:!selected.reason}:null;
+    const old={x:p.x,y:p.y,z:p.z},speed=p.speed*(isMelee(p)?1.22:1)*(p.aiming?.78:1);let velocity;
+    if(p.dash>0){p.slideX=p.dashX*p.speed;p.slideZ=p.dashZ*p.speed;p.dash=Math.max(0,p.dash-dt);velocity={x:p.dashX*22,z:p.dashZ*22};}
+    else if(p.grounded){const drift=weatherMovement(p,mx,mz,speed,dt,this.weather);velocity={x:dt?drift.x/dt:0,z:dt?drift.z/dt:0};}
+    const events=stepTraversal(p,{x:mx,z:mz,jump:!!input.jump&&p.dash<=0,grapple:!!input.grapple&&p.dash<=0,anchorId:this.traversalTarget?.id},dt,boxes,anchors,bounds,{speed,desiredVelocity:velocity,preserveFacing:true});
+    // City coastlines and canals remain impassable until swimming is designed.
+    if(!segmentInMap(this.layout,old,p,p.radius)){p.x=old.x;p.z=old.z;p.vx=p.vz=0;p.grapple=null;}
+    if(p.grounded){p.supportY=p.y;if(Math.abs(p.x-old.x)<.001)p.slideX=0;if(Math.abs(p.z-old.z)<.001)p.slideZ=0;}
+    else p.supportY=0;
+    for(const event of events){if(event.type==='attach'){p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.swingWeapon=null;}this.emit('traversal-'+event.type,{...event,action:event.type,x:p.x,y:p.y,z:p.z});}
+    const reward=this.layout.traversal?.reward;if(reward&&!this.traversalRewardClaimed){const support=this.props.find(o=>o.id===reward.supportId),y=support?.health>0?reward.y:0;
+      if(p.grounded&&Math.abs(p.y-y)<.25&&distance(p,reward)<1.15){this.traversalRewardClaimed=true;p.grenades+=2;this.score+=600;if(this.rpg)this.rpg.coins+=50;this.emit('progression',{category:'discovery',title:'HIGH GROUND',detail:'SERVICE CACHE · +2 ORDNANCE'+(this.rpg?' · +50 CROWNS':'')});}
     }
   }
   fireWeapon(key,aim,slot=key,hand=0){
     if(WEAPONS[key].melee){this.slice(key,aim);return;}
     const p=this.player,w=weaponStats(p,key),angle=Math.atan2(aim.x-p.x,aim.z-p.z),count=p.shotCounts[slot]=(p.shotCounts[slot]||0)+1;const variant=(count-1)%4;p.shots[slot]={time:this.time,weapon:key,hand,variant,tier:w.tier};p.magazines[slot]--;p.weaponTimers[slot]=w.interval*p.fireMultiplier*(p.overdrive>0?.5:1);
-    if(hand)p.offhandRecoil=.12;const offset=(p.equipped.length>1?(hand?-.35:.35):.2);const originX=p.x+Math.cos(angle)*offset,originZ=p.z-Math.sin(angle)*offset;
-    p.aimPitch=aim.perspective?Math.atan2(1.1-aim.y,Math.hypot(aim.x-originX,aim.z-originZ)):0;
-    if(w.chain)this.arcAttack(aim,w,{x:originX+Math.sin(angle)*.85,z:originZ+Math.cos(angle)*.85});else for(let i=0;i<w.pellets;i++){
+    if(hand)p.offhandRecoil=.12;const offset=(p.equipped.length>1?(hand?-.35:.35):.2);const originX=p.x+Math.cos(angle)*offset,originZ=p.z-Math.sin(angle)*offset,originY=feetHeight(p)+1.1;
+    const targetY=aimHeight(aim,originY);p.aimPitch=Math.atan2(originY-targetY,Math.hypot(aim.x-originX,aim.z-originZ));
+    if(w.chain)this.arcAttack(aim,w,{x:originX+Math.sin(angle)*.85,y:originY,z:originZ+Math.cos(angle)*.85});else for(let i=0;i<w.pellets;i++){
       const shotAngle=aim.perspective?Math.atan2(aim.x-originX,aim.z-originZ):angle,a=shotAngle+(this.random()-.5)*w.spread*2*((p.aiming&&aim.perspective)?.55:1),headshot=!aim.perspective&&!['flame','launcher','arc'].includes(key)&&this.random()<(key==='marksman'?.32:key==='revolver'?.22:.07);
-      const pitch=aim.perspective?p.aimPitch:0;
-      this.bullets.push({perspective:!!aim.perspective,id:this.nextId++,x:originX,z:originZ,vx:Math.sin(a)*w.speed*Math.cos(pitch),vz:Math.cos(a)*w.speed*Math.cos(pitch),life:w.range/w.speed,headshot,damage:w.damage*(headshot?1.65:1)*p.damage*(p.swapBoost>0?1.25:1),enemy:false,tier:w.tier,ricochets:w.ricochet||0,y:1.1,vy:aim.perspective?-Math.sin(pitch)*w.speed:key==='launcher'?3.8:0,gravity:key==='launcher'?8:0,terminal:key==='marksman'&&w.tier===3,cluster:key==='launcher'&&w.tier===3,pierce:(w.pierce||0)+p.pierce,hitIds:[],weapon:key,burn:(w.burn||0)+p.burn,frost:p.frost,explosive:(key==='revolver'&&w.tier===3&&count%4===0?1.6:w.explosive||0)*p.blastRadius});
+      const pitch=p.aimPitch;
+      this.bullets.push({perspective:!!aim.perspective,id:this.nextId++,x:originX,z:originZ,vx:Math.sin(a)*w.speed*Math.cos(pitch),vz:Math.cos(a)*w.speed*Math.cos(pitch),life:w.range/w.speed,headshot,damage:w.damage*(headshot?1.65:1)*p.damage*(p.swapBoost>0?1.25:1),enemy:false,tier:w.tier,ricochets:w.ricochet||0,y:originY,vy:-Math.sin(pitch)*w.speed+(key==='launcher'&&!aim.perspective?3.8:0),gravity:key==='launcher'?8:0,terminal:key==='marksman'&&w.tier===3,cluster:key==='launcher'&&w.tier===3,pierce:(w.pierce||0)+p.pierce,hitIds:[],weapon:key,burn:(w.burn||0)+p.burn,frost:p.frost,explosive:(key==='revolver'&&w.tier===3&&count%4===0?1.6:w.explosive||0)*p.blastRadius});
     }
-    this.emit('shoot',{x:originX,z:originZ,angle,pitch:p.aimPitch||0,weapon:key,hand,variant,tier:w.tier,interval:p.weaponTimers[slot]/(this.timeScale||1)});
+    this.emit('shoot',{x:originX,y:originY,z:originZ,angle,pitch:p.aimPitch||0,weapon:key,hand,variant,tier:w.tier,interval:p.weaponTimers[slot]/(this.timeScale||1)});
   }
   slice(key,aim){
-    const p=this.player;if(!WEAPONS[key]?.melee||p.meleeAttack||p.vehicleId||p.dash>0||p.throwAnimation>0)return false;
+    const p=this.player;if(!WEAPONS[key]?.melee||p.meleeAttack||p.vehicleId||p.grapple||p.dash>0||p.throwAnimation>0)return false;
     p.angle=aim?Math.atan2(aim.x-p.x,aim.z-p.z):p.angle;
     p.swingCombo=this.time-(p.lastSwing??-99)<1.3?(p.swingCombo+1)%3:0;p.lastSwing=this.time;
     p.swingVariant=(p.swingCount++)%4;const timing=meleeTiming(key,p.swingCombo,p.fireMultiplier*(1-weaponTier(p,key)*.04));
@@ -274,15 +295,15 @@ export class Simulation {
     const range=w.range*p.blastRadius*(finisher?1.2:1),damage=w.damage*p.damage*(finisher?1.6:1),angle=attack.angle;
     const inArc=(x,z)=>Math.abs(Math.atan2(Math.sin(Math.atan2(x-p.x,z-p.z)-angle),Math.cos(Math.atan2(x-p.x,z-p.z)-angle)))<(finisher?profile.finishArc:profile.arc);
     let hits=0;
-    for(const e of this.enemies)if(e.health>0&&distance(e,p)<range+e.radius&&inArc(e.x,e.z)&&!this.blocked(p,e,.05)){this.damageEnemy(e,damage,Math.sin(angle)*profile.force,Math.cos(angle)*profile.force,{kind:profile.kind,weapon:key,tier:w.tier,finisher,part:profile.kind==='slice'?(finisher?'legs':key==='dual'?'arm':null):null});if(key==='hammer'&&e.type!=='boss')e.slow=Math.max(e.slow||0,finisher?1.2:.6);hits++;}
+    for(const e of this.enemies)if(e.health>0&&distance(e,p)<range+e.radius&&inArc(e.x,e.z)&&meleeReaches(p,e)&&!combatBlocked(this,muzzlePoint(p),bodyPoint(e))){this.damageEnemy(e,damage,Math.sin(angle)*profile.force,Math.cos(angle)*profile.force,{kind:profile.kind,weapon:key,tier:w.tier,finisher,part:profile.kind==='slice'?(finisher?'legs':key==='dual'?'arm':null):null});if(key==='hammer'&&e.type!=='boss')e.slow=Math.max(e.slow||0,finisher?1.2:.6);hits++;}
     if(finisher&&hits>0)p.health=Math.min(p.maxHealth,p.health+(p.finisherHeal||0));
-    for(const o of this.props)if(o.health>0){const x=clamp(p.x,o.x-o.w/2,o.x+o.w/2),z=clamp(p.z,o.z-o.d/2,o.z+o.d/2);if(Math.hypot(x-p.x,z-p.z)<range&&inArc(x,z)){this.damageProp(o,damage*(key==='hammer'?1.2:['crate','planter'].includes(o.kind)?2:.3),{x,z,slicing:profile.kind==='slice'});hits++;}}
+    for(const o of this.props)if(o.health>0&&verticalGap(meleeSpan(p),propSpan(o))===0){const x=clamp(p.x,o.x-o.w/2,o.x+o.w/2),z=clamp(p.z,o.z-o.d/2,o.z+o.d/2);if(Math.hypot(x-p.x,z-p.z)<range&&inArc(x,z)){this.damageProp(o,damage*(key==='hammer'?1.2:['crate','planter'].includes(o.kind)?2:.3),{x,y:Math.max(propSpan(o).min,Math.min(propSpan(o).max,feetHeight(p)+1)),z,slicing:profile.kind==='slice'});hits++;}}
     if(finisher){p.dashCooldown=Math.max(0,p.dashCooldown-.45);p.invulnerable=Math.max(p.invulnerable,.12);}
-    if(finisher&&w.tier===3){for(const e of this.enemies)if(e.health>0&&distance(e,p)>=range+e.radius&&distance(e,p)<range+2.6&&inArc(e.x,e.z)&&!this.blocked(p,e)){this.damageEnemy(e,damage*.55,Math.sin(angle)*profile.force,Math.cos(angle)*profile.force,{kind:profile.kind,weapon:key,tier:3,finisher:true});if(key==='hammer'&&e.type!=='boss')e.slow=Math.max(e.slow||0,1.2);}this.emit('cut-wave',{x:p.x,z:p.z,angle,weapon:key,radius:range+2.6});}
+    if(finisher&&w.tier===3){for(const e of this.enemies)if(e.health>0&&distance(e,p)>=range+e.radius&&distance(e,p)<range+2.6&&inArc(e.x,e.z)&&meleeReaches(p,e)&&!combatBlocked(this,muzzlePoint(p),bodyPoint(e))){this.damageEnemy(e,damage*.55,Math.sin(angle)*profile.force,Math.cos(angle)*profile.force,{kind:profile.kind,weapon:key,tier:3,finisher:true});if(key==='hammer'&&e.type!=='boss')e.slow=Math.max(e.slow||0,1.2);}this.emit('cut-wave',{x:p.x,z:p.z,angle,weapon:key,radius:range+2.6});}
     this.emit('slice',{x:p.x,z:p.z,angle,weapon:key,combo:attack.combo,variant:attack.variant,tier:w.tier,radius:range,hits});
   }
   interactVehicle(){
-    const p=this.player;
+    const p=this.player;if(!nearGround(p))return false;
     // An interaction must have a clear walking path, not merely a clear end
     // point. Ignore the occupied vehicle itself, but never step through walls.
     const accessible=(from,to,vehicle)=>segmentInMap(this.layout,from,to,.4)&&!lineBlocked(from,to,.4,this.obstacles.filter(o=>o!==vehicle));
@@ -290,7 +311,7 @@ export class Simulation {
       const dry=[[0,0],[.45,0],[-.45,0],[0,.45],[0,-.45]].every(([dx,dz])=>!waterAt(this.layout,x+dx,z+dz));
       if(dry&&insideMap(this.layout,x,z,.5)&&!pointBlocked(x,z,.5,this.obstacles)&&accessible(v,{x,z},v)){p.vehicleId=null;p.radius=.4;p.x=x;p.z=z;v.speed=0;v.vx=v.vz=0;this.emit('vehicle',{message:'ON FOOT'});return true;}}this.emit('vehicle',{message:'EXIT BLOCKED · MOVE TO CLEAR GROUND'});return false;}
     const v=this.props.filter(v=>v.driveable&&v.health>0&&distance(v,p)<5&&accessible(p,v,v)).sort((a,b)=>distance(a,p)-distance(b,p))[0];if(!v)return false;
-    p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.vehicleId=v.id;p.radius=1.25;v.angle=v.angle??0;v.speed=0;v.vx=v.vz=0;v.reverseHold=0;p.x=v.x;p.z=v.z;this.emit('vehicle',{message:`${v.vehicleName} · DRIVING CONTROLS ON HUD`});return true;
+    p.y=0;p.vy=0;p.grapple=null;p.grounded=true;p.supportId=null;p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.vehicleId=v.id;p.radius=1.25;v.angle=v.angle??0;v.speed=0;v.vx=v.vz=0;v.reverseHold=0;p.x=v.x;p.z=v.z;this.emit('vehicle',{message:`${v.vehicleName} · DRIVING CONTROLS ON HUD`});return true;
   }
   drive(dt,mx,mz,input){driveVehicle(this,dt,mx,mz,input);}
   collect(type) {
@@ -306,18 +327,26 @@ export class Simulation {
     this.emit('powerup',{powerup:type,...POWERUPS[type]});
   }
   arcAttack(aim,w,origin=this.player) {
-    const p=this.player;let from=origin;
-    let target=this.enemies.filter(e=>(!aim.perspective||e.id===aim.targetId)&&e.health>0&&distance(p,e)<w.range&&!this.blocked(p,e)).sort((a,b)=>distance(a,aim)-distance(b,aim))[0];
+    const p=this.player;let from=origin===p?muzzlePoint(p):origin;
+    let target=this.enemies.filter(e=>(!aim.perspective||e.id===aim.targetId)&&e.health>0&&bodyDistance(p,e)<w.range&&!combatBlocked(this,from,bodyPoint(e))).sort((a,b)=>distance(a,aim)-distance(b,aim))[0];
     const visited=new Set();
     for(let i=0;target&&i<=w.chain;i++){
-      visited.add(target.id);this.emit('arc',{x:from.x,z:from.z,y:i?actorHeight(from)*.65:1.2,toX:target.x,toZ:target.z,toY:actorHeight(target)*.65,weapon:'arc',tier:w.tier});
+      visited.add(target.id);this.emit('arc',{x:from.x,z:from.z,y:i?bodyPoint(from,.65).y:from.y,toX:target.x,toZ:target.z,toY:bodyPoint(target,.65).y,weapon:'arc',tier:w.tier});
       if(target.burning>0)this.emit('combo',{name:'PLASMA ARC',description:'Fire + electricity: +40% arc damage'});
       this.damageEnemy(target,w.damage*p.damage*Math.pow(.83,i)*(target.burning>0?1.4:target.wet>0?1.25:1)*(p.swapBoost>0?1.25:1),0,0,{kind:'electric',weapon:'arc',tier:w.tier});target.slow=Math.max(target.slow||0,.6);target.electrified=.8;this.emit('electrify',{x:target.x,z:target.z});if(p.burn&&!(target.wet>0)){target.burning=p.burn;target.burnWeapon='arc';}
-      from=target;target=this.enemies.filter(e=>e.health>0&&!visited.has(e.id)&&distance(from,e)<4.5&&!this.blocked(from,e)).sort((a,b)=>distance(from,a)-distance(from,b))[0];
+      from=target;target=this.enemies.filter(e=>e.health>0&&!visited.has(e.id)&&bodyDistance(from,e)<4.5&&!combatBlocked(this,bodyPoint(from),bodyPoint(e))).sort((a,b)=>distance(from,a)-distance(from,b))[0];
     }
   }
   updateEnemies(dt) {
-    const p = this.player;
+    const p = this.player,support=p.grounded&&p.supportId?this.props.find(o=>o.id===p.supportId&&o.traversalSupport&&o.health>0):null;
+    // A low service platform buys space, not permanent immunity. Melee enemies
+    // can batter its reachable edge with their normal telegraphed attack rhythm.
+    const supportContact=e=>{
+      if(!support||support.health<=0||!['walker','runner','brute','armored','volatile'].includes(e.type)||Math.abs(feetHeight(p)-propSpan(support).max)>.15||verticalGap(actorSpan(e),propSpan(support))>0)return null;
+      const hit=propBlastPoint(bodyPoint(e),support);
+      if(Math.hypot(hit.x-e.x,hit.z-e.z)>e.radius+.75||combatBlocked(this,bodyPoint(e),hit,support.id))return null;
+      return hit;
+    };
     for (const e of this.enemies) {
       if (e.health <= 0) continue;
       e.chilled=Math.max(0,(e.chilled||0)-dt);e.electrified=Math.max(0,(e.electrified||0)-dt);e.exposed=Math.max(0,(e.exposed||0)-dt);e.shockCooldown=Math.max(0,(e.shockCooldown||0)-dt);
@@ -326,8 +355,8 @@ export class Simulation {
         e.burning-=dt;this.damageEnemy(e,18*dt,0,0,{kind:'fire',weapon:e.burnWeapon,periodic:true});if(e.health<=0)continue;
         e.spreadTimer=(e.spreadTimer||0)-dt;
         if(e.spreadTimer<=0){e.spreadTimer=.4;
-          for(const other of this.enemies)if(other!==e&&other.health>0&&!(other.wet>0)&&distance(e,other)<e.radius+other.radius+.5&&!(other.burning>1.5)){other.burning=2.8;other.burnWeapon=e.burnWeapon;this.emit('ignite',{x:other.x,z:other.z});}
-          for(const prop of this.obstacles)if(!['rock','barrier'].includes(prop.kind)&&distance(e,prop)<e.radius+Math.max(prop.w,prop.d)/2+.4){this.igniteProp(prop,e.x,e.z,.9,4);}
+          for(const other of this.enemies)if(other!==e&&other.health>0&&!(other.wet>0)&&bodyDistance(e,other)<e.radius+other.radius+.5&&!(other.burning>1.5)){other.burning=2.8;other.burnWeapon=e.burnWeapon;this.emit('ignite',{x:other.x,z:other.z});}
+          for(const prop of this.obstacles)if(!['rock','barrier'].includes(prop.kind)&&heightGap(feetHeight(e)+.9,propSpan(prop))<.5&&distance(e,prop)<e.radius+Math.max(prop.w,prop.d)/2+.4){this.igniteProp(prop,e.x,e.z,feetHeight(e)+.9,4);}
         }
       }
       if(e.type==='boss'&&this.updateBoss(e,dt))continue;
@@ -335,13 +364,16 @@ export class Simulation {
       if (e.windup > 0) {
         e.windup -= dt;
         if (e.windup <= 0) {
-          if (e.type === 'spitter') {
-            const angle = Math.atan2(e.targetZ - e.z, e.targetX - e.x);
-            this.bullets.push({ id: this.nextId++, x: e.x, z: e.z, vx: Math.cos(angle) * 8, vz: Math.sin(angle) * 8, life: 2.5, damage: e.damage, enemy: true }); this.emit('spit');
-          } else if(e.type==='boss'){this.bossAttack(e);} else if (d < e.radius + p.radius + .7&&!this.blocked(e,p)) this.damagePlayer(e.damage);
+          if(e.supportTargetId){const targetId=e.supportTargetId;e.supportTargetId=null;const hit=supportContact(e);if(hit&&support.id===targetId)this.damageProp(support,e.damage*2.5,hit);}
+          else if (e.type === 'spitter') {
+            const angle = Math.atan2(e.targetZ - e.z, e.targetX - e.x),originY=feetHeight(e)+.9,pitch=Math.atan2((e.targetY??1)-originY,Math.hypot(e.targetX-e.x,e.targetZ-e.z));
+            this.bullets.push({ id: this.nextId++, x: e.x,y:originY, z: e.z, vx: Math.cos(angle) * Math.cos(pitch)*8, vz: Math.sin(angle) * Math.cos(pitch)*8,vy:Math.sin(pitch)*8, life: 2.5, damage: e.damage, enemy: true }); this.emit('spit');
+          } else if(e.type==='boss'){this.bossAttack(e);} else if (d < e.radius + p.radius + .7&&verticalGap(actorSpan(e),actorSpan(p))===0&&!combatBlocked(this,bodyPoint(e),bodyPoint(p))) this.damagePlayer(e.damage);
         }
-      } else if (e.attack <= 0 && ((e.type === 'spitter' && d < 13 && !this.blocked(e, p)) || (e.type === 'boss' && d < 9) || d < e.radius + p.radius + .5)) {
-        e.windup=e.type==='boss'?1:e.type==='runner'?.3:.55;e.attack=e.type==='boss'? (e.health<e.maxHealth*.5?2.8:3.8) : e.type === 'spitter' ? 2.6 : 1.5; e.targetX = p.x; e.targetZ = p.z;
+      } else if(e.attack<=0&&supportContact(e)){
+        e.windup=e.type==='runner'?.3:e.type==='brute'?.7:.55;e.attack=1.5;e.supportTargetId=support.id;e.targetX=p.x;e.targetZ=p.z;
+      } else if (e.attack <= 0 && ((e.type === 'spitter' && bodyDistance(e,p) < 13 && !combatBlocked(this,bodyPoint(e),bodyPoint(p))) || (e.type === 'boss' && d < 9) || d < e.radius + p.radius + .5)) {
+        e.windup=e.type==='boss'?1:e.type==='runner'?.3:.55;e.attack=e.type==='boss'? (e.health<e.maxHealth*.5?2.8:3.8) : e.type === 'spitter' ? 2.6 : 1.5; e.targetX = p.x; e.targetZ = p.z;e.targetY=bodyPoint(p).y;
       } else {
         let nx = dx / d, nz = dz / d;
         const shouldMove = e.type !== 'spitter' || d > 8 || this.blocked(e, p);
@@ -397,8 +429,8 @@ export class Simulation {
   }
   detonateBullet(b){
     if(b.detonated)return;b.detonated=true;b.life=0;
-    this.blast(b.x,b.z,b.explosive||1.6,b.damage*(b.terminal?.35:1),'explosion',b.weapon,b.weapon,b.tier||0,b.perspective?Math.max(0,b.y||0):0);
-    if(b.cluster&&(!b.perspective||b.y<3)&&!waterAt(this.layout,b.x,b.z))for(let i=0;i<3;i++){const a=i*Math.PI*2/3;this.hazards.push({id:this.nextId++,x:b.x+Math.sin(a)*1.7,z:b.z+Math.cos(a)*1.7,radius:1.5,timer:.2+i*.12,duration:.5,friendly:true,damage:b.damage*.25,source:'cluster',weapon:b.weapon,tier:b.tier});}
+    this.blast(b.x,b.z,b.explosive||1.6,b.damage*(b.terminal?.35:1),'explosion',b.weapon,b.weapon,b.tier||0,Math.max(0,b.y||0));
+    if(b.cluster&&b.y<3&&!waterAt(this.layout,b.x,b.z))for(let i=0;i<3;i++){const a=i*Math.PI*2/3;this.hazards.push({id:this.nextId++,x:b.x+Math.sin(a)*1.7,z:b.z+Math.cos(a)*1.7,radius:1.5,timer:.2+i*.12,duration:.5,friendly:true,damage:b.damage*.25,source:'cluster',weapon:b.weapon,tier:b.tier});}
   }
   updateBullets(dt) {
     const enemyIndex=this.enemies.length>20&&this.bullets.length>4?new SpatialIndex(this.enemies,e=>({x:e.x,z:e.z,w:(e.radius+.35)*2,d:(e.radius+.35)*2})):null;
@@ -406,11 +438,11 @@ export class Simulation {
       if(b.life<=0)continue;const travel=Math.min(dt,b.life),a={x:b.x,z:b.z},end={x:b.x+b.vx*travel,z:b.z+b.vz*travel};b.life-=travel;
       b.y??=b.enemy?.9:1.1;b.vy??=0;const oldY=b.y;b.y+=b.vy*travel-(b.gravity||0)*travel*travel*.5;b.vy-=(b.gravity||0)*travel;
       const start3={...a,y:oldY},end3={...end,y:b.y},endY=b.y;
-      const contacts=collisionCandidates(this,a,end).filter(o=>o.health>0).map(o=>({kind:'prop',o,t:b.perspective?boxHit3D(start3,end3,o):segmentBoxTime(a,end,o)})).filter(c=>c.t!==null);
-      if(b.enemy){const t=circleContact(a,end,this.player,.55);if(t!==null)contacts.push({kind:'player',t});}
-      else for(const e of (enemyIndex?enemyIndex.segment(a,end):this.enemies))if(e.health>0&&!b.hitIds.includes(e.id)){const t=b.perspective?bodyHit3D(start3,end3,e,b.weapon==='flame'?.35:.14):circleContact(a,end,e,e.radius+(b.weapon==='flame'?.35:.14));if(t!==null)contacts.push({kind:'enemy',o:e,t});}
-      const samples=Math.max(1,Math.ceil(Math.hypot(end.x-a.x,end.z-a.z)/.25));for(let i=0;i<=samples;i++){const t=i/samples;if((!b.perspective||oldY+(endY-oldY)*t<=.15)&&waterAt(this.layout,a.x+(end.x-a.x)*t,a.z+(end.z-a.z)*t)){contacts.push({kind:'water',t});break;}}
-      if((b.gravity||b.perspective)&&b.y<=.08)contacts.push({kind:'ground',t:clamp((oldY-.08)/(oldY-b.y||1),0,1)});
+      const contacts=collisionCandidates(this,a,end).filter(o=>o.health>0).map(o=>({kind:'prop',o,t:boxHit3D(start3,end3,o)})).filter(c=>c.t!==null);
+      if(b.enemy){const t=bodyHit3D(start3,end3,this.player,.15);if(t!==null)contacts.push({kind:'player',t});}
+      else for(const e of (enemyIndex?enemyIndex.segment(a,end):this.enemies))if(e.health>0&&!b.hitIds.includes(e.id)){const t=bodyHit3D(start3,end3,e,b.weapon==='flame'?.35:.14);if(t!==null)contacts.push({kind:'enemy',o:e,t});}
+      const samples=Math.max(1,Math.ceil(Math.hypot(end.x-a.x,end.z-a.z)/.25));for(let i=0;i<=samples;i++){const t=i/samples;if((oldY+(endY-oldY)*t<=.15)&&waterAt(this.layout,a.x+(end.x-a.x)*t,a.z+(end.z-a.z)*t)){contacts.push({kind:'water',t});break;}}
+      if(b.y<=.08)contacts.push({kind:'ground',t:clamp((oldY-.08)/(oldY-b.y||1),0,1)});
       contacts.sort((a,b)=>a.t-b.t);let stopped=false;
       for(const c of contacts){
         if(c.o?.health<=0)continue;b.x=a.x+(end.x-a.x)*c.t;b.z=a.z+(end.z-a.z)*c.t;b.y=oldY+(endY-oldY)*c.t;
@@ -418,7 +450,7 @@ export class Simulation {
         if(c.kind==='ground'){if(b.explosive||b.terminal)this.detonateBullet(b);else this.emit('impact',{x:b.x,z:b.z,y:.08,normal:{x:0,z:0},kind:'ground',material:'concrete',weapon:b.weapon,tier:b.tier||0,dx:b.vx,dz:b.vz});b.life=0;stopped=true;break;}
         if(c.kind==='player'){this.damagePlayer(b.damage);b.life=0;stopped=true;break;}
         if(c.kind==='prop'){
-          const o=c.o,n=boxNormal(b,o);this.damageProp(o,b.damage,{x:b.x,y:b.perspective?b.y:undefined,z:b.z,weapon:b.weapon});
+          const o=c.o,n=boxNormal(b,o);this.damageProp(o,b.damage,{x:b.x,y:b.y,z:b.z,weapon:b.weapon});
           if(b.burn)this.igniteProp(o,b.x,b.z,b.y||.9,b.burn+2);
           this.emit('impact',{x:b.x,z:b.z,y:Math.max(.2,b.y),normal:n,weapon:b.weapon,tier:b.tier||0,kind:o.kind,material:o.material,dx:b.vx,dz:b.vz});
           if(b.explosive||b.terminal)this.detonateBullet(b);
@@ -427,7 +459,7 @@ export class Simulation {
         }
         const e=c.o;b.hitIds.push(e.id);
         if(b.explosive){this.detonateBullet(b);stopped=true;break;}
-        const headshot=b.perspective?e.type!=='boss'&&!e.crawling&&!['flame','launcher','arc'].includes(b.weapon)&&b.y>=actorHeight(e)*.78:b.headshot;
+        const headshot=b.perspective?e.type!=='boss'&&!e.crawling&&!['flame','launcher','arc'].includes(b.weapon)&&b.y>=feetHeight(e)+actorHeight(e)*.78:b.headshot;
         let damage=b.damage*(b.perspective&&headshot?1.65:1);const p=this.player,execution=p.crit>0&&p.pierce>0&&e.type!=='boss'&&e.health/e.maxHealth<.2;
         if(execution)damage=Math.max(damage,e.health+1);
         if(e.lastHitWeapon&&e.lastHitWeapon!==b.weapon&&this.time-(e.lastHitAt||0)<3){

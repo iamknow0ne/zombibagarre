@@ -1,3 +1,4 @@
+import {nearGround} from './CombatHeight.js';
 import {TRAINING,enforceProgression} from './Progression.js';
 import {normalizeAppearance,appearanceSignature} from './Customization.js';
 import {configureBoss} from './Bosses.js';
@@ -107,7 +108,7 @@ export function makeRPGWorld(layout){
  }return chosen;
 }
 export function initRPG(sim,profile){sim.profile=normalizeProfile(profile);sim.rpg={coins:60,claimed:[],accepted:[],cases:[],kills:0,contacts:[],delivery:false,runnerKills:0,heavyKills:0,nightKills:0,nightDelivery:0,nightDistricts:[],tracked:null};sim.places=makeRPGWorld(sim.layout);applyProfile(sim);}
-export function nearbyPlace(sim){return sim.player.vehicleId?null:(sim.places||[]).filter(q=>q.revealed&&!q.defeated&&!(q.kind==='cache'&&q.used)&&distance(q,sim.player)<4.5&&!sim.blocked(sim.player,q)).sort((a,b)=>distance(a,sim.player)-distance(b,sim.player))[0]||null;}
+export function nearbyPlace(sim){return sim.player.vehicleId||!nearGround(sim.player)?null:(sim.places||[]).filter(q=>q.revealed&&!q.defeated&&!(q.kind==='cache'&&q.used)&&distance(q,sim.player)<4.5&&!sim.blocked(sim.player,q)).sort((a,b)=>distance(a,sim.player)-distance(b,sim.player))[0]||null;}
 export function questProgress(sim,id){const r=sim.rpg,q=QUESTS.find(q=>q.id===id);if(!q)return[0,1];if(id==='salvage')return[r.cases.length,2];if(id==='mercy')return[Math.min(20,r.kills),20];if(id==='signal')return[+(sim.streetEvents.some(j=>j.kind==='relay'&&j.state==='complete')),1];if(id==='atlas')return[Math.min(4,sim.visited.size),4];if(id==='watch')return[sim.streetEvents.filter(j=>j.state==='complete').length,sim.streetEvents.length||3];
  let n=0;switch(q.metric){case 'nightDistricts':n=r.nightDistricts.length;break;case 'contacts':n=r.contacts.length;break;case 'delivery':n=+r.delivery;break;case 'outfit':n=Object.values(sim.profile.equipment).filter(Boolean).length;break;case 'districts':n=sim.visited.size;break;case 'wave':n=sim.wave;break;case 'cache':case 'hunt':n=+sim.streetEvents.some(j=>j.kind===q.metric&&j.state==='complete');break;case 'guardians':n=sim.places.filter(p=>p.kind==='secret'&&p.defeated).length;break;case 'confessor':case 'marshal':n=+!!sim.places.find(p=>p.id===q.metric)?.defeated;break;default:n=r[q.metric]||0;}
  return [Math.min(n,q.target),q.target];

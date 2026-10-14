@@ -9,7 +9,7 @@
 [![Play now](https://img.shields.io/badge/PLAY_NOW-IN_YOUR_BROWSER-e38b50?style=for-the-badge&labelColor=182327)](https://iamknow0ne.github.io/zombibagarre/)
 
 [![Build and deployment](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml)
-[![Version](https://img.shields.io/badge/version-4.42.0-e38b50?labelColor=182327)](docs/RELEASE-4.42.md)
+[![Version](https://img.shields.io/badge/version-4.43.0-e38b50?labelColor=182327)](docs/RELEASE-4.43.md)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-b5c7b1?logo=threedotjs&logoColor=white&labelColor=182327)](package.json)
 [![Controls](https://img.shields.io/badge/controls-keyboard_%C2%B7_gamepad_%C2%B7_touch-8bbdc8?labelColor=182327)](#controls)
 
@@ -42,6 +42,8 @@ Explore a ruined town on foot or behind the wheel. Pair two guns, master a blade
 
 
 ## Take the high road
+
+**New in 4.43:** Open City expeditions include destructible service platforms and grapple anchors. Press **J** to jump, **G** to grapple or release; controller mappings and touch buttons are available too. Find the elevated supply cache, but keep moving: enemies can break the platform underneath you. [Release details](docs/RELEASE-4.43.md).
 
 **[Play Rooftop Training →](https://iamknow0ne.github.io/zombibagarre/traversal.html)** · [Controls and scope](docs/TRAVERSAL.md)
 
@@ -147,15 +149,15 @@ Meet **Rook, Saint, Torque and Vesper**, explore the factions, and read the Ward
 
 Grenades rebound off walls, fire bottles ignite the facade they hit, and water catches and quenches thrown ordnance. Vehicle entry/exit respects walls and water. The chase camera stays above the street, and the crowded HUD keeps active effects clear of navigation.
 
-Rendering updates transfer only active enemy, rubble and weather data. **364 regression tests pass**, with browser effects checks and a bounded collapse stress run. [Changes, measurements and QA limits](docs/RELEASE-4.42.md) · [Continuing work](docs/NEXT-PASS.md).
+Rendering updates transfer only active enemy, rubble and weather data. **364 regression tests pass**, with browser effects checks and a bounded collapse stress run. [Changes, measurements and QA limits](docs/RELEASE-4.43.md) · [Continuing work](docs/NEXT-PASS.md).
 
 ## macOS test app and portable saves
 
-**[Download the Apple Silicon macOS test edition →](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.42.0)** · macOS 13+
+**[Download the Apple Silicon macOS test edition →](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.43.0)** · macOS 13+
 
 **Your survivor can travel with you.** Settings → Your save now exports and restores character progression, equipment, base camp and settings. Restore previews the incoming character and keeps a recovery copy. Storage problems are visible rather than silently discarding progress.
 
-The Apple Silicon macOS app runs offline with GPU acceleration, native menus and backup-file dialogs. This is an ad-hoc signed, unnotarized test edition; a downloaded app may be blocked by Gatekeeper. [Mac installation and local-build guide](docs/MACOS.md) · [Release details and QA](docs/RELEASE-4.42.md).
+The Apple Silicon macOS app runs offline with GPU acceleration, native menus and backup-file dialogs. This is an ad-hoc signed, unnotarized test edition; a downloaded app may be blocked by Gatekeeper. [Mac installation and local-build guide](docs/MACOS.md) · [Release details and QA](docs/RELEASE-4.43.md).
 
 ## Install on Steam Deck
 

@@ -1,0 +1,82 @@
+{
+  "version": "4.43.0",
+  "date": "2026-10-14",
+  "automated": {
+    "tests": 435,
+    "passed": 435,
+    "failed": 0,
+    "productionBuild": "passed",
+    "campaignRoutes": [
+      "relaxed campaign victory",
+      "standard campaign victory",
+      "nightmare campaign victory",
+      "standard city victory"
+    ]
+  },
+  "browser": {
+    "fixtureSeed": 73,
+    "grapple2": {
+      "grounded": true,
+      "height": 1.1,
+      "rewardClaimed": true,
+      "grenades": 7
+    },
+    "destroyedSupport": {
+      "grounded": true,
+      "height": 0,
+      "support": null
+    },
+    "manualRelease": {
+      "grounded": true,
+      "height": 0,
+      "grapple": null
+    },
+    "elevatedShotTargetHealth": {
+      "initial": 10000,
+      "afterTPS": 9900,
+      "afterFPS": 9775
+    },
+    "scriptedTouch": {
+      "jumpHeight": 1.38,
+      "jumpStickHeld": true,
+      "grappleHeight": 0.449,
+      "grappleAttached": true,
+      "grappleStickHeld": true,
+      "grenadesUnchanged": true
+    },
+    "viewports": [
+      [
+        320,
+        568
+      ],
+      [
+        390,
+        844
+      ],
+      [
+        844,
+        390
+      ]
+    ],
+    "limitations": "Scripted pointer and staged invulnerable fixtures; not physical-device validation."
+  },
+  "mac": {
+    "architecture": "arm64",
+    "normalHardwareBackend": true,
+    "gpu": "enabled",
+    "offlineStartup": "passed",
+    "adHocSigned": true,
+    "notarized": false,
+    "archiveBytes": 133446413,
+    "sha256": "33a5a0843d88928b29a027e0ee8c5f525e00b37f60e629c027873c5aaeda548f",
+    "manualFinalPackagePlay": "pending; preserved active user app"
+  },
+  "remaining": [
+    "normal complete human campaign",
+    "physical controller/phone",
+    "arbitrary roofs and elevated enemy access",
+    "broader perspectives",
+    "interiors",
+    "region and space travel"
+  ]
+}

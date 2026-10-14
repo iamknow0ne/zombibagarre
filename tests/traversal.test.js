@@ -13,3 +13,46 @@ test('authored grapple route reels to each roof, lands and never enters solid wa
 test('release preserves motion and gravity; destroyed anchors detach',()=>{const {boxes,anchors}=coursePlan(),p=player({x:0,y:0,z:7});step(p,{grapple:true,anchorId:anchors[0].id},boxes,anchors);run(p,{},boxes,anchors,.3);const vy=p.vy;step(p,{grapple:true},boxes,anchors);assert.equal(p.grapple,null);assert.ok(p.vy<vy);assert.ok(p.y>0);initTraversal(p,{x:0,y:0,z:7});step(p,{grapple:true,anchorId:anchors[0].id},boxes,anchors);boxes[1].health=0;step(p,{},boxes,anchors);assert.equal(p.grapple,null);});
 test('raised slabs block upward motion and high speed cannot tunnel through walls',()=>{const p=player({x:0,y:0,z:0}),ceiling={x:0,z:0,y:2.7,w:5,d:5,h:.4};step(p,{jump:true},[ceiling]);run(p,{},[ceiling],[],.15);assert.ok(p.y<=2.7-TRAVERSAL.bodyHeight+.001);const wall={x:2,z:0,w:.2,d:5,h:8};initTraversal(p,{x:0,y:1,z:0});p.grounded=false;p.vx=300;step(p,{x:1},[wall],[],.05);assert.ok(p.x<=1.5+.001);});
 test('guided demonstration completes all four checkpoints through ordinary physics',async()=>{const {traversalDemo}=await import('../src/rebuild/Traversal.js'),plan=coursePlan(),p=player(plan.spawn),visited=new Set();for(let i=0;i<2400&&visited.size<4;i++){for(const e of step(p,traversalDemo(p,visited,plan),plan.boxes,plan.anchors,1/120))if(e.type==='land'&&e.supportId)visited.add(e.supportId);}assert.equal(visited.size,4);assert.equal(p.y,10.5);});
+
+test('grapple obstruction uses raised slab bases once and allows a cable below them',()=>{
+ const p=player({x:0,y:0,z:0}),owner={id:'owner',x:0,y:0,z:8,w:2,d:2,h:.5},anchor={id:'a',supportId:'owner',x:0,y:2,z:8};
+ const slab={id:'slab',x:0,y:3,z:4,w:4,d:1,h:.5};
+ assert.equal(grappleAvailability(p,anchor,[owner,slab]),null);
+ assert.match(grappleAvailability(p,anchor,[owner,{...slab,y:1.3}]),/obstructed/);
+ p.y=3;const raisedAnchor={...anchor,y:5};
+ assert.match(grappleAvailability(p,raisedAnchor,[owner,{...slab,y:4.3}]),/obstructed/);
+});
+const configuredRun=(p,input,movement,seconds=1,boxes=[])=>{for(let i=0;i<seconds*120;i++)stepTraversal(p,input,1/120,boxes,[],bounds,movement);return p;};
+test('campaign movement respects real speed while preserving combat facing',()=>{
+ const slow=player({x:0,y:0,z:0}),fast=player({x:0,y:0,z:0});slow.angle=fast.angle=.7;
+ configuredRun(slow,{x:1},{speed:3,preserveFacing:true});configuredRun(fast,{x:1},{speed:9,preserveFacing:true});
+ assert.ok(Math.abs(fast.x/slow.x-3)<1e-9);assert.equal(fast.angle,.7);
+ const stopped=player({x:0,y:0,z:0});configuredRun(stopped,{x:1},{speed:0});assert.equal(stopped.x,0);
+ const turning=player({x:0,y:0,z:0});configuredRun(turning,{x:1},{});assert.equal(turning.angle,Math.PI/2);
+});
+test('authoritative dodge velocity retains collision sweeps and is independent of steering speed',()=>{
+ const p=player({x:0,y:0,z:0});p.angle=.3;
+ stepTraversal(p,{z:1},.05,[],[],bounds,{speed:1,desiredVelocity:{x:22,z:0},preserveFacing:true});
+ assert.ok(Math.abs(p.x-1.1)<1e-9);assert.equal(p.z,0);assert.equal(p.angle,.3);
+ initTraversal(p,{x:0,y:0,z:0});const wall={x:2,z:0,w:.2,d:5,h:8};
+ stepTraversal(p,{},.05,[wall],[],bounds,{desiredVelocity:{x:300,z:0}});assert.ok(p.x<=1.500001);assert.equal(p.vx,0);
+});
+test('ground traction affects acceleration and braking without changing airborne control',()=>{
+ const dry=player({x:0,y:0,z:0}),ice=player({x:0,y:0,z:0});
+ configuredRun(dry,{x:1},{traction:24},.2);configuredRun(ice,{x:1},{traction:2},.2);assert.ok(dry.x>ice.x*2);
+ dry.vx=ice.vx=6;configuredRun(dry,{},{traction:24},.1);configuredRun(ice,{},{traction:2},.1);assert.ok(ice.vx>dry.vx*5);
+ const a=player({x:0,y:8,z:0}),b=player({x:0,y:8,z:0});for(const p of [a,b]){p.grounded=false;p.coyote=0;}
+ configuredRun(a,{x:1},{traction:24},.2);configuredRun(b,{x:1},{traction:2},.2);assert.equal(a.x,b.x);assert.equal(a.y,b.y);
+});
+test('configured body height controls clearance and ceiling contact consistently',()=>{
+ const slab={x:0,z:0,y:2.7,w:5,d:5,h:.4};
+ const p=player({x:0,y:0,z:0});stepTraversal(p,{jump:true},.05,[slab],[],bounds,{bodyHeight:2.5});
+ assert.ok(p.y<=.200001);assert.ok(p.vy<=0);
+ const short=player({x:-4,y:0,z:0}),tall=player({x:-4,y:0,z:0});
+ configuredRun(short,{x:1},{bodyHeight:2.5},1,[slab]);configuredRun(tall,{x:1},{bodyHeight:3},1,[slab]);
+ assert.ok(short.x>0);assert.ok(tall.x<=-2.899);
+});
+test('omitting movement configuration preserves the authored trainer trajectory',()=>{
+ const {boxes,anchors}=coursePlan(),a=player({x:0,y:0,z:7}),b=player({x:0,y:0,z:7});
+ for(let i=0;i<240;i++){const input={x:i<60?1:0,z:i>=60&&i<120?-1:0,jump:i===10};stepTraversal(a,input,1/120,boxes,anchors,bounds);stepTraversal(b,input,1/120,boxes,anchors,bounds,{});assert.deepEqual(a,b);}
+});

@@ -1,3 +1,4 @@
+import {advanceFixedStep} from './rebuild/FixedStepInput.js';
 import {perspectiveSettings} from './rebuild/PerspectiveSettings.js';
 import {PerspectiveUI} from './rebuild/PerspectiveUI.js';
 import './rebuild/perspective.css';
@@ -182,9 +183,7 @@ function loop(now){sim.focusEnabled=settings.bulletTime!==false;input.pollGamepa
   if(['playing','extracting'].includes(sim.state)){
     accumulator=Math.min(.15,accumulator+delta*(input.weaponWheelActive?WHEEL_TIME_SCALE:1));const frame=input.consume(world,auto,sim,delta);
     if(frame.destination){if(distance(sim.player,frame.destination)<.3)input.destination=null;else{const dest=sim.blocked(sim.player,frame.destination,.48)?sim.navigate(sim.player,frame.destination):frame.destination;if(dest){const d=distance(sim.player,dest)||1;frame.x=(dest.x-sim.player.x)/d;frame.z=(dest.z-sim.player.z)/d;}}}
-    let once=true;
-    while(accumulator>=1/60){sim.update(1/60,once?frame:{...frame,bulletTime:false,dash:false,melee:false,grenade:false,reload:false,interact:false,weapon:null});once=false;accumulator-=1/60;}
-    if(once)Object.assign(input.once,{bulletTime:frame.bulletTime,dash:frame.dash,melee:frame.melee,grenade:frame.grenade,reload:frame.reload,interact:frame.interact,weapon:frame.weapon});
+    accumulator=advanceFixedStep(sim,accumulator,frame,input.once);
   }else accumulator=0;
   processEvents();if(now-lastHud>80){updateInputLayout(input,world);hud();controllerUI?.update(sim,world,auto);touchUI?.update(sim,world,auto);perspectiveUI?.update(sim,world);bulletTimeUI?.update(sim);rpgUI?.update();navigationRoute(sim);lastHud=now;}
   if(now-lastFps>1000){fps=Math.round(frameCount*1000/(now-lastFps));frameCount=0;lastFps=now;desktopUI?.performance(fps);if(import.meta.env.DEV){$('game').dataset.fps=fps;$('game').dataset.diagnostics=JSON.stringify({seed:sim.seed,state:sim.state,x:+sim.player.x.toFixed(2),z:+sim.player.z.toFixed(2),weapon:sim.player.weapon,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,props:sim.obstacles.length,effects:world.effects.length,geometries:world.renderer.info.memory.geometries});}}
@@ -246,7 +245,7 @@ try{
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('rpgQA')){const {installRPGQA}=await import('../dev/rpg-qa.js');installRPGQA(input,()=>sim,()=>world);}
 
   // Read-only diagnostics for local QA. No gameplay mutation surface is exposed.
-  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.42.0'})});
+  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.43.0'})});
 }catch(error){console.error(error);$('error-detail').textContent='WebGL is needed to render Saint-Roch. Enable hardware acceleration or try a browser with WebGL support.';$('error').hidden=false;}
 
 // Isolated traversal training does not load or write expedition progression.

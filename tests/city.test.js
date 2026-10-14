@@ -25,7 +25,7 @@ test('vehicles cannot drive through a building and water immersion ejects the su
  step(s,80,{x:1,z:0});assert.equal(s.player.vehicleId,null);assert.ok(v.sunk);assert.equal(v.health<=0,true);assert.ok(insideMap(s.layout,s.player.x,s.player.z,.4));assert.ok(s.events.some(e=>e.type==='splash'));
 });
 test('water shots and explosions produce splashes without igniting the canal',()=>{
- const s=city(),wet=s.layout.waterObstacles[0];s.props=[];s.obstacles=[];s.player.x=wet.x-wet.w/2-3;s.player.z=wet.z;s.switchWeapon('carbine');step(s,30,{firing:true,aim:{x:wet.x,z:wet.z}});assert.ok(s.events.some(e=>e.type==='splash'));
+ const s=city(),wet=s.layout.waterObstacles[0];s.props=[];s.obstacles=[];s.player.x=wet.x-wet.w/2-3;s.player.z=wet.z;s.switchWeapon('carbine');step(s,30,{firing:true,aim:{x:wet.x,y:.08,z:wet.z}});assert.ok(s.events.some(e=>e.type==='splash'));
  s.blast(wet.x,wet.z,4.3,180);assert.ok(s.events.some(e=>e.type==='explosion'&&e.water));s.addFire(wet.x,wet.z);assert.equal(s.fires.length,0);
 });
 test('swords have directional combos, sever limbs, damage timber and require no ammunition',()=>{

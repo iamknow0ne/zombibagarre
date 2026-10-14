@@ -1,3 +1,4 @@
+import {nearGround} from './CombatHeight.js';
 import {seededRandom,distance,pointBlocked} from './config.js';
 export const STREET_JOBS=[
  {kind:'relay',name:'DEAD AIR',instruction:'Clear the relay and stay close on foot',reward:'RADIO RESTORED · +40 ARMOUR',seconds:8},
@@ -30,7 +31,7 @@ export function updateStreetEvents(sim,dt){
   if(remaining>0)continue;
   if(job.kind==='relay'){
    const contested=sim.enemies.some(e=>e.health>0&&distance(e,job)<5);
-   if(distance(p,job)<4&&!p.vehicleId&&!contested)job.progress=Math.min(job.seconds,job.progress+dt);
+   if(nearGround(p)&&distance(p,job)<4&&!p.vehicleId&&!contested)job.progress=Math.min(job.seconds,job.progress+dt);
    if(job.progress<job.seconds)continue;
   }
   job.state='complete';sim.score+=1200;

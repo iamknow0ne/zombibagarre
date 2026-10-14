@@ -1,6 +1,6 @@
 import {WeaponHold} from './WeaponWheel.js';
 import {cameraMovement} from './ViewRig.js';
-import {TouchControls,touchAimTarget} from './TouchControls.js';
+import {TouchControls,touchAimTarget,assistedAimPoint,assistedAimClear} from './TouchControls.js';
 import {assistedDrive} from './Vehicles.js';
 import {sampleGamepad,worldStick,selectGamepad} from './Gamepad.js';
 import {BINDINGS,CONTROL_DEFAULTS,controllerFamily,handInput,stepRange,enabledOptionIndex,directionalControl} from './ControllerConfig.js';
@@ -13,15 +13,15 @@ export class Input {
       if(e.code==='Escape'){if(document.querySelector('dialog[open]'))return;e.preventDefault();}
       if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&!document.querySelector('dialog[open]'))e.preventDefault();
       if(!e.repeat){const actions={Escape:'pause',KeyP:'pause',KeyT:'auto',KeyB:'arsenal',KeyM:'map'};if(actions[e.code])onAction(actions[e.code]);
-        const single={Space:'dash',KeyF:'melee',KeyE:'grenade',KeyR:'reload',KeyV:'interact',KeyC:'bulletTime',KeyX:'toggleAim',Digit9:'katana',Digit0:'dual',Digit1:'carbine',Digit2:'shotgun',Digit3:'smg',Digit4:'revolver',Digit5:'marksman',Digit6:'flame',Digit7:'launcher',Digit8:'arc'};if(single[e.code]){if(e.code.startsWith('Digit'))this.once.weapon=single[e.code];else this.once[single[e.code]]=true;}}
+        const single={Space:'dash',KeyF:'melee',KeyE:'grenade',KeyR:'reload',KeyV:'interact',KeyC:'bulletTime',KeyX:'toggleAim',KeyJ:'jump',KeyG:'grapple',Digit9:'katana',Digit0:'dual',Digit1:'carbine',Digit2:'shotgun',Digit3:'smg',Digit4:'revolver',Digit5:'marksman',Digit6:'flame',Digit7:'launcher',Digit8:'arc'};if(single[e.code]){if(e.code.startsWith('Digit'))this.once.weapon=single[e.code];else this.once[single[e.code]]=true;}}
       this.keys.add(e.code);
     });
     window.addEventListener('keyup',e=>this.keys.delete(e.code));
     window.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')this.source='touch';});
     window.addEventListener('blur',()=>this.clear());
-    canvas.addEventListener('pointermove',e=>{if(e.pointerType==='touch'||this.weaponWheelActive)return;this.source='keyboard';if(document.pointerLockElement===canvas||(this.perspective&&e.buttons===2)){this.lookX=(this.lookX||0)+e.movementX;this.lookY=(this.lookY||0)+e.movementY;}this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
-    canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return;this.source='keyboard';if(this.perspective&&this.playing&&!this.lockUnavailable&&canvas.requestPointerLock&&!document.querySelector('dialog[open]')&&document.pointerLockElement!==canvas){try{canvas.requestPointerLock()?.catch?.(()=>{this.lockUnavailable=true;});}catch{this.lockUnavailable=true;}return;}if(e.button===0)this.firing=true;if(e.button===2&&this.perspective)this.aimHeld=true;canvas.setPointerCapture(e.pointerId);if(e.button===2&&!this.perspective)this.moveRequest={x:e.clientX/innerWidth,y:e.clientY/innerHeight};this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
-    canvas.addEventListener('pointerup',e=>{if(e.button===0)this.firing=false;if(e.button===2)this.aimHeld=false;});canvas.addEventListener('pointercancel',()=>{this.firing=false;this.aimHeld=false;});canvas.addEventListener('contextmenu',e=>e.preventDefault());
+    canvas.addEventListener('pointermove',e=>{if(e.pointerType==='touch'||this.weaponWheelActive)return;this.source='keyboard';if(e.buttons===0&&document.pointerLockElement!==canvas){this.firing=false;this.aimHeld=false;}if(document.pointerLockElement===canvas||(this.perspective&&e.buttons===2)){this.lookX=(this.lookX||0)+e.movementX;this.lookY=(this.lookY||0)+e.movementY;}this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
+    canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return;this.source='keyboard';if(this.perspective&&this.playing&&!this.lockUnavailable&&canvas.requestPointerLock&&!document.querySelector('dialog[open]')&&document.pointerLockElement!==canvas){try{canvas.requestPointerLock()?.catch?.(()=>{this.lockUnavailable=true;});}catch{this.lockUnavailable=true;}return;}if(e.button===0)this.firing=true;if(e.button===2&&this.perspective)this.aimHeld=true;if(document.pointerLockElement!==canvas){try{canvas.setPointerCapture(e.pointerId);}catch{/* Pointer lock/cancellation can invalidate capture; window release still ends the action. */}}if(e.button===2&&!this.perspective)this.moveRequest={x:e.clientX/innerWidth,y:e.clientY/innerHeight};this.pointer={x:e.clientX/innerWidth,y:e.clientY/innerHeight,active:true};});
+    const releasePointer=e=>{if(e.pointerType==='touch')return;if(e.button===0)this.firing=false;if(e.button===2)this.aimHeld=false;};const cancelPointer=e=>{if(e.pointerType==='touch')return;this.firing=false;this.aimHeld=false;this.moveRequest=null;};canvas.addEventListener('pointerup',releasePointer);window.addEventListener('pointerup',releasePointer);canvas.addEventListener('pointercancel',cancelPointer);window.addEventListener('pointercancel',cancelPointer);canvas.addEventListener('lostpointercapture',cancelPointer);canvas.addEventListener('contextmenu',e=>e.preventDefault());
     // Pointer events only emit pointerdown for the first button in a mouse chord.
     // Mouse events keep aim + fire independent when the second button is pressed.
     canvas.addEventListener('mousedown',e=>{if(this.perspective&&this.playing)this.mouseButton(e.button,true);});
@@ -72,12 +72,16 @@ export class Input {
       if(press[b.auto])this.onAction('auto');if(press[b.aim])this.once.toggleAim=true;
     }else{this.weaponHold?.reset();this.onCancelWheel?.();}
     for(const action of (sim.player.vehicleId?['interact']:['dash','reload','interact','grenade','bulletTime']))if(press[b[action]])this.once[action]=true;
+    if(sim.player.traversal&&!sim.player.vehicleId)for(const action of ['jump','grapple'])if(press[b[action]])this.once[action]=true;
     if(Math.hypot(pad.aim.x,pad.aim.y)>.1){
       const a=worldStick({x:pad.aim.x,y:pad.aim.y*(settings.invertAim?-1:1)}),len=Math.hypot(a.x,a.z),range=5+11*Math.min(1,len),angle=Math.atan2(a.x,a.z);
       const previous=this.aimAngle??angle,delta=Math.atan2(Math.sin(angle-previous),Math.cos(angle-previous));this.aimAngle=previous+delta*(1-Math.exp(-dt*24*settings.aimSensitivity));
       this.padAim={x:sim.player.x+Math.sin(this.aimAngle)*range,z:sim.player.z+Math.cos(this.aimAngle)*range};
-      if(settings.aimAssist){const target=(sim.enemies||[]).filter(e=>e.health>0&&Math.hypot(e.x-sim.player.x,e.z-sim.player.z)<range+5&&!sim.blocked?.(sim.player,e)).map(e=>({e,d:Math.abs(Math.atan2(Math.sin(Math.atan2(e.x-sim.player.x,e.z-sim.player.z)-this.aimAngle),Math.cos(Math.atan2(e.x-sim.player.x,e.z-sim.player.z)-this.aimAngle)))})).sort((a,b)=>a.d-b.d)[0];if(target?.d<.13)this.padAim={x:target.e.x,z:target.e.z};}
-    }else if(this.padAim){this.padAim={x:this.padAim.x+(sim.player.x-(this.lastPadX??sim.player.x)),z:this.padAim.z+(sim.player.z-(this.lastPadZ??sim.player.z))};}
+      if(settings.aimAssist){const target=(sim.enemies||[]).filter(e=>e.health>0&&Math.hypot(e.x-sim.player.x,e.z-sim.player.z)<range+5&&assistedAimClear(sim,e)).map(e=>({e,d:Math.abs(Math.atan2(Math.sin(Math.atan2(e.x-sim.player.x,e.z-sim.player.z)-this.aimAngle),Math.cos(Math.atan2(e.x-sim.player.x,e.z-sim.player.z)-this.aimAngle)))})).sort((a,b)=>a.d-b.d)[0];if(target?.d<.13)this.padAim=assistedAimPoint(target.e);}
+    }else if(this.padAim){
+      const tracked=settings.aimAssist&&this.padAim.targetId!==undefined?(sim.enemies||[]).find(e=>e.id===this.padAim.targetId&&e.health>0&&Math.hypot(e.x-sim.player.x,e.z-sim.player.z)<21&&assistedAimClear(sim,e)):null;
+      this.padAim=tracked?assistedAimPoint(tracked):{x:this.padAim.x+(sim.player.x-(this.lastPadX??sim.player.x)),z:this.padAim.z+(sim.player.z-(this.lastPadZ??sim.player.z))};
+    }
     this.lastPadX=sim.player.x;this.lastPadZ=sim.player.z;
     if(handInput(pad,b).some(Boolean)&&!this.padAim)this.padAim={x:sim.player.x+Math.sin(sim.player.angle)*16,z:sim.player.z+Math.cos(sim.player.angle)*16};
   }
@@ -108,8 +112,9 @@ export class Input {
     const touchSim=sim||(world.player?{player:world.player.position,enemies:[],blocked:()=>false}:null);
     const touchTarget=this.source==='touch'&&this.touchAim&&touchSim?touchAimTarget(this.touchAim,touchSim,this.settings?.touchAimAssist!==false):null;this.touchWorldAim=touchTarget;
     if(this.once.toggleAim)this.aimToggle=!this.aimToggle;
-    const out={brake:k.has('Space')||!!pad?.buttons[1],destination:this.destination,...this.once,x:x*.776+y*.63,z:-x*.63+y*.776,auto:aiming?false:auto,aim:pad&&(hands.some(Boolean)||this.once.grenade||aiming)?this.padAim:touchTarget||(this.pointer.active?world.aim(this.pointer.x,this.pointer.y):null),firing:this.firing||!!this.touchFiring,fireHands:hands};this.once={};
+    const out={brake:k.has('Space')||!!pad?.buttons[1],destination:this.destination,...this.once,x:x*.776+y*.63,z:-x*.63+y*.776,auto:aiming?false:auto,aim:pad&&(hands.some(Boolean)||this.once.grenade||aiming)?this.padAim:touchTarget||(this.pointer.active?world.aim(this.pointer.x,this.pointer.y,sim):null),firing:this.firing||!!this.touchFiring,fireHands:hands};this.once={};
     this.perspective=!!world.viewRig?.active;out.aiming=this.perspective&&!!(this.aimHeld||this.aimToggle);
+    if(!sim?.player.traversal||sim.player.vehicleId)out.jump=out.grapple=false;
     if(this.perspective&&sim){const rig=world.viewRig,look=pad?.aim||(this.source==='touch'&&this.touchFiring?this.touchAim:null);rig.look((this.lookX||0)+(look?.x||0)*18*Math.min(.05,dt)*60*(this.settings?.aimSensitivity||1),(this.lookY||0)+(look?.y||0)*14*Math.min(.05,dt)*60*(this.settings?.invertAim?-1:1));this.lookX=this.lookY=0;Object.assign(out,cameraMovement(x,y,rig.yaw));out.aim=rig.aim(sim.player,sim);out.auto=false;out.destination=null;this.destination=null;this.touchWorldAim=out.aim;}
     const vehicle=sim?.props.find(v=>v.id===sim.player.vehicleId);
     if(vehicle){

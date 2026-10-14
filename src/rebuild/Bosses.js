@@ -1,3 +1,4 @@
+import {actorSpan,verticalGap} from './Ballistics.js';
 import {ARENA,clamp,distance,pointBlocked} from './config.js';
 import {insideMap} from './Map.js';
 export const BOSS_PROFILES=[
@@ -17,7 +18,7 @@ export function configureBoss(sim,e,options={}){
  return e;
 }
 export function bossContains(h,p){
- const dx=p.x-h.x,dz=p.z-h.z,r=p.radius||0;
+ const min=h.y||0,max=min+(h.attackHeight??1.15);if(verticalGap(actorSpan(p),{min,max})>0)return false;const dx=p.x-h.x,dz=p.z-h.z,r=p.radius||0;
  if(h.shape==='lane'){const forward=dx*Math.sin(h.angle)+dz*Math.cos(h.angle),side=dx*Math.cos(h.angle)-dz*Math.sin(h.angle);return Math.abs(forward)<=h.length/2+r&&Math.abs(side)<=h.width/2+r;}
  const d=Math.hypot(dx,dz);return d<h.radius+r&&(!h.innerRadius||d>h.innerRadius-r);
 }
@@ -33,7 +34,7 @@ export function bossDefeated(sim,e){
  if(!e.bossProfile)return;clearBossAttacks(sim,e);sim.emit('boss-defeated',{name:e.bossName,x:e.x,z:e.z,height:e.bossHeight,kind:e.bossKind,bossColor:e.bossProfile.color});
  for(const other of sim.enemies)if(other.health>0&&e.duoId&&other.duoId===e.duoId){other.phasePending=true;other.survivorRage=true;}
 }
-function tell(sim,e,data,delay=0){const h={id:sim.nextId++,bossOwner:e.id,x:e.x,z:e.z,radius:3,timer:e.windup+delay,duration:e.windup+delay,friendly:false,damage:e.damage*(e.bossPhase===2?1.1:1),bossKind:e.bossKind,bossColor:e.bossProfile.color,bossHeight:e.bossHeight,bossMove:e.bossMove,...data};sim.hazards.push(h);return h;}
+function tell(sim,e,data,delay=0){const h={id:sim.nextId++,bossOwner:e.id,x:e.x,z:e.z,radius:3,timer:e.windup+delay,duration:e.windup+delay,friendly:false,damage:e.damage*(e.bossPhase===2?1.1:1),bossKind:e.bossKind,bossColor:e.bossProfile.color,bossHeight:e.bossHeight,bossMove:e.bossMove,attackHeight:({bell:.65,stamp:.8,tide:1.1,fault:.8,roots:2.8,furnace:4,kiln:5,harpoon:3.5,judgement:6,anchors:5,seeds:3,brood:3})[e.bossMove]||2,...data};sim.hazards.push(h);return h;}
 export function beginBossAttack(sim,e,forced){
  const p=sim.player,profile=e.bossProfile;if(!profile)return;const moves=profile.moves,move=forced||moves[e.attackCount++%moves.length],rage=e.bossPhase===2;e.chaseTime=0;e.bossMove=move;e.bossState='telegraph';e.windup=move==='rush'?1.15:profile.height>9?1.5:1.1;e.bossTimer=e.windup;e.bossDuration=e.windup;e.targetX=p.x;e.targetZ=p.z;e.angle=Math.atan2(p.x-e.x,p.z-e.z);e.attackActive=.5;e.recoveryDuration=rage?1.5:2.1;
  const circle=(x,z,r,delay=0)=>tell(sim,e,{x,z,radius:r},delay),lane=(angle,length,width,delay=0,extra={})=>tell(sim,e,{x:e.x+Math.sin(angle)*length/2,z:e.z+Math.cos(angle)*length/2,shape:'lane',angle,length,width,radius:width/2,...extra},delay);
@@ -54,7 +55,7 @@ export function updateBoss(sim,e,dt){
  const state=e.bossState;e.bossTimer=Math.max(0,e.bossTimer-dt);
  if(state==='arrival'||state==='transition'){e.windup=0;if(!e.bossTimer){e.bossState='pursuit';e.bossTimer=.55;}return true;}
  if(state==='telegraph'){e.windup=e.bossTimer;if(!e.bossTimer){e.bossState='strike';e.bossTimer=e.bossDuration=e.attackActive;sim.emit('boss-attack',{name:e.bossName,attack:e.bossMove,x:e.x,z:e.z});if(e.summonPending){e.summonPending=false;for(let i=0;i<(e.bossPhase===2?3:2);i++){if(sim.enemies.filter(m=>m.summonedBy===e.id&&m.health>0).length>=4)break;const a=i*2.4+e.attackCount,q={x:e.x+Math.sin(a)*(e.radius+1),z:e.z+Math.cos(a)*(e.radius+1)};if(pointBlocked(q.x,q.z,.5,sim.obstacles)||!insideMap(sim.layout,q.x,q.z,.6))continue;const m=sim.spawnEnemy('runner',q.x,q.z);m.summonedBy=e.id;m.health*=.6;sim.waveTotal++;}}}return true;}
- if(state==='strike'){if(e.bossMove==='rush'){const old={x:e.x,z:e.z};sim.move(e,e.chargeX*dt*e.chargeSpeed,e.chargeZ*dt*e.chargeSpeed);if(distance(e,sim.player)<e.radius+sim.player.radius+.15)sim.damagePlayer(e.damage*1.2);if(distance(old,e)<dt*.2)e.bossTimer=0;}if(!e.bossTimer){if(e.bossMove==='rush')sim.emit('boss-charge-impact',{x:e.x,z:e.z,radius:e.radius+1,bossKind:e.bossKind,bossHeight:e.bossHeight,bossColor:e.bossProfile.color});e.bossState='recovery';e.bossTimer=e.bossDuration=e.recoveryDuration;}return true;}
+ if(state==='strike'){if(e.bossMove==='rush'){const old={x:e.x,z:e.z};sim.move(e,e.chargeX*dt*e.chargeSpeed,e.chargeZ*dt*e.chargeSpeed);if(distance(e,sim.player)<e.radius+sim.player.radius+.15&&verticalGap(actorSpan(e),actorSpan(sim.player))===0)sim.damagePlayer(e.damage*1.2);if(distance(old,e)<dt*.2)e.bossTimer=0;}if(!e.bossTimer){if(e.bossMove==='rush')sim.emit('boss-charge-impact',{x:e.x,z:e.z,radius:e.radius+1,bossKind:e.bossKind,bossHeight:e.bossHeight,bossColor:e.bossProfile.color});e.bossState='recovery';e.bossTimer=e.bossDuration=e.recoveryDuration;}return true;}
  if(state==='recovery'){if(!e.bossTimer){e.bossState='pursuit';e.bossTimer=e.survivorRage?.15:.35;}return true;}
  const p=sim.player,d=distance(e,p),peer=sim.enemies.find(b=>b!==e&&b.health>0&&e.duoId&&b.duoId===e.duoId),reserved=peer&&['telegraph','strike','transition','arrival'].includes(peer.bossState);
  e.chaseTime=(e.chaseTime||0)+dt;
