@@ -9,8 +9,11 @@ const onBox=(p,b,margin=0)=>Math.abs(p.x-b.x)<b.w/2-margin&&Math.abs(p.z-b.z)<b.
 export function initTraversal(p,spawn={x:0,y:0,z:7}){
  Object.assign(p,spawn,{traversal:true,vy:0,vx:0,vz:0,grounded:true,supportId:null,grapple:null,grappleCooldown:0,jumpBuffer:0,coyote:.1,landing:0,moveX:0,moveZ:0,moving:false,dash:0});return p;
 }
+// Landings use the same expanded body footprint as side/ceiling collisions.
+// A centre-only test lets a descending body's edge enter the wall, after which
+// a lateral boundary sweep cannot recover that already-overlapping position.
 export function supportBelow(p,boxes,ceiling=p.y+.06){
- let result={id:null,y:0};for(const b of boxes)if(alive(b)&&b.standable!==false&&top(b)<=ceiling&&top(b)>result.y&&onBox(p,b,p.radius*.2))result={id:b.id,y:top(b)};return result;
+ let result={id:null,y:0};for(const b of boxes)if(alive(b)&&b.standable!==false&&top(b)<=ceiling&&top(b)>result.y&&onBox(p,b,-p.radius+.001))result={id:b.id,y:top(b)};return result;
 }
 export function grappleAvailability(p,anchor,boxes){
  if(!anchor)return 'No anchor selected';

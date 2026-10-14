@@ -74,12 +74,23 @@ export class BuildingCutaway{
 // pass-wide override (which otherwise paints a dark ghost over the opening).
 export function installCutawayAO(ao,scene,cutaway){
  const normal=ao.normalMaterial.clone();applyCutaway(normal,cutaway.uniforms);
+ // Keep scratch slots between frames, but never retain scene resources in them.
+ // A city can have thousands of meshes; avoid two temporary arrays per mesh.
+ const frames=[],hasCutaway=material=>!!material.cutawayUniforms;let depth=0;
  ao.renderOverride=function(renderer,override,target,color,alpha){
-  const clear=renderer.getClearColor(new T.Color()).clone(),clearAlpha=renderer.getClearAlpha(),auto=renderer.autoClear,oldOverride=scene.overrideMaterial,originals=[];
+  const scratch=frames[depth]??(frames[depth]={nodes:[],materials:[],clear:new T.Color()});
+  const {nodes,materials,clear}=scratch;let count=0;depth++;
+  renderer.getClearColor(clear);const clearAlpha=renderer.getClearAlpha(),auto=renderer.autoClear,oldOverride=scene.overrideMaterial;
   try{
-   scene.traverseVisible(o=>{if(!o.isMesh)return;originals.push([o,o.material]);const materials=Array.isArray(o.material)?o.material:[o.material];o.material=materials.some(m=>m.cutawayUniforms)?normal:override;});
+   scene.traverseVisible(o=>{if(!o.isMesh)return;const material=o.material;nodes[count]=o;materials[count++]=material;
+    const aperture=Array.isArray(material)?material.some(hasCutaway):material.cutawayUniforms;
+    o.material=aperture?normal:override;
+   });
    scene.overrideMaterial=null;renderer.setRenderTarget(target);renderer.autoClear=false;renderer.setClearColor(color);renderer.setClearAlpha(alpha);renderer.clear();renderer.render(scene,this.camera);
-  }finally{for(const [o,m]of originals)o.material=m;scene.overrideMaterial=oldOverride;renderer.autoClear=auto;renderer.setClearColor(clear);renderer.setClearAlpha(clearAlpha);}
+  }finally{
+   for(let i=0;i<count;i++){nodes[i].material=materials[i];nodes[i]=materials[i]=null;}depth--;
+   scene.overrideMaterial=oldOverride;renderer.autoClear=auto;renderer.setClearColor(clear);renderer.setClearAlpha(clearAlpha);
+  }
  };
- const dispose=ao.dispose.bind(ao);ao.dispose=()=>{normal.dispose();dispose();};
+ const dispose=ao.dispose.bind(ao);ao.dispose=()=>{frames.length=0;normal.dispose();dispose();};
 }

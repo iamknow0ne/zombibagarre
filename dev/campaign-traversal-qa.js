@@ -17,6 +17,7 @@ function setup(){
  sim=new Simulation({seed:73,mode:'city',environment:settings});sim.start('carbine');sim.toSpawn=999;sim.spawnTimer=99999;sim.player.invulnerable=999;sim.enemies=[];sim.events=[];
  const anchors=sim.layout.traversal.anchors,centre={x:(anchors[0].x+anchors[1].x)/3,z:(anchors[0].z+anchors[1].z+3)/3};
  world=new World($('game'),settings,0,sim.layout);world.applySettings(settings);world.portrait=25;world.inspectionTarget=centre;world.focus.set(centre.x,0,centre.z);world.update(sim,0);
+ if(scene==='edge'){const a=anchors[0],support=sim.props.find(p=>p.id===a.supportId);Object.assign(sim.player,{x:a.x+support.w/2+.1,z:a.z,y:support.h+.1,vy:-5,grounded:false,supportId:null,supportY:0,angle:-Math.PI/2});centre.x=a.x;centre.z=a.z;world.focus.set(a.x,0,a.z);}
  if(scene==='shooting'){const a=anchors[0],support=sim.props.find(p=>p.id===a.supportId);Object.assign(sim.player,{x:a.x,z:a.z,y:support.h,grounded:true,supportId:support.id,supportY:support.h,angle:Math.atan2(-a.x,3-a.z)});target=sim.spawnEnemy('walker',0,3);target.health=target.maxHealth=10000;target.speed=0;target.attack=999;centre.x=(a.x+target.x)/2;centre.z=(a.z+target.z)/2;world.focus.set(centre.x,0,centre.z);}
  applyCamera();$('aim-target').disabled=!target;$('fire-burst').disabled=!['manual','shooting'].includes(scene);
  document.querySelectorAll('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.scene===scene)));$('error').hidden=true;
@@ -24,6 +25,7 @@ function setup(){
 }
 function actionInput(){
  const input={auto:false};
+ if(scene==='edge')return {...input,x:-1,z:0};
  if(scene==='manual'||scene==='shooting'){
   input.x=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
   input.z=Number(keys.has('KeyS')||keys.has('ArrowDown'))-Number(keys.has('KeyW')||keys.has('ArrowUp'));

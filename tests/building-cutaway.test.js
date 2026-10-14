@@ -58,3 +58,32 @@ test('anchor labels leave the survivor clear and stay on a narrow screen',async(
   const clear=placeAnchorLabel({x:hero.x,y:230},hero,width);assert.equal(clear.y,230);
  }
 });
+
+test('AO scratch survives nested passes, material arrays, removals and a failed render',()=>{
+ const scene=new T.Scene(),cutaway=new BuildingCutaway(),geometry=new T.BoxGeometry();
+ const plain=new T.MeshStandardMaterial(),facade=new T.MeshStandardMaterial();cutaway.bind(new T.Mesh(geometry,facade));
+ const aperture=cutaway.materials.get(facade),mixed=[plain,aperture];
+ const wall=new T.Mesh(geometry,mixed),hero=new T.Mesh(geometry,plain),hidden=new T.Mesh(geometry,plain);hidden.visible=false;scene.add(wall,hero,hidden);
+ const originalOverride=new T.MeshBasicMaterial();scene.overrideMaterial=originalOverride;
+ const ao={normalMaterial:new T.MeshNormalMaterial(),dispose(){},camera:new T.Camera()};installCutawayAO(ao,scene,cutaway);
+ let color=new T.Color(0x123456),alpha=.8,nested=false,fail=false,renders=0;
+ const renderer={autoClear:true,getClearColor:out=>out.copy(color),getClearAlpha:()=>alpha,setRenderTarget(){},setClearColor:value=>color.set(value),setClearAlpha:value=>{alpha=value;},clear(){},render(){
+  renders++;assert.equal(scene.overrideMaterial,null);assert.equal(hero.material,hero.parent?ao.normalMaterial:plain);assert.equal(hidden.material,plain);
+  if(!nested){
+   const outerMaterial=wall.material;assert.equal(outerMaterial.cutawayUniforms,cutaway.uniforms);
+   nested=true;ao.renderOverride(renderer,ao.normalMaterial,{},0xff0000,.2);nested=false;
+   assert.equal(wall.material,outerMaterial,'nested pass restores outer aperture material');assert.equal(color.getHex(),0x00ff00);assert.equal(alpha,.5);
+   if(fail)throw new Error('interrupted draw');
+  }
+ }};
+ for(let frame=0;frame<40;frame++){
+  // Repeated changing scene size must not restore removed meshes from old slots.
+  if(frame===10)hero.removeFromParent();if(frame===20)scene.add(hero);
+  fail=frame===25;
+  const draw=()=>ao.renderOverride(renderer,ao.normalMaterial,{},0x00ff00,.5);
+  if(fail)assert.throws(draw,/interrupted draw/);else draw();
+  assert.equal(wall.material,mixed,'original material array identity survives');assert.equal(hero.material,plain);assert.equal(hidden.material,plain);
+  assert.equal(scene.overrideMaterial,originalOverride);assert.equal(renderer.autoClear,true);assert.equal(color.getHex(),0x123456);assert.equal(alpha,.8);
+ }
+ assert.equal(renders,80);ao.dispose();cutaway.dispose();geometry.dispose();plain.dispose();originalOverride.dispose();ao.normalMaterial.dispose();
+});

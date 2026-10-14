@@ -9,7 +9,7 @@
 [![Play now](https://img.shields.io/badge/PLAY_NOW-IN_YOUR_BROWSER-e38b50?style=for-the-badge&labelColor=182327)](https://iamknow0ne.github.io/zombibagarre/)
 
 [![Build and deployment](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml)
-[![Version](https://img.shields.io/badge/version-4.48.1-e38b50?labelColor=182327)](docs/RELEASE-4.48.1.md)
+[![Version](https://img.shields.io/badge/version-4.48.2-e38b50?labelColor=182327)](docs/RELEASE-4.48.2.md)
 
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-b5c7b1?logo=threedotjs&logoColor=white&labelColor=182327)](package.json)
 [![Controls](https://img.shields.io/badge/controls-keyboard_%C2%B7_gamepad_%C2%B7_touch-8bbdc8?labelColor=182327)](#controls)
@@ -28,7 +28,7 @@ Explore a ruined town on foot or behind the wheel. Pair two guns, master a blade
 
 ## Survivor and infected visual pass · 4.48
 
-Refined survivor clothing and proportions, articulated footwork and six rebuilt enemy silhouettes. The live cast remains stylized procedural art; the more detailed Rook model is still a separate development study. **553 regression tests pass**, with rendered rifle/melee checks and Mac hardware startup. [Actual captures, changes and limits](docs/RELEASE-4.48.md). The [4.48.1 patch](docs/RELEASE-4.48.1.md) fixes corpse geometry cleanup and jump/landing foot angles; all 559 regression tests pass.
+Refined survivor clothing and proportions, articulated footwork and six rebuilt enemy silhouettes. The live cast remains stylized procedural art; the more detailed Rook model is still a separate development study. **553 regression tests pass**, with rendered rifle/melee checks and Mac hardware startup. [Actual captures, changes and limits](docs/RELEASE-4.48.md). The [4.48.1 patch](docs/RELEASE-4.48.1.md) fixes corpse geometry cleanup and jump/landing foot angles; all 559 regression tests pass. The [4.48.2 patch](docs/RELEASE-4.48.2.md) fixes platform-edge landings and reduces temporary allocations in building visibility rendering; 563 regression tests pass.
 
 ## A game inside the game
 
@@ -176,11 +176,11 @@ Rendering updates transfer only active enemy, rubble and weather data. **530 reg
 
 ## macOS test app and portable saves
 
-**[Download the Apple Silicon macOS test edition →](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.48.1)** · macOS 13+
+**[Download the Apple Silicon macOS test edition →](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.48.2)** · macOS 13+
 
 **Your survivor can travel with you.** Settings → Your save now exports and restores character progression, equipment, base camp and settings. Restore previews the incoming character and keeps a recovery copy. Storage problems are visible rather than silently discarding progress.
 
-The Apple Silicon macOS app runs offline with GPU acceleration, native menus and backup-file dialogs. This is an ad-hoc signed, unnotarized test edition; a downloaded app may be blocked by Gatekeeper. [Mac installation and local-build guide](docs/MACOS.md) · [Release details and QA](docs/RELEASE-4.48.1.md).
+The Apple Silicon macOS app runs offline with GPU acceleration, native menus and backup-file dialogs. This is an ad-hoc signed, unnotarized test edition; a downloaded app may be blocked by Gatekeeper. [Mac installation and local-build guide](docs/MACOS.md) · [Release details and QA](docs/RELEASE-4.48.2.md).
 
 ## Install on Steam Deck
 

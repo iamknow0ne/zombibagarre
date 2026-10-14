@@ -56,3 +56,22 @@ test('omitting movement configuration preserves the authored trainer trajectory'
  const {boxes,anchors}=coursePlan(),a=player({x:0,y:0,z:7}),b=player({x:0,y:0,z:7});
  for(let i=0;i<240;i++){const input={x:i<60?1:0,z:i>=60&&i<120?-1:0,jump:i===10};stepTraversal(a,input,1/120,boxes,anchors,bounds);stepTraversal(b,input,1/120,boxes,anchors,bounds,{});assert.deepEqual(a,b);}
 });
+
+test('descending edge and corner contacts land on the same footprint blocked by side collision',()=>{
+ const b={id:'edge',x:0,z:0,w:4,d:4,h:1.1};
+ for(const spawn of [{x:2.1,y:1.2,z:0},{x:-2.35,y:1.2,z:0},{x:0,y:1.2,z:2.35},{x:2.25,y:1.2,z:2.25}]){
+  const p=player(spawn);p.grounded=false;p.vy=-5;p.coyote=0;
+  for(let i=0;i<90;i++){
+   step(p,{x:-Math.sign(spawn.x),z:-Math.sign(spawn.z)},[b],[],1/120);
+   assert.ok(!(p.y<b.h-.001&&Math.abs(p.x-b.x)<b.w/2+p.radius-.001&&Math.abs(p.z-b.z)<b.d/2+p.radius-.001),`entered solid via edge: ${JSON.stringify(p)}`);
+  }
+  assert.equal(p.y,b.h);assert.equal(p.supportId,b.id);
+ }
+ // Outside the physical footprint still falls, rather than creating an invisible shelf.
+ const miss=player({x:2.41,y:1.2,z:0});miss.grounded=false;miss.vy=-5;miss.coyote=0;run(miss,{},[b]);assert.equal(miss.y,0);assert.equal(miss.supportId,null);
+});
+test('fast descending edge catches elevated slabs and destroyed support still drops the actor',()=>{
+ const b={id:'slab-edge',x:0,y:3,z:0,w:4,d:4,h:.5},p=player({x:2.3,y:4,z:0});p.grounded=false;p.vy=-90;p.coyote=0;
+ step(p,{},[b],[],.05);assert.equal(p.y,3.5);assert.equal(p.supportId,b.id);
+ b.health=0;run(p,{},[b]);assert.equal(p.y,0);assert.equal(p.supportId,null);
+});

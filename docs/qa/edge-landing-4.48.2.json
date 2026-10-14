@@ -1,0 +1,34 @@
+{
+  "position": {
+    "x": 1.725,
+    "y": 1.1,
+    "z": -9
+  },
+  "grounded": true,
+  "support": "prop-129",
+  "grapple": null,
+  "velocityY": 0,
+  "target": {
+    "id": "service-anchor-1",
+    "available": true,
+    "reason": null
+  },
+  "camera": {
+    "mode": "third",
+    "x": 6.225,
+    "y": 3.739,
+    "z": -9.65
+  },
+  "aim": null,
+  "targetHealth": null,
+  "rewardClaimed": false,
+  "grenades": 3,
+  "lastEvents": [
+    {
+      "type": "traversal-land",
+      "time": 0.025,
+      "support": "prop-129",
+      "message": null
+    }
+  ]
+}

@@ -26,3 +26,11 @@ test('pausing freezes airborne movement and city boundary checks do not teleport
  const s=game();s.player.x=7;s.update(1/60,{jump:true,auto:false});s.pause();const before={x:s.player.x,y:s.player.y,z:s.player.z};step(s,90,{x:1});assert.deepEqual({x:s.player.x,y:s.player.y,z:s.player.z},before);s.resume();step(s,90);assert.equal(s.player.y,0);
  const l=layout();l.city=true;l.boundary=[{x:-20,z:-20},{x:20,z:-20},{x:20,z:20},{x:-20,z:20}];l.water=[{x:8,z:3,w:3,d:12,shape:'rectangle'}];l.buildings=[];l.spawnPoints=[];l.landmarks=[];l.mapSeed=1;const water=new Simulation({layout:l});water.start();water.toSpawn=999;water.spawnTimer=1e6;water.player.x=5;water.update(1/60,{jump:true,x:1,auto:false});step(water,90,{x:1});assert.ok(water.player.x<6.5);
 });
+
+test('campaign descending edge lands above solid support and retains elevated bullet origin',()=>{
+ const s=game(),box=s.props[0],p=s.player;Object.assign(p,{x:box.x+box.w/2+.1,y:box.h+.1,z:box.z,vy:-5,grounded:false,coyote:0});
+ for(let i=0;i<32;i++){s.update(1/120,{x:-1,auto:false});assert.ok(!(p.y<box.h-.001&&Math.abs(p.x-box.x)<box.w/2+p.radius-.001&&Math.abs(p.z-box.z)<box.d/2+p.radius-.001));}
+ assert.equal(p.grounded,true);assert.equal(p.supportId,box.id);assert.equal(p.y,box.h);assert.equal(p.supportY,box.h);
+ s.fireWeapon('carbine',{x:7,y:1.1,z:0});assert.ok(Math.abs(s.bullets.at(-1).y-(box.h+1.1))<1e-8);
+ s.pause();const position={x:p.x,y:p.y,z:p.z};step(s,20,{x:1,jump:true});assert.deepEqual({x:p.x,y:p.y,z:p.z},position);s.resume();step(s,90,{x:1});assert.equal(p.y,0);assert.equal(p.supportId,null);assert.equal(p.supportY,0);
+});
