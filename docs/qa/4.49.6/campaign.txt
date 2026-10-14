@@ -1,0 +1,198 @@
+standard wave 1 time 0 hp 100
+progress 0 1 0 0 3 []
+standard wave 2 time 16 hp 100
+standard wave 3 time 33 hp 100
+standard wave 4 time 55 hp 100
+progress 59.999999999999154 4 4 2.3038536405062566 5.7578993810927415 [
+  [ 'boss', -3, 18 ],
+  [ 'runner', -5, 32 ],
+  [ 'walker', -6, 36 ],
+  [ 'walker', -17, 10 ]
+]
+standard wave 5 time 68 hp 100
+standard wave 6 time 92 hp 100
+standard wave 7 time 114 hp 100
+progress 119.99999999999575 7 8 2.9151380353121232 -2.113113822755629 [
+  [ 'walker', -4, 31 ],
+  [ 'brute', -14, 8 ],
+  [ 'brute', -5, 30 ],
+  [ 'walker', 5, -25 ],
+  [ 'brute', -3, 22 ],
+  [ 'runner', 6, -29 ],
+  [ 'spitter', -4, 23 ],
+  [ 'brute', -17, 10 ]
+]
+standard wave 8 time 144 hp 100
+standard wave 9 time 164 hp 100
+progress 179.99999999999235 9 18 1.2979130124070675 -8.105318451547808 [
+  [ 'spitter', -2, 16 ],  [ 'brute', -3, 22 ],
+  [ 'spitter', -12, 7 ],  [ 'brute', -2, 19 ],
+  [ 'spitter', -2, 12 ],  [ 'spitter', 5, -26 ],
+  [ 'walker', 6, -29 ],   [ 'spitter', -2, 14 ],
+  [ 'spitter', -2, 15 ],  [ 'runner', 5, -28 ],
+  [ 'volatile', 6, -29 ], [ 'volatile', 6, -30 ],
+  [ 'volatile', -13, 6 ], [ 'runner', -3, 18 ],
+  [ 'runner', -10, 4 ],   [ 'runner', -11, 5 ],
+  [ 'brute', 7, -36 ],    [ 'volatile', -2, 13 ]
+]
+standard wave 10 time 191 hp 100
+standard wave 11 time 219 hp 100
+progress 239.99999999998894 11 10 -1.3329325441068849 -8.052482440831177 [
+  [ 'spitter', 4, -27 ],
+  [ 'brute', -10, 2 ],
+  [ 'brute', -2, 12 ],
+  [ 'brute', -11, 6 ],
+  [ 'spitter', 6, -35 ],
+  [ 'spitter', -3, 17 ],
+  [ 'walker', 5, -25 ],
+  [ 'runner', 3, -22 ],
+  [ 'brute', 7, -38 ],
+  [ 'brute', -3, 15 ]
+]
+standard wave 12 time 249 hp 100
+standard wave 13 time 262 hp 100
+standard wave 14 time 293 hp 100
+progress 300.000000000023 14 13 -2.9629098067304858 -1.3953384799449844 [
+  [ 'armored', -18, 7 ],
+  [ 'armored', 4, -26 ],
+  [ 'runner', 4, -27 ],
+  [ 'armored', -21, 11 ],
+  [ 'armored', -4, 18 ],
+  [ 'volatile', 2, -16 ],
+  [ 'armored', -4, 24 ],
+  [ 'spitter', -24, 13 ],
+  [ 'armored', 5, -30 ],
+  [ 'armored', -3, 16 ],
+  [ 'brute', 5, -26 ],
+  [ 'armored', -25, 14 ],
+  [ 'volatile', 4, -22 ]
+]
+standard wave 15 time 327 hp 130
+progress 360.00000000007077 15 2 0.4297881617193334 -7.865424001800341 [ [ 'brute', 4, -20 ], [ 'armored', -20, 11 ] ]
+standard wave 16 time 363 hp 130
+standard wave 17 time 382 hp 166
+standard wave 18 time 414 hp 166
+progress 420.0000000001185 18 9 0.20096810941173626 8.77589860314758 [
+  [ 'spitter', 7, -35 ],
+  [ 'walker', 5, -29 ],
+  [ 'spitter', -4, 26 ],
+  [ 'runner', 6, -29 ],
+  [ 'volatile', 5, -23 ],
+  [ 'spitter', 4, -20 ],
+  [ 'runner', 4, -21 ],
+  [ 'spitter', -30, 17 ],
+  [ 'brute', 3, -14 ]
+]
+standard wave 19 time 448 hp 166
+progress 480.00000000016627 19 6 -4.258163819533449 8.338824372412102 [
+  [ 'brute', -20, 12 ],
+  [ 'walker', -18, 15 ],
+  [ 'spitter', -4, 30 ],
+  [ 'brute', -4, 28 ],
+  [ 'walker', -19, 14 ],
+  [ 'brute', 4, -16 ]
+]
+standard wave 20 time 485 hp 166
+standard wave 21 time 505 hp 166
+progress 540.0000000001662 21 3 -2.0214015808915016 3.778562487830297 [
+  [ 'spitter', -2, 20 ],
+  [ 'volatile', -2, 19 ],
+  [ 'walker', -19, 11 ]
+]
+standard wave 22 time 541 hp 166
+standard wave 23 time 582 hp 166
+progress 600.0000000001116 23 14 0.929087024618513 -8.545948755756278 [
+  [ 'brute', -1, 16 ],
+  [ 'brute', -16, 10 ],
+  [ 'spitter', -2, 17 ],
+  [ 'brute', -1, 18 ],
+  [ 'spitter', -14, 6 ],
+  [ 'brute', -3, 17 ],
+  [ 'brute', -3, 20 ],
+  [ 'volatile', 6, -29 ],
+  [ 'brute', -1, 7 ],
+  [ 'walker', -3, 21 ],
+  [ 'brute', 7, -34 ],
+  [ 'spitter', 7, -35 ],
+  [ 'spitter', 6, -31 ],
+  [ 'runner', 7, -36 ]
+]
+standard wave 24 time 623 hp 208
+standard wave 25 time 643 hp 208
+progress 660.0000000000571 25 12 -1.76080586871386 -7.2786697686295705 [
+  [ 'spitter', -4, 15 ],
+  [ 'brute', -4, 14 ],
+  [ 'spitter', 5, -27 ],
+  [ 'walker', -3, 17 ],
+  [ 'brute', 5, -25 ],
+  [ 'brute', -11, 5 ],
+  [ 'brute', 5, -29 ],
+  [ 'brute', 5, -26 ],
+  [ 'walker', -24, 13 ],
+  [ 'runner', -3, 14 ],
+  [ 'walker', -17, 9 ],
+  [ 'walker', -13, 7 ]
+]
+standard wave 26 time 691 hp 259
+progress 720.0000000000025 26 25 -2.998630186476467 -0.16568789802955397 [
+  [ 'walker', 6, -26 ],    [ 'brute', -2, 15 ],
+  [ 'spitter', -2, 17 ],   [ 'spitter', 5, -28 ],
+  [ 'spitter', 6, -33 ],   [ 'volatile', 3, -26 ],
+  [ 'brute', -4, 16 ],     [ 'brute', -15, 7 ],
+  [ 'walker', -4, 14 ],    [ 'walker', 4, -26 ],
+  [ 'walker', 5, -29 ],    [ 'walker', 4, -27 ],
+  [ 'spitter', 5, -27 ],   [ 'walker', -4, 13 ],
+  [ 'spitter', 5, -25 ],   [ 'walker', -4, 23 ],
+  [ 'spitter', -24, 13 ],  [ 'spitter', 5, -26 ],
+  [ 'runner', 1, -12 ],    [ 'volatile', -26, 14 ],
+  [ 'volatile', -27, 14 ], [ 'runner', 6, -28 ],
+  [ 'runner', 3, -16 ],    [ 'spitter', -4, 27 ],
+  [ 'walker', 4, -23 ]
+]
+standard wave 27 time 739 hp 259
+progress 779.9999999999479 27 12 -1.914866149266397 6.9223826216435205 [
+  [ 'brute', 1, -13 ],
+  [ 'walker', 1, -14 ],
+  [ 'spitter', 1, -13 ],
+  [ 'walker', 2, -14 ],
+  [ 'walker', 1, -16 ],
+  [ 'walker', 2, -13 ],
+  [ 'spitter', 2, -15 ],
+  [ 'spitter', 2, -12 ],
+  [ 'volatile', 1, -15 ],
+  [ 'brute', 4, -24 ],
+  [ 'walker', 3, -17 ],
+  [ 'brute', 4, -15 ]
+]
+standard wave 28 time 785 hp 259
+standard wave 29 time 804 hp 259
+progress 839.9999999998934 29 29 0.5968070852474985 8.80231445979689 [
+  [ 'spitter', -22, 13 ],  [ 'spitter', -23, 13 ],
+  [ 'brute', -5, 32 ],     [ 'walker', 3, -17 ],
+  [ 'brute', 2, -14 ],     [ 'walker', -4, 29 ],
+  [ 'walker', -23, 14 ],   [ 'volatile', 4, -17 ],
+  [ 'walker', 3, -18 ],    [ 'walker', -5, 29 ],
+  [ 'runner', -24, 15 ],   [ 'spitter', 4, -21 ],
+  [ 'runner', 4, -18 ],    [ 'runner', 4, -13 ],
+  [ 'runner', 3, -14 ],    [ 'spitter', -23, 14 ],
+  [ 'walker', -5, 31 ],    [ 'brute', 3, -13 ],
+  [ 'walker', -29, 16 ],   [ 'walker', -24, 14 ],
+  [ 'spitter', -6, 40 ],   [ 'spitter', 4, -16 ],
+  [ 'volatile', -25, 14 ], [ 'brute', 2, -8 ],
+  [ 'volatile', -5, 35 ],  [ 'walker', -7, 41 ],
+  [ 'walker', -26, 14 ],   [ 'brute', 2, -12 ],
+  [ 'volatile', 2, -9 ]
+]
+standard wave 30 time 850 hp 259
+standard wave 31 time 897 hp 259
+progress 899.9999999998388 31 6 2.7319882567815186 3.7041197741403717 [
+  [ 'brute', 4, -22 ],
+  [ 'volatile', -6, 36 ],
+  [ 'spitter', -26, 14 ],
+  [ 'spitter', 3, -13 ],
+  [ 'runner', -5, 32 ],
+  [ 'brute', 3, -14 ]
+]
+standard wave 32 time 956 hp 259
+progress 959.9999999997842 32 3 2.6251394064484432 -4.344489233491172 [ [ 'boss', -2, 16 ], [ 'walker', -3, 22 ], [ 'walker', -3, 19 ] ]
+RESULT standard victory wave 32 time 980.8 kills 1623 hp 259 left []

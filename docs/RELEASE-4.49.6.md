@@ -13,7 +13,7 @@ Jumping into the edge of a raised canopy now uses the same head-clearance tolera
 - Both regressions failed before their fixes. Traversal coverage includes four approach directions, three update rates and two body heights, plus the campaign simulation path.
 - Actual browser input fixture exercised the real Input listeners and ViewRig: right-drag, aim plus fire, release fire while aiming, and release aim all passed. The combined chord produced look delta 11/4 and yaw change −0.02750 instead of freezing. [Input results](qa/4.49.6/pointer.txt). These are explicitly simulated browser events, not a physical mouse/controller test.
 - Actual rendered campaign fixture: zero measured head penetration after the critical canopy entry; the hero then landed at street height and continued underneath. [Entry](qa/4.49.6/canopy-edge.json) · [recovery](qa/4.49.6/canopy-recovery.json).
-- Standard Open City automated campaign completed all 32 waves, 1,623 kills, 980.8 simulated seconds. [Campaign log](qa/4.49.6/campaign.log). This does not replace a full ordinary playthrough.
+- Standard Open City automated campaign completed all 32 waves, 1,623 kills, 980.8 simulated seconds. [Campaign log](qa/4.49.6/campaign.txt). This does not replace a full ordinary playthrough.
 - Service-roof grapple landed on the correct support at height 3.41 in TPS; switching to FPS preserved position and placed the camera at height 4.96. That visual check exposed the central marker pole blocking the first-person view; see the marker correction below.
 
 ## Grapple marker correction
@@ -25,3 +25,9 @@ The marker now uses a side mast and overhead arm, leaving the landing lane clear
 ## Scope
 
 This is a focused reliability checkpoint. Wider perspective validation, authored character art and production integration, ordinary full expedition, sustained native soak and hangar/orbit/moon progression remain open. Apple Developer ID signing/notarization, Steam Deck and other ports remain deferred. No physical phone/controller result or whole-game completion is claimed.
+
+## Publication
+
+Runtime `1f20ffb79eabaac6d7829181ed27e2f520f30c1b` is published. The [Mac test release](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.49.6) contains the exact locally tested archive: 141,690,475 bytes, GitHub asset `641889439`, matching the SHA-256 above. Deferred Steam Deck workflow `38648679162` was cancelled.
+
+Pages run `38648564212` passed. The actual public browser menu reports BUILD 4.49.6, with no captured startup errors. [Published capture](qa/4.49.6/published-menu.png).
