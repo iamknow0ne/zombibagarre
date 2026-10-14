@@ -51,5 +51,15 @@
     "indoor combat and TPS/FPS",
     "region/save boundaries and space chapter",
     "physical mobile/controller validation"
-  ]
+  ],
+  "publication": {
+    "runtimeCommit": "2adb3218dded2366a41389e75766c0386b530d40",
+    "pagesRun": 38571087231,
+    "pagesStatus": "success",
+    "macOSRun": 38571335466,
+    "macOSStatus": "success",
+    "publicMenuVersion": "4.44.0",
+    "uploadedArchiveDigestMatches": true,
+    "archiveBytes": 133454409
+  }
 }

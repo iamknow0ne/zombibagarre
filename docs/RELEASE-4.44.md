@@ -29,11 +29,13 @@ Screenshots show isolated local QA scenes with fixture placement and disabled ou
 
 [Download the 4.44 Apple Silicon test edition](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.44.0) · macOS 13+.
 
-Archive: `Zombie-Bagarre-4.44.0-macOS-arm64.zip`.
+Archive: `Zombie-Bagarre-4.44.0-macOS-arm64.zip` · 133,454,409 bytes.
 
 SHA-256: `8a33668877689d4d77a8652483a9f0ea2f918a8eafc0f1c31e38c2559b9bbc5f`.
 
 Ad-hoc signed, **not notarized**. Downloaded copies may be blocked by Gatekeeper. Apple account setup is deferred. This is the GPU-accelerated desktop edition of the game, not a separate Metal-engine rewrite. Existing running Mac versions are preserved in their own folders.
+
+Runtime commit `2adb321`: [Pages deployment](https://github.com/iamknow0ne/zombibagarre/actions/runs/38571087231) and [macOS CI](https://github.com/iamknow0ne/zombibagarre/actions/runs/38571335466) passed. The public menu was verified at 4.44.0; GitHub reports the same ZIP digest as the locally tested archive. Mac CI detected a real Metal device and passed packaged hardware startup.
 
 ## Boundaries and next work
 
