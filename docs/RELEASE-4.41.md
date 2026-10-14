@@ -22,6 +22,8 @@ The panel uses the existing charcoal, bone and amber palette, monospace labels a
 
 ## macOS
 
+[Download the Apple Silicon test edition](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.41.0).
+
 See [the Mac installation and build guide](MACOS.md). The app packages the offline game and uses hardware-accelerated WebGL. It is not a separate Metal engine. The first release targets Apple Silicon and is a test build, not notarized public distribution.
 
 ## Scope
@@ -37,3 +39,5 @@ The packaged Apple Silicon app passed a local offline startup smoke check with G
 ![Packaged Mac app reaching its first upgrade](screenshots/mac-native-4.41.png)
 
 The final local Mac archive is `Zombie-Bagarre-4.41.0-macOS-arm64.zip` (macOS 13 or newer, Apple Silicon). Its SHA-256 is `3a8763e6dc5e9795671323883dc15bb078951c22693d34daa5ca5c27360da86d`. The exact packaged app passed the final hardware-accelerated startup check after all source changes. Native combat reached wave 2, including an evolved weapon, upgrade selection, dodge, grenade and pause; the native Quit menu exited cleanly.
+
+The [macOS release workflow](https://github.com/iamknow0ne/zombibagarre/actions/runs/38545228402) also passed all 348 tests, packaging, signatures, archive checks and startup using its normal graphics backend. The hosted runner exposed an Apple Paravirtual Metal device; this is additional startup evidence, not a physical-Mac performance benchmark. The downloadable archive remains the locally tested package identified above.

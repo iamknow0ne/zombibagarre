@@ -145,6 +145,8 @@ Meet **Rook, Saint, Torque and Vesper**, explore the factions, and read the Ward
 
 ## macOS test app and portable saves · 4.41
 
+**[Download the Apple Silicon macOS test edition →](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.41.0)** · macOS 13+
+
 **Your survivor can travel with you.** Settings → Your save now exports and restores character progression, equipment, base camp and settings. Restore previews the incoming character and keeps a recovery copy. Storage problems are visible rather than silently discarding progress.
 
 The Apple Silicon macOS app runs offline with GPU acceleration, native menus and backup-file dialogs. This is an ad-hoc signed, unnotarized test edition; a downloaded app may be blocked by Gatekeeper. [Mac installation and local-build guide](docs/MACOS.md) · [Release details and QA](docs/RELEASE-4.41.md).

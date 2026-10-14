@@ -22,8 +22,8 @@ Updated 14 October 2026. This is the active, bounded release goal: a working bro
 - [x] Smoke-test packaged Mac startup and exercise actual menus/gameplay.
 - [x] Verify save portability and document installation, update and signing limitations.
 - [x] Update version, release notes and README with verified evidence and download links.
-- [ ] Commit and push; verify browser deployment and publish the tested macOS archive.
-- [ ] Confirm repository state, deliver links and disable the autonomous follow-up.
+- [x] Commit and push; verify browser deployment and publish the tested macOS archive.
+- [x] Confirm repository state, publish delivery links and disable the autonomous follow-up.
 
 ## Acceptance criteria
 
@@ -32,3 +32,7 @@ No known reproducible startup blocker in the tested browser or local Mac package
 ## Deferred
 
 Steam Deck launch confirmation, suspend/resume and GPU measurements; physical phone multitouch and controller haptics; full TPS/FPS and main-world verticality integration; interiors, country travel and space chapter; Android/iOS/tvOS and retro ports. These do not block this narrowly defined release but remain unfinished product work.
+
+## Delivered
+
+Browser 4.41.0 is live on GitHub Pages. The [macOS prerelease](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.41.0) contains the locally tested Apple Silicon app and verified checksum. [Mac CI](https://github.com/iamknow0ne/zombibagarre/actions/runs/38545228402) passed tests, packaging and normal-backend startup on its exposed Metal device. The bounded release is complete; the hourly follow-up is disabled. Deferred product work above remains open.
