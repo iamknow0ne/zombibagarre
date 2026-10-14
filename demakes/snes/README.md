@@ -30,6 +30,13 @@ The script downloads the official 4.6.0 compiler archive into an OS temporary ca
 
 The compiler archive hashes are pinned in the build script and verified against GitHub release asset metadata. On macOS the script uses the Command Line Tools copy of Make, avoiding an unrelated Xcode license prompt.
 
+The upstream Linux and Darwin SDK archives contain different precompiled SNES
+`libc.obj` files. The automated builder uses the Darwin archive's four LoROM
+target libraries on both hosts, with each host's native compiler. Linux therefore
+downloads both verified archives. CI still requires byte-for-byte equality with
+the published cartridge; a successful compile alone is insufficient. A manual
+SDK build below may differ if it uses the Linux archive's original libraries.
+
 For an already installed SDK:
 
 ```sh

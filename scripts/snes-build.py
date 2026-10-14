@@ -15,13 +15,18 @@ host, digest=ARCHIVES[system]
 if (system=='Darwin' and platform.machine()!='arm64') or (system=='Linux' and platform.machine() not in ('x86_64','AMD64')):
     raise SystemExit('The pinned archive supports macOS arm64 / Linux x86_64; use the Linux CI job on other hosts.')
 cache=Path(os.environ.get('SNES_SDK_CACHE',Path(tempfile.gettempdir())/'zb-pvsneslib-4.6.0'))
-archive=cache/f'pvsneslib_460_64b_{host}_release.zip'
 cache.mkdir(parents=True,exist_ok=True)
-if not archive.exists():
-    url=f'https://github.com/alekmaul/pvsneslib/releases/download/{VERSION}/{archive.name}'
-    print('Downloading pinned PVSnesLib 4.6.0:',url,flush=True)
-    with urllib.request.urlopen(url,timeout=90) as response, archive.open('wb') as output:shutil.copyfileobj(response,output)
-if hashlib.sha256(archive.read_bytes()).hexdigest()!=digest:raise SystemExit(f'Compiler archive checksum mismatch: {archive}')
+def checked_archive(host, digest):
+    archive=cache/f'pvsneslib_460_64b_{host}_release.zip'
+    if not archive.exists():
+        url=f'https://github.com/alekmaul/pvsneslib/releases/download/{VERSION}/{archive.name}'
+        print('Downloading pinned PVSnesLib 4.6.0:',url,flush=True)
+        partial=archive.with_suffix('.download')
+        with urllib.request.urlopen(url,timeout=90) as response, partial.open('wb') as output:shutil.copyfileobj(response,output)
+        partial.replace(archive)
+    if hashlib.sha256(archive.read_bytes()).hexdigest()!=digest:raise SystemExit(f'Compiler archive checksum mismatch: {archive}')
+    return archive
+archive=checked_archive(host,digest)
 sdk=cache/'pvsneslib'
 if not sdk.exists():
     with zipfile.ZipFile(archive) as z:
@@ -30,6 +35,15 @@ if not sdk.exists():
             if not dest.is_relative_to(cache.resolve()):raise SystemExit('Unsafe SDK archive entry')
             z.extract(entry,cache)
             if not entry.is_dir():dest.chmod((entry.external_attr>>16)&0o777 or 0o644)
+# The upstream host releases contain different precompiled libc.obj files.
+# SNES object code is host-independent: use the tested Darwin release's target
+# libraries on both hosts, retaining each host's native compiler executables.
+# Never silently accept a different cartridge just because it has a valid header.
+if system=='Linux':
+    with zipfile.ZipFile(checked_archive(*ARCHIVES['Darwin'])) as z:
+        for name in ('crt0_snes.obj','libc.obj','libm.obj','libtcc.obj'):
+            entry=f'pvsneslib/pvsneslib/lib/LoROM_SlowROM/{name}'
+            (cache/entry).write_bytes(z.read(entry))
 make='/Library/Developer/CommandLineTools/usr/bin/make' if system=='Darwin' else shutil.which('make')
 if not make:raise SystemExit('GNU make is required')
 env={**os.environ,'PVSNESLIB_HOME':str(sdk)}
