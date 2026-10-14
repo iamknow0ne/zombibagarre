@@ -115,3 +115,5 @@ and the hardware-startup-tested, ad-hoc signed Apple Silicon app. SNES CI run
 both Mac and Linux clean rebuilds are repeatable. Linux linker layout differs,
 so its diagnostic ROM is not substituted into the tested release. The emulator
 bundle hash check brings regression coverage to 545 tests.
+Pages run `38597047051` passed; the actual public `/retro/play.html` loaded its
+bundled emulator and displayed the correct SNES title screen on 14 October 2026.

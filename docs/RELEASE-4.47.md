@@ -83,3 +83,8 @@ cartridge roundtrip and physical controller feel still need a dedicated check.
 Final Mac archive: 141,684,749 bytes; SHA-256
 `00e5651bc2070277fb189f78bf2f31fa797a5c4bc5e4e84f59a1305e087165be`.
 The exact archive's packaged app passed hardware startup on 14 October 2026.
+
+Pages deployment `38597047051` passed. The public `/retro/play.html` was opened
+and powered on successfully: the original cartridge title screen, HP, wave and
+grenade counts rendered correctly. Interactive combat and room return evidence
+above comes from local browser QA, not a physical SNES.
