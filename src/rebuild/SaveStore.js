@@ -12,7 +12,7 @@ export function normalizeRecord(raw={}){
  if(!object(raw))raw={};
  return {score:integer(raw.score),wins:integer(raw.wins),scrap:integer(raw.scrap),meta:Object.fromEntries(META_UPGRADES.map(u=>[u.id,integer(raw.meta?.[u.id],u.max)]))};
 }
-// Settings accept scalars plus the two documented controller records. Drop
+// Settings accept scalars plus documented controller and keyboard records. Drop
 // unexpected object values before downstream numeric coercion can throw.
 export function normalizeSavedSettings(raw={}){
  if(!object(raw))return {};
@@ -22,7 +22,7 @@ export function normalizeSavedSettings(raw={}){
   if(Array.isArray(value))return value.slice(0,64).map(v=>clean(v,depth+1));
   if(object(value))return Object.fromEntries(Object.entries(value).slice(0,100).filter(([k])=>!['__proto__','prototype','constructor','toString','valueOf'].includes(k)).map(([k,v])=>[k,clean(v,depth+1)]).filter(([,v])=>v!==undefined));
  };
- const settings=Object.fromEntries(Object.entries(raw).filter(([k,v])=>!['__proto__','prototype','constructor','toString','valueOf'].includes(k)&&(!object(v)&&!Array.isArray(v)||['bindings','rawMapping'].includes(k))).map(([k,v])=>[k,clean(v)]).filter(([,v])=>v!==undefined));
+ const settings=Object.fromEntries(Object.entries(raw).filter(([k,v])=>!['__proto__','prototype','constructor','toString','valueOf'].includes(k)&&(!object(v)&&!Array.isArray(v)||['bindings','rawMapping','keyboardBindings'].includes(k))).map(([k,v])=>[k,clean(v)]).filter(([,v])=>v!==undefined));
  if(Object.hasOwn(settings,'volume')){
   const value=settings.volume,numeric=typeof value==='number'||typeof value==='string'&&value.trim()!=='';
   if(numeric&&Number.isFinite(Number(value)))settings.volume=Math.max(0,Math.min(100,Number(value)));

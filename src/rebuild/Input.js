@@ -1,3 +1,4 @@
+import {KEYBOARD_ACTIONS,normalizeKeyboardBindings,resolveKeyboardActions,keyboardHeld} from './KeyboardBindings.js';
 import {activeGameplay} from './GameplayContext.js';
 import {WeaponHold} from './WeaponWheel.js';
 import {cameraMovement} from './ViewRig.js';
@@ -7,16 +8,9 @@ import {sampleGamepad,worldStick,selectGamepad} from './Gamepad.js';
 import {BINDINGS,CONTROL_DEFAULTS,controllerFamily,handInput,stepRange,enabledOptionIndex,directionalControl} from './ControllerConfig.js';
 export class Input {
   constructor(canvas,onAction,settings=CONTROL_DEFAULTS){
-    this.settings=settings;this.source='keyboard';
+    this.settings=settings;this.keyboardBindings=normalizeKeyboardBindings(settings.keyboardBindings);this.settings.keyboardBindings=this.keyboardBindings;this.source='keyboard';
     this.padButtons=[];this.pad=null;this.padGuard=false;this.keys=new Set();this.once={};this.pointer={x:.5,y:.5,active:false};this.firing=false;this.stick={x:0,y:0};this.canvas=canvas;this.onAction=onAction;
-    window.addEventListener('keydown',e=>{this.source='keyboard';if(e.target.matches('input,select,textarea'))return;
-      // Let an existing dialog handle Escape; prevent the same key from closing a newly opened pause dialog.
-      if(e.code==='Escape'){if(document.querySelector('dialog[open]'))return;e.preventDefault();}
-      if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&!document.querySelector('dialog[open]'))e.preventDefault();
-      if(!e.repeat){const actions={Escape:'pause',KeyP:'pause',KeyT:'auto',KeyB:'arsenal',KeyM:'map'};if(actions[e.code])onAction(actions[e.code]);
-        const single={Space:'dash',KeyF:'melee',KeyE:'grenade',KeyR:'reload',KeyV:'interact',KeyC:'bulletTime',KeyX:'toggleAim',KeyJ:'jump',KeyG:'grapple',Digit9:'katana',Digit0:'dual',Digit1:'carbine',Digit2:'shotgun',Digit3:'smg',Digit4:'revolver',Digit5:'marksman',Digit6:'flame',Digit7:'launcher',Digit8:'arc'};if(single[e.code]){if(e.code.startsWith('Digit'))this.once.weapon=single[e.code];else this.once[single[e.code]]=true;}}
-      this.keys.add(e.code);
-    });
+    window.addEventListener('keydown',e=>this.keyDown(e));
     window.addEventListener('keyup',e=>this.keys.delete(e.code));
     window.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')this.source='touch';});
     window.addEventListener('blur',()=>this.clear());
@@ -34,9 +28,27 @@ export class Input {
     for(const [id,key]of [['drive-brake','touchBrake'],['drive-reverse','touchReverse']]){const button=document.getElementById(id);button?.addEventListener('pointerdown',e=>{if(this.touchHoldIds[key]!==undefined)return;e.preventDefault();this.source='touch';this.touchHoldIds[key]=e.pointerId;this[key]=true;try{button.setPointerCapture(e.pointerId);}catch{/* The browser may have cancelled the pointer. */}});for(const event of ['pointerup','pointercancel','lostpointercapture'])button?.addEventListener(event,e=>{if(this.touchHoldIds[key]===e.pointerId){delete this.touchHoldIds[key];this[key]=false;}});}
     this.touchControls=new TouchControls(this);
   }
+  setKeyboardBindings(bindings){this.keyboardBindings=normalizeKeyboardBindings(bindings);this.settings.keyboardBindings=this.keyboardBindings;this.clear();return this.keyboardBindings;}
+  keyDown(e){
+    // Menus retain native Escape, arrows, Enter and shortcuts. No gameplay edge
+    // or held movement may survive a key typed into a dialog or editable field.
+    const editable=e.target?.isContentEditable||e.target?.closest?.('input,select,textarea,[contenteditable="true"],[contenteditable=""]');
+    if(e.defaultPrevented||e.isComposing||e.metaKey||e.ctrlKey||e.altKey||editable||document.querySelector('dialog[open]')){this.keys.clear();this.once={};return;}
+    if(!this.playing&&['Enter','NumpadEnter','Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))return;
+    const actions=resolveKeyboardActions(this.keyboardBindings,e.code,this.keyboardContext||'foot').filter(id=>this.playing||!!KEYBOARD_ACTIONS[id].command);if(!actions.length)return;
+    if(e.repeat&&!this.keys.has(e.code))return;
+    this.source='keyboard';e.preventDefault();const repeated=e.repeat||this.keys.has(e.code);this.keys.add(e.code);
+    if(repeated)return;
+    for(const id of actions){const a=KEYBOARD_ACTIONS[id];
+      if(a.command){if(a.context==='all'||this.playing)this.onAction(a.command);continue;}
+      if(!this.playing||a.mode==='hold')continue;
+      if(a.hand!==undefined){this.onWeaponWheel?.({type:'cycle',hand:a.hand},this.pad);continue;}
+      if(a.weapon)this.once.weapon=a.weapon;else this.once[id]=true;
+    }
+  }
   mouseButton(button,down){if(button===0)this.firing=down;if(button===2)this.aimHeld=down&&this.perspective;}
   clear(){this.wasLocked=false;this.aimHeld=this.aimToggle=false;this.weaponHold?.reset();this.onCancelWheel?.();if(typeof document!=='undefined'&&document?.pointerLockElement===this.canvas)document?.exitPointerLock?.();this.perspective=false;this.lookX=this.lookY=0;this.touchControls?.clear();this.touchWorldAim=null;this.touchFiring=false;this.touchHoldIds={};this.touchBrake=this.touchReverse=false;this.padGuard=true;this.padAim=null;this.keys.clear();this.once={};this.firing=false;this.destination=null;this.moveRequest=null;this.stick={x:0,y:0};this.resetStick?.();this.resetAim?.();this.touchAim=null;this.onStopFeedback?.();}
-  pollGamepad(sim,now=performance.now()){this.playing=activeGameplay(sim.state);
+  pollGamepad(sim,now=performance.now()){this.playing=activeGameplay(sim.state);this.keyboardContext=sim.interior?'interior':sim.player.vehicleId?'vehicle':'foot';
     const dt=Math.min(.05,Math.max(0,(now-(this.padTime??now))/1000));this.padTime=now;
     if(document.hidden||!document.hasFocus()){if(!this.padInactive)this.clear();this.padInactive=true;this.padButtons=[];return;}this.padInactive=false;
     let pads=[];try{pads=Array.from(this.getGamepads?this.getGamepads():navigator.getGamepads?.()||[]).filter(Boolean);}catch{/* Some embedded browsers deny access. */}
@@ -59,7 +71,7 @@ export class Input {
       if(this.menuWaitRelease){if(!pad.buttons.some(Boolean))this.menuWaitRelease=false;else return;}
       if(dialog?.id==='map-dialog'&&this.onMapInput?.(pad,dt))return;
       this.navigateMenu(root,pad,now);
-      if(press[1]&&dialog){if(dialog.id==='pause-dialog')this.onAction('pause');else if(!['upgrade-dialog','result-dialog'].includes(dialog.id))dialog.close();}
+      if(press[1]&&dialog){if(dialog.id==='pause-dialog')this.onAction('pause');else if(!['upgrade-dialog','result-dialog'].includes(dialog.id)){if(this.onMenuBack?.(dialog))return;dialog.close();}}
       if(press[9]&&dialog?.id==='pause-dialog')this.onAction('pause');
       return;
     }
@@ -105,18 +117,19 @@ export class Input {
   changeSelection(select,direction,wrap=false){const index=enabledOptionIndex(select.options,select.selectedIndex,direction,wrap);if(index===select.selectedIndex)return;select.selectedIndex=index;select.dispatchEvent(new Event('change',{bubbles:true}));select.dispatchEvent(new Event('input',{bubbles:true}));}
   consume(world,auto,sim=null,dt=1/60){
     if(this.weaponWheelActive){this.once={};return {x:0,z:0,auto:false,firing:false,fireHands:[false,false],aim:null};}
-    const k=this.keys;let x=(k.has('KeyD')||k.has('ArrowRight')?1:0)-(k.has('KeyA')||k.has('KeyQ')||k.has('ArrowLeft')?1:0)+this.stick.x;
-    let y=(k.has('KeyS')||k.has('ArrowDown')?1:0)-(k.has('KeyW')||k.has('KeyZ')||k.has('ArrowUp')?1:0)+this.stick.y;
+    const k=this.keys,held=id=>keyboardHeld(this.keyboardBindings,k,id);let x=+held('moveRight')-held('moveLeft')+this.stick.x;
+    let y=+held('moveDown')-held('moveUp')+this.stick.y;
     const pad=this.padGuard||this.source&&this.source!=='gamepad'?null:this.pad;if(pad){x+=pad.move.x;y+=pad.move.y;}
     if(sim?.interior){const interact=!!this.once.interact;this.once={};this.destination=this.moveRequest=null;this.perspective=false;this.lookX=this.lookY=0;return {x:x*.776+y*.63,z:-x*.63+y*.776,interact,auto:false,firing:false};}
     if(this.moveRequest){this.destination=world.aim(this.moveRequest.x,this.moveRequest.y);this.moveRequest=null;}
     if(Math.hypot(x,y)>.1)this.destination=null;
-    const hands=pad?handInput(pad,this.settings?.bindings||BINDINGS):undefined,aiming=pad&&Math.hypot(pad.aim.x,pad.aim.y)>.1;
+    let hands=pad?handInput(pad,this.settings?.bindings||BINDINGS):undefined;const keyboardHands=[held('fire')||held('fireRight'),held('fire')||held('fireLeft')];if(keyboardHands.some(Boolean))hands=keyboardHands.map((down,i)=>down||!!hands?.[i]);const aiming=pad&&Math.hypot(pad.aim.x,pad.aim.y)>.1;
     const touchSim=sim||(world.player?{player:world.player.position,enemies:[],blocked:()=>false}:null);
     const touchTarget=this.source==='touch'&&this.touchAim&&touchSim?touchAimTarget(this.touchAim,touchSim,this.settings?.touchAimAssist!==false):null;this.touchWorldAim=touchTarget;
     if(this.once.toggleAim)this.aimToggle=!this.aimToggle;
-    const out={brake:k.has('Space')||!!pad?.buttons[1],destination:this.destination,...this.once,x:x*.776+y*.63,z:-x*.63+y*.776,auto:aiming?false:auto,aim:pad&&(hands.some(Boolean)||this.once.grenade||aiming)?this.padAim:touchTarget||(this.pointer.active?world.aim(this.pointer.x,this.pointer.y,sim):null),firing:this.firing||!!this.touchFiring,fireHands:hands};this.once={};
-    this.perspective=!!world.viewRig?.active;out.aiming=this.perspective&&!!(this.aimHeld||this.aimToggle);
+    const out={brake:held('handbrake')||!!pad?.buttons[1],destination:this.destination,...this.once,x:x*.776+y*.63,z:-x*.63+y*.776,auto:aiming?false:auto,aim:pad&&(hands.some(Boolean)||this.once.grenade||aiming)?this.padAim:touchTarget||(this.pointer.active?world.aim(this.pointer.x,this.pointer.y,sim):null),firing:this.firing||!!this.touchFiring||held('fire'),fireHands:hands};this.once={};
+    if(keyboardHands.some(Boolean)&&!out.aim&&sim)out.aim={x:sim.player.x+Math.sin(sim.player.angle)*18,z:sim.player.z+Math.cos(sim.player.angle)*18};
+    this.perspective=!!world.viewRig?.active;out.aiming=this.perspective&&!!(this.aimHeld||this.aimToggle||held('aimHold'));
     if(!sim?.player.traversal||sim.player.vehicleId)out.jump=out.grapple=false;
     if(this.perspective&&sim){const rig=world.viewRig,look=pad?.aim||(this.source==='touch'&&this.touchFiring?this.touchAim:null);rig.look((this.lookX||0)+(look?.x||0)*18*Math.min(.05,dt)*60*(this.settings?.aimSensitivity||1),(this.lookY||0)+(look?.y||0)*14*Math.min(.05,dt)*60*(this.settings?.invertAim?-1:1));this.lookX=this.lookY=0;Object.assign(out,cameraMovement(x,y,rig.yaw));out.aim=rig.aim(sim.player,sim);out.auto=false;out.destination=null;this.destination=null;this.touchWorldAim=out.aim;}
     const vehicle=sim?.props.find(v=>v.id===sim.player.vehicleId);
@@ -124,9 +137,9 @@ export class Input {
       out.aiming=false;this.aimHeld=this.aimToggle=false;
       this.destination=this.moveRequest=null;out.destination=null;out.firing=false;out.fireHands=[false,false];out.grenade=out.dash=out.melee=out.reload=false;out.weapon=null;
       const assisted=this.source==='touch'||this.settings?.drivingStyle==='assisted';
-      out.drive=assisted?assistedDrive(vehicle,out.x,out.z,!!this.touchBrake||out.brake):{throttle:pad?(pad.triggers?.[1]??+!!pad.buttons[7]):+(k.has('KeyW')||k.has('KeyZ')||k.has('ArrowUp')),brake:pad?(pad.triggers?.[0]??+!!pad.buttons[6]):+(k.has('KeyS')||k.has('ArrowDown')),steer:pad?pad.move.x:x,handbrake:out.brake};
+      out.drive=assisted?assistedDrive(vehicle,out.x,out.z,!!this.touchBrake||out.brake):{throttle:pad?(pad.triggers?.[1]??+!!pad.buttons[7]):+held('moveUp'),brake:pad?(pad.triggers?.[0]??+!!pad.buttons[6]):+held('moveDown'),steer:pad?pad.move.x:x,handbrake:out.brake};
       if(assisted&&pad?.triggers?.[0]>.05)out.drive={...assistedDrive(vehicle,-out.x,-out.z),throttle:0,brake:pad.triggers[0],handbrake:out.brake};
-      if(assisted&&(k.has('ShiftLeft')||k.has('ShiftRight')))out.drive={...assistedDrive(vehicle,-out.x,-out.z),throttle:0,brake:1,handbrake:out.brake};
+      if(assisted&&held('reverse'))out.drive={...assistedDrive(vehicle,-out.x,-out.z),throttle:0,brake:1,handbrake:out.brake};
       if(this.touchReverse)out.drive={...assistedDrive(vehicle,-out.x,-out.z),throttle:0,brake:1,handbrake:!!this.touchBrake};
       out.steerSensitivity=this.settings?.steerSensitivity||1;
     }return out;

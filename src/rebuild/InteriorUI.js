@@ -1,3 +1,4 @@
+import {keyboardHint} from './KeyboardBindings.js';
 import {interiorInteraction,nearbyInteriorDoor,nearbyInteriorRecovery,hasInteriorCase} from './Interiors.js';
 import {questObjective} from './RPG.js';
 import {glyph,buttonName} from './ControllerConfig.js';
@@ -31,7 +32,7 @@ export class InteriorUI{
   const object=interiorInteraction(sim);this.action.disabled=!object;
   const label=object?.type==='merchant'?'Talk to Mara':object?.type==='exit'?'Leave shelter':object?.type==='case'?(hasInteriorCase(sim)?'Case recovered':'Search tools'):'Move closer';
   this.action.setAttribute('aria-label',label);this.action.innerHTML=`${this.binding()}<span>${label}</span>`;
-  this.hint.textContent=touch?'Move with the left stick · Tap to interact':this.input.source==='gamepad'?`Left stick · Move   /   ${buttonName(this.input.settings.bindings.arsenal,this.input.family)} · Character`:'WASD / arrows · Move   /   V · Interact   /   B · Character';
+  this.hint.textContent=touch?'Move with the left stick · Tap to interact':this.input.source==='gamepad'?`Left stick · Move   /   ${buttonName(this.input.settings.bindings.arsenal,this.input.family)} · Character`:`${['moveUp','moveLeft','moveDown','moveRight'].map(action=>keyboardHint(this.input.settings?.keyboardBindings,action)).join(' / ')} · Move   /   ${keyboardHint(this.input.settings?.keyboardBindings,'interact')} · Interact   /   ${keyboardHint(this.input.settings?.keyboardBindings,'character')} · Character`;
  }
- binding(){return this.input.source==='gamepad'?glyph(this.input.settings.bindings.interact,this.input.family):this.input.source==='touch'?'': '<kbd>V</kbd>';}
+ binding(){return this.input.source==='gamepad'?glyph(this.input.settings.bindings.interact,this.input.family):this.input.source==='touch'?'': `<kbd>${keyboardHint(this.input.settings?.keyboardBindings,'interact')}</kbd>`;}
 }

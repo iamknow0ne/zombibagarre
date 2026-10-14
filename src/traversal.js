@@ -1,3 +1,4 @@
+import {keyboardHint} from './rebuild/KeyboardBindings.js';
 import * as T from 'three';
 import {World} from './rebuild/World.js';
 import {readSavedSettings} from './rebuild/Persistence.js';
@@ -5,7 +6,7 @@ import {placeAnchorLabel} from './rebuild/TraversalLabels.js';
 import {Simulation} from './rebuild/Simulation.js';
 import {Input} from './rebuild/Input.js';
 import {generateMap} from './rebuild/Map.js';
-import {CONTROL_DEFAULTS,BINDINGS,buttonName} from './rebuild/ControllerConfig.js';
+import {controlSettings,buttonName} from './rebuild/ControllerConfig.js';
 import {bindTouchAction} from './rebuild/TouchControls.js';
 import {toggleFullscreen} from './rebuild/Fullscreen.js';
 import {coursePlan,initTraversal,stepTraversal,supportBelow,grappleAvailability,traversalDemo} from './rebuild/Traversal.js';
@@ -13,7 +14,7 @@ const $=id=>document.getElementById(id);
 try{await boot();}catch(error){$('loading').hidden=false;$('loading').replaceChildren();const heading=document.createElement('strong');heading.textContent='TRAINING COULD NOT START';const note=document.createElement('span');note.textContent=error.message;const retry=document.createElement('button');retry.textContent='RETRY';retry.onclick=()=>location.reload();$('loading').append(heading,note,retry);console.error(error);}
 async function boot(){
  const plan=coursePlan(),b=plan.bounds;let saved={};try{saved=readSavedSettings(localStorage);}catch{}
- const settings={...CONTROL_DEFAULTS,...saved,bindings:{...BINDINGS},quality:saved.quality||'balanced',viewMode:'diorama',worldTheme:'quarantine',visualStyle:'classic',shaderStyle:'natural',foliageDetail:'standard',environmentDetail:'standard',lightingDetail:saved.lightingDetail||'standard',populationDetail:'off',weatherEffects:'off',reducedMotion:saved.reducedMotion||matchMedia('(prefers-reduced-motion: reduce)').matches,gore:false};
+ const settings={...saved,...controlSettings(saved),quality:saved.quality||'balanced',viewMode:'diorama',worldTheme:'quarantine',visualStyle:'classic',shaderStyle:'natural',foliageDetail:'standard',environmentDetail:'standard',lightingDetail:saved.lightingDetail||'standard',populationDetail:'off',weatherEffects:'off',reducedMotion:saved.reducedMotion||matchMedia('(prefers-reduced-motion: reduce)').matches,gore:false};
  const layout={...generateMap(73),cover:[],bounds:b,boundary:[{x:b.minX,z:b.minZ},{x:b.maxX,z:b.minZ},{x:b.maxX,z:b.maxZ},{x:b.minX,z:b.maxZ}],road:{x:15,z:13,width:6}};
  const sim=new Simulation({layout,environment:{dayCycle:'day',weatherMode:'clear'}});sim.start('carbine');initTraversal(sim.player,plan.spawn);sim.events=[];sim.enemies=[];sim.props=plan.boxes;sim.obstacles=plan.boxes;
  const world=new World($('game'),settings,0,layout);world.applySettings(settings);world.portrait=matchMedia('(max-width:600px)').matches?28:25;world.touchView=true;
@@ -46,7 +47,7 @@ async function boot(){
  const landing=new T.Mesh(new T.RingGeometry(.45,.5,32),new T.MeshBasicMaterial({color:0xeac897,transparent:true,opacity:0,depthWrite:false}));landing.rotation.x=-Math.PI/2;scene.add(landing);let landTime=0;
  const dust=new T.InstancedMesh(new T.IcosahedronGeometry(1,0),new T.MeshStandardMaterial({color:0xa39d8a,roughness:1,transparent:true,opacity:.55}),24);dust.frustumCulled=false;scene.add(dust);dust.count=0;let dustParts=[];const dummy=new T.Object3D();
  const visited=new Set();let checkpoint={...plan.spawn},selected=0,noticeUntil=0,last=performance.now(),accumulator=0,hudAt=0,frameInput=null,demo=false,notifiedReady=false;
- const input=new Input($('game'),action=>{if(action==='pause')togglePause();if(action==='nextWeapon')select(1);if(action==='prevWeapon')select(-1);},settings);
+ const input=new Input($('game'),action=>{if(action==='pause')togglePause();if(action==='nextWeapon'||action==='cycleRight')select(1);if(action==='prevWeapon'||action==='cycleLeft')select(-1);},settings);
  input.onWeaponWheel=event=>{if(event?.type==='cycle'||event?.type==='open')select(event.hand?-1:1);};
  const announce=(text)=>{$('notice').textContent=text;noticeUntil=performance.now()+3200;};
  function select(delta){if(sim.player.grapple){announce('RELEASE CABLE TO CHANGE ANCHOR');return;}selected=(selected+delta+plan.anchors.length)%plan.anchors.length;announce(`ANCHOR / ${plan.anchors[selected].label}`);}
@@ -57,9 +58,8 @@ async function boot(){
  $('demo').onclick=startDemo;$('demo-paused').onclick=startDemo;
  $('resume').onclick=()=>$('pause-dialog').close();$('restart').onclick=()=>{reset(true);$('pause-dialog').close();};$('exit').onclick=()=>{location.href='./';};$('pause').onclick=togglePause;
  $('fullscreen').onclick=async()=>{try{await toggleFullscreen();}catch(error){announce(error.message);}};
- for(const [id,action]of [['jump',()=>input.once.dash=true],['grapple',()=>input.once.grenade=true],['target',()=>select(1)],['return',()=>reset()]])bindTouchAction($(id),input,()=>{if(sim.state!=='playing')return;action();if(input.source!=='touch')$('game').focus({preventScroll:true});});
- // Course-only keys deliberately leave the expedition bindings untouched.
- addEventListener('keydown',e=>{if($('pause-dialog').open)return;if(e.code==='KeyT'&&!e.repeat)select(e.shiftKey?-1:1);if(e.code==='KeyG'&&!e.repeat)input.once.grenade=true;});
+ for(const [id,action]of [['jump',()=>input.once.jump=true],['grapple',()=>input.once.grapple=true],['target',()=>select(1)],['return',()=>reset()]])bindTouchAction($(id),input,()=>{if(sim.state!=='playing')return;action();if(input.source!=='touch')$('game').focus({preventScroll:true});});
+ // Training uses the same configurable Jump / Grapple actions as the city.
  addEventListener('keydown',e=>{if(document.activeElement?.tagName==='BUTTON'&&['Space','Enter'].includes(e.code))e.stopPropagation();},{capture:true});
  const suspend=()=>{if(sim.state==='playing')togglePause();};addEventListener('blur',suspend);document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend();});window.bagarreDesktop?.onSuspend(suspend);
  addEventListener('resize',()=>{world.portrait=innerWidth<600?28:25;world.resize();});
@@ -75,22 +75,23 @@ async function boot(){
   el.style.left=`${point.x}px`;el.style.top=`${point.y}px`;el.hidden=q.z>1||Math.abs(q.x)>1.1||Math.abs(q.y)>1.1;el.style.visibility=el.hidden?'hidden':'visible';
  }
  function updateHud(now){const p=sim.player,a=plan.anchors[selected],reason=grappleAvailability(p,a,plan.boxes),pad=input.source==='gamepad'&&input.pad,family=input.family;
+  $('game').setAttribute('aria-label',`Rooftop traversal course. Jump: ${keyboardHint(settings.keyboardBindings,'jump')}. Grapple or release: ${keyboardHint(settings.keyboardBindings,'grapple')}. Movement follows your keyboard bindings.`);
   $('height').innerHTML=`${p.y.toFixed(1)} <small>m</small>`;$('motion').textContent=p.grapple?'REELING':p.grounded?'GROUNDED':p.vy>0?'RISING':'FALLING';$('progress').textContent=`${visited.size} / 4`;
   const next=plan.boxes.find(b=>!visited.has(b.id));$('objective').textContent=next?`${String(plan.boxes.indexOf(next)+1).padStart(2,'0')} / ${next.id==='step'?'JUMP ONTO THE CARGO':'REACH THE '+next.label.split(' / ')[1]}`:'COURSE COMPLETE';
   $('instruction').textContent=next?.id==='step'?'Move toward the striped crate and jump. Amber rings mark grapple anchors.':next?'Grapple to a marked anchor. Tap again to release; steer in the air to land.':'All four checkpoints reached. Try releasing the cable between rooftops.';
   [...$('steps').children].forEach((el,i)=>el.classList.toggle('done',visited.has(plan.boxes[i].id)));
-  const labels=pad?[buttonName(0,family),buttonName(4,family),'← / →',buttonName(3,family)]:['SPACE','E','T','R'];['jump','grapple','target','return'].forEach((id,i)=>$(id).querySelector('kbd').textContent=labels[i]);
-  $('input-help').textContent=pad?'LEFT STICK · MOVE / D-PAD ← → · ANCHOR':input.source==='touch'?'DRAG STICK · TAP JUMP / GRAPPLE':'WASD / ARROWS · MOVE';
+  const labels=pad?['jump','grapple','nextWeapon','reload'].map(action=>buttonName(settings.bindings[action],family)):['jump','grapple','cycleRight','reload'].map(action=>keyboardHint(settings.keyboardBindings,action));['jump','grapple','target','return'].forEach((id,i)=>$(id).querySelector('kbd').textContent=labels[i]);
+  $('input-help').textContent=pad?`LEFT STICK · MOVE / ${buttonName(settings.bindings.leftWeapon,family)} / ${buttonName(settings.bindings.nextWeapon,family)} · ANCHOR`:input.source==='touch'?'DRAG STICK · TAP JUMP / GRAPPLE':`${['moveUp','moveLeft','moveDown','moveRight'].map(action=>keyboardHint(settings.keyboardBindings,action)).join(' / ')} · MOVE`;
   $('grapple').querySelector('span').textContent=p.grapple?'RELEASE':'GRAPPLE';$('grapple').setAttribute('aria-label',p.grapple?'Release grapple cable':'Grapple to selected anchor');
   $('anchor-tag').querySelector('span').textContent=`${a.label} · ${p.grapple?'ATTACHED':reason||'READY'}`;$('anchor-tag').classList.toggle('blocked',!!reason&&!p.grapple);
   if(now>noticeUntil)$('notice').textContent='';
  }
  function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;input.pollGamepad(sim,now);
   if(sim.state==='playing'){
-   const controls=input.consume(world,false,sim,dt);if(controls.interact||controls.reload)reset();if(Math.hypot(controls.x,controls.z)>.1||controls.dash||controls.grenade)demo=false;
+   const controls=input.consume(world,false,sim,dt);if(controls.reload)reset();if(Math.hypot(controls.x,controls.z)>.1||controls.jump||controls.grapple)demo=false;
    // Retain edge-triggered actions on frames shorter than a simulation tick.
-   frameInput={...controls,dash:!!(controls.dash||frameInput?.dash),grenade:!!(controls.grenade||frameInput?.grenade)};accumulator+=dt;
-   while(accumulator>=1/120){const command=demo?traversalDemo(sim.player,visited,plan):{x:frameInput.x,z:frameInput.z,jump:frameInput.dash,grapple:frameInput.grenade,anchorId:plan.anchors[selected].id};feedback(stepTraversal(sim.player,command,1/120,plan.boxes,plan.anchors,plan.bounds));frameInput.dash=frameInput.grenade=false;sim.time+=1/120;accumulator-=1/120;}
+   frameInput={...controls,jump:!!(controls.jump||frameInput?.jump),grapple:!!(controls.grapple||frameInput?.grapple)};accumulator+=dt;
+   while(accumulator>=1/120){const command=demo?traversalDemo(sim.player,visited,plan):{x:frameInput.x,z:frameInput.z,jump:frameInput.jump,grapple:frameInput.grapple,anchorId:plan.anchors[selected].id};feedback(stepTraversal(sim.player,command,1/120,plan.boxes,plan.anchors,plan.bounds));frameInput.jump=frameInput.grapple=false;sim.time+=1/120;accumulator-=1/120;}
   }else{frameInput=null;accumulator=0;}
   const p=sim.player,motionDt=sim.state==='playing'?dt:0;p.supportY=supportBelow(p,plan.boxes).y;
   cable.visible=!!p.grapple;const a=plan.anchors.find(a=>a.id===p.grapple?.anchorId);if(a){const points=cable.geometry.attributes.position;for(let i=0;i<17;i++){const t=i/16;points.setXYZ(i,p.x+(a.x-p.x)*t,p.y+1.2+(a.y-p.y-1.2)*t-Math.sin(t*Math.PI)*.1,p.z+(a.z-p.z)*t);}points.needsUpdate=true;}

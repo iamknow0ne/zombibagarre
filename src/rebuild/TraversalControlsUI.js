@@ -1,3 +1,4 @@
+import {keyboardHint} from './KeyboardBindings.js';
 import {bindTouchAction} from './TouchControls.js';
 import {actionIcon} from './ActionIcons.js';
 import {upgradeIcon} from './UpgradeUI.js';
@@ -24,7 +25,7 @@ export class TraversalControlsUI{
   const state=this.state=traversalControlState(sim);this.group.hidden=!state.visible;document.body.classList.toggle('traversal-enabled',state.visible);if(!state.visible)return;
   for(const action of ['jump','grapple']){const button=this.buttons[action],label=action==='jump'?'Jump':state.grappleLabel;button.disabled=!state[action];button.classList.toggle('attached',action==='grapple'&&state.attached);
    if(touch)actionIcon(button,action,label);
-   else{const hint=this.input.source==='gamepad'&&this.input.pad?glyph(this.settings.bindings[action],this.input.family):`<kbd>${action==='jump'?'J':'G'}</kbd>`;writeHUD(button,`<span class="action-symbol">${upgradeIcon(action)}</span><span>${action==='jump'?'JUMP':state.attached?'RELEASE':'GRAPPLE'}</span>${hint}`);button.setAttribute('aria-label',label);button.title=label;}
+   else{const hint=this.input.source==='gamepad'&&this.input.pad?glyph(this.settings.bindings[action],this.input.family):`<kbd>${keyboardHint(this.settings.keyboardBindings,action)}</kbd>`;writeHUD(button,`<span class="action-symbol">${upgradeIcon(action)}</span><span>${action==='jump'?'JUMP':state.attached?'RELEASE':'GRAPPLE'}</span>${hint}`);button.setAttribute('aria-label',label);button.title=label;}
   }
  }
 }

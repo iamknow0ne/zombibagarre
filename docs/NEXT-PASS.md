@@ -43,3 +43,7 @@ Runtime commit `2adb321` is published. Pages run 38571087231 and Mac run 3857133
 ## 4.43 delivery checkpoint
 
 Runtime commit `b9dd004c65662be51cac1e89bd30f79f269b974e`: 435 tests passed; production build and final Apple Silicon hardware boot passed. Exact archive SHA-256 is recorded in RELEASE-4.43. The final package is in `release/4.43.0-verified`; older running 4.42 and 4.43 test windows were preserved. The user was actively interacting with the earlier 4.43 test app, so manual testing of the refreshed package was not forced. Pages run 38567261359 and macOS run 38567403722 passed, including hardware boot; uploaded archive digest matches. Apple ID/signing and Steam Deck remain deferred.
+
+## 4.45 controls checkpoint
+
+Keyboard rebinding and nine settings submenus are implemented. 483 regression tests and the production build passed; desktop/phone viewport checks and virtual-controller Back navigation were exercised. Mappings are included in backup/restore and rooftop training. See [4.45 evidence](RELEASE-4.45.md). The portrait-faithful Rook asset milestone above remains the next art priority.

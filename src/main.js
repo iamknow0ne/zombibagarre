@@ -1,3 +1,5 @@
+import {SettingsUI} from './rebuild/SettingsUI.js';
+import {keyboardHint} from './rebuild/KeyboardBindings.js';
 import {activeGameplay} from './rebuild/GameplayContext.js';
 import {InteriorUI} from './rebuild/InteriorUI.js';
 import {interactRoom} from './rebuild/RPG.js';
@@ -59,6 +61,7 @@ import './rebuild/mobile-polish.css';
 import {SaveStore,LEGACY_KEYS,SAVE_KEY} from './rebuild/SaveStore.js';
 import {SaveUI} from './rebuild/SaveUI.js';
 import './rebuild/save.css';
+import './rebuild/settings.css';
 import {updateInputLayout} from './rebuild/HUDPresentation.js';
 import {FieldMessages,compactFieldMessage} from './rebuild/FieldMessages.js';
 const fieldMessages=new FieldMessages();
@@ -71,7 +74,7 @@ import { WEAPONS, weaponStats, WAVE_NAMES, distance, lineBlocked, magazineSize, 
 const $=id=>document.getElementById(id);
 const qaSession=import.meta.env.DEV&&['interiorQA','playQA','controllerQA','touchQA','upgradeQA','rpgQA','bossQA','perspectiveQA'].some(k=>new URLSearchParams(location.search).has(k));
 const saveStore=new SaveStore(()=>localStorage,{ephemeral:qaSession});
-let saveUI;
+let saveUI,settingsUI;
 function save(key,value){const field=Object.keys(LEGACY_KEYS).find(k=>LEGACY_KEYS[k]===key);saveStore.set(field,value);}
 function persistNow(){save('zb-rpg-profile',sim.profile);saveStore.flush();}
 const defaults={bulletTime:true,focusCinematics:true,questGuidance:true,visualStyle:'classic',progression:'sandbox',progressionPopups:true,volume:45,quality:matchMedia('(pointer:coarse)').matches?'balanced':'high',difficulty:'standard',gore:true,damageNumbers:true,enemyHealthBars:true,criticalCallouts:true,damageColors:true,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
@@ -103,12 +106,12 @@ function announce(kicker,title,boss=false){$('announcement').classList.toggle('b
 function toast(text){fieldMessages.add(text);$('toast').dataset.fullText=text;$('toast').textContent=document.body.classList.contains('touch-layout')?compactFieldMessage(text):text;$('toast').setAttribute('aria-label',text);toastUntil=performance.now()+3000;}
 function rebuildMap(){world?.destroy();world=new World($('game'),settings,sim.district,sim.layout);world.applySettings(settings);$('map-seed').textContent=`ROUTE ${sim.seed.toString(36).toUpperCase()} / ${sim.layout.shape.toUpperCase()} / ${Math.round(sim.layout.bounds.maxX-sim.layout.bounds.minX)}×${Math.round(sim.layout.bounds.maxZ-sim.layout.bounds.minZ)}`;}
 function reshuffle(){let seed=freshSeed();if(runMode==='city'&&sim.layout.city&&(seed&3)===(sim.seed&3))seed=(seed+1)>>>0;sim=new Simulation({seed,mode:runMode,skin,profile:rpgProfile,progression:settings.progression,environment:settings});rebuildMap();}
-function start(){fieldMessages.clear();closeDialogs();if(sim.state!=='menu'||world.district!==0||sim.mode!==runMode)reshuffle();else world.clearDynamic();sim=new Simulation({seed:sim.seed,difficulty:settings.difficulty,meta:record.meta,mode:runMode,skin,profile:rpgProfile,progression:settings.progression,environment:settings});sim.start(loadout);sim.player.throwable=throwableLock(sim,equippedThrowable)?'frag':equippedThrowable;sim.setLoadout(equipped);sim.setBuildings(world.buildingTargets);audio.start();audio.lastBeat=0;input.clear();resultSaved=false;accumulator=0;$('menu').hidden=true;$('hud').hidden=false;$('game').focus();toast(world.viewRig.mode!=='diorama'?'PRECISION AIM · HOLD RIGHT MOUSE / X · CONTROLLER D-PAD DOWN · TOUCH TARGET ICON':(input.source==='touch'?'LEFT THUMB TO MOVE · RIGHT THUMB TO AIM':input.source==='gamepad'?'LEFT STICK TO MOVE':'WASD / ZQSD TO MOVE')+' · AUTO FIRE IS '+(auto?'ON':'OFF'));}
+function start(){fieldMessages.clear();closeDialogs();if(sim.state!=='menu'||world.district!==0||sim.mode!==runMode)reshuffle();else world.clearDynamic();sim=new Simulation({seed:sim.seed,difficulty:settings.difficulty,meta:record.meta,mode:runMode,skin,profile:rpgProfile,progression:settings.progression,environment:settings});sim.start(loadout);sim.player.throwable=throwableLock(sim,equippedThrowable)?'frag':equippedThrowable;sim.setLoadout(equipped);sim.setBuildings(world.buildingTargets);audio.start();audio.lastBeat=0;input.clear();resultSaved=false;accumulator=0;$('menu').hidden=true;$('hud').hidden=false;$('game').focus();toast(world.viewRig.mode!=='diorama'?`PRECISION AIM · RIGHT MOUSE / ${keyboardHint(input.keyboardBindings,'toggleAim')} · OR YOUR CONTROLLER AIM BUTTON / TOUCH TARGET`:(input.source==='touch'?'LEFT THUMB TO MOVE · RIGHT THUMB TO AIM':input.source==='gamepad'?'LEFT STICK TO MOVE':`${['moveUp','moveLeft','moveDown','moveRight'].map(k=>keyboardHint(input.keyboardBindings,k)).join(' / ')} TO MOVE`)+' · AUTO FIRE IS '+(auto?'ON':'OFF'));}
 function menu(){closeDialogs();reshuffle();input.clear();$('menu').hidden=false;$('hud').hidden=true;$('damage-flash').style.opacity=0;recordUI();$('start').focus();}
 function togglePause(){if(loreUI?.dialog.open){loreUI.dialog.close();return;}if(rpgUI?.dialog.open){rpgUI.dialog.close();return;}if($('map-dialog').open){$('map-dialog').close();return;}if($('arsenal-dialog').open){$('arsenal-dialog').close();return;}if(sim.state==='paused'){if($('settings-dialog').open){$('settings-dialog').close();showDialog('pause-dialog');}else resume();}else if(activeGameplay(sim.state)){sim.pause();showDialog('pause-dialog');}}
 function resume(){closeDialogs();sim.resume();input.clear();accumulator=0;$('game').focus();}
 function toggleAuto(value){if(world?.viewRig.active&&value===undefined){input.once.toggleAim=true;return;}auto=value??!auto;settings.autoFire=auto;save('zb-quarantine-settings',settings);$('auto-action').setAttribute('aria-pressed',String(auto));toast(auto?'AUTO FIRE ENABLED':input?.source==='touch'?'MANUAL FIRE · DRAG THE RIGHT STICK':input?.source==='gamepad'?'MANUAL FIRE · USE YOUR HAND BUTTONS':'MANUAL AIM · HOLD LEFT MOUSE TO FIRE');}
-function openSettings(fromPause=false){settingsFromPause=fromPause;if(fromPause)$('pause-dialog').close();showDialog('settings-dialog');saveUI?.update();}
+function openSettings(fromPause=false){settingsFromPause=fromPause;if(fromPause)$('pause-dialog').close();showDialog('settings-dialog');settingsUI?.open();saveUI?.update();}
 function settingsClosed(){if(settingsFromPause&&sim.state==='paused'){settingsFromPause=false;showDialog('pause-dialog');}}
 function openArsenal(){if(sim.interior){rpgUI.open();return;}
   if(!['menu','playing','extracting','paused'].includes(sim.state))return;
@@ -178,7 +181,7 @@ function hud(){const p=sim.player,w=weaponStats(p);$('weather-hud').textContent=
   $('dash-state').textContent=p.dashCooldown>0?`${p.dashCooldown.toFixed(1)}s`:'READY';$('dash-action').classList.toggle('cooldown',p.dashCooldown>0);
   $('melee-action').disabled=!w.melee;$('melee-state').textContent=!w.melee?'BLADE ONLY':p.weaponTimers[p.weapon]>.18?'SWING':p.weaponTimers[p.weapon]>0?'CHAIN':'READY';$('melee-action').classList.toggle('cooldown',(p.weaponTimers[p.weapon]||0)>.18);
   $('grenade-action').querySelector('span').textContent=THROWABLES[p.throwable||'frag'].short;$('grenade-action').setAttribute('aria-label','Throw '+THROWABLES[p.throwable||'frag'].name);$('grenade-state').textContent=`× ${p.grenades}`;$('combo').hidden=sim.combo<3;$('combo').textContent=`${sim.combo} KILL STREAK`;
-  if(!document.body.classList.contains('touch-layout'))drawAtlas($('minimap'),sim);const vehicle=sim.props.find(v=>v.id===p.vehicleId),nearCar=sim.props.find(v=>v.driveable&&v.health>0&&distance(v,p)<5);$('vehicle-action').hidden=!vehicle&&!nearCar;$('vehicle-status').textContent=vehicle?`${vehicle.vehicleName} · ${Math.round(Math.abs(vehicle.speed||0)*3.6)} KM/H · ${Math.ceil(vehicle.health/vehicle.maxHealth*100)}% HULL`:p.waypoint?`DESTINATION ${Math.round(distance(p,p.waypoint))} m`:sim.layout.city?'FREE ROAM · M MAP':'';
+  if(!document.body.classList.contains('touch-layout'))drawAtlas($('minimap'),sim);const vehicle=sim.props.find(v=>v.id===p.vehicleId),nearCar=sim.props.find(v=>v.driveable&&v.health>0&&distance(v,p)<5);$('vehicle-action').hidden=!vehicle&&!nearCar;$('vehicle-status').textContent=vehicle?`${vehicle.vehicleName} · ${Math.round(Math.abs(vehicle.speed||0)*3.6)} KM/H · ${Math.ceil(vehicle.health/vehicle.maxHealth*100)}% HULL`:p.waypoint?`DESTINATION ${Math.round(distance(p,p.waypoint))} m`:sim.layout.city?`FREE ROAM · ${keyboardHint(input.keyboardBindings,'map')} MAP`:'';
   document.body.classList.toggle('perspective-play',!!world.viewRig?.active&&['playing','extracting'].includes(sim.state));
   $('district-hud').textContent=sim.layout.city?`${[...sim.layout.landmarks].sort((a,b)=>distance(a,p)-distance(b,p))[0].name} / OPEN CITY`:`${DISTRICTS[sim.district].name} / DISTRICT ${sim.district+1} OF ${DISTRICTS.length}`;if(settings.worldTheme==='cyberpunk')$('district-hud').textContent='BLACKOUT 2089 / '+$('district-hud').textContent;
   const buffs=[p.shield>0?`ARMOUR ${Math.ceil(p.shield)}`:'',p.overdrive>0?`OVERDRIVE ${Math.ceil(p.overdrive)}s`:'',p.freeze>0?`COLD FRONT ${Math.ceil(p.freeze)}s`:'',p.doubleScore>0?`BOUNTY ×2 ${Math.ceil(p.doubleScore)}s`:''].filter(Boolean);$('active-powers').replaceChildren(...buffs.map(text=>{const tag=document.createElement('span');tag.textContent=text;return tag;}));
@@ -199,7 +202,7 @@ function loop(now){sim.focusEnabled=settings.bulletTime!==false;input.pollGamepa
 }
 try{
   await loadingStage(55,'Building Saint-Roch');
-  rebuildMap();$('new-map').onclick=reshuffle;$('new-map-mobile').onclick=reshuffle;input=new Input($('game'),action=>{if(action==='pause')togglePause();if(action==='auto'&&['playing','extracting'].includes(sim.state))toggleAuto();if(action==='arsenal')openArsenal();if(action==='map')openMap();if(action==='nextWeapon')cycleWeapon(1);if(action==='prevWeapon')cycleWeapon(-1);},settings);
+  rebuildMap();$('new-map').onclick=reshuffle;$('new-map-mobile').onclick=reshuffle;input=new Input($('game'),action=>{if(action==='character')rpgUI?.open();if(action==='pause')togglePause();if(action==='auto'&&['playing','extracting'].includes(sim.state))toggleAuto();if(action==='arsenal')openArsenal();if(action==='map')openMap();if(action==='nextWeapon')cycleWeapon(1);if(action==='prevWeapon')cycleWeapon(-1);},settings);
   new WeaponWheel(input,()=>sim,toast);installFullscreen();
   perspectiveUI=new PerspectiveUI(input,settings,()=>{world.applySettings(settings);save('zb-quarantine-settings',settings);});
   haptics=new Haptics(input,settings);dualsense=new DualSense(settings);input.onStopFeedback=()=>{haptics.stop();dualsense.stop();endFocus(sim,true);};controllerUI=new ControllerUI(input,settings,haptics,dualsense,()=>save('zb-quarantine-settings',settings),toggleAuto);controllerMap=new ControllerMap(()=>sim,input);input.onMapInput=(pad,dt)=>controllerMap.poll(pad,dt);$('vehicle-world-prompt').onclick=()=>{input.once.interact=true;};window.addEventListener('pagehide',()=>{haptics.stop();dualsense.disconnect();});
@@ -213,7 +216,7 @@ try{
   const saveHost=document.createElement('div');$('settings-dialog').querySelector('h2').after(saveHost);
   saveUI=new SaveUI({store:saveStore,host:saveHost,canRestore:()=>sim.state==='menu',beforeExport:()=>save('zb-rpg-profile',sim.profile),onRestored:()=>location.reload()});
   for(const [host,paused]of [[document.querySelector('.menu-links'),false],[document.querySelector('.pause-tools'),true]]){
-   const warning=document.createElement('button');warning.className='save-warning';warning.textContent='SAVE NEEDS ATTENTION';warning.onclick=()=>{openSettings(paused);saveUI.panel.open=true;saveUI.panel.scrollIntoView({block:'start'});};host.append(warning);saveStore.subscribe(store=>{warning.hidden=!store.issue;warning.title=store.issue;});
+   const warning=document.createElement('button');warning.className='save-warning';warning.textContent='SAVE NEEDS ATTENTION';warning.onclick=()=>{openSettings(paused);settingsUI?.select('save');saveUI.panel.open=true;saveUI.panel.scrollIntoView({block:'start'});};host.append(warning);saveStore.subscribe(store=>{warning.hidden=!store.issue;warning.title=store.issue;});
   }
   window.addEventListener('pagehide',persistNow);
   window.addEventListener('storage',event=>{if(event.key===SAVE_KEY||event.key===null){try{saveStore.checkExternal();}catch{}}});
@@ -239,6 +242,7 @@ try{
   window.addEventListener('resize',()=>world.resize());
   const focusLost=()=>{persistNow();if(activeGameplay(sim.state)){sim.pause();showDialog('pause-dialog');}input.clear();};
   desktopUI=installDesktopUI({bridge:desktop,settings,apply:updateSettings,beforeQuit:persistNow,onSuspend:()=>{focusLost();last=performance.now();accumulator=0;},input});
+  settingsUI=new SettingsUI(input,settings,()=>save('zb-quarantine-settings',settings),{onSectionChange:id=>{if(id!=='controller')controllerUI.setup.stop();}});
   window.addEventListener('blur',focusLost);document.addEventListener('visibilitychange',()=>{if(document.hidden)focusLost();});
   $('game').addEventListener('webglcontextlost',e=>{e.preventDefault();focusLost();$('error-detail').textContent='The graphics connection was interrupted. Reload to start a fresh run.';$('error').hidden=false;});
   // Compile once before controls can replace scene materials. The async helper
@@ -252,7 +256,7 @@ try{
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('rpgQA')){const {installRPGQA}=await import('../dev/rpg-qa.js');installRPGQA(input,()=>sim,()=>world);}
 
   // Read-only diagnostics for local QA. No gameplay mutation surface is exposed.
-  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.44.0'})});
+  if(import.meta.env.DEV)Object.defineProperty(window,'zombieBagarre',{get:()=>({state:sim.state,wave:sim.wave,kills:sim.kills,score:sim.score,time:sim.time,player:{...sim.player},enemyCount:sim.enemies.length,remaining:sim.toSpawn,drawCalls:world.renderer.info.render.calls,triangles:world.renderer.info.render.triangles,mode:sim.mode,visited:[...sim.visited],version:'4.45.0'})});
 }catch(error){console.error(error);$('error-detail').textContent='WebGL is needed to render Saint-Roch. Enable hardware acceleration or try a browser with WebGL support.';$('error').hidden=false;}
 
 // Isolated traversal training does not load or write expedition progression.
