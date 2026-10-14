@@ -5,12 +5,10 @@ import {fileURLToPath} from 'node:url';
 import {desktopTarget} from './desktop-target.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const {platform,arch,name}=desktopTarget(process.argv.slice(2));
+if(process.argv.includes('--software'))throw new Error('Software graphics are not supported by this smoke runner. Use the default hardware backend; hosted macOS without Metal can verify packaging only.');
 const app=path.join(root,'release',`${name}-${platform}-${arch}`);
 const executable=platform==='darwin'?path.join(app,'Zombie Bagarre.app','Contents','MacOS','zombie-bagarre'):path.join(app,'zombie-bagarre');
 const args=['--smoke-test','--windowed'];
-// Hosted CI machines have no usable Metal device. This opt-in is a boot check,
-// never a performance measurement or a flag baked into the delivered app.
-if(process.argv.includes('--software'))args.push('--use-angle=swiftshader','--enable-unsafe-swiftshader');
 const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
 const child=spawn(executable,args,{env,stdio:['ignore','pipe','pipe']});
 let output='',expired=false;

@@ -36,4 +36,4 @@ The packaged Apple Silicon app passed a local offline startup smoke check with G
 
 ![Packaged Mac app reaching its first upgrade](screenshots/mac-native-4.41.png)
 
-The final local Mac archive is `Zombie-Bagarre-4.41.0-macOS-arm64.zip` (macOS 13 or newer, Apple Silicon). Its SHA-256 is `38eee8cb92feda1d86fac385417606ea98c300b1f9777c24694f70cb4b0b9685`. The exact packaged app passed the final hardware-accelerated startup check after all source changes. Native combat reached wave 2, including an evolved weapon, upgrade selection, dodge, grenade and pause; the native Quit menu exited cleanly.
+The final local Mac archive is `Zombie-Bagarre-4.41.0-macOS-arm64.zip` (macOS 13 or newer, Apple Silicon). Its SHA-256 is `3a8763e6dc5e9795671323883dc15bb078951c22693d34daa5ca5c27360da86d`. The exact packaged app passed the final hardware-accelerated startup check after all source changes. Native combat reached wave 2, including an evolved weapon, upgrade selection, dodge, grenade and pause; the native Quit menu exited cleanly.

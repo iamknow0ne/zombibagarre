@@ -18,22 +18,54 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run desktop:mac
-      - name: Boot the packaged app (CI software GPU, not a Mac benchmark)
-        run: node scripts/smoke-desktop.mjs --mac --software
+      - name: Detect a real Metal graphics device
+        id: metal
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/probe-metal.swift" <<'SWIFT'
+          import Metal
+          let devices = MTLCopyAllDevices()
+          print("available=\(!devices.isEmpty)")
+          print("devices=\(devices.map { $0.name }.joined(separator: ", "))")
+          SWIFT
+          xcrun swift "$RUNNER_TEMP/probe-metal.swift" | tee release/metal-probe.log
+          cat release/metal-probe.log >> "$GITHUB_OUTPUT"
+      - name: Boot the packaged app with its normal hardware backend
+        if: steps.metal.outputs.available == 'true'
+        run: node scripts/smoke-desktop.mjs --mac
       - name: Verify the downloadable archive
         run: |
           cd release
           shasum -a 256 -c ./*macOS*.sha256
+      - name: Record the runtime validation boundary
+        if: steps.metal.outputs.available == 'false'
+        shell: bash
+        run: |
+          printf '%s\n' '::warning::No Metal device is exposed by this hosted Mac. Runtime boot was NOT tested here; release approval requires a separate hardware smoke and gameplay check.'
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          ### macOS packaging checks passed; runtime not tested
+
+          This hosted runner exposes no Metal graphics device. The unit suite,
+          app bundle signing/verification and archive checksum were checked.
+          Game boot, rendering and gameplay require the separate local hardware
+          test before a release. The packaged macOS SwiftShader backend fails
+          initialization and is not used to claim a software-rendering pass.
+
+          Run `node scripts/smoke-desktop.mjs --mac` on a Mac with graphics support
+          and record the exact ZIP checksum alongside gameplay evidence.
+          SUMMARY
       - name: Keep startup diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: macOS-startup-diagnostics
-          path: release/*-smoke.log
+          path: |
+            release/*-smoke.log
+            release/metal-probe.log
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
-          name: Zombie-Bagarre-macOS-local-test
+          name: Zombie-Bagarre-macOS-build-only
           path: |
             release/*macOS*.zip
             release/*macOS*.sha256
