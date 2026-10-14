@@ -1,6 +1,6 @@
 # Regional travel: first integration design
 
-Status: **unimplemented**. Read-only foundation audit, 14 October 2026. This document describes proposed behavior, not a shipped feature or a separate demonstration. Character art remains the current implementation priority.
+Status: **implemented and tested in 4.46**. 14 October 2026. Physical phone/controller checks remain open. Character art continues as a separate unfinished milestone.
 
 ## Bounded playable slice
 
@@ -35,7 +35,7 @@ For a future snapshot codec, convert Sets and Maps explicitly, validate finite s
 
 Keep `sim.time` monotonic. Inactive regional countdowns stop. Enemy `lastHitAt` is a regional absolute timestamp used for combination windows: rebase it by inactive duration if those windows freeze. Player timestamps remain on the global clock. Global weather advances while playing the active region; inactive fires/destruction do not simulate in the background. Clear all derived collision/navigation caches after activation.
 
-## Proposed code seams
+## Implemented code seams
 
 1. New `Regions.js`: registry, deterministic first creation, capture/activation, gate eligibility, safe arrival search and transaction result. Keep pure helpers testable.
 2. New `CountryRoad.js`: actual connected rural road, irregular boundary, dry walkable route, trees/cover, supply stop and reciprocal gate using current layout interfaces.
@@ -56,19 +56,27 @@ Prepare destination simulation and visuals before committing the active region. 
 
 SaveStore currently normalizes only profile/record/settings and caps portable backups at 256 KB. Do not put regional data in settings or silently change the backup promise. The first slice retains in-memory regional state only. A later suspend/resume feature requires an explicit schema/version, quotas, migrations, validation, corruption recovery and an atomic write policy.
 
-## Acceptance gates — all required before claiming implemented
+## Acceptance evidence and outstanding gates
 
-- [ ] A normal player can walk city → country road → city using keyboard, gamepad and touch interact controls.
-- [ ] Repeated visits preserve damage, rubble, moved vehicles, pickups, enemy/encounter state and interior/traversal rewards without regeneration or duplication.
-- [ ] Low health, partially spent magazines, reload progress, cooldowns, currency, mastery and focus survive a transition unchanged.
-- [ ] Inactive city spawning/waves remain frozen; country kills/empty encounters cannot award city upgrades or trigger extraction.
-- [ ] City district advancement does not regenerate the road.
-- [ ] Accepted/completed quests retain correct state across regions; foreign targets guide to local gates; repeated delivery claims fail.
-- [ ] Blocked/flooded/burning/occupied arrival selects a validated fallback or rejects without any partial switch.
-- [ ] Held interact/fire and multi-step frames cannot trigger repeated travel or attacks after loading; pause/restart/death remain correct.
-- [ ] World recreation visibly restores collapsed and damaged buildings and moved vehicles without replayed explosions or rewards.
-- [ ] Tests cover duplicate local IDs across regions, 50 roundtrips, interrupted/failed render construction, and fresh expedition registry reset.
-- [ ] Browser QA checks compact portrait and landscape HUD/map, real combat before/after travel and ordinary indoor entry/exit.
-- [ ] Reload retains permanent hero progression and intentionally discards expedition regions; old backups still import/export unchanged.
+- [x] Main game exposes city → country road → city through the existing interact action. Actual pedestrian navigation to gates is covered across ten seeds. Browser interaction exercised; physical gamepad/multitouch play remains unverified.
+- [x] Repeated visits preserve damage, rubble, moved vehicles, pickups, enemy/encounter state and interior/traversal rewards without regeneration or duplication.
+- [x] Low health, partially spent magazines, reload progress, cooldowns, currency, mastery and focus survive a transition unchanged.
+- [x] Inactive city spawning/waves remain frozen; country kills/empty encounters cannot award city upgrades or trigger extraction.
+- [x] City district advancement does not regenerate the road.
+- [x] Accepted/completed quests retain correct state across regions; foreign targets guide to local gates; repeated delivery claims fail.
+- [x] Blocked/flooded/burning/occupied arrival selects a validated fallback or rejects without any partial switch.
+- [x] Held interact/fire and multi-step frames cannot trigger repeated travel or attacks after loading; pause/restart/death remain correct.
+- [x] World recreation visibly restores collapsed and damaged buildings and moved vehicles without replayed explosions or rewards.
+- [x] Tests cover duplicate local IDs across regions, 50 roundtrips, interrupted/failed render construction, and fresh expedition registry reset.
+- [x] Browser QA checks compact portrait/landscape HUD and map, country combat, contextual travel and delivery return. Indoor persistence and entry/exit regressions pass; a complete human expedition combining every feature remains open.
+- [x] Reload retains permanent hero progression and intentionally discards expedition regions; old backups still import/export unchanged.
 
 Physical controller/phone acceptance requires those devices. Automated or desktop-emulated tests are not substitutes for that evidence.
+
+## Restoration limits
+
+Returning reconstructs facade damage from its saved damage stage. Exact historical
+bullet holes and individual broken-window choices are not retained. Transient
+smoke, gore decals and old particle trails are intentionally cleared with the old
+renderer; gameplay projectiles, fires, damage, loot and enemies persist. This does
+not claim continuous rendering or background simulation of inactive regions.

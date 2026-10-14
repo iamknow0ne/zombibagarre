@@ -1,0 +1,2 @@
+.region-loading{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#101b1ff2;color:#eee5cf;text-align:center;padding:24px;gap:14px;cursor:wait}
+.region-loading[hidden]{display:none}.region-loading small{font:11px monospace;letter-spacing:.2em;color:#d4a477}.region-loading strong{font-size:clamp(24px,5vw,44px);font-family:var(--display, sans-serif)}.region-loading p{max-width:32ch;margin:0;color:#b9c6bb;font-size:14px}

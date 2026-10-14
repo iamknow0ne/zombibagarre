@@ -11,7 +11,7 @@ export function syncQuestNavigation(sim){
  const guide=questGuide(sim);if(!guide)return null;
  if(guide.state==='complete'||guide.state==='locked'){sim.rpg.tracked=null;if(sim.player.waypoint?.source==='quest')sim.player.waypoint=null;return guide;}
  if(sim.interior)return guide;
- if(sim.player.waypoint?.source!=='manual')sim.player.waypoint=guide.target?{x:guide.target.x,z:guide.target.z,source:'quest',questId:guide.quest.id,name:guide.target.name||guide.quest.name}:null;
+ if(sim.player.waypoint?.source!=='manual')sim.player.waypoint=guide.target?{x:guide.target.x,z:guide.target.z,source:'quest',questId:guide.quest.id,name:guide.target.name||guide.quest.name,regionId:guide.target.regionId}:null;
  return guide;
 }
 // A cached, conservative pedestrian grid. Occupied cells include a clearance
@@ -44,8 +44,8 @@ export function buildRoute(sim,target){
  const smooth=[path[0]];let i=0;while(i<path.length-1){let j=Math.min(path.length-1,i+30);while(j>i&&!routeSegmentClear(sim,path[i],path[j]))j--;if(j===i)return [];smooth.push(path[j]);i=j;}return smooth;
 }
 export function navigationRoute(sim,target=sim.player.waypoint,cacheSlot='questRoute'){
- if(sim.interior||!target){sim[cacheSlot]=null;return null;}
- const p=sim.player,old=sim[cacheSlot],key=`${target.x.toFixed(1)}:${target.z.toFixed(1)}:${target.source||'manual'}`,revision=sim.geometryRevision||0;
+ if(sim.interior||!target||target.regionId&&target.regionId!==(sim.activeRegionId||'city')){sim[cacheSlot]=null;return null;}
+ const p=sim.player,old=sim[cacheSlot],key=`${target.x.toFixed(1)}:${target.z.toFixed(1)}:${target.source||'manual'}:${sim.activeRegionId||'city'}`,revision=sim.geometryRevision||0;
  if(old&&old.key===key&&old.revision===revision&&distance(old.origin,p)<8){old.status=distance(p,target)<3?'arrived':old.points.length?'route':'unavailable';return old;}
  const points=buildRoute(sim,target),length=points.slice(1).reduce((n,p,i)=>n+distance(points[i],p),0);
  return sim[cacheSlot]={key,revision,origin:{x:p.x,z:p.z},points,length,source:target.source||'manual',status:distance(p,target)<3?'arrived':points.length?'route':'unavailable'};

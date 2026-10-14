@@ -64,7 +64,7 @@ test('inventory filters, comparison and equip agree on permanent gear bonuses',a
  assert.ok(armourComparison(s.profile,'warden-chest-3').every(r=>r.delta===0));
 });
 test('journal stages track objectives, then return to the giver, with gated follow-up contracts',async()=>{
- const {QUESTS,acceptQuest,questState,questObjective,trackQuest}=await import('../src/rebuild/RPG.js');const s=game();assert.equal(QUESTS.length,21);
+ const {QUESTS,acceptQuest,questState,questObjective,trackQuest}=await import('../src/rebuild/RPG.js');const s=game();assert.equal(QUESTS.length,22);
  assert.equal(acceptQuest(s,'salvage','smith'),false);go(s,'smith');assert.equal(acceptQuest(s,'salvage','smith'),true);assert.equal(acceptQuest(s,'salvage','smith'),false);
  assert.equal(questState(s,QUESTS.find(q=>q.id==='salvage')),'active');assert.equal(trackQuest(s,'salvage'),true);assert.equal(questObjective(s,'salvage').target.id,'exit');
  s.rpg.cases=['case-a','case-b'];assert.equal(questState(s,QUESTS.find(q=>q.id==='salvage')),'ready');assert.equal(questObjective(s,'salvage').target.id,'smith');assert.equal(claimQuest(s,'salvage','smith'),true);assert.equal(trackQuest(s,'salvage'),false);
@@ -72,7 +72,7 @@ test('journal stages track objectives, then return to the giver, with gated foll
 });
 test('courier delivery requires a visit after acceptance, and every new contract pays once',async()=>{
  const {QUESTS,acceptQuest,interactPlace}=await import('../src/rebuild/RPG.js');const s=game();go(s,'smith');interactPlace(s);s.resume();go(s,'medic');acceptQuest(s,'runner','medic');assert.deepEqual(questProgress(s,'runner'),[0,1]);go(s,'smith');interactPlace(s);s.resume();assert.deepEqual(questProgress(s,'runner'),[1,1]);
- for(const q of QUESTS.filter(q=>q.metric&&!q.requiresInterior)){go(s,q.npc);if(q.requires&&!s.rpg.claimed.includes(q.requires))s.rpg.claimed.push(q.requires);s.rpg.accepted.push(q.id);s.rpg.contacts=['smith','medic','broker'];s.rpg.delivery=true;s.rpg.runnerKills=12;s.rpg.heavyKills=6;s.rpg.nightKills=18;s.rpg.nightDelivery=1;s.rpg.nightDistricts=['a','b','c'];s.wave=6;s.visited=new Set(['a','b','c','d','e','f','g']);for(const j of s.streetEvents)j.state='complete';for(const p of s.places.filter(p=>p.kind==='secret'))p.defeated=true;for(const slot of ['head','chest','legs']){const id=`scout-${slot}-0`;if(!s.profile.owned.includes(id))s.profile.owned.push(id);s.profile.equipment[slot]=id;}
+ for(const q of QUESTS.filter(q=>q.metric&&!q.requiresInterior)){go(s,q.npc);if(q.requires&&!s.rpg.claimed.includes(q.requires))s.rpg.claimed.push(q.requires);s.rpg.accepted.push(q.id);s.rpg.contacts=['smith','medic','broker'];s.rpg.delivery=true;s.rpg.countrySupplies=true;s.rpg.runnerKills=12;s.rpg.heavyKills=6;s.rpg.nightKills=18;s.rpg.nightDelivery=1;s.rpg.nightDistricts=['a','b','c'];s.wave=6;s.visited=new Set(['a','b','c','d','e','f','g']);for(const j of s.streetEvents)j.state='complete';for(const p of s.places.filter(p=>p.kind==='secret'))p.defeated=true;for(const slot of ['head','chest','legs']){const id=`scout-${slot}-0`;if(!s.profile.owned.includes(id))s.profile.owned.push(id);s.profile.equipment[slot]=id;}
   assert.deepEqual(questProgress(s,q.id),[q.target,q.target],q.id);const coins=s.rpg.coins;assert.equal(claimQuest(s,q.id,q.npc),true,q.id);assert.equal(s.rpg.coins,coins+q.coins);assert.equal(claimQuest(s,q.id,q.npc),false,q.id);
  }
 });

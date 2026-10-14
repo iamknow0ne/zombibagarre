@@ -6,7 +6,7 @@ export const STREET_JOBS=[
  {kind:'hunt',name:'THE NIGHT WATCH',instruction:'Defeat the marked enforcer',reward:'ENFORCER DOWN · +15 MAX HEALTH',seconds:0},
 ];
 export function makeStreetEvents(layout){
- if(!layout.city)return [];
+ if(!layout.city||layout.country)return [];
  const random=seededRandom(layout.mapSeed^0x773ada),selected=[];
  const points=layout.spawnPoints.filter(p=>Math.hypot(p.x,p.z)>24&&Math.hypot(p.x,p.z)<100&&!pointBlocked(p.x,p.z,2.5,[...layout.cover,...layout.buildings]));
  for(const [i,job]of STREET_JOBS.entries()){

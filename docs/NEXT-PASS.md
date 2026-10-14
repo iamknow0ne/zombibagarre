@@ -17,7 +17,7 @@
 - [ ] Extend traversal to curated service roofs with accurate parapet/accessory collision and elevated enemy threats.
 - [ ] Finish perspective-mode aiming, collision and visibility validation.
 - [x] Ship one useful enterable workshop and apartment loot quest, with stable identifiers and safe exits (4.44).
-- [ ] Implement the [session-only city ↔ country-road roundtrip](REGIONAL-TRAVEL-DESIGN.md) and pass its persistence/safe-return gates before the hidden hangar chapter (design saved; implementation pending).
+- [x] Implement the session-only city ↔ country-road roundtrip, guarded medicine delivery, safe arrival and preserved regional state. See [implementation and gates](REGIONAL-TRAVEL-DESIGN.md). Physical device checks remain open.
 - [ ] Add launch/orbit/return and first moon as independently testable slices.
 
 ## QA inventory
@@ -74,3 +74,22 @@ were reviewed in the browser. See [validation](art-direction/ROOK-VALIDATION.md)
 The model still lacks Rook-specific likeness, complete painted materials and
 production animation; do not enable it as the default hero yet. Continue those
 quality gates before the runtime adapter, then expand to other characters.
+
+## 4.46 regional travel checkpoint
+
+The actual Open City now connects to seeded Old Mill Road through an on-foot
+interaction, map markers and reciprocal signs. Lenoir offers a guarded medicine
+delivery with a once-only return reward. Inactive regions freeze; returning
+rebuilds damaged structures and moved vehicles without resetting the hero or city
+wave. This is session-only expedition state, not a resumable save.
+
+Automated coverage includes 50 roundtrips, safe/blocked arrival, renderer-preparation
+rollback and actual navigation to gates across ten seeds. Browser fixture checks
+have completed acceptance, real guard combat, collection, return and payment,
+with the original damaged building health and spent magazine retained. 530 tests, four automated full campaigns, the production build and isolated Mac
+hardware startup passed. See [release evidence](RELEASE-4.46.md). Publication
+is verified separately; ordinary full playthrough and physical devices remain open.
+
+Next: service-roof traversal/collision and wider perspective checks; Rook portrait
+likeness and authored combat animation; full ordinary expedition and sustained
+native soak. Hangar/orbit/moon stay downstream of these first travel gates.

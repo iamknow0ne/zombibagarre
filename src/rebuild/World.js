@@ -1,3 +1,4 @@
+import {RegionVisuals} from './RegionVisuals.js';
 import {disposeObjectResources} from './ResourceDisposal.js';
 import {InteriorView,InteriorDoors} from './InteriorView.js';
 import {buildServicePlatform} from './PlatformVisuals.js';
@@ -80,23 +81,37 @@ const asphaltTex=(district=0)=>texture(1024,1024,(c,W,H)=>{
 });
 function contact(parent,x,z,w,d,opacity=.22){const m=new T.MeshBasicMaterial({map:shadowTexture,transparent:true,opacity,depthWrite:false});return plane(parent,m,x,.026,z,w,d,true);}
 let shadowTexture;
+function createWorldRenderer(canvas){
+  // Three installs canvas listeners before requesting WebGL. A failed Three
+  // constructor cannot be disposed, so retain exactly its new listener handles.
+  const own=Object.getOwnPropertyDescriptor(canvas,'addEventListener'),add=canvas.addEventListener,listeners=[];
+  canvas.addEventListener=function(...args){listeners.push(args);return add.apply(this,args);};
+  try{return new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}
+  catch(error){for(const args of listeners)try{canvas.removeEventListener(...args);}catch{}throw error;}
+  finally{if(own)Object.defineProperty(canvas,'addEventListener',own);else delete canvas.addEventListener;}
+}
 
 export class World {
   constructor(canvas,settings,district=0,layout=generateMap(73,district)){
+    try{this.initialize(canvas,settings,district,layout);}catch(error){this.destroy();throw error;}
+  }
+  initialize(canvas,settings,district,layout){
     this.feedback=new CombatOverlay(canvas);this.feedback.applySettings(settings);this.layout=layout;this.district=district;this.biome=DISTRICTS[district];
     this.cutaway=new BuildingCutaway();this.surfaces=new SurfaceMaterials();this.fireClock={value:0};this.settings=settings;this.random=seededRandom(layout.mapSeed);this.canvas=canvas;
-    this.renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+    this.renderer=createWorldRenderer(canvas);
     this.cutawayMSAA=!!this.renderer.getContext().getContextAttributes()?.antialias;
     this.renderer.localClippingEnabled=true;this.renderer.info.autoReset=false;this.renderer.setPixelRatio(renderPixelRatio(settings,devicePixelRatio));
     this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;
     this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.3;
     this.scene=new T.Scene();this.scene.updateMatrix();this.scene.matrixAutoUpdate=false;this.scene.background=new T.Color(this.biome.sky);this.scene.fog=new T.FogExp2(this.biome.sky,.009);
-    const room=new RoomEnvironment(),pmrem=new T.PMREMGenerator(this.renderer);this.reflectionTarget=pmrem.fromScene(room,.04);room.dispose();pmrem.dispose();this.scene.environment=this.reflectionTarget.texture;this.scene.environmentIntensity=.42;
+    const room=new RoomEnvironment();let pmrem;
+    try{pmrem=new T.PMREMGenerator(this.renderer);this.reflectionTarget=pmrem.fromScene(room,.04);}finally{room.dispose();pmrem?.dispose();}
+    this.scene.environment=this.reflectionTarget.texture;this.scene.environmentIntensity=.42;
     this.camera=new T.OrthographicCamera(-30,30,20,-20,.1,160);this.orthoCamera=this.camera;this.viewRig=new ViewRig();this.focus=new T.Vector3(0,0,0);this.shake=0;
     this.hemi=new T.HemisphereLight(0xa9c6da,0x323d32,1.45);this.scene.add(this.hemi);
     const sun=new T.DirectionalLight(this.biome.accent,2.5);sun.position.set(-18,32,5);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-40,right:40,top:35,bottom:-35,near:1,far:100});sun.shadow.bias=-.001;sun.shadow.normalBias=.04;this.scene.add(sun);this.sun=sun;this.scene.add(sun.target);
     const rim=new T.DirectionalLight(0x7ea9b8,1.1);rim.position.set(15,12,-24);this.scene.add(rim);this.rim=rim;
-    shadowTexture=texture(64,64,(c,W,H)=>{const g=c.createRadialGradient(32,32,1,32,32,32);g.addColorStop(0,'rgba(0,0,0,.85)');g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,W,H);});
+    shadowTexture??=texture(64,64,(c,W,H)=>{const g=c.createRadialGradient(32,32,1,32,32,32);g.addColorStop(0,'rgba(0,0,0,.85)');g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,W,H);});shadowTexture.userData.shared=true;
     this.static=new T.Group();this.scene.add(this.static);this.characters=new Map();this.projectiles=new Map();this.items=new Map();this.grenades=new Map();this.streetJobs=new Map();this.rings=new Map();this.effects=[];this.corpses=[];this.decals=[];this.wrecks=[];this.propMeshes=new Map();this.buildingMeshes=new Map();this.impacts=[];
     this.characterInstances=new CharacterInstances(this.scene);this.structuralVisuals=new StructureVisuals(this.scene);this.fountainJets=[];this.waterMeshes=[];this.buildStreet();this.trimToMap();this.collectBuildings();this.batchStatic();for(const [id,g] of this.propMeshes)if(!this.layout.cover[Number(id.split('-')[1])]?.driveable)this.batchStatic(g,g);for(const g of this.buildingMeshes.values()){this.batchStatic(g,g);this.cutaway.bind(g);}freezeLocalTransforms(this.static);for(const g of this.buildingMeshes.values())freezeLocalTransforms(g);for(const [id,g]of this.propMeshes)if(!this.layout.cover[Number(id.split('-')[1])]?.driveable)freezeLocalTransforms(g);this.buildParticles();this.bloodGroundTargets=this.scene.children.filter(o=>o.isMesh&&!o.material.transparent);this.player=this.character('player');this.scene.add(this.player);
     this.traversalVisuals=new TraversalVisuals(this.scene,this.layout.traversal,this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`})));
@@ -182,7 +197,7 @@ export class World {
   }
   buildCity(){
     const g=this.static,b=this.layout.bounds,r=this.random;
-    const asphalt=asphaltTex(0);asphalt.wrapS=asphalt.wrapT=T.RepeatWrapping;asphalt.repeat.set(.065,.065);
+    const asphalt=asphaltTex(this.layout.country?4:0);asphalt.wrapS=asphalt.wrapT=T.RepeatWrapping;asphalt.repeat.set(.065,.065);
     const ground=new T.Shape(this.layout.boundary.map(p=>new T.Vector2(p.x,-p.z)));for(const w of this.layout.water){const hole=new T.Path(waterOutline(w).map(p=>new T.Vector2(p.x,-p.z)));hole.closePath();ground.holes.push(hole);}const geo=new T.ShapeGeometry(ground);geo.rotateX(-Math.PI/2);const floor=new T.Mesh(geo,new T.MeshStandardMaterial({map:asphalt,color:0x939c7f,roughness:.98}));floor.position.y=-.04;floor.receiveShadow=true;g.add(floor);
     for(const road of this.layout.roads){
       const dx=road.b.x-road.a.x,dz=road.b.z-road.a.z,len=Math.hypot(dx,dz),angle=Math.atan2(dx,dz),cx=(road.a.x+road.b.x)/2,cz=(road.a.z+road.b.z)/2;
@@ -195,10 +210,10 @@ export class World {
       if(park){const shape=new T.Shape([new T.Vector2(x-w/2,-z-d/2),new T.Vector2(x+w/2,-z-d/2),new T.Vector2(x+w/2,-z+d/2),new T.Vector2(x-w/2,-z+d/2)]);for(const lake of this.layout.water.filter(l=>l.x===x&&l.z===z))shape.holes.push(new T.Path(waterOutline(lake).map(p=>new T.Vector2(p.x,-p.z))));const geo=new T.ShapeGeometry(shape);geo.rotateX(-Math.PI/2);paving=new T.Mesh(geo,mat(0x63714c));paving.position.y=.14;g.add(paving);
        for(let i=0;i<65;i++){const gx=x+(r()-.5)*(w-1),gz=z+(r()-.5)*(d-1);if(this.layout.water.some(l=>waterContains({...l,w:l.w+1,d:l.d+1},gx,gz)))continue;const grass= new T.Mesh(new T.ConeGeometry(.12+r()*.18,.25+r()*.45,4),mat([0x708357,0x8d9461,0x4d6950][i%3]));grass.position.set(gx,.3,gz);grass.rotation.z=(r()-.5)*.4;g.add(grass);}
       }else paving=this.surfaces.apply(box(g,0x7c8278,x,.04,z,w,.18,d),'paving',0x9ea18f);paving.receiveShadow=true;
-      for(const side of [-1,1]){box(g,0xa0a58e,x+side*w/2,.16,z,.25,.26,d);box(g,0xa0a58e,x,.16,z+side*d/2,w,.26,.25);}
-      if(this.random()<.5)this.lamp(x-w/2,z-d/2);
+      if(!this.layout.country)for(const side of [-1,1]){box(g,0xa0a58e,x+side*w/2,.16,z,.25,.26,d);box(g,0xa0a58e,x,.16,z+side*d/2,w,.26,.25);}
+      if(this.random()<(this.layout.country?.15:.5))this.lamp(x-w/2,z-d/2);
     }
-    dressStreets(this,{box,cylinder,sphere,sign,mat,plane,texture});
+    if(!this.layout.country)dressStreets(this,{box,cylinder,sphere,sign,mat,plane,texture});
     for(const b of this.layout.buildings)this.cityBuilding(b);
     for(const rect of this.layout.water)this.waterSurface(rect);
     for(const bridge of this.layout.bridges){box(g,0x777f78,bridge.x,-.08,bridge.z,bridge.w,.16,bridge.d);for(const side of [-1,1]){box(g,0xa8ac98,bridge.x,.55,bridge.z+side*bridge.d/2,bridge.w,.15,.2);for(let x=-bridge.w/2;x<=bridge.w/2;x+=2)box(g,0x4d605f,bridge.x+x,.3,bridge.z+side*bridge.d/2,.12,.7,.12);}}
@@ -316,14 +331,57 @@ export class World {
     this.buildingTargets=[];
     for(const[id,g]of this.buildingMeshes){if(g.userData.plan){const b=g.userData.plan;g.userData.center=new T.Vector3(b.x,b.h/2,b.z);g.userData.size=new T.Vector3(b.w,b.h+5.3,b.d);this.buildingTargets.push({...b});continue;}const bounds=g.userData.wall?new T.Box3().setFromObject(g.userData.wall).expandByScalar(.7):new T.Box3().setFromObject(g);const center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3());g.userData.center=center;g.userData.size=size;this.buildingTargets.push({id,x:center.x,z:center.z,w:size.x,d:size.z,h:bounds.max.y});}
   }
-  damageBuildingStage(e){
-    const g=this.buildingMeshes.get(e.id);if(!g)return;g.userData.damageStage=e.stage;
+  damageBuildingStage(e,{silent=false,reset=false}={}){
+    const g=this.buildingMeshes.get(e.id);if(!g)return;
+    if(reset){for(const m of [...(g.userData.sections||[]),...(g.userData.glass||[])])m.visible=true;if(g.userData.roofAccessories)g.userData.roofAccessories.visible=true;}
+    g.userData.damageStage=e.stage;
     const pieces=(g.userData.sections||[]).filter(m=>m.visible);pieces.sort((a,b)=>{const av=new T.Vector3(),bv=new T.Vector3();a.getWorldPosition(av);b.getWorldPosition(bv);return Math.hypot(av.x-e.x,av.z-e.z,av.y-(e.y??2))-Math.hypot(bv.x-e.x,bv.z-e.z,bv.y-(e.y??2));});
-    for(const m of pieces.slice(0,Math.max(0,Math.ceil((g.userData.sections||[]).length*.24*e.stage)-((g.userData.sections||[]).length-pieces.length)))){m.visible=false;const p=new T.Vector3();m.getWorldPosition(p);debris(this,{x:p.x,z:p.z,y:p.y,material:g.userData.material||'brick',count:4,power:4,scale:.8});if(this.random()<.35)this.smoke(p.x,p.z,1,p.y);}
-    const panes=g.userData.glass.filter(m=>m.visible);for(const pane of panes.slice(0,e.stage*2)){pane.visible=false;const p=new T.Vector3();pane.getWorldPosition(p);this.effect(p.x,p.z,0x98bab9,12,6,'glass',p.y);}
-    if(g.userData.roofAccessories&&(!g.userData.roof.visible||g.userData.decoratedRoof?.visible===false))g.userData.roofAccessories.visible=false;
+    for(const m of pieces.slice(0,Math.max(0,Math.ceil((g.userData.sections||[]).length*.24*e.stage)-((g.userData.sections||[]).length-pieces.length)))){m.visible=false;if(silent)continue;const p=new T.Vector3();m.getWorldPosition(p);debris(this,{x:p.x,z:p.z,y:p.y,material:g.userData.material||'brick',count:4,power:4,scale:.8});if(this.random()<.35)this.smoke(p.x,p.z,1,p.y);}
+    const panes=(g.userData.glass||[]).filter(m=>m.visible);for(const pane of panes.slice(0,e.stage*2)){pane.visible=false;if(silent)continue;const p=new T.Vector3();pane.getWorldPosition(p);this.effect(p.x,p.z,0x98bab9,12,6,'glass',p.y);}
+    if(g.userData.roofAccessories&&(g.userData.roof?.visible===false||g.userData.decoratedRoof?.visible===false))g.userData.roofAccessories.visible=false;
     if(g.userData.plan)this.rebuildBuildingShell(g);
-    this.shake=Math.max(this.shake,.13*e.stage);
+    if(!silent)this.shake=Math.max(this.shake,.13*e.stage);
+  }
+  hydrateRegion(sim){
+    // Region snapshots contain simulation state, not historical rendering events.
+    // Reconstruct lasting damage without explosions, RNG advancement or rewards.
+    const wrecksById=new Map(this.wrecks.filter(w=>w.userData.propId!==undefined).map(w=>[w.userData.propId,w])),keepWrecks=new Set();
+    for(const prop of sim.props||[]){
+      const destroyed=prop.health<=0;
+      if(prop.kind==='building'){
+        const building=this.buildingMeshes.get(prop.id);if(!building)continue;
+        building.visible=!destroyed;building.userData.collapsed=destroyed;
+        const stage=clamp(Math.floor(prop.damageStage||0),0,3);
+        if(!destroyed&&(building.userData.damageStage||0)!==stage)this.damageBuildingStage({id:prop.id,stage,x:prop.x,y:2,z:prop.z},{silent:true,reset:true});
+        continue;
+      }
+      const root=this.propMeshes.get(prop.id);if(root){root.visible=!destroyed;if(prop.driveable&&!destroyed)this.syncVehicle(prop,sim.player,0,sim.time||0);}
+      if(!destroyed||prop.kind==='rubble'||prop.sunk)continue;
+      const key=JSON.stringify([prop.kind,prop.x,prop.z,prop.angle,prop.rotation,prop.w,prop.d]);let wreck=wrecksById.get(prop.id);
+      if(wreck&&wreck.userData.regionState!==key){this.removeDynamic(wreck);this.wrecks.splice(this.wrecks.indexOf(wreck),1);wreck=null;}
+      if(!wreck){let seed=2166136261;for(const c of `${this.layout.mapSeed}:${prop.id}`)seed=Math.imul(seed^c.charCodeAt(0),16777619);wreck=this.propWreck(prop,seededRandom(seed>>>0));}
+      wreck.userData.regionState=key;keepWrecks.add(wreck);
+    }
+    for(const wreck of [...this.wrecks])if(wreck.userData.propId!==undefined&&!keepWrecks.has(wreck)){this.removeDynamic(wreck);this.wrecks.splice(this.wrecks.indexOf(wreck),1);}
+    this.structuralVisuals.update(sim.structures||[],sim.player,this.overview);
+    this.updateRegionVisuals(sim);
+    // Fire patches and burning facade cells stay authoritative in sim and resume
+    // through update's existing effects path on the next advancing frame.
+    if(this.player){this.player.position.set(sim.player.x,sim.player.y||0,sim.player.z);this.player.rotation.y=sim.player.angle||0;}
+    this.focus?.set(sim.player.x,(sim.player.y||0)*.8,sim.player.z-1);
+    this.requestRender=true;
+  }
+  updateRegionVisuals(sim){if(!this.regionVisuals&&(sim.regionGates||this.layout.country))this.regionVisuals=new RegionVisuals(this.scene);this.regionVisuals?.update(sim,this.overview);}
+  updateRegionFire(sim,dt,motionDt){
+    const p=sim.player;
+    for(const prop of sim.props)if(prop.health>0&&prop.kind!=='building'&&prop.burning>0&&this.random()<dt*12){this.flame(prop.x,prop.z,2,prop.kind==='planter'?1.4:.5);if(this.random()<.25)this.smoke(prop.x,prop.z,1);}
+    for(const prop of sim.props)if(prop.health>0&&prop.surfaces&&Math.hypot(prop.x-p.x,prop.z-p.z)<55)for(const c of prop.surfaces)if(c.burning>0&&this.random()<motionDt*5){const fx=c.x+(c.face===2?-.45:c.face===3?.45:0),fz=c.z+(c.face===0?-.45:c.face===1?.45:0);this.flame(fx,fz,1,c.y);if(this.random()<.2)this.smoke(fx,fz,1,c.y+1,0x55534d);}
+    for(const fire of sim.fires)if(this.random()<dt*18){this.flame(fire.x+(this.random()-.5)*fire.radius,fire.z+(this.random()-.5)*fire.radius,2,.25);if(this.random()<.25)this.smoke(fire.x,fire.z,1);}
+  }
+  syncVehicle(v,player,dt,time){
+    const root=this.propMeshes.get(v.id),plan=this.layout.cover[Number(v.id.split('-')[1])];if(!root||!plan)return;
+    root.visible=v.health>0&&Math.hypot(v.x-player.x,v.z-player.z)<70;root.position.set(v.x-plan.x,0,v.z-plan.z);root.updateMatrix();
+    const car=root.children[0];if(car)animateVehicle(car,{...v,occupied:player.vehicleId===v.id},dt,time);
   }
   buildingImpact(e){
     const building=this.buildingMeshes.get(e.id);if(!building)return;
@@ -347,11 +405,15 @@ export class World {
     for(const {material,geos}of batches.values()){const mesh=new T.Mesh(mergeGeometries(geos),material);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.shellPart=true;shell.add(mesh);geos.forEach(g=>g.dispose());}g.add(shell);g.userData.shell=shell;this.cutaway?.bind(g);
   }
   destroy(){
-    this.interiorView?.dispose();this.interiorDoors?.dispose();this.traversalVisuals?.dispose();this.viewRig?.clearHands();this.ambience?.dispose();this.weatherVisuals?.dispose();this.cutaway?.dispose();this.cityArt?.dispose();this.characterInstances.dispose();this.surfaces.dispose();this.structuralVisuals.dispose();
-    this.feedback.destroy();
-    this.reflectionTarget?.dispose();
-    disposeObjectResources(this.scene,{geometries:[boxGeo,sphereGeo],ownedTextures:[this.smokeTex,this.fireTex,this.scarTex,this.wallTex,this.charTex,...(this.bloodTextures?.values()||[])]});
-    for(const pass of this.composer.passes)pass.dispose?.();this.composer.dispose();this.renderer.dispose();
+    if(this.destroyed)return;this.destroyed=true;this.disposeErrors=[];
+    // Construction can fail before assignment to the caller. Release every
+    // owner that exists, and do not mask the original failure if one cleanup fails.
+    const release=fn=>{try{fn();}catch(error){this.disposeErrors.push(error);}};
+    for(const owner of [this.interiorView,this.interiorDoors,this.regionVisuals,this.traversalVisuals,this.ambience,this.weatherVisuals,this.cutaway,this.cityArt,this.characterInstances,this.surfaces,this.structuralVisuals])release(()=>owner?.dispose());
+    release(()=>this.viewRig?.clearHands());release(()=>this.feedback?.destroy());release(()=>this.reflectionTarget?.dispose());
+    if(this.scene)release(()=>disposeObjectResources(this.scene,{geometries:[boxGeo,sphereGeo],ownedTextures:[this.smokeTex,this.fireTex,this.scarTex,this.wallTex,this.charTex,...(this.bloodTextures?.values()||[])]}));
+    const passes=new Set([...(this.composer?.passes||[]),this.ao,this.pixelArtPass,this.bloom].filter(Boolean));
+    for(const pass of passes)release(()=>pass.dispose?.());release(()=>this.composer?.dispose());release(()=>this.renderer?.dispose());
   }
   wallMaterial(color){
     if(!this.wallTex)this.wallTex=texture(256,256,(c,W,H)=>{const r=seededRandom(621);c.fillStyle='#c4c0ae';c.fillRect(0,0,W,H);for(let i=0;i<9500;i++){c.fillStyle=`rgba(61,68,59,${r()*.15})`;c.fillRect(r()*W,r()*H,1+r()*5,1+r()*3);}for(let i=0;i<40;i++){const x=r()*W,y=r()*H;c.fillStyle='rgba(75,81,70,.08)';c.fillRect(x,y,r()*30,r()*55);}});
@@ -384,13 +446,15 @@ export class World {
   }
   destroyProp(e){
     if(e.kind==='building'){const building=this.buildingMeshes.get(e.id);if(building){building.visible=false;building.userData.collapsed=true;this.shake=.35;}return;}if(e.kind==='rubble'){debris(this,{x:e.x,z:e.z,material:e.material||'concrete',count:12,power:3});return;}const group=this.propMeshes.get(e.id);if(group)group.visible=false;if(e.sunk){this.splash(e.x,e.z,6);return;}
-    const colors={car:0x5b6561,barrier:0xa19a80,planter:0x7c8267,crate:0x9a8051,barrel:0x87472f};
     debris(this,{x:e.x,z:e.z,material:materialFor(e.kind),count:e.kind==='car'?34:22,power:e.kind==='car'?8:4,scale:e.kind==='car'?1.2:.8});
-    this.smoke(e.x,e.z,e.kind==='car'?8:4);
+    this.smoke(e.x,e.z,e.kind==='car'?8:4);this.propWreck(e);
+  }
+  propWreck(e,random=this.random){
+    const colors={car:0x5b6561,barrier:0xa19a80,planter:0x7c8267,crate:0x9a8051,barrel:0x87472f};
     const wreck=new T.Group();wreck.position.set(e.x,0,e.z);
-    if(e.kind==='car'){wreck.rotation.y=e.rotation||0;box(wreck,0x343e3b,0,.28,0,3.8,.4,1.8);box(wreck,0x283734,-.25,.68,0,1.9,.4,1.3);for(const x of [-1.3,1.2])for(const z of [-.85,.85])sphere(wreck,0x202c2c,x,.27,z,.35,.23,.25);}
-    else for(let i=0;i<6;i++){const piece=box(wreck,colors[e.kind],(this.random()-.5)*e.w,.1,(this.random()-.5)*e.d,.3+this.random()*.4,.12,.2);piece.rotation.y=this.random()*6;}
-    this.scene.add(wreck);this.wrecks.push(wreck);
+    if(e.kind==='car'){wreck.rotation.y=e.driveable&&Number.isFinite(e.angle)?e.angle-Math.PI/2:e.rotation||0;box(wreck,0x343e3b,0,.28,0,3.8,.4,1.8);box(wreck,0x283734,-.25,.68,0,1.9,.4,1.3);for(const x of [-1.3,1.2])for(const z of [-.85,.85])sphere(wreck,0x202c2c,x,.27,z,.35,.23,.25);}
+    else for(let i=0;i<6;i++){const piece=box(wreck,colors[e.kind]||0x77756b,(random()-.5)*(e.w||1),.1,(random()-.5)*(e.d||1),.3+random()*.4,.12,.2);piece.rotation.y=random()*6;}
+    wreck.userData.propId=e.id;this.scene.add(wreck);this.wrecks.push(wreck);return wreck;
   }
   smoke(x,z,count=6,height=.4,color=0x69665c){
     if(!this.smokeTex)this.smokeTex=texture(64,64,(c)=>{const r=seededRandom(42);for(let i=0;i<24;i++){const x=20+r()*24,y=20+r()*24,g=c.createRadialGradient(x,y,0,x,y,18);g.addColorStop(0,'rgba(220,213,198,.25)');g.addColorStop(1,'rgba(220,213,198,0)');c.fillStyle=g;c.fillRect(0,0,64,64);}});
@@ -565,6 +629,7 @@ export class World {
   update(sim,dt,menu=false){
     if(sim.interior){if(!this.interiorView?.active)this.feedback.clear();this.interiorView??=new InteriorView(this);this.viewRig.active=false;this.interiorView.update(sim,dt,this.aspect);this.camera=this.interiorView.camera;return;}
     if(this.interiorView?.active){this.interiorView.leave();this.feedback.clear();}
+    this.updateRegionVisuals(sim);
     if(sim.interiorState?.manifest?.length){this.interiorDoors??=new InteriorDoors(this.scene);this.interiorDoors.update(sim);}else if(this.interiorDoors)this.interiorDoors.update(sim);
     this.weatherState=sim.weather;this.camera=this.orthoCamera;const profile=this.profile;let mark=profile?performance.now():0;const lap=name=>{if(profile){const now=performance.now();profile[name]=now-mark;mark=now;}};
     this.fireClock.value+=dt;const aimDt=dt/(sim.timeScale||1),focusBlend=this.settings.focusCinematics!==false?(sim.focus?.blend||0):0;const t=sim.time,p=sim.player,motionDt=['paused','upgrade','dead','victory'].includes(sim.state)?0:dt;
@@ -610,7 +675,7 @@ export class World {
     this.syncMap(this.rings,sim.hazards,h=>{const m=h.bossOwner?bossWarning(h):this.ring(h.radius,h.friendly?(THROWABLES[h.throwable]?.color||0xf2c179):0xee684c,.1);m.userData.disposable=true;this.scene.add(m);return m;},(m,h)=>{if(h.bossOwner){animateBossWarning(m,h);return;}m.position.set(h.x,.06,h.z);m.material.opacity=.4+.5*(1-h.timer/h.duration);m.scale.setScalar(.85+.15*(1-h.timer/h.duration));});
     this.structuralVisuals.update(sim.structures||[],p,this.overview);
     for(const jet of this.fountainJets){jet.mesh.visible=Math.hypot(jet.x-p.x,jet.z-p.z)<65;jet.mesh.material.opacity=.55+Math.sin(t*5+jet.phase)*.12;if(jet.mesh.visible&&this.random()<motionDt*2)this.splash(jet.x,jet.z,.2);}
-    for(const v of sim.props)if(v.driveable&&v.health>0){const root=this.propMeshes.get(v.id),plan=this.layout.cover[Number(v.id.split('-')[1])];if(root&&plan){root.visible=Math.hypot(v.x-p.x,v.z-p.z)<70;root.position.set(v.x-plan.x,0,v.z-plan.z);const car=root.children[0];if(car)animateVehicle(car,{...v,occupied:p.vehicleId===v.id},motionDt,t);if(v.speed>5&&this.random()<dt*2)this.smoke(v.x-Math.sin(v.angle)*2,v.z-Math.cos(v.angle)*2,1,.1);}}
+    for(const v of sim.props)if(v.driveable&&v.health>0){this.syncVehicle(v,p,motionDt,t);if(v.speed>5&&this.random()<dt*2)this.smoke(v.x-Math.sin(v.angle)*2,v.z-Math.cos(v.angle)*2,1,.1);}
     ageBlood(this,motionDt);
     for(const corpse of this.corpses){
       corpse.age+=dt;if(corpse.settled)continue;const m=corpse.mesh,t=corpse.age,duration=(corpse.death==='electrocuted'?1.1:.7)*corpse.fallSpeed,progress=clamp(t/duration,0,1),ease=progress*progress*(3-2*progress);
@@ -652,9 +717,7 @@ export class World {
     }
     this.effects=this.effects.filter(e=>e.life>0);if(this.effects.length>420){for(const e of this.effects.splice(0,this.effects.length-420))this.removeDynamic(e.mesh);}
     if(!this.settings.reducedMotion){this.ash.rotation.y+=dt*.005;this.ash.position.y=Math.sin(performance.now()*.0002)*.3;}
-    for(const prop of sim.props)if(prop.health>0&&prop.kind!=='building'&&prop.burning>0&&this.random()<dt*12){this.flame(prop.x,prop.z,2,prop.kind==='planter'?1.4:.5);if(this.random()<.25)this.smoke(prop.x,prop.z,1);}
-    for(const prop of sim.props)if(prop.health>0&&prop.surfaces&&Math.hypot(prop.x-p.x,prop.z-p.z)<55)for(const c of prop.surfaces)if(c.burning>0&&this.random()<motionDt*5){const fx=c.x+(c.face===2?-.45:c.face===3?.45:0),fz=c.z+(c.face===0?-.45:c.face===1?.45:0);this.flame(fx,fz,1,c.y);if(this.random()<.2)this.smoke(fx,fz,1,c.y+1,0x55534d);}
-    for(const fire of sim.fires)if(this.random()<dt*18){this.flame(fire.x+(this.random()-.5)*fire.radius,fire.z+(this.random()-.5)*fire.radius,2,.25);if(this.random()<.25)this.smoke(fire.x,fire.z,1);}
+    this.updateRegionFire(sim,dt,motionDt);
     for(const lamp of this.blastLights){lamp.userData.life=Math.max(0,lamp.userData.life-dt);lamp.intensity=(lamp.userData.power||160)*lamp.userData.life/.55;}
     this.muzzleLight.intensity=Math.max(0,this.muzzleLight.intensity-dt*220);
     lap('effects');this.viewRig.active=this.settings.viewMode!=='diorama'&&!menu&&!this.overview&&!this.portrait&&!this.inspectionTarget;if(this.viewRig.active){this.viewRig.update(sim,this.aspect,motionDt);this.camera=this.viewRig.camera;this.player.visible=this.player.visible&&this.settings.viewMode!=='first';this.playerRing.visible=false;}else this.playerRing.visible=true;this.viewRig.fadeAvatar(this.player);this.viewRig.syncHands(this.player,sim,this.scene);this.composer.passes[0].camera=this.camera;this.camera.updateMatrixWorld();this.cutaway.uniforms.cutawayCoverage.value=this.cutawayMSAA||this.ao.enabled||this.pixelArtPass.enabled||this.bloom.enabled?1:0;this.cutaway.setViewport(innerWidth,innerHeight,this.camera);this.cutaway.update(this.player,this.camera,dt,!this.viewRig.active&&!menu&&!this.overview,this.settings.reducedMotion);this.traversalVisuals?.update(sim,motionDt,this.camera,this.settings.reducedMotion,this.player);this.feedback.draw(sim,motionDt,this.camera);

@@ -1,3 +1,5 @@
+import {initializeRegions,captureRegion,requestRegionTravel,collectCountrySupply} from './Regions.js';
+import {generateCountryRoad} from './CountryRoad.js';
 import {stepInterior} from './Interiors.js';
 import {prepareTraversalLayout,campaignTraversalBoxes} from './CampaignTraversal.js';
 import {stepTraversal,grappleAvailability} from './Traversal.js';
@@ -32,7 +34,7 @@ export class Simulation {
     this.progression=progression==='hero'?'hero':'sandbox';this.seed=seed;this.mode=mode;this.skin=skin;this.visited=new Set();this.layout=layout||(mode==='city'?generateCity(seed):generateMap(seed,0));this.layout=prepareTraversalLayout(this.layout);this.streetEvents=makeStreetEvents(this.layout);this.meta=meta;this.district=0;this.random = seededRandom(seed); this.difficulty = difficulty; this.events = []; this.nextId = 1;
     this.focus=createFocus();this.timeScale=1;this.focusEnabled=environment?.bulletTime!==false;this.weather=createWeather(seed,environment);this.state = 'menu'; this.enemies = []; this.bullets = []; this.pickups = []; this.hazards = [];this.fires=[];
     this.time = 0; this.wave = 0; this.kills = 0; this.score = 0; this.combo = 0; this.comboTimer = 0;
-    this.player = this.makePlayer('carbine'); this.upgrades = []; this.upgradeOffers=[]; this.rerolls=2; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:(o.maxHealth||PROP_HEALTH[o.kind]||600),maxHealth:o.driveable?vehicleSpec(o).health:(o.maxHealth||PROP_HEALTH[o.kind]||600)}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);if(profile)initRPG(this,profile);
+    this.player = this.makePlayer('carbine'); this.upgrades = []; this.upgradeOffers=[]; this.rerolls=2; this.extraction = 0; this.navigation = new Map(); this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:(o.maxHealth||PROP_HEALTH[o.kind]||600),maxHealth:o.driveable?vehicleSpec(o).health:(o.maxHealth||PROP_HEALTH[o.kind]||600)}));this.obstacles=this.props;this.geometryRevision=0;if(this.layout.city)this.setBuildings(this.layout.buildings);if(profile)initRPG(this,profile);initializeRegions(this);
   }
   makePlayer(weapon) {
     return { skin:this.skin,traversal:this.layout.traversal?'campaign':false,grounded:true,vy:0,vx:0,vz:0,supportId:null,grapple:null,grappleCooldown:0,jumpBuffer:0,coyote:.1,landing:0,vehicleId:null,swing:0,swingCombo:0,swingWeapon:null,x: 0, y:0, z: 3, angle: Math.PI, radius: .4, health: 100, maxHealth: 100, speed: 5.2, damage: 1,
@@ -41,10 +43,17 @@ export class Simulation {
       melee: 0, throwable: 'frag', grenades: 3, blast: 1, pickupRange: 1.35, lifeSteal: 0, reloadMultiplier: 1, fireMultiplier: 1, moving: false, resistance:0, regen:0, pierce:0, crit:0, magazineBonus:0, burn:0, frost:0, blastRadius:1, shield:0, overdrive:0, doubleScore:0, freeze:0,equipped:[weapon],weaponTimers:{},reloads:{},reloadDurations:{},shots:{},equippedAt:-99,moveX:0,moveZ:0,meleeAttack:null,meleeBuffer:null,attackHeld:false,throwAnimation:0,offhandRecoil:0,swapBoost:0,lastWeapon:null,lastWeaponTime:-100 };
   }
   emit(type, data = {}) { this.events.push({ ...data, type }); }
-  start(weapon = 'carbine') { this.interior=null;this.interiorState={manifest:[],visited:[],collected:[]};this.traversalRewardClaimed=false;this.traversalTarget=null;this.focus=createFocus();this.timeScale=1; this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave(); }
+  start(weapon = 'carbine') { this.interior=null;this.interiorState={manifest:[],visited:[],collected:[]};this.traversalRewardClaimed=false;this.traversalTarget=null;this.focus=createFocus();this.timeScale=1; this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave();initializeRegions(this); }
+  createCountryRegion(){
+    const layout=generateCountryRoad(this.seed^0x4d494c4c),region=new Simulation({seed:this.seed^0x4d494c4c,difficulty:this.difficulty,layout,mode:'campaign',progression:this.progression,environment:this.weather.options});
+    region.wave=this.wave;region.district=this.district;region.nextId=this.nextId;region.state='playing';region.toSpawn=0;region.spawnTimer=0;region.waveKills=0;region.waveTotal=layout.region.encounterSpawns.length;region.places=[];region.streetEvents=[];region.interiorState={manifest:[],visited:[],collected:[]};
+    region.countryEncounter={guardIds:layout.region.encounterSpawns.map(point=>{const e=region.spawnEnemy(point.type,point.x,point.z);e.incidentId='country-supply';return e.id;})};
+    return {...captureRegion(region),parkedAt:this.time,nextEntityId:region.nextId};
+  }
   pause() { if (['playing', 'extracting', 'interior'].includes(this.state)) { this.previousState = this.state; this.state = 'paused';endFocus(this,true); } }
   resume() { if (this.state === 'paused') this.state = this.previousState; }
   nextWave() {
+    if(this.layout.country)return;
     this.wave++;this.state='playing';const p=this.player;p.shield=Math.max(p.shield,p.waveShield||0);if(this.wave>1)p.grenades+=p.waveGrenades||0;const vehicle=this.props.find(v=>v.id===p.vehicleId);if(vehicle)vehicle.health=Math.min(vehicle.maxHealth,vehicle.health+vehicle.maxHealth*(p.vehicleRepair||0));const district=Math.floor((this.wave-1)/4);
     if(district!==this.district&&!this.layout.city){this.district=district;this.player.vehicleId=null;this.player.radius=.4;this.player.y=0;this.player.grapple=null;this.player.x=0;this.player.z=3;this.layout=generateMap(this.seed,district);this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:(o.maxHealth||PROP_HEALTH[o.kind]||600),maxHealth:o.driveable?vehicleSpec(o).health:(o.maxHealth||PROP_HEALTH[o.kind]||600)}));this.obstacles=this.props;this.navigation.clear();this.pickups=[];this.fires=[];this.structures=[];this.rubblePiles=new Map();this.wetGround=[];this.emit('district',{district});}
     this.toSpawn=this.wave%4===0?Math.min(12,6+district*2):12+(this.wave-1)*3;
@@ -166,6 +175,7 @@ export class Simulation {
   update(dt, input = {}) {
     if(this.state==='interior'){stepInterior(this,input,dt);return;}
     if (!['playing', 'extracting'].includes(this.state)) return;
+    if(input.interact&&(requestRegionTravel(this)||collectCountrySupply(this)))return;
     dt = clamp(dt, 0, .05);dt*=stepFocus(this,dt,!!input.bulletTime); this.time += dt;updateWeather(this,dt);const p = this.player;
     for (const key of ['ambushTime', 'fire', 'invulnerable', 'dashCooldown', 'melee','overdrive','doubleScore','freeze','swapBoost','swing','throwAnimation','offhandRecoil']) p[key] = Math.max(0, p[key] - dt);
     p.health = Math.min(p.maxHealth,p.health+p.regen*dt*(p.lifeSteal>0?2:1));
@@ -221,11 +231,11 @@ export class Simulation {
     p.fire=p.weaponTimers[p.weapon]||0;p.reload=p.reloads[p.weapon]||0;
     if(input.melee&&!p.vehicleId&&!p.grapple&&p.melee<=0){const blade=p.equipped.find(k=>WEAPONS[k].melee);if(blade){if(!p.weaponTimers[blade])this.slice(blade,input.aim||aim);p.melee=.2;}}
     if(input.grenade)throwOrdnance(this,input.aim||aim);
-    if (this.state === 'playing' && this.toSpawn > 0 && !this.enemies.some(e=>e.type==='boss'&&e.bossState==='arrival')) {
+    if (!this.layout.country && this.state === 'playing' && this.toSpawn > 0 && !this.enemies.some(e=>e.type==='boss'&&e.bossState==='arrival')) {
       this.spawnTimer -= dt;
       if (this.spawnTimer <= 0) { this.spawn(); this.spawnTimer = Math.max(.38, 1.1 - this.wave * .1)*(this.weather.night?.85:1); }
     }
-    if(this.layout.city){for(const e of this.enemies)if(distance(e,p)>75&&e.type!=='boss'&&!e.incidentId){e.health=0;this.toSpawn++;}for(const place of this.layout.landmarks)if(!this.visited.has(place.name)&&distance(place,p)<6){this.visited.add(place.name);p.grenades+=2;p.health=Math.min(p.maxHealth,p.health+25);this.score+=500;this.emit('discovery',{name:place.name});}}
+    if(this.layout.city&&!this.layout.country){for(const e of this.enemies)if(distance(e,p)>75&&e.type!=='boss'&&!e.incidentId){e.health=0;this.toSpawn++;}for(const place of this.layout.landmarks)if(!this.visited.has(place.name)&&distance(place,p)<6){this.visited.add(place.name);p.grenades+=2;p.health=Math.min(p.maxHealth,p.health+25);this.score+=500;this.emit('discovery',{name:place.name});}}
     this.updateFire(dt);updateCollapse(this,dt);
     this.updateEnemies(dt);
     this.updateBullets(dt);
@@ -243,7 +253,7 @@ export class Simulation {
     this.pickups = this.pickups.filter(i => i.life > 0);
     updateStreetEvents(this,dt);updateNightQuests(this);
     this.enemies = this.enemies.filter(e => e.health > 0);
-    if (this.state === 'playing' && this.toSpawn === 0 && this.enemies.length === 0) {
+    if (!this.layout.country && this.state === 'playing' && this.toSpawn === 0 && this.enemies.length === 0) {
       this.bullets = []; this.hazards = [];
       if (this.wave === TOTAL_WAVES) { this.state = 'extracting'; this.emit('extraction'); }
       else { this.state = 'upgrade';if(this.wave%4===0)this.rerolls=Math.min(5,this.rerolls+1);this.offerUpgrades(); }

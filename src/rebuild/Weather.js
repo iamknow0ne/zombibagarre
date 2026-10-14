@@ -30,7 +30,7 @@ export function updateWeather(sim,dt){
  addNightReinforcements(sim);
 }
 export function addNightReinforcements(sim){
- if(!sim.weather?.night||sim.state!=='playing'||sim.wave%4===0||sim.nightReinforced)return;
+ if(sim.layout?.country||!sim.weather?.night||sim.state!=='playing'||sim.wave%4===0||sim.nightReinforced)return;
  const count=Math.min(12,Math.max(3,Math.ceil((sim.waveBaseCount||12)*(sim.difficulty==='relaxed'?.15:.25))));
  sim.toSpawn+=count;sim.waveTotal+=count;sim.nightReinforced=true;
 }
