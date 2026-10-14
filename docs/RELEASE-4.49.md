@@ -50,3 +50,15 @@ full playthrough, character likeness/production integration and downstream
 hangar/space chapters remain open. Physical phone/controller verification is
 not claimed. macOS remains ad-hoc signed and unnotarized; Apple Developer ID
 and Steam Deck work remain deferred.
+
+## Published artifact
+
+Runtime commit `da2f11ab554d2229df4691103e106ffba19eb2f6`. The
+[v4.49.0 Mac test download](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.49.0)
+was uploaded with the same size and SHA-256 as the hardware-tested local archive.
+The automatic Steam Deck tag build was cancelled because that platform is deferred.
+
+Pages run `38616849197` passed. The public game loaded to its menu with
+BUILD 4.49.0 and no captured browser errors on 14 October 2026.
+
+![Published browser menu](screenshots/traversal/public-4.49.png)

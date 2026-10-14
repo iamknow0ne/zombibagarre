@@ -34,7 +34,7 @@ Root: browser profiling, normal playthrough, integration and release. Performanc
 - [x] Shared structural health, support removal on collapse, nearby enemy pressure and single-hit blast/melee ownership.
 - [x] Detailed Rook development travel locomotion, forward/backward/strafe/stop, planted-foot anchors and following-camera review; 29 art tests pass.
 - [x] 575 gameplay tests, 29 art tests, four full automated campaigns, production build and exact packaged Mac hardware startup.
-- [ ] Publish and verify browser/Mac 4.49 after final release checks.
+- [x] Publish and verify browser/Mac 4.49: runtime `da2f11a`, Pages `38616849197` passed, public menu reports BUILD 4.49.0 with no browser errors, and uploaded Mac archive digest matches the hardware-tested ZIP.
 
 This closes the first accurate service-roof route, not all rooftops or elevated
 enemy encounters. See [4.49 evidence](RELEASE-4.49.md). Flat-ground development
