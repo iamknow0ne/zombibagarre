@@ -23,3 +23,9 @@ Building impacts and degradation now calculate each visible piece's world distan
 The [Apple Silicon macOS test edition](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.49.4) remains ad-hoc signed, not Developer ID signed or notarized. Signing and Steam Deck work remain deferred.
 
 Physical phone/controller verification, sustained native soak, wider perspective checks, ordinary 32-wave playthrough, production character-art integration, and hangar/orbit/moon progression remain open. This is a narrow reliability checkpoint, not whole-game completion.
+
+## Publication
+
+Runtime commit `cfec6aadd0ae18687c8dddf0383b56e4987f25d8` is published. Pages run `38634225917` passed; the actual public menu reports **BUILD 4.49.4**, with no captured startup errors. The public Mac archive is 141,689,402 bytes and its GitHub digest matches the exact tested archive above. The automatic Steam Deck build `38634360316` was cancelled.
+
+[Published menu capture](qa/4.49.4/published-menu.png) also exposed cramped bottom navigation at the test window height. This pre-existing layout issue is retained as a follow-up; the startup check is not described as complete visual polish.

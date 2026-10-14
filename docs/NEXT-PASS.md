@@ -219,4 +219,6 @@ hardware-tested package. Automatic Steam Deck build cancellation requested.
 - [x] Fixed-seed combat/collapse before-after samples retain identical draw/triangle/effect counts. CPU microbenchmarks improve; short samples do not establish overall FPS improvement.
 - [x] Investigated the 100-second GPU geometry rise: late +75 is exactly +54 first-use registrations of existing props plus +21 active lightning geometries; scene owners and actor batches remain flat, with a stable non-scene registration gap. No concrete leak found in this bounded check. Sustained native soak remains open.
 
-See [4.49.4 evidence](RELEASE-4.49.4.md). Publication verification pending. Broader perspective validation, production character art, sustained native soak and ordinary full expedition remain open; hangar/orbit/moon remain downstream. Apple signing, Steam Deck and other ports stay deferred.
+See [4.49.4 evidence](RELEASE-4.49.4.md). Published runtime `cfec6aa`; Pages `38634225917` passed; public BUILD 4.49.4 confirmed; GitHub Mac digest matches the tested archive. Deferred Steam Deck workflow `38634360316` cancelled. Broader perspective validation, production character art, sustained native soak and ordinary full expedition remain open; hangar/orbit/moon remain downstream. Apple signing, Steam Deck and other ports stay deferred.
+
+Next UI check: the public menu capture at 1280×857 shows cramped/cropped bottom navigation and controller guidance; improve height-aware menu layout while preserving the compact mobile gameplay HUD.
