@@ -35,15 +35,6 @@ if not sdk.exists():
             if not dest.is_relative_to(cache.resolve()):raise SystemExit('Unsafe SDK archive entry')
             z.extract(entry,cache)
             if not entry.is_dir():dest.chmod((entry.external_attr>>16)&0o777 or 0o644)
-# The upstream host releases contain different precompiled libc.obj files.
-# SNES object code is host-independent: use the tested Darwin release's target
-# libraries on both hosts, retaining each host's native compiler executables.
-# Never silently accept a different cartridge just because it has a valid header.
-if system=='Linux':
-    with zipfile.ZipFile(checked_archive(*ARCHIVES['Darwin'])) as z:
-        for name in ('crt0_snes.obj','libc.obj','libm.obj','libtcc.obj'):
-            entry=f'pvsneslib/pvsneslib/lib/LoROM_SlowROM/{name}'
-            (cache/entry).write_bytes(z.read(entry))
 make='/Library/Developer/CommandLineTools/usr/bin/make' if system=='Darwin' else shutil.which('make')
 if not make:raise SystemExit('GNU make is required')
 env={**os.environ,'PVSNESLIB_HOME':str(sdk)}

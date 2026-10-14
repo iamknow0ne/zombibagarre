@@ -10,21 +10,32 @@ permissions:
   contents: read
 jobs:
   cartridge:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Rebuild pinned SNES source
         run: |
           cp public/retro/zombie-bagarre.sfc /tmp/committed.sfc
           python3 scripts/snes-build.py
-          cmp public/retro/zombie-bagarre.sfc /tmp/committed.sfc
+      - name: Verify exact published cartridge on canonical release host
+        if: runner.os == 'macOS'
+        run: cmp public/retro/zombie-bagarre.sfc /tmp/committed.sfc
       - name: Check cartridge integrity
         run: node --test tests/snes-rom.test.js
+      - name: Verify clean rebuild reproducibility on this host
+        run: |
+          cp public/retro/zombie-bagarre.sfc /tmp/first-build.sfc
+          python3 scripts/snes-build.py
+          cmp public/retro/zombie-bagarre.sfc /tmp/first-build.sfc
       - name: Retain cartridge and linker diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: snes-build-diagnostics
+          name: snes-build-diagnostics-${{ matrix.os }}
           path: |
             public/retro/zombie-bagarre.sfc
             public/retro/zombie-bagarre.json

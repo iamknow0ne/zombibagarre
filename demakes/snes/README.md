@@ -30,12 +30,15 @@ The script downloads the official 4.6.0 compiler archive into an OS temporary ca
 
 The compiler archive hashes are pinned in the build script and verified against GitHub release asset metadata. On macOS the script uses the Command Line Tools copy of Make, avoiding an unrelated Xcode license prompt.
 
-The upstream Linux and Darwin SDK archives contain different precompiled SNES
-`libc.obj` files. The automated builder uses the Darwin archive's four LoROM
-target libraries on both hosts, with each host's native compiler. Linux therefore
-downloads both verified archives. CI still requires byte-for-byte equality with
-the published cartridge; a successful compile alone is insufficient. A manual
-SDK build below may differ if it uses the Linux archive's original libraries.
+**Release host: Apple Silicon macOS.** CI requires byte-for-byte equality with
+the published, emulator-tested cartridge on that host. Both macOS and Linux also
+build twice from clean intermediates and require identical output on each host.
+The upstream linker places equal-sized sections in a different order on the two
+hosts: inspection found `effect` / `spcSetSoundEntry` and two RAM variables swapped.
+The Linux ROM differs by 364 bytes (including relocated calls and checksum).
+Replacing its target libraries with the Darwin copies did not change that result.
+Linux builds are diagnostic artifacts, not the published or emulator-validated
+cartridge. Cross-host byte identity is not claimed.
 
 For an already installed SDK:
 
