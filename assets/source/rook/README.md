@@ -119,3 +119,21 @@ See the validator evidence for precise counts and limits. The 19.6 MB GLB is
 larger despite lower triangle/draw counts because of the extra material maps.
 V3 is still an incremental development study: it does not satisfy portrait
 likeness, final garment/animation, customization, mobile LOD or gameplay gates.
+
+
+## Development v4: seam attachment and motion review
+
+Rebuild with `--study v4` using the same Blender command above. V4 preserves
+v3's materials, mesh count and skeleton, and transfers newly authored seam and
+pocket-welt skin weights from the closest jacket vertices before batching.
+It produces `rook-prototype-v4.glb`, `rook-prototype-v4.blend` and neutral full
+and face renders. V1–v3 artifacts remain intact.
+
+The viewer now defaults to v4 and adds `dev/RookMotionStudy.js`: six rest-pose-aware
+motion studies with measured limb IK, hand poses and an actual carbine prop.
+These live in the viewer; they are not exported animation clips. Scrub pose
+time or step 1/30 second to inspect deformation. Imported clips and bind pose
+remain selectable. The 19.6 MB model is still excluded from the production
+build, pending likeness, complete animation, LOD and gameplay-adapter gates.
+See the v4 section of [validation evidence](../../../docs/art-direction/ROOK-VALIDATION.md)
+for measured improvements, tests, screenshots and remaining limitations.

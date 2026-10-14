@@ -132,6 +132,22 @@ def refine(ctx):
             px=x-.043+j*.086/6;z=1.365;loc,_,_,_=bvh.ray_cast(Vector((px,-1,z)),Vector((0,1,0)))
             if loc:pts.append((px,loc.y-.015,z))
         if len(pts)>1:ctx['tube']('Jacket / pocket welt',pts,.0012,stitch)
+    # V4: these decorations are created after the original garment transfer.
+    # Match their local skin influences to the canvas before joining batches.
+    # Leave truly rigid cap/hair/hardware attachments alone.
+    if ctx['options'].study == 'v4':
+        tree=ctx['KDTree'](len(jacket.data.vertices))
+        for vertex in jacket.data.vertices:tree.insert(jacket.matrix_world@vertex.co,vertex.index)
+        tree.balance()
+        for obj in bpy.context.scene.objects:
+            if obj.type!='MESH' or not obj.name.startswith(('Jacket / tailored seam','Jacket / pocket welt')):continue
+            obj.vertex_groups.clear()
+            for vertex in obj.data.vertices:
+                _,nearest,_=tree.find(obj.matrix_world@vertex.co)
+                for group in jacket.data.vertices[nearest].groups:
+                    name=jacket.vertex_groups[group.group].name
+                    target=obj.vertex_groups.get(name) or obj.vertex_groups.new(name=name)
+                    target.add([vertex.index],group.weight,'REPLACE')
     for obj in bpy.context.scene.objects:
         if obj.type=='MESH' and any(m in mapped for m in obj.data.materials):uv_project(obj)
     # Hidden skin under the fixed prototype outfit consumes geometry but cannot
@@ -157,5 +173,5 @@ def refine(ctx):
         bpy.ops.object.select_all(action='DESELECT')
         for obj in objects:obj.select_set(True)
         bpy.context.view_layer.objects.active=objects[0];bpy.ops.object.join()
-        objects[0].name='Rook v3 / '+mats[0]
+        objects[0].name='Rook '+ctx['options'].study+' / '+mats[0]
     print('ROOK_V3_REFINEMENT_COMPLETE')

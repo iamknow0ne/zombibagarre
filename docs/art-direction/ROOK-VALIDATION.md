@@ -82,3 +82,64 @@ undressed customization base. No gameplay replacement or hardware-performance
 claim is made.
 
 Reproduce: `node scripts/art/validate-rook.mjs assets/characters/rook-prototype-v3.glb`.
+
+
+## Development v4 — articulated motion, 14 October 2026
+
+V4 retains v3's geometry/material budget and changes the garment seam skin
+weights. All 5,256 seam-thread vertices now use blended jacket influences,
+instead of a rigid spine binding. Structural/texture/container validation passes:
+10 skinned meshes, 29,518 vertices, 46,546 triangles, 163 joints, 15 textures.
+The 19,597,208-byte GLB has SHA-256
+`8c704e461e9fa8591bc2e7ff25a3ce8916f6959df88a09ff416f4419fd8e53ef`.
+See [validator report](rook-validation-v4.json), [v3 rig baseline](rook-rig-audit.json)
+and [v4 rig report](rook-rig-audit-v4.json).
+
+An isolated chest-turn probe reduces maximum nearest-canvas attachment drift
+from 58.684 to 6.129 mm and mean drift from 13.105 to 0.327 mm. Left-arm maximum
+drift falls from 9.772 to 3.181 mm. These are attachment-distance heuristics,
+not cloth collision or intersection guarantees.
+
+The actual GLB viewer now includes six deterministic runtime motion studies:
+relaxed ready, in-place walk, rifle ready, three-pulse recoil, reload and unarmed
+melee guard. They derive limb directions, lengths and finger flex axes from the
+loaded rest skeleton. Two-bone IK preserves the bind matrices; planted ankle
+phases, opposite arm/leg motion and loop continuity have automated coverage.
+The rifle is the actual game carbine, scaled to this model, with its fore-end
+support position used for the supporting hand. Reload transfers its magazine
+toward the hand and back. These are **development sidecar poses**, not six new
+embedded GLB clips or production combat animations. The two original imported
+clips remain available for comparison.
+
+Browser review inspected ready/walk, rifle/recoil, reload and guard, including
+front/profile/rear and an oblique view. The review corrected an oversized rifle,
+wide idle elbows and a floating reload magazine. Pose scrubbing, stepping,
+play/pause and switching v3/v4 were exercised. Browser console warnings/errors
+were empty. The model renders 11 calls / 46,548 triangles including the floor;
+the unbatched review rifle brings this to 52 calls / 47,324 triangles. This is
+not a gameplay or device performance benchmark.
+
+![Actual v4 recoil study](rook-motion-v4-rifle.png)
+![Actual v4 reload hand attachment](rook-motion-v4-reload.png)
+![Actual v4 walk study](rook-motion-v4-walk.png)
+
+Validation: **16 art tests pass** (7 validator, 5 motion, 4 rig-regression),
+**559 gameplay tests pass**, production build passes with the existing large
+chunk advisory. The rig regression uses the actual v3 model as a negative
+control and rejects its rigid seam defect. Node tests use disclosed image
+placeholders; actual texture appearance was checked separately in the browser.
+
+Reproduce:
+
+```sh
+node scripts/art/validate-rook.mjs assets/characters/rook-prototype-v4.glb
+node scripts/art/rook-rig-audit.mjs assets/characters/rook-prototype-v4.glb
+node --test scripts/art/validate-rook.test.mjs scripts/art/rook-motion-study.test.mjs scripts/art/rook-rig-audit.test.mjs
+```
+
+Still open: portrait-faithful face/hair and tailored garment detail, precise
+thumb/finger contact, shoulder/stock fit, heel/toe roll, grounded root motion,
+transitions, attacks/dodges/aim layers, collision clearance, LODs and the
+production character/equipment/customization adapter. No live hero replacement,
+Mac package update or new physical-device verification is claimed for this
+asset-only checkpoint. The public game remains 4.48.1.
