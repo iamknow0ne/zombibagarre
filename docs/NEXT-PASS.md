@@ -30,7 +30,9 @@ Root: browser profiling, normal playthrough, integration and release. Performanc
 
 ## Next concrete slice
 
-The first low-platform city route and two-room workshop/apartment quest are implemented. Next validate a longer ordinary expedition and perspective-mode visibility/aiming, then design region travel with explicit save boundaries. Do not skip directly to procedural planets before travel, return and save semantics work. Indoor combat, indoor TPS/FPS and more room templates are separate extensions. Use two agents for isolated implementation/review work. See [4.44 evidence](RELEASE-4.44.md) and [the interior implementation](INTERIOR-INTEGRATION.md).
+Latest user priority: close the visual gap between the lore portraits and playable characters. The source/art review and first Rook reference sheet are saved in [character art direction](art-direction/CHARACTER-DIRECTION.md). Next produce and validate one rigged, textured Rook in actual gameplay before expanding the character pipeline. The reference image is concept only; no new character model has shipped. Do not claim further procedural detail alone satisfies this request.
+
+The first low-platform city route and two-room workshop/apartment quest are implemented. Longer ordinary-expedition QA, perspective visibility/aiming and region travel remain open after this art milestone. Do not skip directly to procedural planets before travel, return and save semantics work. Indoor combat, indoor TPS/FPS and more room templates are separate extensions. Use two agents for isolated implementation/review work. See [4.44 evidence](RELEASE-4.44.md) and [the interior implementation](INTERIOR-INTEGRATION.md).
 
 ## 4.44 delivery checkpoint
 
