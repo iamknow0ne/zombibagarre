@@ -186,3 +186,12 @@ so its diagnostic ROM is not substituted into the tested release. The emulator
 bundle hash check brings regression coverage to 545 tests.
 Pages run `38597047051` passed; the actual public `/retro/play.html` loaded its
 bundled emulator and displayed the correct SNES title screen on 14 October 2026.
+
+## 4.49.2 — phone landscape HUD
+
+- [x] Separate compact viewport presentation from touch/controller ownership. A connected PlayStation pad no longer restores the desktop HUD on a phone.
+- [x] Compact edge panels, short notices, smaller boss/quest strips and bottom traversal controls. Hide redundant score/status and inactive melee controls; keep the full map and pause details available.
+- [x] Browser QA at 844×390, 1280×550, 390×844 and desktop 1280×720; touch ↔ controller transitions, boss/evolution notices, map opening and directional dodge.
+- [x] 579 tests pass; production build passes. Actual DOM measurements at 844×390: no overlapping HUD buttons and all visible button targets at least 44×44, with both touch and simulated DualSense.
+- [ ] Physical phone and controller verification remains with the user. Browser fixture input does not establish hardware behavior.
+- Browser-only patch; macOS download remains the tested 4.49.1 edition.

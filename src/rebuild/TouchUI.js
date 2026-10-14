@@ -17,8 +17,8 @@ export class TouchUI {
  apply(){document.documentElement.style.setProperty('--touch-size',this.settings.touchSize);document.documentElement.style.setProperty('--touch-opacity',this.settings.touchOpacity);}
  update(sim,world,auto){
   const input=this.input,p=sim.player,active=usesTouchLayout(input);
-  const message=$('toast');if(message.textContent&&message.dataset.fullText){const text=active?compactFieldMessage(message.dataset.fullText):message.dataset.fullText;if(message.textContent!==text)message.textContent=text;}
-  if(!active)return;
+  const message=$('toast');if(message.textContent&&message.dataset.fullText){const text=active||document.body.classList.contains('compact-hud')?compactFieldMessage(message.dataset.fullText):message.dataset.fullText;if(message.textContent!==text)message.textContent=text;}
+  if(!active){if(document.body.classList.contains('compact-hud'))reserveHUDFeedback(world);return;}
   const boss=$('boss-hud'),floor=document.querySelector('.hud-top').getBoundingClientRect().top+(innerWidth>innerHeight?86:102);
   const noticeTop=!boss.hidden?Math.max(floor,boss.getBoundingClientRect().bottom+6):floor;
   document.documentElement.style.setProperty('--touch-notice-top',`${noticeTop}px`);
@@ -38,8 +38,12 @@ export class TouchUI {
   actionIcon($('pause'),'pause','Pause game');actionIcon($('drive-brake'),'brake','Brake');actionIcon($('drive-reverse'),'reverse','Reverse');$('vehicle-world-prompt').hidden=true;
   $('touch-help').textContent=p.vehicleId?'RELEASE STICK TO BRAKE':world.viewRig?.active?'RIGHT STICK TO LOOK + ATTACK':auto?'MOVE TO SURVIVE · AIM TO OVERRIDE':'RIGHT STICK TO AIM + ATTACK';
   // Keep floating combat labels off the information strip and both thumb areas.
-  const selectors=['#traversal-actions','#focus-action','#field-notices','.hud-top','.weapon-hud','#map-action','.touch-tools','#boss-hud','.toast:not(:empty)','.announcement.show','.vehicle-readout','#vehicle-action','#move-zone','#aim-zone','.touch-action','.driving-hud','.drive-touch'];
-  world.feedback.reserved=[...document.querySelectorAll(selectors.join(','))].filter(el=>!el.hidden&&el.getClientRects().length&&getComputedStyle(el).display!=='none').map(el=>el.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0).map(r=>({x:r.x+r.width/2,y:r.y+r.height/2,w:r.width+8,h:r.height+8}));
+  reserveHUDFeedback(world);
   world.aimRing.visible=!!input.touchFiring&&!p.vehicleId&&playing;if(world.aimRing.visible&&input.touchWorldAim)world.aimRing.position.set(input.touchWorldAim.x,.08,input.touchWorldAim.z);
  }
+}
+
+function reserveHUDFeedback(world){
+  const selectors=['#traversal-actions','#focus-action','#field-notices','.survivor','.wave-status','#pause','.weapon-hud','#map-action','.touch-tools','.abilities','.hud-controls','.street-job','#boss-hud','.toast:not(:empty)','.announcement.show','.vehicle-readout','#vehicle-action','#move-zone','#aim-zone','.touch-action','.driving-hud','.drive-touch'];
+  world.feedback.reserved=[...document.querySelectorAll(selectors.join(','))].filter(el=>!el.hidden&&el.getClientRects().length&&getComputedStyle(el).display!=='none').map(el=>el.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0).map(r=>({x:r.x+r.width/2,y:r.y+r.height/2,w:r.width+8,h:r.height+8}));
 }

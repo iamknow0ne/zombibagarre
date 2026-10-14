@@ -36,6 +36,7 @@ export class ControllerUI{
  renderBindings(){const focus=document.activeElement?.id,family=this.input.family||'playstation';$('controller-bindings').replaceChildren(...Object.entries(ACTION_NAMES).map(([action,name])=>{const row=document.createElement('label');row.className='setting-row binding-row';row.innerHTML=`<span>${name}</span><select id="bind-${action}" aria-label="${name} button">${Array.from({length:16},(_,i)=>`<option value="${i}">${buttonName(i,family)}</option>`).join('')}</select>`;const select=row.querySelector('select');select.value=this.settings.bindings[action];select.onchange=()=>{this.settings.bindings=rebind(this.settings.bindings,action,Number(select.value));this.renderBindings();this.onSave();};return row;}));if(focus?.startsWith('bind-'))$(focus)?.focus();this.diagram?.update();}
  prompt(action){return this.input.source==='gamepad'&&this.input.pad?glyph(this.settings.bindings[action],this.input.family):`<kbd>${keyboardHint(this.settings.keyboardBindings,({rightFire:'melee',leftWeapon:'cycleLeft',nextWeapon:'cycleRight',aim:'toggleAim'})[action]||action)}</kbd>`;}
  update(sim,world,auto){
+  const compact=document.body.classList.contains('compact-hud');
   const input=this.input,pad=input.source==='gamepad'&&input.pad,p=sim.player,touch=usesTouchLayout(input);
   this.traversal.update(sim,touch);
   if($('settings-dialog').open)this.diagram.update();
@@ -47,11 +48,11 @@ export class ControllerUI{
   if(!touch){
    for(const [id,action]of [['dash-action','dash'],['melee-action','rightFire'],['grenade-action','grenade']]){const node=$(id).querySelector('kbd, .pad-key'),html=this.prompt(action);if(node.outerHTML!==html)node.outerHTML=html;}
    writeHUD($('arsenal-action'),`ARSENAL ${this.prompt('arsenal')}`);$('auto-action').disabled=!!world.viewRig?.active;writeHUD($('auto-action'),`${world.viewRig?.active?'CAMERA AIM':'AUTO FIRE'} <b>${world.viewRig?.active?'MANUAL':auto?'ON':'OFF'}</b> ${this.prompt('auto')}`);
-   writeHUD($('map-action').querySelector('span'),`STREET MAP ${this.prompt('map')}`);
+   writeHUD($('map-action').querySelector('span'),`${compact?'MAP':'STREET MAP'} ${this.prompt('map')}`);
    writeHUD($('pause'),pad?this.prompt('pause'):'Ⅱ');
    $('auto-action').setAttribute('aria-pressed',String(auto));
    writeHUD($('weapon-controls'),pad?`${this.prompt('leftWeapon')} / ${this.prompt('nextWeapon')} TAP / HOLD · ${this.prompt('reload')} RELOAD`:`${this.prompt('nextWeapon')} / ${this.prompt('leftWeapon')} · CYCLE HANDS &nbsp; ${this.prompt('reload')} RELOAD`);
-   writeHUD($('equipped-hud'),p.equipped.map((key,i)=>`${pad?glyph(this.settings.bindings[i?'leftFire':'rightFire'],input.family):''} ${i?'LEFT':'RIGHT'} · ${weaponStats(p,key).name} ${TIER_MARKS[weaponTier(p,key)]} ${WEAPONS[key].melee?'BLADE':p.magazines[i&&p.equipped[0]===key?'offhand':key]}${p.reloads[i&&p.equipped[0]===key?'offhand':key]>0?' ↻':''}`).join('<br>'));
+   writeHUD($('equipped-hud'),p.equipped.map((key,i)=>`${pad?glyph(this.settings.bindings[i?'leftFire':'rightFire'],input.family):''} ${compact?'':`${i?'LEFT':'RIGHT'} · `}${weaponStats(p,key).name} ${TIER_MARKS[weaponTier(p,key)]} ${WEAPONS[key].melee?'BLADE':p.magazines[i&&p.equipped[0]===key?'offhand':key]}${p.reloads[i&&p.equipped[0]===key?'offhand':key]>0?' ↻':''}`).join('<br>'));
   }
   const car=p.vehicleId?sim.props.find(v=>v.id===p.vehicleId):sim.props.filter(v=>v.driveable&&v.health>0&&distance(v,p)<5).sort((a,b)=>distance(a,p)-distance(b,p))[0];
   if(!touch)writeHUD($('vehicle-action'),`${p.vehicleId?'EXIT':'ENTER'} VEHICLE ${this.prompt('interact')}`);

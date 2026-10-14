@@ -1,0 +1,100 @@
+/* Screen density is independent of input: phones retain this layout with pads.
+   Compact edge instruments leave the centre for play; hit areas stay >=44px. */
+.compact-hud #hud{background:linear-gradient(#12202785,transparent 100px,transparent calc(100% - 64px),#10202770)}
+.compact-hud .controller-status,.compact-hud #objective,.compact-hud .wave-track,
+.compact-hud #district-hud,.compact-hud #vehicle-status,.compact-hud #weapon-controls,
+.compact-hud #hud-gun,.compact-hud #weapon-name,.compact-hud #ammo,.compact-hud #reload-label,
+.compact-hud #active-powers,.compact-hud #combo,.compact-hud .score-block>.hud-label,.compact-hud #score{display:none}
+.compact-hud .hud-top{top:var(--touch-top);left:var(--touch-left);right:var(--touch-right);height:44px;gap:8px}
+.compact-hud .survivor{width:148px;max-width:31vw;padding:5px 8px;background:#142125c9}
+.compact-hud .survivor .hud-label{font-size:0;letter-spacing:0}
+.compact-hud #health-number{font:11px/16px var(--mono);margin-left:auto}
+.compact-hud .health-track{height:4px;margin-top:3px}
+.compact-hud .wave-status{top:2px;left:50%;width:190px;max-width:30vw;transform:translateX(-50%);text-align:center}
+.compact-hud #weather-hud{font:9px/15px var(--mono);letter-spacing:0}
+.compact-hud #wave-label{font:10px/16px var(--mono);letter-spacing:.5px}
+.compact-hud .score-block{display:block}
+.compact-hud #pause{position:absolute;right:0;top:0;width:44px;min-width:44px;height:44px;padding:4px;font-size:18px}
+.compact-hud .hud-bottom{position:static}
+.compact-hud .weapon-hud{position:absolute;left:var(--touch-left);top:calc(var(--touch-top) + 44px);min-width:0;max-width:220px;width:27vw;padding:4px 8px;display:block;background:#142125b8}
+.compact-hud #equipped-hud{font:10px/22px var(--mono);letter-spacing:0;white-space:nowrap}
+.compact-hud .mastery-track{height:2px;margin-top:3px}
+.compact-hud .reload-track{height:2px;bottom:0}
+.compact-hud #map-action{top:var(--touch-top);right:calc(var(--touch-right) + 48px);width:64px;height:44px;min-height:44px;padding:4px;display:flex;align-items:center;justify-content:center}
+.compact-hud #map-action canvas{display:none}
+.compact-hud #map-action>span{font:9px/14px var(--mono);padding:0;display:flex;align-items:center;gap:4px}
+.compact-hud #hud .pad-key,.compact-hud #hud kbd{min-width:20px;width:auto;height:20px;min-height:20px;padding:1px 3px;font:9px/16px var(--mono);margin:0;vertical-align:middle}
+.compact-hud #hud .pad-face{font-size:14px;line-height:16px}
+.compact-hud .street-job{top:calc(var(--touch-top) + 104px);left:var(--touch-left);width:27vw;max-width:220px;min-height:44px;padding:5px 8px;background:#142125b8}
+.compact-hud .street-job>span{display:none}
+.compact-hud .street-job strong{font:11px/15px var(--mono);letter-spacing:0;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compact-hud .street-job small{font:9px/13px var(--mono);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.compact-hud:not(.touch-layout) .abilities{position:absolute;bottom:var(--touch-bottom);left:var(--touch-left);right:auto;transform:none;gap:4px}
+.compact-hud:not(.touch-layout) .abilities button{min-width:60px;min-height:44px;height:44px;padding:4px 6px;display:grid;grid-template-columns:20px auto;gap:2px 5px}
+.compact-hud:not(.touch-layout) .abilities button>.pad-key,.compact-hud:not(.touch-layout) .abilities button>kbd{grid-row:1/3;display:inline-block}
+.compact-hud:not(.touch-layout) .abilities span,.compact-hud:not(.touch-layout) .abilities small{font:9px/12px var(--mono);letter-spacing:0}
+.compact-hud #melee-action:disabled{display:none}
+.compact-hud:not(.touch-layout) #traversal-actions{bottom:var(--touch-bottom);left:50%;right:auto;transform:translateX(-50%);gap:4px}
+.compact-hud #traversal-actions button{min-width:44px;min-height:44px;height:44px;padding:5px;gap:4px}
+.compact-hud #traversal-actions button>span:not(.action-symbol):not(.pad-key){display:none}
+.compact-hud #traversal-actions .action-symbol{width:20px;height:20px}
+.compact-hud:not(.touch-layout) .hud-controls{position:absolute;right:var(--touch-right);bottom:var(--touch-bottom);flex-direction:row;gap:6px;min-width:0;max-width:none}
+.compact-hud:not(.touch-layout) .hud-controls button{min-height:44px;min-width:44px;padding:4px 6px;display:flex;align-items:center;gap:4px;font:9px var(--mono);letter-spacing:0;background:#142125b8}
+.compact-hud .hud-controls b{margin-left:0}
+.compact-hud:not(.touch-layout) #focus-action{top:calc(var(--touch-top) + 48px);bottom:auto;right:var(--touch-right);width:112px;height:44px;min-height:44px;padding:5px;gap:5px}
+.compact-hud #focus-action .action-symbol{width:20px;height:20px}
+.compact-hud .focus-caption{font:9px var(--mono);gap:1px}
+.compact-hud .focus-caption small{font-size:0}
+.compact-hud #field-notices{top:calc(var(--touch-top) + 96px);right:var(--touch-right);bottom:auto;width:44px;height:44px;min-height:44px}
+.compact-hud #boss-hud{top:calc(var(--touch-top) + 38px)!important;left:50%;transform:translateX(-50%);width:32vw;max-width:300px;padding:5px 8px}
+.compact-hud .boss-caption{font-size:10px;letter-spacing:0}
+.compact-hud .boss-row small{font-size:9px}
+.compact-hud .boss-track{height:4px}
+.compact-hud:has(#boss-hud:not([hidden])) .announcement.boss-announcement.show{display:none}
+.compact-hud .announcement{top:calc(var(--touch-top) + 112px);max-width:32vw;padding:6px 10px}
+.compact-hud .announcement strong{font-size:18px}
+.compact-hud .announcement>span{font-size:9px}
+.compact-hud .toast:not(:empty){top:calc(var(--touch-top) + 94px);max-width:32vw;font:10px/14px var(--mono);padding:5px 8px}
+.compact-hud:has(#boss-hud:not([hidden])) .toast:not(:empty){top:calc(var(--touch-top) + 122px)}
+.compact-hud .vehicle-readout{top:auto;bottom:calc(var(--touch-bottom) + 50px);left:var(--touch-left)}
+.compact-hud #vehicle-action{min-height:44px;padding:5px 8px;font-size:9px}
+.compact-hud #vehicle-world-prompt{font-size:9px;padding:4px 6px}
+.compact-hud #driving-hud{bottom:var(--touch-bottom);padding:6px 10px;max-width:45vw}
+.compact-hud #drive-name{font-size:10px}
+.compact-hud #drive-speed{font-size:24px}
+.compact-hud #drive-help{font-size:9px;margin:4px 0 0}
+@media(orientation:landscape) and (max-height:600px){
+ .compact-hud.touch-layout #traversal-actions{bottom:var(--touch-bottom);left:50%;right:auto;transform:translateX(-50%);gap:6px}
+ .compact-hud.touch-layout #focus-action{bottom:calc(var(--touch-bottom) + 50px)}
+ .compact-hud.touch-layout .street-job.quest-tracked{top:calc(var(--touch-top) + 100px);max-width:210px;min-height:44px;padding:4px 8px}
+ .compact-hud.touch-layout .touch-tools{top:var(--touch-top);right:calc(var(--touch-right) + 116px)}
+ .compact-hud.touch-layout #map-action{width:44px}
+}
+@media(orientation:portrait) and (max-width:700px){
+ .compact-hud:not(.touch-layout) .wave-status{top:48px;left:auto;right:0;transform:none;max-width:45vw}
+ .compact-hud:not(.touch-layout) .weapon-hud{width:50vw;max-width:50vw}
+ .compact-hud:not(.touch-layout) #equipped-hud{font-size:9px}
+ .compact-hud:not(.touch-layout) #focus-action{top:calc(var(--touch-top) + 88px)}
+ .compact-hud:not(.touch-layout) #field-notices{top:calc(var(--touch-top) + 136px)}
+ .compact-hud:not(.touch-layout) .street-job{width:50vw;max-width:50vw}
+ .compact-hud:not(.touch-layout) #traversal-actions{bottom:calc(var(--touch-bottom) + 50px);left:var(--touch-left);transform:none}
+ .compact-hud:not(.touch-layout) #boss-hud{top:calc(var(--touch-top) + 184px)!important;width:80vw}
+}
+.compact-hud #pause .pad-key{font-size:7px;padding:1px;max-width:36px}
+.compact-hud .wave-status #wave-label{padding:0;background:none;line-height:16px}
+@media(orientation:landscape) and (max-height:600px){
+ .compact-hud.touch-layout #touch-controls .touch-tools{right:calc(var(--touch-right) + 100px)}
+}
+@media(orientation:portrait) and (max-width:700px){
+ .compact-hud.touch-layout .wave-status{left:56%;max-width:36vw}
+ .compact-hud.touch-layout #map-action{top:calc(var(--touch-top) + 48px);right:var(--touch-right);width:44px}
+ .compact-hud.touch-layout #boss-hud{top:calc(var(--touch-top) + 160px)!important;width:80vw;max-width:300px}
+ .compact-hud.touch-layout .toast:not(:empty){top:var(--touch-notice-top,calc(var(--touch-top) + 110px));max-width:70vw}
+ .compact-hud.touch-layout .announcement{top:calc(var(--touch-top) + 218px);max-width:75vw}
+}
+.compact-hud .toast:not(:empty),.compact-hud .announcement{bottom:auto;height:auto;left:50%;transform:translateX(-50%);width:max-content;text-align:center}
+/* Two weapon rows must clear the tracked-contract strip in either orientation. */
+.compact-hud.touch-layout .street-job.quest-tracked{top:calc(var(--touch-top) + 116px)}
+@media(orientation:portrait) and (max-width:700px){
+ .compact-hud.touch-layout #boss-hud{top:calc(var(--touch-top) + 172px)!important}
+}

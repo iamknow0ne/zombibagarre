@@ -9,7 +9,7 @@
 [![Play now](https://img.shields.io/badge/PLAY_NOW-IN_YOUR_BROWSER-e38b50?style=for-the-badge&labelColor=182327)](https://iamknow0ne.github.io/zombibagarre/)
 
 [![Build and deployment](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml)
-[![Version](https://img.shields.io/badge/version-4.49.1-e38b50?labelColor=182327)](docs/RELEASE-4.49.1.md)
+[![Version](https://img.shields.io/badge/version-4.49.2-e38b50?labelColor=182327)](docs/RELEASE-4.49.2.md)
 
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-b5c7b1?logo=threedotjs&logoColor=white&labelColor=182327)](package.json)
 [![Controls](https://img.shields.io/badge/controls-keyboard_%C2%B7_gamepad_%C2%B7_touch-8bbdc8?labelColor=182327)](#controls)
