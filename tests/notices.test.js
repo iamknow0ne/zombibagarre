@@ -19,5 +19,5 @@ test('quest reward reminder requires an accepted, completed objective and clears
  const s=game(),n=new Notices();assert.ok(!n.sync(s).some(n=>n.quest==='salvage'));s.rpg.accepted.push('salvage');
  for(const id of ['case-a','case-b']){const p=s.places.find(p=>p.id===id);s.player.x=p.x;s.player.z=p.z;interactPlace(s);}
  assert.ok(n.sync(s).some(n=>n.quest==='salvage'));
- const smith=s.places.find(p=>p.id==='smith');s.player.x=smith.x;s.player.z=smith.z;assert.equal(claimQuest(s,'salvage','smith'),true);assert.ok(!n.sync(s).some(n=>n.quest==='salvage'));
+ const smith=s.places.find(p=>p.id==='smith');s.player.x=smith.x;s.player.z=smith.z;assert.ok(interactPlace(s));Object.assign(s.interior.pose,s.interior.plan.objects.find(o=>o.id==='mara'));assert.equal(claimQuest(s,'salvage','smith'),true);assert.ok(!n.sync(s).some(n=>n.quest==='salvage'));
 });

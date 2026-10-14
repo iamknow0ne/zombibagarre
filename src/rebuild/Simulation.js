@@ -1,3 +1,4 @@
+import {stepInterior} from './Interiors.js';
 import {prepareTraversalLayout,campaignTraversalBoxes} from './CampaignTraversal.js';
 import {stepTraversal,grappleAvailability} from './Traversal.js';
 import {bodyPoint,aimHeight,muzzlePoint,bodyDistance,blastDistance,meleeReaches,meleeSpan,nearGround,combatBlocked,propBlastPoint} from './CombatHeight.js';
@@ -40,8 +41,8 @@ export class Simulation {
       melee: 0, throwable: 'frag', grenades: 3, blast: 1, pickupRange: 1.35, lifeSteal: 0, reloadMultiplier: 1, fireMultiplier: 1, moving: false, resistance:0, regen:0, pierce:0, crit:0, magazineBonus:0, burn:0, frost:0, blastRadius:1, shield:0, overdrive:0, doubleScore:0, freeze:0,equipped:[weapon],weaponTimers:{},reloads:{},reloadDurations:{},shots:{},equippedAt:-99,moveX:0,moveZ:0,meleeAttack:null,meleeBuffer:null,attackHeld:false,throwAnimation:0,offhandRecoil:0,swapBoost:0,lastWeapon:null,lastWeaponTime:-100 };
   }
   emit(type, data = {}) { this.events.push({ ...data, type }); }
-  start(weapon = 'carbine') { this.traversalRewardClaimed=false;this.traversalTarget=null;this.focus=createFocus();this.timeScale=1; this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave(); }
-  pause() { if (['playing', 'extracting'].includes(this.state)) { this.previousState = this.state; this.state = 'paused';endFocus(this,true); } }
+  start(weapon = 'carbine') { this.interior=null;this.interiorState={manifest:[],visited:[],collected:[]};this.traversalRewardClaimed=false;this.traversalTarget=null;this.focus=createFocus();this.timeScale=1; this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave(); }
+  pause() { if (['playing', 'extracting', 'interior'].includes(this.state)) { this.previousState = this.state; this.state = 'paused';endFocus(this,true); } }
   resume() { if (this.state === 'paused') this.state = this.previousState; }
   nextWave() {
     this.wave++;this.state='playing';const p=this.player;p.shield=Math.max(p.shield,p.waveShield||0);if(this.wave>1)p.grenades+=p.waveGrenades||0;const vehicle=this.props.find(v=>v.id===p.vehicleId);if(vehicle)vehicle.health=Math.min(vehicle.maxHealth,vehicle.health+vehicle.maxHealth*(p.vehicleRepair||0));const district=Math.floor((this.wave-1)/4);
@@ -163,6 +164,7 @@ export class Simulation {
   offerUpgrades(){this.choices=rollUpgrades(this.player,this.wave,this.random,this.upgradeOffers);this.upgradeOffers=this.choices.map(u=>u.id);this.emit('upgrade');}
   rerollUpgrades(){if(this.state!=='upgrade'||this.rerolls<=0)return false;this.rerolls--;this.offerUpgrades();return true;}
   update(dt, input = {}) {
+    if(this.state==='interior'){stepInterior(this,input,dt);return;}
     if (!['playing', 'extracting'].includes(this.state)) return;
     dt = clamp(dt, 0, .05);dt*=stepFocus(this,dt,!!input.bulletTime); this.time += dt;updateWeather(this,dt);const p = this.player;
     for (const key of ['ambushTime', 'fire', 'invulnerable', 'dashCooldown', 'melee','overdrive','doubleScore','freeze','swapBoost','swing','throwAnimation','offhandRecoil']) p[key] = Math.max(0, p[key] - dt);
@@ -177,7 +179,7 @@ export class Simulation {
     if (input.reload) p.equipped.forEach((key,i)=>this.reload(key,slotKey(p.equipped,key,i)));
     let mx = input.x || 0, mz = input.z || 0, length = Math.hypot(mx, mz);
     if (length > 1) { mx /= length; mz /= length; }
-    if(input.interact&&nearGround(p)){if(!this.profile||!interactPlace(this))this.interactVehicle();if(this.state==='paused')return;}
+    if(input.interact&&nearGround(p)){if(!this.profile||!interactPlace(this))this.interactVehicle();if(['paused','interior'].includes(this.state))return;}
     if (input.dash && !p.vehicleId&& p.dashCooldown === 0) {
       p.grapple=null;p.jumpBuffer=0;p.ambushTime=3;p.shield=Math.max(p.shield,p.dashShield||0);p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;const dive=!isMelee(p)&&beginFocusDive(this);p.focusDive=!!dive;p.dash = dive?FOCUS.diveDuration:isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax;
       p.dashX = length > .1 ? mx / Math.hypot(mx, mz) : Math.sin(p.angle); p.dashZ = length > .1 ? mz / Math.hypot(mx, mz) : Math.cos(p.angle); this.emit('dash');

@@ -1,16 +1,17 @@
+import {endInterior} from '../src/rebuild/Interiors.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Simulation} from '../src/rebuild/Simulation.js';
-import {trackQuest,acceptQuest,claimQuest} from '../src/rebuild/RPG.js';
+import {trackQuest,acceptQuest,claimQuest,interactPlace} from '../src/rebuild/RPG.js';
 import {questGuide,syncQuestNavigation,buildRoute,routeSegmentClear,navigationRoute} from '../src/rebuild/QuestNavigation.js';
 import {atlasTransform,atlasPoint} from '../src/rebuild/Atlas.js';
 const fixture=()=>({player:{x:-24,z:0},obstacles:[],geometryRevision:0,layout:{city:true,bounds:{minX:-40,maxX:40,minZ:-40,maxZ:40},boundary:[{x:-40,z:-40},{x:40,z:-40},{x:40,z:40},{x:-40,z:40}],water:[],bridges:[]}});
 const game=()=>{const s=new Simulation({seed:31,mode:'city',profile:{}});s.start();return s;};
 test('quest guidance advances from contact to cases to reward without replacing a custom pin',()=>{
- const s=game();trackQuest(s,'salvage');assert.equal(questGuide(s).step,0);const smith=s.places.find(p=>p.id==='smith');Object.assign(s.player,{x:smith.x,z:smith.z});acceptQuest(s,'salvage','smith');let g=syncQuestNavigation(s);assert.equal(g.step,1);assert.equal(g.target.kind,'cache');assert.equal(s.player.waypoint.source,'quest');
+ const s=game();trackQuest(s,'salvage');assert.equal(questGuide(s).step,0);const smith=s.places.find(p=>p.id==='smith');Object.assign(s.player,{x:smith.x,z:smith.z});assert.ok(interactPlace(s));Object.assign(s.interior.pose,s.interior.plan.objects.find(o=>o.id==='mara'));assert.ok(acceptQuest(s,'salvage','smith'));Object.assign(s.interior.pose,s.interior.plan.objects.find(o=>o.id==='exit'));assert.ok(endInterior(s));let g=syncQuestNavigation(s);assert.equal(g.step,1);assert.equal(g.target.kind,'cache');assert.equal(s.player.waypoint.source,'quest');
  s.rpg.cases.push(g.target.id);g.target.used=true;g=syncQuestNavigation(s);assert.ok(!s.rpg.cases.includes(g.target.id));
  const pin={x:12,z:13,source:'manual'};s.player.waypoint=pin;s.rpg.cases=['case-a','case-b'];g=syncQuestNavigation(s);assert.equal(g.step,2);assert.equal(g.target.id,'smith');assert.equal(s.player.waypoint,pin);
- trackQuest(s,'salvage');assert.equal(s.player.waypoint.name,smith.name);claimQuest(s,'salvage','smith');syncQuestNavigation(s);assert.equal(s.rpg.tracked,null);assert.equal(s.player.waypoint,null);
+ trackQuest(s,'salvage');assert.equal(s.player.waypoint.name,smith.name);assert.ok(interactPlace(s));Object.assign(s.interior.pose,s.interior.plan.objects.find(o=>o.id==='mara'));assert.ok(claimQuest(s,'salvage','smith'));syncQuestNavigation(s);assert.equal(s.rpg.tracked,null);assert.equal(s.player.waypoint,null);
 });
 test('city-wide objectives clear stale quest destinations and completed quests preserve discovery pins',()=>{
  const s=game();s.rpg.accepted.push('mercy');trackQuest(s,'mercy');s.player.waypoint={x:0,z:0,source:'quest'};const g=syncQuestNavigation(s);assert.equal(g.target,null);assert.equal(s.player.waypoint,null);assert.match(g.text,/Defeat/);

@@ -1,3 +1,4 @@
+import {activeGameplay} from './GameplayContext.js';
 import {WeaponHold} from './WeaponWheel.js';
 import {cameraMovement} from './ViewRig.js';
 import {TouchControls,touchAimTarget,assistedAimPoint,assistedAimClear} from './TouchControls.js';
@@ -34,8 +35,8 @@ export class Input {
     this.touchControls=new TouchControls(this);
   }
   mouseButton(button,down){if(button===0)this.firing=down;if(button===2)this.aimHeld=down&&this.perspective;}
-  clear(){this.aimHeld=this.aimToggle=false;this.weaponHold?.reset();this.onCancelWheel?.();if(typeof document!=='undefined'&&document?.pointerLockElement===this.canvas)document?.exitPointerLock?.();this.perspective=false;this.lookX=this.lookY=0;this.touchControls?.clear();this.touchWorldAim=null;this.touchFiring=false;this.touchHoldIds={};this.touchBrake=this.touchReverse=false;this.padGuard=true;this.padAim=null;this.keys.clear();this.once={};this.firing=false;this.destination=null;this.moveRequest=null;this.stick={x:0,y:0};this.resetStick?.();this.resetAim?.();this.touchAim=null;this.onStopFeedback?.();}
-  pollGamepad(sim,now=performance.now()){this.playing=['playing','extracting'].includes(sim.state);
+  clear(){this.wasLocked=false;this.aimHeld=this.aimToggle=false;this.weaponHold?.reset();this.onCancelWheel?.();if(typeof document!=='undefined'&&document?.pointerLockElement===this.canvas)document?.exitPointerLock?.();this.perspective=false;this.lookX=this.lookY=0;this.touchControls?.clear();this.touchWorldAim=null;this.touchFiring=false;this.touchHoldIds={};this.touchBrake=this.touchReverse=false;this.padGuard=true;this.padAim=null;this.keys.clear();this.once={};this.firing=false;this.destination=null;this.moveRequest=null;this.stick={x:0,y:0};this.resetStick?.();this.resetAim?.();this.touchAim=null;this.onStopFeedback?.();}
+  pollGamepad(sim,now=performance.now()){this.playing=activeGameplay(sim.state);
     const dt=Math.min(.05,Math.max(0,(now-(this.padTime??now))/1000));this.padTime=now;
     if(document.hidden||!document.hasFocus()){if(!this.padInactive)this.clear();this.padInactive=true;this.padButtons=[];return;}this.padInactive=false;
     let pads=[];try{pads=Array.from(this.getGamepads?this.getGamepads():navigator.getGamepads?.()||[]).filter(Boolean);}catch{/* Some embedded browsers deny access. */}
@@ -46,7 +47,7 @@ export class Input {
     const label=document.getElementById('controller-status');
     this.family=this.pad?controllerFamily(this.pad.id,settings.promptStyle):settings.promptStyle==='auto'?(this.family||'playstation'):settings.promptStyle;const brand=this.family==='playstation'?'PLAYSTATION':this.family==='xbox'?'XBOX':'GAMEPAD';
     const status=this.pad?`${brand} CONNECTED · CONTROLS IN SETTINGS`:pads.length?'CONTROLLER DETECTED · CONFIGURE LAYOUT IN SETTINGS':'CONTROLLER · CONNECT, THEN PRESS A BUTTON';if(label&&label.textContent!==status)label.textContent=status;
-    if(!this.pad){if(old){this.clear();this.source='keyboard';if(['playing','extracting'].includes(sim.state)){this.onAction('pause');if(label)label.textContent='CONTROLLER DISCONNECTED · GAME PAUSED';}}return;}
+    if(!this.pad){if(old){this.clear();this.source='keyboard';if(activeGameplay(sim.state)){this.onAction('pause');if(label)label.textContent='CONTROLLER DISCONNECTED · GAME PAUSED';}}return;}
     if(changed){this.clear();return;}
     const pad=this.pad,press=pad.pressed,dialog=[...document.querySelectorAll?.('dialog[open]')||[]].at(-1)||document.querySelector('dialog[open]');
     if(pad.buttons.some(Boolean)||Math.hypot(pad.move.x,pad.move.y)>.1||Math.hypot(pad.aim.x,pad.aim.y)>.1)this.source='gamepad';
@@ -65,6 +66,7 @@ export class Input {
     this.menuRoot=null;this.menuHeld=false;
     if(this.padGuard){if(!pad.buttons.some(Boolean)&&Math.hypot(pad.move.x,pad.move.y)<.1&&Math.hypot(pad.aim.x,pad.aim.y)<.1)this.padGuard=false;else return;}
     for(const action of ['pause','map','arsenal'])if(press[b[action]]||(action==='map'&&press[17])){this.onAction(action);return;}
+    if(sim.interior){this.weaponHold?.reset();this.onCancelWheel?.();if(press[b.interact])this.once.interact=true;return;}
     if(!sim.player.vehicleId){
       if(this.weaponWheelActive&&press[1]){this.clear();return;}
       this.weaponHold??=new WeaponHold();const event=this.weaponHold.update(pad.buttons,b,now);this.onWeaponWheel?.(event,pad);
@@ -106,6 +108,7 @@ export class Input {
     const k=this.keys;let x=(k.has('KeyD')||k.has('ArrowRight')?1:0)-(k.has('KeyA')||k.has('KeyQ')||k.has('ArrowLeft')?1:0)+this.stick.x;
     let y=(k.has('KeyS')||k.has('ArrowDown')?1:0)-(k.has('KeyW')||k.has('KeyZ')||k.has('ArrowUp')?1:0)+this.stick.y;
     const pad=this.padGuard||this.source&&this.source!=='gamepad'?null:this.pad;if(pad){x+=pad.move.x;y+=pad.move.y;}
+    if(sim?.interior){const interact=!!this.once.interact;this.once={};this.destination=this.moveRequest=null;this.perspective=false;this.lookX=this.lookY=0;return {x:x*.776+y*.63,z:-x*.63+y*.776,interact,auto:false,firing:false};}
     if(this.moveRequest){this.destination=world.aim(this.moveRequest.x,this.moveRequest.y);this.moveRequest=null;}
     if(Math.hypot(x,y)>.1)this.destination=null;
     const hands=pad?handInput(pad,this.settings?.bindings||BINDINGS):undefined,aiming=pad&&Math.hypot(pad.aim.x,pad.aim.y)>.1;

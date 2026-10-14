@@ -16,7 +16,7 @@
 - [x] Integrate the first low-platform Open City traversal route with height-aware combat and keyboard/controller/touch inputs (4.43).
 - [ ] Extend traversal to curated service roofs with accurate parapet/accessory collision and elevated enemy threats.
 - [ ] Finish perspective-mode aiming, collision and visibility validation.
-- [ ] Ship one useful enterable workshop and apartment loot quest, with stable identifiers and safe exits.
+- [x] Ship one useful enterable workshop and apartment loot quest, with stable identifiers and safe exits (4.44).
 - [ ] Add region travel/save boundaries, then the country road and hidden hangar chapter.
 - [ ] Add launch/orbit/return and first moon as independently testable slices.
 
@@ -30,7 +30,11 @@ Root: browser profiling, normal playthrough, integration and release. Performanc
 
 ## Next concrete slice
 
-The first Open City service route is implemented and tested in 4.43. Next, validate longer ordinary gameplay and perspective visibility, then build one enterable workshop and an apartment loot quest with safe exits. Keep jumping, dodge and grenade bindings distinct across keyboard, controller and touch. Inspect elevated projectile origins, melee/AOE/contact damage, falling supports and safe recovery. Use two agents for isolated implementation/review work. See [4.43 evidence](RELEASE-4.43.md), [the traversal scope](TRAVERSAL-INTEGRATION.md) and [the unimplemented interior plan](INTERIOR-INTEGRATION.md).
+The first low-platform city route and two-room workshop/apartment quest are implemented. Next validate a longer ordinary expedition and perspective-mode visibility/aiming, then design region travel with explicit save boundaries. Do not skip directly to procedural planets before travel, return and save semantics work. Indoor combat, indoor TPS/FPS and more room templates are separate extensions. Use two agents for isolated implementation/review work. See [4.44 evidence](RELEASE-4.44.md) and [the interior implementation](INTERIOR-INTEGRATION.md).
+
+## 4.44 delivery checkpoint
+
+462 automated tests and production build passed. Standard Open City bot completed all 32 waves. Browser fixture checks covered the workshop/apartment quest and compact portrait/landscape controls. Renderer disposal was tested over 50 room visits; hardware memory soak and physical controller/multitouch remain open. The exact Mac archive passed hardware startup with GPU enabled. Versioned output: `release/4.44.0`. Apple signing and Steam Deck remain deferred.
 
 ## 4.43 delivery checkpoint
 

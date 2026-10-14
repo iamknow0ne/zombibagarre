@@ -1,0 +1,55 @@
+{
+  "version": "4.44.0",
+  "date": "2026-10-14",
+  "automatedTests": {
+    "passed": 462,
+    "failed": 0
+  },
+  "productionBuild": "passed",
+  "cityBot": {
+    "difficulty": "standard",
+    "state": "victory",
+    "wave": 32,
+    "kills": 1623,
+    "simulatedSeconds": 980.8
+  },
+  "interiors": {
+    "seedCount": 100,
+    "resourceOwnershipCycles": 50,
+    "browser": [
+      "workshop entry",
+      "trade acceptance",
+      "apartment entry",
+      "case collection",
+      "quest payout",
+      "safe exit",
+      "paused exterior",
+      "portrait 390x844",
+      "landscape 844x390"
+    ],
+    "fixtureLimits": "Placement buttons and disabled outdoor spawns; not a human full run or physical controller/mobile test."
+  },
+  "macOS": {
+    "arch": "arm64",
+    "minimum": "13",
+    "versionedOutput": "release/4.44.0",
+    "hardwareBoot": "passed",
+    "gpu": "enabled",
+    "notarized": false,
+    "archiveSHA256": "8a33668877689d4d77a8652483a9f0ea2f918a8eafc0f1c31e38c2559b9bbc5f",
+    "extendedManualPlay": "pending"
+  },
+  "uiReview": {
+    "direction": "Charcoal/bone/brass shelter field overlay; room is dominant; one contextual action",
+    "aiSlopScore": 1,
+    "distinctivenessScore": 8,
+    "limits": "First authored procedural rooms; richer narrative props and NPC animation remain open."
+  },
+  "deferred": [
+    "Apple Developer ID/notarization",
+    "Steam Deck troubleshooting",
+    "indoor combat and TPS/FPS",
+    "region/save boundaries and space chapter",
+    "physical mobile/controller validation"
+  ]
+}

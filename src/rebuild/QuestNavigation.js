@@ -5,11 +5,12 @@ import {distance,lineBlocked} from './config.js';
 export function questGuide(sim,id=sim.rpg?.tracked){
  const quest=QUESTS.find(q=>q.id===id);if(!quest||!sim.rpg)return null;
  const objective=questObjective(sim,id),[done,total]=questProgress(sim,id),step=objective.state==='available'?0:objective.state==='ready'?2:objective.state==='complete'?3:1;
- return {quest,...objective,done,total,step,distance:objective.target?Math.round(distance(sim.player,objective.target)):null};
+ return {quest,...objective,done,total,step,distance:objective.target?Math.round(distance(sim.interior?.pose||sim.player,objective.target)):null};
 }
 export function syncQuestNavigation(sim){
  const guide=questGuide(sim);if(!guide)return null;
  if(guide.state==='complete'||guide.state==='locked'){sim.rpg.tracked=null;if(sim.player.waypoint?.source==='quest')sim.player.waypoint=null;return guide;}
+ if(sim.interior)return guide;
  if(sim.player.waypoint?.source!=='manual')sim.player.waypoint=guide.target?{x:guide.target.x,z:guide.target.z,source:'quest',questId:guide.quest.id,name:guide.target.name||guide.quest.name}:null;
  return guide;
 }
@@ -43,7 +44,7 @@ export function buildRoute(sim,target){
  const smooth=[path[0]];let i=0;while(i<path.length-1){let j=Math.min(path.length-1,i+30);while(j>i&&!routeSegmentClear(sim,path[i],path[j]))j--;if(j===i)return [];smooth.push(path[j]);i=j;}return smooth;
 }
 export function navigationRoute(sim,target=sim.player.waypoint,cacheSlot='questRoute'){
- if(!target){sim[cacheSlot]=null;return null;}
+ if(sim.interior||!target){sim[cacheSlot]=null;return null;}
  const p=sim.player,old=sim[cacheSlot],key=`${target.x.toFixed(1)}:${target.z.toFixed(1)}:${target.source||'manual'}`,revision=sim.geometryRevision||0;
  if(old&&old.key===key&&old.revision===revision&&distance(old.origin,p)<8){old.status=distance(p,target)<3?'arrived':old.points.length?'route':'unavailable';return old;}
  const points=buildRoute(sim,target),length=points.slice(1).reduce((n,p,i)=>n+distance(points[i],p),0);

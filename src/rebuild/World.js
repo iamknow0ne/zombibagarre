@@ -1,3 +1,4 @@
+import {InteriorView,InteriorDoors} from './InteriorView.js';
 import {buildServicePlatform} from './PlatformVisuals.js';
 import {worldRayTarget} from './WorldAim.js';
 import {TraversalVisuals,applyTraversalPose} from './TraversalVisuals.js';
@@ -345,7 +346,7 @@ export class World {
     for(const {material,geos}of batches.values()){const mesh=new T.Mesh(mergeGeometries(geos),material);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.shellPart=true;shell.add(mesh);geos.forEach(g=>g.dispose());}g.add(shell);g.userData.shell=shell;this.cutaway?.bind(g);
   }
   destroy(){
-    this.traversalVisuals?.dispose();this.viewRig?.hands?.removeFromParent();this.ambience?.dispose();this.weatherVisuals?.dispose();this.cutaway?.dispose();this.cityArt?.dispose();this.characterInstances.dispose();this.surfaces.dispose();this.structuralVisuals.dispose();
+    this.interiorView?.dispose();this.interiorDoors?.dispose();this.traversalVisuals?.dispose();this.viewRig?.hands?.removeFromParent();this.ambience?.dispose();this.weatherVisuals?.dispose();this.cutaway?.dispose();this.cityArt?.dispose();this.characterInstances.dispose();this.surfaces.dispose();this.structuralVisuals.dispose();
     this.feedback.destroy();
     this.reflectionTarget?.dispose();for(const tex of this.bloodTextures?.values()||[])tex.dispose();
     this.scene.traverse(o=>{if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==sphereGeo&&!o.geometry.userData.shared)o.geometry.dispose();if(o.material){for(const m of Array.isArray(o.material)?o.material:[o.material]){if(!m.userData.shared){m.map?.dispose();m.dispose();}}}if(o.isLight)o.shadow?.map?.dispose();});
@@ -560,6 +561,9 @@ export class World {
     if(e.type==='spark')this.effect(e.x,e.z,0xddbe84,5,3);
   }
   update(sim,dt,menu=false){
+    if(sim.interior){if(!this.interiorView?.active)this.feedback.clear();this.interiorView??=new InteriorView(this);this.viewRig.active=false;this.interiorView.update(sim,dt,this.aspect);this.camera=this.interiorView.camera;return;}
+    if(this.interiorView?.active){this.interiorView.leave();this.feedback.clear();}
+    if(sim.interiorState?.manifest?.length){this.interiorDoors??=new InteriorDoors(this.scene);this.interiorDoors.update(sim);}else if(this.interiorDoors)this.interiorDoors.update(sim);
     this.weatherState=sim.weather;this.camera=this.orthoCamera;const profile=this.profile;let mark=profile?performance.now():0;const lap=name=>{if(profile){const now=performance.now();profile[name]=now-mark;mark=now;}};
     this.fireClock.value+=dt;const aimDt=dt/(sim.timeScale||1),focusBlend=this.settings.focusCinematics!==false?(sim.focus?.blend||0):0;const t=sim.time,p=sim.player,motionDt=['paused','upgrade','dead','victory'].includes(sim.state)?0:dt;
     const driving=sim.props.find(v=>v.id===p.vehicleId),lead=driving?{x:(driving.vx||0)*.25,z:(driving.vz||0)*.25}:this.settings.reducedMotion?{x:0,z:0}:{x:clamp((p.moveX||0)*.12,-.8,.8),z:clamp((p.moveZ||0)*.12,-.8,.8)};

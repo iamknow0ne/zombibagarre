@@ -1,3 +1,4 @@
+import {endInterior} from '../src/rebuild/Interiors.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Simulation} from '../src/rebuild/Simulation.js';
@@ -48,7 +49,7 @@ test('snow drift respects walls and a dodge remains immediate and directional',(
  s.player.x=-5;s.player.z=0;s.player.slideX=5;s.update(.05,{x:0,z:-1,dash:true,auto:false});assert.ok(s.player.z<-.9);assert.ok(Math.abs(s.player.x+5)<.05);assert.equal(s.player.dashX,0);
 });
 const city=()=>{const s=new Simulation({mode:'city',seed:31,profile:{},environment:{dayCycle:'day'}});s.start();return s;};
-const visit=(s,id)=>{const p=s.places.find(p=>p.id===id);Object.assign(s.player,{x:p.x,z:p.z});};
+const visit=(s,id)=>{if(s.interior){s.state='interior';Object.assign(s.interior.pose,s.interior.plan.objects.find(o=>o.id==='exit'));assert.ok(endInterior(s));}const p=s.places.find(p=>p.id===id);Object.assign(s.player,{x:p.x,z:p.z});if(id==='smith'&&s.interiorState.manifest.length){assert.ok(interactPlace(s));Object.assign(s.interior.pose,s.interior.plan.objects.find(o=>o.id==='mara'));}};
 test('night contracts appear after dark, retain progress at dawn, and reward only once',()=>{
  const s=city(),q=QUESTS.find(q=>q.id==='night-hunt');visit(s,'medic');assert.equal(questVisible(s,q),false);assert.equal(acceptQuest(s,q.id,'medic'),false);
  s.weather.options.dayCycle='night';updateWeather(s,0);assert.ok(questVisible(s,q));assert.ok(acceptQuest(s,q.id,'medic'));rpgKill(s,{type:'walker'});assert.equal(s.rpg.nightKills,1);
@@ -56,7 +57,7 @@ test('night contracts appear after dark, retain progress at dawn, and reward onl
  s.rpg.nightKills=18;assert.equal(questState(s,q),'ready');assert.ok(claimQuest(s,q.id,'medic'));assert.equal(claimQuest(s,q.id,'medic'),false);
 });
 test('night delivery and district survey require acceptance and darkness, and offer valid guidance',()=>{
- const s=city();s.weather.options.dayCycle='night';updateWeather(s,0);visit(s,'medic');interactPlace(s);assert.equal(s.rpg.nightDelivery,0);s.resume();visit(s,'smith');assert.ok(acceptQuest(s,'night-courier','smith'));assert.equal(questObjective(s,'night-courier').target.id,'medic');
+ const s=city();s.weather.options.dayCycle='night';updateWeather(s,0);visit(s,'medic');interactPlace(s);assert.equal(s.rpg.nightDelivery,0);s.resume();visit(s,'smith');assert.ok(acceptQuest(s,'night-courier','smith'));assert.equal(questObjective(s,'night-courier').target.id,'exit');
  s.weather.options.dayCycle='day';updateWeather(s,0);visit(s,'medic');interactPlace(s);assert.equal(s.rpg.nightDelivery,0);s.resume();s.weather.options.dayCycle='night';updateWeather(s,0);interactPlace(s);assert.equal(s.rpg.nightDelivery,1);s.resume();
  visit(s,'broker');assert.ok(acceptQuest(s,'night-atlas','broker'));const target=questObjective(s,'night-atlas').target;Object.assign(s.player,{x:target.x,z:target.z});updateNightQuests(s);updateNightQuests(s);assert.equal(s.rpg.nightDistricts.length,1);assert.notEqual(questObjective(s,'night-atlas').target.name,target.name);
 });

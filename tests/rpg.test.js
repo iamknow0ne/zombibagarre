@@ -1,3 +1,4 @@
+import {endInterior} from '../src/rebuild/Interiors.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Simulation} from '../src/rebuild/Simulation.js';
@@ -5,7 +6,7 @@ import {normalizeProfile,levelForXP,pointsLeft,gainXP,spendPoint,equipArmour,app
 import {generateCity,waterAt} from '../src/rebuild/City.js';
 import {pointBlocked,weaponStats} from '../src/rebuild/config.js';
 const game=(profile={})=>{const s=new Simulation({seed:31,mode:'city',profile});s.start();s.events=[];return s;};
-const go=(s,id)=>{const q=s.places.find(q=>q.id===id);assert.ok(q,id);s.player.x=q.x;s.player.z=q.z;return q;};
+const go=(s,id)=>{if(s.interior){s.state='interior';const exit=s.interior.plan.objects.find(o=>o.id==='exit');Object.assign(s.interior.pose,exit);assert.ok(endInterior(s));}if(s.state==='paused')s.resume();const q=s.places.find(q=>q.id===id);assert.ok(q,id);s.player.x=q.x;s.player.z=q.z;if(id==='smith'&&s.interiorState.manifest.some(p=>p.template==='workshop-v1')){assert.ok(interactPlace(s));const mara=s.interior.plan.objects.find(o=>o.id==='mara');Object.assign(s.interior.pose,{x:mara.x,z:mara.z});}return q;};
 test('profile migration rejects invalid equipment, duplicate skills, overspent points and unknown relics',()=>{
  const p=normalizeProfile({xp:-10,attributes:{vigor:999,might:99},skills:['pyre','pyre'],owned:['not-real'],equipment:{head:'scout-chest-0'},relics:['fake'],dye:'bad'});assert.equal(pointsLeft(p),0);assert.equal(p.attributes.vigor,3);assert.equal(p.equipment.head,null);assert.deepEqual(p.skills,[]);assert.equal(p.dye,'olive');assert.deepEqual(p.relics,[]);assert.equal(Object.keys(ARMOUR).length,36);
 });
@@ -63,15 +64,15 @@ test('inventory filters, comparison and equip agree on permanent gear bonuses',a
  assert.ok(armourComparison(s.profile,'warden-chest-3').every(r=>r.delta===0));
 });
 test('journal stages track objectives, then return to the giver, with gated follow-up contracts',async()=>{
- const {QUESTS,acceptQuest,questState,questObjective,trackQuest}=await import('../src/rebuild/RPG.js');const s=game();assert.equal(QUESTS.length,20);
+ const {QUESTS,acceptQuest,questState,questObjective,trackQuest}=await import('../src/rebuild/RPG.js');const s=game();assert.equal(QUESTS.length,21);
  assert.equal(acceptQuest(s,'salvage','smith'),false);go(s,'smith');assert.equal(acceptQuest(s,'salvage','smith'),true);assert.equal(acceptQuest(s,'salvage','smith'),false);
- assert.equal(questState(s,QUESTS.find(q=>q.id==='salvage')),'active');assert.equal(trackQuest(s,'salvage'),true);assert.equal(questObjective(s,'salvage').target.kind,'cache');
+ assert.equal(questState(s,QUESTS.find(q=>q.id==='salvage')),'active');assert.equal(trackQuest(s,'salvage'),true);assert.equal(questObjective(s,'salvage').target.id,'exit');
  s.rpg.cases=['case-a','case-b'];assert.equal(questState(s,QUESTS.find(q=>q.id==='salvage')),'ready');assert.equal(questObjective(s,'salvage').target.id,'smith');assert.equal(claimQuest(s,'salvage','smith'),true);assert.equal(trackQuest(s,'salvage'),false);
  assert.equal(questState(s,QUESTS.find(q=>q.id==='enforcer')),'locked');assert.equal(acceptQuest(s,'enforcer','smith'),false);assert.equal(acceptQuest(s,'convoy','smith'),true);s.streetEvents.find(j=>j.kind==='cache').state='complete';assert.equal(claimQuest(s,'convoy','smith'),true);assert.equal(acceptQuest(s,'enforcer','smith'),true);
 });
 test('courier delivery requires a visit after acceptance, and every new contract pays once',async()=>{
  const {QUESTS,acceptQuest,interactPlace}=await import('../src/rebuild/RPG.js');const s=game();go(s,'smith');interactPlace(s);s.resume();go(s,'medic');acceptQuest(s,'runner','medic');assert.deepEqual(questProgress(s,'runner'),[0,1]);go(s,'smith');interactPlace(s);s.resume();assert.deepEqual(questProgress(s,'runner'),[1,1]);
- for(const q of QUESTS.filter(q=>q.metric)){go(s,q.npc);if(q.requires&&!s.rpg.claimed.includes(q.requires))s.rpg.claimed.push(q.requires);s.rpg.accepted.push(q.id);s.rpg.contacts=['smith','medic','broker'];s.rpg.delivery=true;s.rpg.runnerKills=12;s.rpg.heavyKills=6;s.rpg.nightKills=18;s.rpg.nightDelivery=1;s.rpg.nightDistricts=['a','b','c'];s.wave=6;s.visited=new Set(['a','b','c','d','e','f','g']);for(const j of s.streetEvents)j.state='complete';for(const p of s.places.filter(p=>p.kind==='secret'))p.defeated=true;for(const slot of ['head','chest','legs']){const id=`scout-${slot}-0`;if(!s.profile.owned.includes(id))s.profile.owned.push(id);s.profile.equipment[slot]=id;}
+ for(const q of QUESTS.filter(q=>q.metric&&!q.requiresInterior)){go(s,q.npc);if(q.requires&&!s.rpg.claimed.includes(q.requires))s.rpg.claimed.push(q.requires);s.rpg.accepted.push(q.id);s.rpg.contacts=['smith','medic','broker'];s.rpg.delivery=true;s.rpg.runnerKills=12;s.rpg.heavyKills=6;s.rpg.nightKills=18;s.rpg.nightDelivery=1;s.rpg.nightDistricts=['a','b','c'];s.wave=6;s.visited=new Set(['a','b','c','d','e','f','g']);for(const j of s.streetEvents)j.state='complete';for(const p of s.places.filter(p=>p.kind==='secret'))p.defeated=true;for(const slot of ['head','chest','legs']){const id=`scout-${slot}-0`;if(!s.profile.owned.includes(id))s.profile.owned.push(id);s.profile.equipment[slot]=id;}
   assert.deepEqual(questProgress(s,q.id),[q.target,q.target],q.id);const coins=s.rpg.coins;assert.equal(claimQuest(s,q.id,q.npc),true,q.id);assert.equal(s.rpg.coins,coins+q.coins);assert.equal(claimQuest(s,q.id,q.npc),false,q.id);
  }
 });
