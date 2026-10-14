@@ -87,8 +87,10 @@ Automated coverage includes 50 roundtrips, safe/blocked arrival, renderer-prepar
 rollback and actual navigation to gates across ten seeds. Browser fixture checks
 have completed acceptance, real guard combat, collection, return and payment,
 with the original damaged building health and spent magazine retained. 530 tests, four automated full campaigns, the production build and isolated Mac
-hardware startup passed. See [release evidence](RELEASE-4.46.md). Publication
-is verified separately; ordinary full playthrough and physical devices remain open.
+hardware startup passed. See [release evidence](RELEASE-4.46.md). Runtime commit `766aeb7f3216ef00bca0273a5b828d7a89e679af` is published. Pages run
+`38587969482` passed, the public loader reports 4.46.0, and GitHub’s uploaded
+Mac archive digest matches the hardware-tested ZIP. Ordinary full playthrough
+and physical devices remain open.
 
 Next: service-roof traversal/collision and wider perspective checks; Rook portrait
 likeness and authored combat animation; full ordinary expedition and sustained

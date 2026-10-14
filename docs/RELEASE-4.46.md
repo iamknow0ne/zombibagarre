@@ -97,3 +97,12 @@ Developer ID signing/notarization are deferred.
   deferred.
 - Rook's textured study remains a development asset. Portrait likeness, tailored
   clothing, authored combat animation, LODs and gameplay integration are unfinished.
+
+## Publication checkpoint
+
+Runtime commit `766aeb7f3216ef00bca0273a5b828d7a89e679af` is pushed to main.
+Pages workflow `38587969482` completed successfully; the public page reports
+4.46.0. [Release and Mac download](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.46.0)
+are published. GitHub reports the uploaded archive at 133,471,922 bytes with
+SHA-256 `7281af7404464b4c3986a872c85ca71a1c27fb5a6955e0d1a087d03473cdc962`,
+matching the exact locally tested ZIP.
