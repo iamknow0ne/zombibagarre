@@ -3,7 +3,8 @@
 This is **an asset-production study, not the replacement playable hero**. It
 establishes a reproducible real mesh/UV/skin/skeleton pipeline in Blender. The
 face is still a generic anatomical base; the clothing is a first construction
-pass, and the materials are flat PBR factors without painted texture maps.
+pass. V1 retains flat PBR factors. V2 adds mapped skin, cutout hair/eyes and a
+generated olive-canvas albedo; it is not a complete painted PBR material set.
 It does not meet the portrait-likeness or gameplay-integration acceptance gate.
 
 ## Source and licensing
@@ -17,6 +18,18 @@ records the revision, filenames, sizes and SHA-256 hashes. No MakeHuman program
 code is incorporated into the importer. Do not apply this licensing assumption
 to arbitrary community clothing, texture or animation downloads.
 
+`system-assets/` is a small selection from the official
+[CC0 system asset pack](https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html).
+Its manifest records the archive URL/hash, individual hashes and license
+evidence; original notices are retained in the source material/attachment files.
+The original importer implements the documented hm08 attachment mapping and
+checks the selected data hashes. No downloaded program code is executed.
+
+`textures/olive-canvas-albedo-v1.png` is an original project texture generated
+with the built-in imagegen tool. The exact prompt is stored beside it. Its
+actual resolution is 1254×1254; tiling and material scale have been inspected in
+the preview, but it is not a baked garment atlas or a normal/roughness set.
+
 The asset uses the adult male target and 0.30 of the muscular build target.
 The source importer checks pinned checksums before construction, retains UV
 seams, caps normalized weights at four per vertex, and derives the 163-bone rig
@@ -29,8 +42,9 @@ the clothing/headwear height. The resulting GLB is Y-up and faces +Z.
 From the repository root, with Blender 5.1:
 
 ```sh
-/Applications/Blender.app/Contents/MacOS/Blender --background --python scripts/art/build_rook_prototype.py
-node scripts/art/validate-rook.mjs
+/Applications/Blender.app/Contents/MacOS/Blender --background --python scripts/art/build_rook_prototype.py -- --study v2
+node scripts/art/validate-rook.mjs assets/characters/rook-prototype-v2.glb
+node --test scripts/art/validate-rook.test.mjs
 ```
 
 On this Mac, Blender needs normal host graphics access; the restricted sandbox
@@ -38,9 +52,13 @@ crashes during Metal initialization before the Python importer starts.
 
 Outputs:
 
-- `assets/characters/rook-prototype-v1.glb`: actual skinned preview asset.
-- `assets/source/rook/rook-prototype-v1.blend`: editable source scene.
-- `docs/art-direction/rook-prototype-v1.png`: neutral-light Blender inspection.
+- `assets/characters/rook-prototype-v2.glb`: actual textured/skinned preview asset.
+- `assets/source/rook/rook-prototype-v2.blend`: editable scene with packed textures.
+- `docs/art-direction/rook-prototype-v2.png`: neutral-light Blender inspection.
+
+Use `--study v1` to rebuild the preserved untextured study. The viewer switches
+between both assets. See [validation evidence](../../../docs/art-direction/ROOK-VALIDATION.md)
+for geometry/material counts and Node-versus-browser validation boundaries.
 
 Run the usual development server and open `/dev/character-art-qa.html` for the
 actual Three.js import, clip selection, orbit views, normal inspection and draw
@@ -53,6 +71,9 @@ files are included in the normal production build.
 - Initial wrapped jacket, trousers, boots, gloves, cap, scarf and harness.
 - Breathing and walking **deformation studies**, not final locomotion clips.
 - Export/import and animation validation using the installed Three.js version.
+- V2 replaces guessed eyes and temple tubes with UV-mapped attachments, fixes
+  eye cutout opacity, surface-fits subdivided scarf/harness panels and extends
+  glove coverage. Browser close/full/back views and both clips were inspected.
 
 ## Required before gameplay replacement
 

@@ -1,0 +1,74 @@
+{
+  "source": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "license": "CC0-1.0",
+  "licenseEvidence": "https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html",
+  "archiveSha256": "b542127a8e25547c7c29c19f2d1d2adb9a664c80396ecd694095dbc8028a0107",
+  "downloaded": "2026-10-14",
+  "files": [
+    {
+      "path": "skins/young_caucasian_male/young_lightskinned_male_diffuse.png",
+      "bytes": 3693828,
+      "sha256": "862a26e335e958b70534cb5f0d7c47ef30ab148a56c42b3e9da969cf76f12963"
+    },
+    {
+      "path": "skins/young_caucasian_male/young_caucasian_male.thumb",
+      "bytes": 79031,
+      "sha256": "9ea46d1b5c4230bcff248b1262eaf4f5b4b14bbffd8fc09d2c20c6058f02e12d"
+    },
+    {
+      "path": "skins/young_caucasian_male/young_caucasian_male.mhmat",
+      "bytes": 1462,
+      "sha256": "6eda60b07ff2afbde078a2535ef3913593d84e9de92b2eb76c30f396a181fe2e"
+    },
+    {
+      "path": "hair/short02/short02.thumb",
+      "bytes": 41127,
+      "sha256": "af21a0e84bfcc294b9840d90a04f1b6655ad909bc09328251886adffbc0727e8"
+    },
+    {
+      "path": "hair/short02/short02.obj",
+      "bytes": 139742,
+      "sha256": "48f979114adfa712165a69cc55c45a70831af1fb3cba8e2a89120f0c87407b64"
+    },
+    {
+      "path": "hair/short02/short02.mhclo",
+      "bytes": 119240,
+      "sha256": "625736cdb73e6d094df6e5a2df18f371781f1d2cd37b0ae15795c5d7051c3ec2"
+    },
+    {
+      "path": "hair/short02/short02.mhmat",
+      "bytes": 1323,
+      "sha256": "2ed04c8aad9c1a35d858ca72091525d32b1da3b61b5a031634dd528fd8530f6d"
+    },
+    {
+      "path": "hair/short02/short02_diffuse.png",
+      "bytes": 3553543,
+      "sha256": "47fe33831a3929567c733356dd66243116e05df2ace1f884ddca0080b728229f"
+    },
+    {
+      "path": "hair/short02/short02_normal.png",
+      "bytes": 1626745,
+      "sha256": "2cfac7619f8eec77dd90df979d912415058f4f0fc16940cba40a8eb1ae6d74b5"
+    },
+    {
+      "path": "eyes/materials/brownlight.mhmat",
+      "bytes": 1256,
+      "sha256": "75ae6903fe51134ee6f10147dadad3cb1b355aecf8218213431fb6ddbb3ba71d"
+    },
+    {
+      "path": "eyes/materials/brownlight_eye.png",
+      "bytes": 680577,
+      "sha256": "3f43a4de70e446186dac1760cfa01dfe36d530ed7564208455395b0ebcdf788a"
+    },
+    {
+      "path": "eyes/high-poly/high-poly.obj",
+      "bytes": 100882,
+      "sha256": "da2493215b708a344c33dc72f2a9a5b8fa985dcc5a70ad3b208995cf871da8e1"
+    },
+    {
+      "path": "eyes/high-poly/high-poly.mhclo",
+      "bytes": 72490,
+      "sha256": "b183cfe37120ab726f9b3f2ea6cd3a64c44ce7b4bd91a77c841cf70c04f83a0d"
+    }
+  ]
+}

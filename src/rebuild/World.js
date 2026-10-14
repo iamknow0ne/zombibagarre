@@ -1,3 +1,4 @@
+import {disposeObjectResources} from './ResourceDisposal.js';
 import {InteriorView,InteriorDoors} from './InteriorView.js';
 import {buildServicePlatform} from './PlatformVisuals.js';
 import {worldRayTarget} from './WorldAim.js';
@@ -346,10 +347,10 @@ export class World {
     for(const {material,geos}of batches.values()){const mesh=new T.Mesh(mergeGeometries(geos),material);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.shellPart=true;shell.add(mesh);geos.forEach(g=>g.dispose());}g.add(shell);g.userData.shell=shell;this.cutaway?.bind(g);
   }
   destroy(){
-    this.interiorView?.dispose();this.interiorDoors?.dispose();this.traversalVisuals?.dispose();this.viewRig?.hands?.removeFromParent();this.ambience?.dispose();this.weatherVisuals?.dispose();this.cutaway?.dispose();this.cityArt?.dispose();this.characterInstances.dispose();this.surfaces.dispose();this.structuralVisuals.dispose();
+    this.interiorView?.dispose();this.interiorDoors?.dispose();this.traversalVisuals?.dispose();this.viewRig?.clearHands();this.ambience?.dispose();this.weatherVisuals?.dispose();this.cutaway?.dispose();this.cityArt?.dispose();this.characterInstances.dispose();this.surfaces.dispose();this.structuralVisuals.dispose();
     this.feedback.destroy();
-    this.reflectionTarget?.dispose();for(const tex of this.bloodTextures?.values()||[])tex.dispose();
-    this.scene.traverse(o=>{if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==sphereGeo&&!o.geometry.userData.shared)o.geometry.dispose();if(o.material){for(const m of Array.isArray(o.material)?o.material:[o.material]){if(!m.userData.shared){m.map?.dispose();m.dispose();}}}if(o.isLight)o.shadow?.map?.dispose();});
+    this.reflectionTarget?.dispose();
+    disposeObjectResources(this.scene,{geometries:[boxGeo,sphereGeo],ownedTextures:[this.smokeTex,this.fireTex,this.scarTex,this.wallTex,this.charTex,...(this.bloodTextures?.values()||[])]});
     for(const pass of this.composer.passes)pass.dispose?.();this.composer.dispose();this.renderer.dispose();
   }
   wallMaterial(color){
@@ -510,10 +511,11 @@ export class World {
     this.ao.enabled=settings.quality==='high'&&settings.lightingDetail==='high'&&!retro&&settings.viewMode==='diorama';this.composer?.setPixelRatio(this.renderer.getPixelRatio());this.resize();}
 
   clearDynamic(){this.traversalVisuals?.clear();this.characterInstances.dispose();this.structuralVisuals.update([],{x:0,z:0});this.feedback.clear();for(const collection of [this.characters,this.projectiles,this.items,this.rings,this.grenades,this.streetJobs,...(this.rpgPlaces?[this.rpgPlaces]:[])]){for(const m of collection.values())this.removeDynamic(m);collection.clear();}for(const e of this.effects)this.removeDynamic(e.mesh);this.effects=[];for(const c of this.corpses)this.removeDynamic(c.mesh);this.corpses=[];for(const m of this.decals)this.removeDynamic(m);this.decals=[];for(const m of this.wrecks)this.removeDynamic(m);this.wrecks=[];for(const g of this.propMeshes.values())g.visible=true;for(const g of this.buildingMeshes.values()){g.visible=true;g.userData.collapsed=false;for(const pane of g.userData.glass)pane.visible=true;for(const section of g.userData.sections||[])section.visible=true;g.userData.damageStage=0;if(g.userData.roofAccessories)g.userData.roofAccessories.visible=true;}for(const m of this.impacts)this.removeDynamic(m);this.impacts=[];}
-  removeDynamic(mesh){mesh.removeFromParent();mesh.traverse(o=>{
-    if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==sphereGeo&&!o.geometry.userData.shared&&!o.isSprite)o.geometry.dispose();
-    if(o.material&&!o.material.userData.shared){if(o.material.map&&!o.material.map.userData.shared&&o.material.map!==shadowTexture&&o.material.map!==this.smokeTex&&o.material.map!==this.fireTex)o.material.map.dispose();o.material.dispose();}
-  });}
+  removeDynamic(mesh){
+    // First-person meshes borrow their source resources; discard references,
+    // never dispose the overlay independently of the owning character/weapon.
+    if(this.viewRig?.sources?.some(source=>{for(let node=source;node;node=node.parent)if(node===mesh)return true;return false;}))this.viewRig.clearHands();
+    mesh.removeFromParent();disposeObjectResources(mesh,{geometries:[boxGeo,sphereGeo],textures:[shadowTexture,this.smokeTex,this.fireTex,this.scarTex,this.wallTex,this.charTex]});}
 
   effect(x,z,color,count=8,power=3,kind='spark',height=.8){
     if(['debris','glass'].includes(kind)){debris(this,{x,z,y:height,material:kind==='glass'?'glass':'concrete',count,power:power*.55});return;}

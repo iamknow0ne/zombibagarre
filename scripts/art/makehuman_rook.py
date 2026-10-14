@@ -236,3 +236,74 @@ def build_base(source_dir=None, height=1.82, muscle=.30):
     data['body'] = mesh_from_faces('Rook_WorkingBody', groups['body'], data)
     data['body']['working_asset_notice'] = 'Dress before rendering/exporting; source anatomical base only'
     return data
+
+
+def mesh_from_proxy(name, relative_path, data, source_dir=None, bone='head'):
+    """Read a pinned hm08 data attachment, preserving its authored UV topology.
+
+    Implements only the documented 3-axis scale/barycentric offset format used
+    by our reviewed eye/hair sources. Unsupported transforms fail explicitly.
+    https://static.makehumancommunity.org/oldsite/documentation/file_formats_and_extensions.html
+    These head accessories are rigidly weighted to the shared head bone; this
+    is not a general clothes retargeter or an implementation of MakeHuman code.
+    """
+    source = Path(source_dir) if source_dir else SOURCE.parent / 'system-assets'
+    manifest = json.loads((source / 'manifest.json').read_text())
+    hashes = {entry['path']: entry['sha256'] for entry in manifest['files']}
+    def pinned(path):
+        relative = path.relative_to(source).as_posix()
+        if hashlib.sha256(path.read_bytes()).hexdigest() != hashes.get(relative):
+            raise ValueError('Pinned attachment checksum mismatch: ' + relative)
+        return path
+    path = pinned(source / relative_path)
+    raw, scales, rows, obj_file, active = data['source_coords'], [1., 1., 1.], [], None, False
+    for line in path.read_text().splitlines():
+        fields = line.split()
+        if not fields or fields[0].startswith('#'):
+            continue
+        key = fields[0]
+        if key == 'obj_file':
+            obj_file = fields[1]
+        elif key == 'basemesh' and fields[1] != 'hm08':
+            raise ValueError('Attachment has an incompatible base mesh')
+        elif key in ['x_scale', 'y_scale', 'z_scale']:
+            axis = ['x_scale', 'y_scale', 'z_scale'].index(key)
+            a, b, denominator = int(fields[1]), int(fields[2]), float(fields[3])
+            if not 0 <= a < len(raw) or not 0 <= b < len(raw) or denominator <= 0:
+                raise ValueError('Invalid attachment scale landmarks')
+            scales[axis] = abs(raw[a][axis] - raw[b][axis]) / denominator
+        elif 'shear' in key or key == 'vertexboneweights_file':
+            raise ValueError('Unsupported attachment transform or weights: ' + key)
+        elif key == 'verts':
+            if fields[1] != '0':
+                raise ValueError('Only zero-based attachments are supported')
+            active = True
+        elif active and key.lstrip('-').isdigit():
+            if len(fields) == 1:
+                indices, weights, offset = [int(key)], [1.], Vector()
+            elif len(fields) in [6, 9]:
+                indices = list(map(int, fields[:3]))
+                weights = list(map(float, fields[3:6]))
+                offset = Vector(tuple(map(float, fields[6:9]))) if len(fields) == 9 else Vector()
+            else:
+                raise ValueError('Unsupported attachment row')
+            if any(not 0 <= i < len(raw) for i in indices) or not all(math.isfinite(v) for v in weights + list(offset)):
+                raise ValueError('Invalid attachment position mapping')
+            if abs(sum(weights) - 1) > .001:
+                raise ValueError('Attachment barycentric weights do not sum to one')
+            rows.append((indices, weights, offset))
+    if not obj_file or Path(obj_file).name != obj_file or bone not in data['rig'].data.bones:
+        raise ValueError('Invalid attachment mesh or destination bone')
+    original, uvs, faces, _ = _obj(pinned(path.parent / obj_file))
+    if len(original) != len(rows):
+        raise ValueError('Attachment mappings do not match mesh vertex count')
+    coords = []
+    for indices, weights, offset in rows:
+        point = sum((raw[i] * w for i, w in zip(indices, weights)), Vector())
+        point += Vector(tuple(offset[i] * scales[i] for i in range(3)))
+        coords.append(Vector((point.x * data['scale'], -point.z * data['scale'], (point.y - data['floor']) * data['scale'])))
+    proxy = dict(data, coords=coords, uvs=uvs, weights=[[(bone, 1.)] for _ in coords])
+    result = mesh_from_faces(name, faces, proxy)
+    result['source_asset'] = relative_path
+    result['source_revision'] = manifest['archiveSha256']
+    return result

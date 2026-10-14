@@ -2,7 +2,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 
-const $=id=>document.getElementById(id),modelURL=new URL('../assets/characters/rook-prototype-v1.glb',import.meta.url),motion=matchMedia('(prefers-reduced-motion: reduce)');
+const $=id=>document.getElementById(id),models={v1:new URL('../assets/characters/rook-prototype-v1.glb',import.meta.url),v2:new URL('../assets/characters/rook-prototype-v2.glb',import.meta.url)},motion=matchMedia('(prefers-reduced-motion: reduce)');
 let renderer,controls,mixer,content,action,clips=[],playing=false,turning=false,disposed=false,contextLost=false,loadRevision=0,raf=0,last=0,lastReport=0,height=1.8,width=.8,direction='front',normalMaterial;
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(38,1,.02,100),pivot=new T.Group(),originalMaterials=new Map();scene.background=new T.Color(0x243332);scene.add(pivot);
 const floorGeometry=new T.PlaneGeometry(40,40),floorMaterial=new T.MeshStandardMaterial({color:0x293a38,roughness:1}),floor=new T.Mesh(floorGeometry,floorMaterial);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;floor.position.y=-.012;scene.add(floor);
@@ -28,7 +28,7 @@ function clearModel(){if(mixer){mixer.stopAllAction();if(content)mixer.uncacheRo
 function surfaceMode(){if(!content)return;const normal=$('surface').value==='normal';normalMaterial??=new T.MeshNormalMaterial();content.traverse(o=>{if(o.isMesh){if(!originalMaterials.has(o))originalMaterials.set(o,o.material);o.material=normal?normalMaterial:originalMaterials.get(o);}});}
 function selectClip(){if(!mixer)return;const clip=$('clip').value===''?null:clips[Number($('clip').value)];mixer.stopAllAction();action=clip?mixer.clipAction(clip):null;if(action){action.reset();action.play();}playing=!!action&&!motion.matches;mixer.update(0);syncButtons();}
 async function loadModel(){
- const revision=++loadRevision;clearModel();$('error-panel').hidden=true;$('clip').disabled=true;$('clip').replaceChildren(new Option('Loading clips…',''));status('LOADING ROOK PROTOTYPE');
+ const revision=++loadRevision,modelURL=models[$('study').value]||models.v2;clearModel();$('error-panel').hidden=true;$('clip').disabled=true;$('clip').replaceChildren(new Option('Loading clips…',''));status('LOADING ROOK PROTOTYPE');
  try{
   const gltf=await new GLTFLoader().loadAsync(modelURL.href,event=>{if(revision!==loadRevision||disposed)return;if(event.total>0)status(`LOADING MODEL · ${Math.round(event.loaded/event.total*100)}%`);});
   if(disposed||revision!==loadRevision){disposeModel(gltf.scene);return;}
@@ -37,7 +37,7 @@ async function loadModel(){
   let meshes=0,bones=0;content.traverse(o=>{if(o.isMesh){o.castShadow=o.receiveShadow=true;if(o.isSkinnedMesh)o.frustumCulled=false;meshes++;}if(o.isBone)bones++;});
   clips=gltf.animations||[];mixer=new T.AnimationMixer(content);$('clip').replaceChildren(new Option('Bind pose',''));clips.forEach((clip,i)=>$('clip').append(new Option(clip.name||`Clip ${i+1}`,String(i))));$('clip').disabled=false;const idle=clips.findIndex(clip=>/idle/i.test(clip.name));$('clip').value=idle>=0?String(idle):'';
   if(idle>=0)selectClip();else{action=null;playing=false;syncButtons();}surfaceMode();frameCamera();status(`${meshes} meshes · ${bones} bones · ${clips.length} imported clips · ${height.toFixed(2)}m authored height`);
- }catch(error){if(disposed||revision!==loadRevision)return;clearModel();$('clip').replaceChildren(new Option('No model loaded',''));showError(`Could not load rook-prototype-v1.glb. ${error.message} If export is still running, retry once the file is ready.`);}
+ }catch(error){if(disposed||revision!==loadRevision)return;clearModel();$('clip').replaceChildren(new Option('No model loaded',''));showError(`Could not load ${modelURL.pathname.split('/').at(-1)}. ${error.message} If export is still running, retry once the file is ready.`);}
 }
 function destroy(){if(disposed)return;disposed=true;loadRevision++;cancelAnimationFrame(raf);listeners.splice(0).forEach(remove=>remove());controls?.dispose();clearModel();normalMaterial?.dispose();floorGeometry.dispose();floorMaterial.dispose();key.shadow.map?.dispose();key.shadow.mapPass?.dispose();renderer?.renderLists.dispose();renderer?.dispose();renderer?.forceContextLoss();}
 function tick(now){if(disposed)return;const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(!document.hidden){if(playing&&mixer)mixer.update(dt);if(turning)pivot.rotation.y+=dt*.3;controls.update();renderer.render(scene,camera);if(now-lastReport>350){const info=renderer.info;$('render-stats').textContent=`${info.render.calls.toLocaleString()} draw calls · ${info.render.triangles.toLocaleString()} triangles / frame · ${info.memory.geometries} geometries · ${info.memory.textures} textures`;lastReport=now;}}raf=requestAnimationFrame(tick);}
@@ -48,7 +48,7 @@ try{
  for(const button of document.querySelectorAll('[data-direction]'))listen(button,'click',()=>{direction=button.dataset.direction;turning=false;pivot.rotation.y=0;frameCamera();syncButtons();});
  listen($('turntable'),'click',()=>{turning=!turning;syncButtons();});listen($('framing'),'change',frameCamera);listen($('clip'),'change',selectClip);listen($('play'),'click',()=>{if(action)playing=!playing;syncButtons();});listen($('surface'),'change',surfaceMode);
  listen($('reference-toggle'),'click',()=>{const visible=$('reference').hidden;$('reference').hidden=!visible;$('reference-toggle').setAttribute('aria-pressed',String(visible));});
- listen($('retry'),'click',()=>contextLost?location.reload():loadModel());listen(window,'resize',resize);listen(window,'pagehide',destroy);listen(document,'visibilitychange',()=>{last=performance.now();});listen(motion,'change',()=>{if(motion.matches){playing=turning=false;syncButtons();}});
+ listen($('study'),'change',loadModel);listen($('retry'),'click',()=>contextLost?location.reload():loadModel());listen(window,'resize',resize);listen(window,'pagehide',destroy);listen(document,'visibilitychange',()=>{last=performance.now();});listen(motion,'change',()=>{if(motion.matches){playing=turning=false;syncButtons();}});
  listen($('view'),'webglcontextlost',event=>{event.preventDefault();contextLost=true;playing=turning=false;syncButtons();showError('The graphics context was lost. Reload this viewer to restore it.');$('retry').textContent='Reload viewer';});
  resize();last=performance.now();raf=requestAnimationFrame(tick);await loadModel();
 }catch(error){showError(`The 3D viewer could not start. ${error.message}`);$('retry').textContent='Reload viewer';$('retry').onclick=()=>location.reload();}

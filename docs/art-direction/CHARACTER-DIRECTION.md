@@ -96,3 +96,16 @@ normal game and production download until it passes those checks.
 - [Three.js AnimationMixer](https://threejs.org/docs/pages/AnimationMixer.html): animation playback, timing and lifecycle management.
 
 These establish a feasible import/animation route. They do not establish that the required character assets have been produced.
+
+## Textured study v2
+
+V2 adds embedded skin/hazel eyes, cutout hair and generated canvas albedo. The
+preview can compare it with v1. Browser inspection caught opaque eye-shell
+cutouts and torso intersections; corrected eye alpha and subdivided,
+surface-fitted scarf/harness panels are in the retained build. All four raster
+textures render in Three.js; both imported deformation clips play.
+
+The face still reads as the generic base, and clothing/leather remain too plain.
+This is progress on material/export correctness, not portrait fidelity. Keep
+likeness sculpting, distinctive swept hair/stubble, jacket tailoring, baked
+normal/roughness maps and grounded animation as explicit next art requirements.

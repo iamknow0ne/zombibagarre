@@ -1,0 +1,5 @@
+Use case: photorealistic-natural. Asset type: tileable game-material base-color texture for a worn olive canvas field jacket in Zombie Bagarre. Create one square, perfectly flat, orthographic scan of tightly woven military cotton canvas, filling the whole image edge to edge. Subdued moss/olive green (#48513b approximate), believable fine cotton weave, irregular worn fibers, subtle small dust and abrasion variation. Fine grain at a consistent scale, no large recognizable spots. Neutral cross-polarized diffuse illumination: NO directional shadows, NO highlights, NO 3D folds, NO seams, NO buttons, NO garment outline, NO border, NO text, NO collage. This is material albedo, not a photograph of a jacket. Opposite edges must join seamlessly when repeated horizontally and vertically. The surface should be richly tactile but restrained enough for a realistically proportioned small game character. Output a single opaque 2048x2048 texture.
+
+Generated using the built-in image_gen tool, 14 October 2026.
+Source: exec-0da438d4-7401-4771-bcb6-70fd78cec81b.png
+Inspect tiling on the actual UVs; generated opposite-edge continuity is not certified by the prompt.

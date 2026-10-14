@@ -1,3 +1,4 @@
+import {disposeObjectResources} from './ResourceDisposal.js';
 import * as T from 'three';
 import {rounded} from './SurvivorVisuals.js';
 import {resolveAppearance} from './Customization.js';
@@ -6,7 +7,7 @@ import {ARMOUR,DYES,RARITY_COLORS} from './RPG.js';
 const mesh=(parent,color,x,y,z,w,h,d,metal=.25)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d),new T.MeshStandardMaterial({color,roughness:.65,metalness:metal}));m.geometry.userData.surfaceOwned=true;m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;};
 export function dressArmour(character,p){
  const hidden=resolveAppearance(p.skin,p.appearance).hideHelmet==='yes',key=JSON.stringify([p.armour,p.dye,hidden]);if(character.userData.armourKey===key)return;character.userData.armourKey=key;
- for(const g of character.userData.armourParts||[]){g.removeFromParent();g.traverse(m=>{m.geometry?.dispose();if(!m.material?.userData?.shared)m.material?.dispose();});}
+ for(const g of character.userData.armourParts||[]){g.removeFromParent();disposeObjectResources(g);}
  const helmet=ARMOUR[p.armour?.head]&&!hidden;if(character.userData.hat)character.userData.hat.visible=!helmet;if(character.userData.hair)character.userData.hair.visible=!helmet;
  const groups=[],group=parent=>{const g=new T.Group();parent.add(g);groups.push(g);return g;},body=character.userData.body,color=DYES[p.dye]?.color||0x697758;
  const plate=(g,c,x,y,z,w,h,d,metal=.35)=>rounded(g,new T.MeshStandardMaterial({color:c,roughness:metal>.4?.42:.78,metalness:metal}),x,y,z,w,h,d,.045);

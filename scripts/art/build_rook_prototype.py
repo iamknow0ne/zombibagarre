@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 import math
 import json
+import argparse
 import bpy
 from mathutils import Vector, Quaternion
 from mathutils.bvhtree import BVHTree
@@ -16,7 +17,14 @@ from mathutils.kdtree import KDTree
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from makehuman_rook import build_base, mesh_from_faces
+from makehuman_rook import build_base, mesh_from_faces, mesh_from_proxy
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--study', choices=['v1', 'v2'], default='v2')
+options = parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+textured = options.study == 'v2'
+stem = 'rook-prototype-' + options.study
+SYSTEM = ROOT / 'assets/source/rook/system-assets'
 
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)
@@ -48,6 +56,37 @@ sole = material('Boot soles', (.018, .021, .018), .95)
 eye_white = material('Eyes / ivory', (.68, .64, .54), .35)
 iris = material('Eyes / hazel', (.13, .095, .035), .36)
 pupil = material('Eyes / pupil', (.006, .008, .006), .2)
+
+
+def image_material(mat, path, alpha=False):
+    """Portable glTF texture graph, without render-only procedural effects."""
+    image = bpy.data.images.load(str(path), check_existing=True)
+    image.pack()
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    texture = nodes.new('ShaderNodeTexImage')
+    texture.image = image
+    texture.extension = 'REPEAT'
+    shader = nodes.get('Principled BSDF')
+    shader.inputs['Base Color'].default_value = (1, 1, 1, 1)
+    links.new(texture.outputs['Color'], shader.inputs['Base Color'])
+    if alpha:
+        # A binary cutout avoids sorted transparent hair-card halos in WebGL.
+        threshold = nodes.new('ShaderNodeMath')
+        threshold.operation = 'GREATER_THAN'
+        threshold.inputs[1].default_value = .4
+        links.new(texture.outputs['Alpha'], threshold.inputs[0])
+        links.new(threshold.outputs[0], shader.inputs['Alpha'])
+        mat.surface_render_method = 'DITHERED'
+    return mat
+
+
+if textured:
+    image_material(skin, SYSTEM / 'skins/young_caucasian_male/young_lightskinned_male_diffuse.png')
+    image_material(cloth, ROOT / 'assets/source/rook/textures/olive-canvas-albedo-v1.png')
+    image_material(hair, SYSTEM / 'hair/short02/short02_diffuse.png', alpha=True)
+    image_material(eye_white, SYSTEM / 'eyes/materials/brownlight_eye.png', alpha=True)
+    skin.node_tree.nodes.get('Principled BSDF').inputs['Roughness'].default_value = .64
+    hair.use_backface_culling = False
 
 
 def bind(obj, bone='spine02', mat=None):
@@ -112,6 +151,25 @@ def patch(name, coords, mat, bone='spine02', thickness=.005):
     return bind(obj, bone)
 
 
+def ribbon(name, centers, widths, mat, bone='spine02', thickness=.005):
+    """Subdivided sewn panel, so surface fitting cannot cut through the torso."""
+    vertices, faces = [], []
+    columns = 6
+    for (x, y, z), width in zip(centers, widths):
+        for column in range(columns + 1):
+            vertices.append((x + (column / columns - .5) * width, y, z))
+    for row in range(len(centers)-1):
+        for column in range(columns):
+            a = row * (columns+1) + column
+            faces.append((a, a+columns+1, a+columns+2, a+1))
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(vertices, [], faces);mesh.update()
+    obj = bpy.data.objects.new(name, mesh);bpy.context.collection.objects.link(obj)
+    obj.data.materials.append(mat)
+    mod = obj.modifiers.new('Sewn panel thickness', 'SOLIDIFY');mod.thickness = thickness
+    return bind(obj, bone)
+
+
 def face_center(face):
     return sum((data['coords'][i] for i in face['vertices']), Vector()) / len(face['vertices'])
 
@@ -157,7 +215,7 @@ garment('Trousers / knee folds', lambda p: .17 < p.z < 1.00, pants, .013)
 garment('Boots / wrapped leather', lambda p: p.z < .25, leather, .016)
 
 # Brown gloves keep finger topology visible while the cuff covers the seam.
-hands = [f for f in data['groups']['body'] if abs(face_center(f).x) > .48 and face_center(f).z < 1.35]
+hands = [f for f in data['groups']['body'] if abs(face_center(f).x) > (.40 if textured else .48) and face_center(f).z < 1.35]
 gloves = mesh_from_faces('Gloves / articulated fingers', hands, data, offset=.002)
 gloves.data.materials.append(leather)
 
@@ -168,9 +226,12 @@ for ring in range(4):
         a = i / 16 * math.tau
         points.append((math.cos(a)*(.079+ring*.003), math.sin(a)*(.079+ring*.002)-.034, 1.55+ring*.012+.008*math.sin(a*3+ring)))
     tube('Scarf / collar fold %d' % ring, points, .015, scarf, 'neck01')
-patch('Scarf / hanging end', [(-.045,-.093,1.55),(.035,-.101,1.54),(.059,-.139,1.32),(.013,-.151,1.27),(-.027,-.134,1.31)], scarf, 'spine01', .012)
-for x in [-.02, 0, .02]:
-    tube('Scarf / vertical seam', [(x,-.108,1.48),(x+.017,-.142,1.37),(x+.020,-.148,1.30)], .0017, scarf, 'spine01')
+if textured:
+    ribbon('Scarf / hanging end', [(.015*t,-.14,1.55-.28*t) for t in [i/12 for i in range(13)]], [.082-.015*(i/12)**3 for i in range(13)], scarf, 'spine01', .009)
+else:
+    patch('Scarf / hanging end', [(-.045,-.093,1.55),(.035,-.101,1.54),(.059,-.139,1.32),(.013,-.151,1.27),(-.027,-.134,1.31)], scarf, 'spine01', .012)
+    for x in [-.02, 0, .02]:
+        tube('Scarf / vertical seam', [(x,-.108,1.48),(x+.017,-.142,1.37),(x+.020,-.148,1.30)], .0017, scarf, 'spine01')
 
 # Jacket collar, storm placket and shaped pocket flaps.
 for sign in [-1, 1]:
@@ -185,9 +246,13 @@ for z in [1.13,1.24,1.35]:
 
 # Diagonal leather harness: flat straps with edge piping, not round ropes.
 points = [(-.13,-.105,1.52),(-.09,-.16,1.41),(.005,-.17,1.26),(.11,-.15,1.08)]
-patch('Harness / diagonal leather', [(x-.018,y,z) for x,y,z in points] + [(x+.018,y,z) for x,y,z in reversed(points)], leather)
-for dx in [-.015,.015]:
-    tube('Harness / edge stitch', [(x+dx,y-.004,z) for x,y,z in points], .0012, edge)
+if textured:
+    samples = [Vector(points[i]).lerp(Vector(points[i+1]), t/5) for i in range(3) for t in range(5)] + [Vector(points[-1])]
+    ribbon('Harness / diagonal leather', samples, [.036]*len(samples), leather)
+else:
+    patch('Harness / diagonal leather', [(x-.018,y,z) for x,y,z in points] + [(x+.018,y,z) for x,y,z in reversed(points)], leather)
+    for dx in [-.015,.015]:
+        tube('Harness / edge stitch', [(x+dx,y-.004,z) for x,y,z in points], .0012, edge)
 for sign in [-1,1]:
     tube('Belt / side', [(0,-.132,.985),(sign*.10,-.117,.985),(sign*.167,0,.985),(sign*.1,.106,.985),(0,.113,.985)], .018, leather, 'spine05')
 patch('Belt / buckle', [(-.023,-.155,1.007),(.023,-.155,1.007),(.023,-.155,.973),(-.023,-.155,.973)], brass, 'spine05')
@@ -196,7 +261,7 @@ patch('Belt / buckle', [(-.023,-.155,1.007),(.023,-.155,1.007),(.023,-.155,.973)
 verts, faces = [], []
 for j in range(5):
     t = j/4
-    radius = 1 - .72*t*t
+    radius = 1 - (.25 if textured else .72)*t*t
     for i in range(32):
         a = i/32*math.tau
         verts.append((math.cos(a)*.092*radius, math.sin(a)*.115*radius-.058, 1.765+t*.075+.005*math.cos(a)))
@@ -211,10 +276,16 @@ orb('Cap / curved visor', (0,-.169,1.762), (.09,.062,.009), leather)
 tube('Cap / stitched band',[(math.cos(i/32*math.tau)*.094,math.sin(i/32*math.tau)*.117-.058,1.765) for i in range(33)],.004,cloth,'head')
 
 # Short swept locks along the cap opening. Facial sculpt/paint remains a TODO.
-for sign in [-1,1]:
-    for i in range(5):
-        x=sign*(.059+i*.005)
-        tube('Hair / swept temple',[(x,-.12,1.765),(x+sign*.004,-.135,1.744),(x+sign*.002,-.11,1.718)],.005,hair,'head')
+if textured:
+    hair_mesh = mesh_from_proxy('Hair / swept textured crop', 'hair/short02/short02.mhclo', data)
+    for vertex in hair_mesh.data.vertices:
+        vertex.co.z = min(vertex.co.z, 1.761)
+    hair_mesh.data.materials.append(hair)
+else:
+    for sign in [-1,1]:
+        for i in range(5):
+            x=sign*(.059+i*.005)
+            tube('Hair / swept temple',[(x,-.12,1.765),(x+sign*.004,-.135,1.744),(x+sign*.002,-.11,1.718)],.005,hair,'head')
 
 # Surface-fit front garment details against the actual morphed canvas. Source
 # body proportions are not interchangeable with the old procedural hero.
@@ -225,7 +296,9 @@ for obj in list(bpy.context.scene.objects):
         point=obj.matrix_world@v.co
         loc,normal,_,_=bvh.ray_cast(Vector((point.x,-1,point.z)),Vector((0,1,0)))
         if loc:
-            point.y=loc.y-(.012 if obj.name.startswith('Harness') else .008)
+            point.y=loc.y-(.016 if textured and obj.name.startswith('Scarf') else .012 if obj.name.startswith('Harness') else .008)
+            if textured and obj.name.startswith('Scarf'):
+                point.y -= .003*math.cos(point.x*180+point.z*12)
             v.co=obj.matrix_world.inverted()@point
 for obj in list(bpy.context.scene.objects):
     if obj.name.startswith(('Pocket press','Jacket / brass')):
@@ -249,13 +322,30 @@ for obj in list(bpy.context.scene.objects):
             vg.add([v.index],group.weight,'REPLACE')
 
 # Source eye helper geometry matches the morphed head, unlike guessed spheres.
-for side in ['l','r']:
-    eye=mesh_from_faces('Eye / '+side,data['groups']['helper-'+side+'-eye'],data,offset=0)
-    eye.data.materials.append(eye_white)
-    center=sum((v.co for v in eye.data.vertices),Vector())/len(eye.data.vertices)
-    front=min(v.co.y for v in eye.data.vertices)
-    orb('Iris / '+side,(center.x,front-.001,center.z),(.0045,.0015,.0045),iris,'head')
-    orb('Pupil / '+side,(center.x,front-.0022,center.z),(.002,.0008,.002),pupil,'head')
+if textured:
+    eyes = mesh_from_proxy('Eyes / mapped hazel', 'eyes/high-poly/high-poly.mhclo', data)
+    eyes.data.materials.append(eye_white)
+    # Fabric has a physical texel scale across authored and helper meshes.
+    # Project each panel on its dominant plane; baked UVs export identically.
+    # Final garment UV islands/paint remain a separate production requirement.
+    for obj in bpy.context.scene.objects:
+        if obj.type != 'MESH' or cloth not in list(obj.data.materials):
+            continue
+        uv = obj.data.uv_layers.active or obj.data.uv_layers.new(name='UVMap')
+        for polygon in obj.data.polygons:
+            dominant = max(range(3), key=lambda i: abs(polygon.normal[i]))
+            axes = [i for i in range(3) if i != dominant]
+            for loop in polygon.loop_indices:
+                point = obj.matrix_world @ obj.data.vertices[obj.data.loops[loop].vertex_index].co
+                uv.data[loop].uv = (point[axes[0]] * 3.33, point[axes[1]] * 3.33)
+else:
+    for side in ['l','r']:
+        eye=mesh_from_faces('Eye / '+side,data['groups']['helper-'+side+'-eye'],data,offset=0)
+        eye.data.materials.append(eye_white)
+        center=sum((v.co for v in eye.data.vertices),Vector())/len(eye.data.vertices)
+        front=min(v.co.y for v in eye.data.vertices)
+        orb('Iris / '+side,(center.x,front-.001,center.z),(.0045,.0015,.0045),iris,'head')
+        orb('Pupil / '+side,(center.x,front-.0022,center.z),(.002,.0008,.002),pupil,'head')
 
 # Animation study: real skin deformation, intentionally not a final locomotion
 # library. Arms remain in the reference A-pose for a clean garment stress test.
@@ -295,7 +385,7 @@ for obj in bpy.context.scene.objects:
     if obj.type in {'ARMATURE','MESH'}:
         obj.select_set(True)
 bpy.context.view_layer.objects.active=rig
-bpy.ops.export_scene.gltf(filepath=str(out/'rook-prototype-v1.glb'),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIONS',export_skins=True,export_yup=True,export_apply=True)
+bpy.ops.export_scene.gltf(filepath=str(out/(stem+'.glb')),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIONS',export_skins=True,export_yup=True,export_apply=True,export_image_format='AUTO')
 
 # Neutral-light offline QA, with exactly the exported model's geometry/materials.
 scene=bpy.context.scene
@@ -311,7 +401,7 @@ bpy.ops.object.camera_add(location=(2,-4,2.0))
 camera=bpy.context.object;camera.rotation_euler=(Vector((0,0,.96))-camera.location).to_track_quat('-Z','Y').to_euler();camera.data.type='ORTHO';camera.data.ortho_scale=2.25;scene.camera=camera
 scene.render.resolution_x=900;scene.render.resolution_y=1100;scene.render.resolution_percentage=100
 scene.view_settings.view_transform='AgX'
-scene.render.filepath=str(ROOT/'docs/art-direction/rook-prototype-v1.png')
-bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'assets/source/rook/rook-prototype-v1.blend'))
+scene.render.filepath=str(ROOT/'docs/art-direction'/(stem+'.png'))
+bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'assets/source/rook'/(stem+'.blend')))
 bpy.ops.render.render(write_still=True)
-print('ROOK_PROTOTYPE_COMPLETE',out/'rook-prototype-v1.glb')
+print('ROOK_PROTOTYPE_COMPLETE',out/(stem+'.glb'))

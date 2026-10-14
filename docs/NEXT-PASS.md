@@ -17,7 +17,7 @@
 - [ ] Extend traversal to curated service roofs with accurate parapet/accessory collision and elevated enemy threats.
 - [ ] Finish perspective-mode aiming, collision and visibility validation.
 - [x] Ship one useful enterable workshop and apartment loot quest, with stable identifiers and safe exits (4.44).
-- [ ] Add region travel/save boundaries, then the country road and hidden hangar chapter.
+- [ ] Implement the [session-only city ↔ country-road roundtrip](REGIONAL-TRAVEL-DESIGN.md) and pass its persistence/safe-return gates before the hidden hangar chapter (design saved; implementation pending).
 - [ ] Add launch/orbit/return and first moon as independently testable slices.
 
 ## QA inventory
@@ -57,3 +57,20 @@ The independent art validator imports the real GLB through Three.js and checks
 all 50 meshes are skinned, finite attributes/weights and sampled deformation
 for both clips. Geometry is about 69k triangles with 11 untextured materials;
 mesh batching, LODs, painted materials and production motion remain open.
+
+## 4.45.2 reliability and textured-study checkpoint
+
+496 gameplay tests and production build passed. Material cleanup now releases
+hidden originals during faded survivor/armour/weapon removal, preserves caches
+and clears borrowed FPS references. Actual survivor reproduction: 0/13 original
+materials released before, 13/13 after. Versioned Apple Silicon package hardware
+startup passed; see [4.45.2 evidence](RELEASE-4.45.2.md). Full native expedition and
+sustained hardware memory soak remain open.
+
+Rook v2 is a separate textured development asset with a v1/v2 comparison viewer.
+Skin and eyes/hair use pinned official CC0 data; canvas albedo is generated with
+its exact prompt saved. Corrected eye cutouts and surface-fitted scarf panels
+were reviewed in the browser. See [validation](art-direction/ROOK-VALIDATION.md).
+The model still lacks Rook-specific likeness, complete painted materials and
+production animation; do not enable it as the default hero yet. Continue those
+quality gates before the runtime adapter, then expand to other characters.
