@@ -6,3 +6,10 @@ export function readStoredObject(storage,key,fallback={}){
   return value&&typeof value==='object'&&!Array.isArray(value)?value:fallback;
  }catch{return fallback;}
 }
+
+export function readSavedSettings(storage){
+ const current=readStoredObject(storage,'zb-save-v1');
+ if(current.format==='zombie-bagarre'&&current.version===1&&current.data?.settings&&typeof current.data.settings==='object'&&!Array.isArray(current.data.settings))return normalizeSavedSettings(current.data.settings);
+ return normalizeSavedSettings(readStoredObject(storage,'zb-quarantine-settings'));
+}
+import {normalizeSavedSettings} from './SaveStore.js';

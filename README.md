@@ -9,7 +9,7 @@
 [![Play now](https://img.shields.io/badge/PLAY_NOW-IN_YOUR_BROWSER-e38b50?style=for-the-badge&labelColor=182327)](https://iamknow0ne.github.io/zombibagarre/)
 
 [![Build and deployment](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/iamknow0ne/zombibagarre/actions/workflows/pages.yml)
-[![Version](https://img.shields.io/badge/version-4.40.1-e38b50?labelColor=182327)](docs/STEAM-DECK.md)
+[![Version](https://img.shields.io/badge/version-4.41.0-e38b50?labelColor=182327)](docs/RELEASE-4.41.md)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-b5c7b1?logo=threedotjs&logoColor=white&labelColor=182327)](package.json)
 [![Controls](https://img.shields.io/badge/controls-keyboard_%C2%B7_gamepad_%C2%B7_touch-8bbdc8?labelColor=182327)](#controls)
 
@@ -125,7 +125,7 @@ Meet **Rook, Saint, Torque and Vesper**, explore the factions, and read the Ward
 
 [World art & lore](docs/art/WORLD-DOSSIER.md) · [Survivor & Warden portraits](docs/art/PORTRAITS-4.36.md) · [City sprite and texture atlases](docs/art/CITY-ASSETS.md)
 
-## Latest field report · 4.40.0
+## Previous field report · 4.40.0
 
 **More room to fight on mobile.** Compact character tabs, reachable attribute spending, smaller upgrade panels and quieter combat notices. Full alerts remain in **Pause → Recent field messages**. The boss strip keeps the information without a second large box covering your survivor.
 
@@ -142,6 +142,12 @@ Meet **Rook, Saint, Torque and Vesper**, explore the factions, and read the Ward
 **Your level of gore.** A new **0–10 slider** controls blood spray, wall and ground stains, persistence and fragments. **4 matches the original intensity**; 0 removes blood and dismemberment. Rendering budgets remain capped at every level, and combat damage is unchanged.
 
 [Camera controls, verification and limitations](docs/PERSPECTIVE-4.39.md) · [Try Rooftop Training](https://iamknow0ne.github.io/zombibagarre/traversal.html) · [Previous performance and artwork report](docs/RELEASE-4.36.md)
+
+## macOS test app and portable saves · 4.41
+
+**Your survivor can travel with you.** Settings → Your save now exports and restores character progression, equipment, base camp and settings. Restore previews the incoming character and keeps a recovery copy. Storage problems are visible rather than silently discarding progress.
+
+The Apple Silicon macOS app runs offline with GPU acceleration, native menus and backup-file dialogs. This is an ad-hoc signed, unnotarized test edition; a downloaded app may be blocked by Gatekeeper. [Mac installation and local-build guide](docs/MACOS.md) · [Release details and QA](docs/RELEASE-4.41.md).
 
 ## Install on Steam Deck
 
@@ -199,7 +205,7 @@ The former implementation is retained in `src/legacy-main.js` and `legacy-3d.htm
 <details>
 <summary><b>Current scope & compatibility</b></summary>
 
-- Single-player, finite generated worlds. No multiplayer, cloud saves or mid-expedition save/resume. Progress belongs to the current browser and origin.
+- Single-player, finite generated worlds. No multiplayer, cloud saves or mid-expedition save/resume. Progress is stored locally per browser/origin or desktop app; portable backups transfer permanent progress between them.
 - Diorama is the primary camera. FPS/TPS remain experimental. Jumping and grappling are playable in **Rooftop Training**; city combat and enemy navigation remain on the ground.
 - Destruction uses bounded debris physics and staged structural damage. It is not a structural-engineering or fluid solver.
 - Touch and controller flows have browser QA and regression coverage. Physical-phone, Steam Deck and direct DualSense USB/Bluetooth validation remain separate hardware checks. Optional WebHID trigger effects require a compatible browser; standard play does not require WebHID.

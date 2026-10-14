@@ -16,7 +16,7 @@ function startupLog(directory) {
   return {file, log};
 }
 
-function startupWatch({log, fail, schedule = setTimeout, cancel = clearTimeout, timeout = 120000}) {
+function startupWatch({log, fail, schedule = setTimeout, cancel = clearTimeout, timeout = 120000, platform = process.platform}) {
   let settled = false, gpuCrashes = 0, stage = 'starting the desktop runtime';
   const timer = schedule(() => reject(`Startup timed out while ${stage}.`), timeout);
   function reject(reason) {
@@ -28,7 +28,7 @@ function startupWatch({log, fail, schedule = setTimeout, cancel = clearTimeout, 
     ready() { if (!settled) { settled = true; cancel(timer); log('GAME READY'); } },
     gpuExit(details) {
       if (settled || details.type !== 'GPU' || !['crashed','abnormal-exit','launch-failed','oom','integrity-failure'].includes(details.reason)) return;
-      if (++gpuCrashes >= 3) reject(`The graphics process failed ${gpuCrashes} times (last exit: ${details.exitCode}). Try Launch OpenGL.sh from the installed folder, then include the launch log if it still fails.`);
+      if (++gpuCrashes >= 3) reject(`The graphics process failed ${gpuCrashes} times (last exit: ${details.exitCode}). ${platform==='linux'?'Try Launch OpenGL.sh from the installed folder, then include the launch log if it still fails.':'Include the startup log when reporting this problem.'}`);
     },
     fail: reject,
     stop() { settled = true; cancel(timer); },

@@ -38,7 +38,7 @@ test('ready and ordinary quit cancel startup watchdogs',()=>{
 });
 test('three GPU startup crashes terminate the invisible retry loop with a useful diagnosis',()=>{
  const timer=clock(),failures=[];
- const watch=startupWatch({log:()=>{},fail:why=>failures.push(why),schedule:timer.schedule,cancel:timer.cancel});
+ const watch=startupWatch({log:()=>{},fail:why=>failures.push(why),schedule:timer.schedule,cancel:timer.cancel,platform:'linux'});
  for(let i=0;i<4;i++)watch.gpuExit({type:'Utility',reason:'crashed',exitCode:139});
  watch.gpuExit({type:'GPU',reason:'clean-exit',exitCode:0});
  for(let i=0;i<2;i++)watch.gpuExit({type:'GPU',reason:'crashed',exitCode:139});

@@ -1,0 +1,14 @@
+.save-panel{border-block:1px solid var(--line);padding:10px 0;margin:18px 0;color:var(--bone)}
+.save-panel summary{min-height:44px;align-content:center;cursor:pointer;font:12px/1.5 var(--mono);color:var(--orange)}
+.save-panel p{font:12px/1.6 var(--mono);overflow-wrap:anywhere}
+.save-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.save-actions button{min-height:44px;padding:10px 12px;border:1px solid var(--line);font:11px/1.4 var(--mono);text-align:left}
+.save-actions button:hover,.save-actions button:focus-visible{border-color:var(--orange)}
+.save-actions button:disabled{opacity:.45;cursor:not-allowed}
+#save-restore{background:var(--orange);color:var(--coal);font-weight:700}
+#save-preview{border-left:2px solid var(--orange);padding:12px 0 4px 14px;margin-top:20px}
+#save-comparison{white-space:pre-line;color:var(--bone)}
+.save-panel .save-error,.save-warning{color:var(--danger)}
+.save-warning{font:11px/1.4 var(--mono);min-height:44px;text-align:left}
+.save-actions [hidden],.save-warning[hidden]{display:none!important}
+@media(max-width:480px){.save-actions button{flex:1 1 130px}.save-panel p{font-size:11px}#save-preview{padding-left:10px}}

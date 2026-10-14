@@ -4,7 +4,11 @@ export function deadZone(x=0,y=0,zone=.2){
  x=finite(x);y=finite(y);const length=Math.hypot(x,y);
  if(length<=zone)return {x:0,y:0};const strength=Math.min(1,(length-zone)/(1-zone));return {x:x/length*strength,y:y/length*strength};
 }
-export function validCalibration(map,id){return !!map&&map.id===id&&map.buttons?.length===16&&map.axes?.length===4&&[...map.buttons,...map.axes].every(v=>v&&['button','axis'].includes(v.kind)&&Number.isInteger(v.index)&&v.index>=0&&v.index<64&&(v.kind==='button'||[1,-1].includes(v.sign)));}
+export function validCalibration(map,id){
+ if(!map||typeof map.id!=='string'||map.id!==id||!Array.isArray(map.buttons)||map.buttons.length!==16||!Array.isArray(map.axes)||map.axes.length!==4)return false;
+ const valid=entry=>!!entry&&['button','axis'].includes(entry.kind)&&Number.isInteger(entry.index)&&entry.index>=0&&entry.index<64&&(entry.kind==='button'||([1,-1].includes(entry.sign)&&(entry.rest===undefined||typeof entry.rest==='number'&&Number.isFinite(entry.rest)&&Math.abs(entry.rest)<=1)&&(entry.range===undefined||typeof entry.range==='number'&&Number.isFinite(entry.range)&&entry.range>0&&entry.range<=2)));
+ return map.buttons.every(valid)&&map.axes.every(entry=>valid(entry)&&entry.kind==='axis');
+}
 export function mappedValue(pad,entry){if(!entry)return 0;if(entry.kind==='button')return Math.max(0,Math.min(1,Number(pad.buttons?.[entry.index]?.value)||(pad.buttons?.[entry.index]?.pressed?1:0)));const value=finite(pad.axes?.[entry.index]);return Math.max(0,Math.min(1,(value-(entry.rest||0))*entry.sign/(entry.range||1)));}
 export function sampleGamepad(pad,previous=[],settings={}){
  if(!pad||pad.connected===false)return null;

@@ -6,6 +6,7 @@ import {slotKey} from './Loadout.js';
 import {weaponTier,TIER_MARKS} from './Evolution.js';
 import {touchSettings} from './TouchControls.js';
 import {compactFieldMessage} from './FieldMessages.js';
+import {usesTouchLayout,writeHUD} from './HUDPresentation.js';
 const $=id=>document.getElementById(id);
 export class TouchUI {
  constructor(input,settings,save){this.input=input;this.settings=settings;Object.assign(settings,touchSettings(settings));
@@ -15,14 +16,14 @@ export class TouchUI {
  }
  apply(){document.documentElement.style.setProperty('--touch-size',this.settings.touchSize);document.documentElement.style.setProperty('--touch-opacity',this.settings.touchOpacity);}
  update(sim,world,auto){
-  const input=this.input,p=sim.player,active=(matchMedia('(pointer:coarse)').matches||innerWidth<=700||input.source==='touch')&&input.source!=='gamepad';document.body.classList.toggle('touch-layout',active);world.touchView=active;world.feedback.mobile=active;world.feedback.reserved=[];
+  const input=this.input,p=sim.player,active=usesTouchLayout(input);
   const message=$('toast');if(message.textContent&&message.dataset.fullText){const text=active?compactFieldMessage(message.dataset.fullText):message.dataset.fullText;if(message.textContent!==text)message.textContent=text;}
   if(!active)return;
   const boss=$('boss-hud'),floor=document.querySelector('.hud-top').getBoundingClientRect().top+(innerWidth>innerHeight?86:102);
   const noticeTop=!boss.hidden?Math.max(floor,boss.getBoundingClientRect().bottom+6):floor;
   document.documentElement.style.setProperty('--touch-notice-top',`${noticeTop}px`);
   const weaponMarkup=p.equipped.map((key,i)=>{const w=weaponStats(p,key),slot=slotKey(p.equipped,key,i);return `<div class="touch-weapon-line"><span>${w.name} <small>${TIER_MARKS[weaponTier(p,key)]}</small></span><b>${w.melee?'MELEE':p.reloads[slot]>0?'↻':p.magazines[slot]}</b></div>`;}).join('');
-  $('equipped-hud').innerHTML=weaponMarkup;
+  writeHUD($('equipped-hud'),weaponMarkup);
   const playing=['playing','extracting'].includes(sim.state),melee=MELEE_KEYS.includes(p.weapon);
   const manual=!!world.viewRig?.active;
   const aimOn=manual?p.aiming:auto;$('touch-auto').disabled=manual&&(melee||!!p.vehicleId);actionIcon($('touch-auto'),'target',manual?`Precision aim ${aimOn?'on':'off'}`:`Automatic fire ${auto?'on':'off'}`,manual?(aimOn?'AIM':'HIP'):(auto?'ON':'OFF'));$('touch-auto').setAttribute('aria-pressed',String(!!aimOn));

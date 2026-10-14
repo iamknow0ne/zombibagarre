@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Save QA / Zombie Bagarre</title></head><body>
+<main style="max-width:650px;margin:20px auto;padding:16px"><h1>Save workshop</h1><p>Memory-only test fixture. Your real character is never read or changed.</p><div class="save-actions"><button id="sample">Preview sample</button><button id="bad">Preview invalid file</button><button id="quota">Simulate full storage</button><button id="available">Storage available</button><button id="playing">Toggle expedition</button><button id="reload">Reload saved character</button></div><output id="report"></output><div id="host"></div></main>
+<script type="module">
+import '../src/rebuild/style.css';import '../src/rebuild/save.css';
+import {SaveStore,backupText,SAVE_KEY,parseBackup} from '../src/rebuild/SaveStore.js';import {SaveUI} from '../src/rebuild/SaveUI.js';
+const data=new Map(),device={full:false,getItem:key=>data.get(key)??null,setItem(key,value){if(this.full)throw new Error('Quota exceeded');data.set(key,value);}};
+let store=new SaveStore(device),playing=false,ui;
+function report(){document.getElementById('report').textContent=JSON.stringify({state:playing?'expedition':'title',xp:store.data.profile.xp,scrap:store.data.record.scrap,diskXP:data.has(SAVE_KEY)?parseBackup(data.get(SAVE_KEY)).profile.xp:null,issue:store.issue});}
+function mount(){document.getElementById('host').replaceChildren();ui=new SaveUI({store,host:document.getElementById('host'),canRestore:()=>!playing,onRestored:()=>{store=new SaveStore(device);mount();report();}});ui.panel.open=true;store.subscribe(report);report();}
+mount();document.getElementById('sample').onclick=()=>ui.preview(backupText({profile:{xp:900,appearance:{hair:'mohawk'}},record:{scrap:250},settings:{volume:30}}));
+document.getElementById('bad').onclick=()=>{ui.pending=null;ui.attempt(()=>ui.preview('{invalid'));ui.update();};
+document.getElementById('quota').onclick=()=>{device.full=true;store.set('profile',{xp:180});store.flush();report();};
+document.getElementById('available').onclick=()=>{device.full=false;store.flush();report();};
+document.getElementById('playing').onclick=()=>{playing=!playing;ui.update();report();};
+document.getElementById('reload').onclick=()=>{store=new SaveStore(device);mount();report();};
+</script></body></html>

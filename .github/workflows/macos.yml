@@ -1,0 +1,41 @@
+name: Build macOS test edition
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['desktop/**', 'scripts/*desktop*', 'src/rebuild/Desktop*', '.github/workflows/macos.yml', 'package*.json']
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run desktop:mac
+      - name: Boot the packaged app (CI software GPU, not a Mac benchmark)
+        run: node scripts/smoke-desktop.mjs --mac --software
+      - name: Verify the downloadable archive
+        run: |
+          cd release
+          shasum -a 256 -c ./*macOS*.sha256
+      - name: Keep startup diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-startup-diagnostics
+          path: release/*-smoke.log
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Zombie-Bagarre-macOS-local-test
+          path: |
+            release/*macOS*.zip
+            release/*macOS*.sha256
+          if-no-files-found: error
+          retention-days: 30

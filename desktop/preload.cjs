@@ -5,6 +5,7 @@ const listen = (channel, callback) => {
   return () => ipcRenderer.removeListener(channel, listener);
 };
 contextBridge.exposeInMainWorld('bagarreDesktop', Object.freeze({
+  platform: process.platform,
   steamDeck: process.argv.includes('--bagarre-deck'),
   smokeTest: process.argv.includes('--bagarre-smoke'),
   getStatus: () => ipcRenderer.invoke('desktop:status'),

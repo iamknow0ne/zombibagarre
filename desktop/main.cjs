@@ -6,15 +6,16 @@ const {pathToFileURL} = require('node:url');
 const {ORIGIN, trustedURL, assetPath, trustedSender} = require('./policy.cjs');
 const {startupLog, startupWatch, graphicsSwitches} = require('./startup.cjs');
 const smoke = process.argv.includes('--smoke-test');
+const isolated = smoke || process.argv.includes('--test-profile');
 const deck = process.argv.includes('--steam-deck') || process.env.SteamDeck === '1' || (() => {
   try { return /Jupiter|Galileo/i.test(readFileSync('/sys/devices/virtual/dmi/id/product_name', 'utf8')); } catch { return false; }
 })();
 app.setName('Zombie Bagarre');
-app.setPath('userData', smoke ? mkdtempSync(path.join(tmpdir(), 'bagarre-smoke-')) : path.join(app.getPath('appData'), 'zombie-bagarre'));
+app.setPath('userData', isolated ? mkdtempSync(path.join(tmpdir(), 'bagarre-smoke-')) : path.join(app.getPath('appData'), 'zombie-bagarre'));
 const {log, file:logFile} = startupLog(path.join(app.getPath('userData'), 'diagnostics'));
-log('LAUNCH', JSON.stringify({version:app.getVersion(),electron:process.versions.electron,platform:process.platform,arch:process.arch,deck,smoke}));
+log('LAUNCH', JSON.stringify({version:app.getVersion(),electron:process.versions.electron,platform:process.platform,arch:process.arch,deck,smoke,isolated}));
 const startup = startupWatch({log, fail: reason => {
-  if (!smoke && app.isReady()) dialog.showErrorBox('Zombie Bagarre could not start', `${reason}\n\nStartup details are saved in:\n${logFile}\n\nIf you used launch.sh, also include ~/.local/state/zombie-bagarre/launch.log when reporting this problem.`);
+  if (!smoke && app.isReady()) dialog.showErrorBox('Zombie Bagarre could not start', `${reason}\n\nStartup details are saved in:\n${logFile}${process.platform==='linux'?'\n\nIf you used launch.sh, also include ~/.local/state/zombie-bagarre/launch.log when reporting this problem.':''}`);
   app.exit(1);
 }});
 app.on('before-quit', () => startup.stop());
@@ -45,12 +46,24 @@ else {
     session.defaultSession.setPermissionCheckHandler((_contents, permission, origin) => trustedURL(origin) && ['fullscreen','pointerLock'].includes(permission));
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => callback({responseHeaders:{...details.responseHeaders,
       'Content-Security-Policy':["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-src 'none'; frame-ancestors 'none'"]}}));
-    Menu.setApplicationMenu(null);
+    if(process.platform==='darwin'){
+      app.setAboutPanelOptions({applicationName:'Zombie Bagarre',applicationVersion:app.getVersion(),copyright:'Zombie Bagarre · Quarantine'});
+      Menu.setApplicationMenu(Menu.buildFromTemplate([
+        {role:'appMenu'}, {role:'editMenu'},
+        {label:'View',submenu:[{role:'togglefullscreen'}]}, {role:'windowMenu'},
+      ]));
+    }else Menu.setApplicationMenu(null);
     win = new BrowserWindow({width:1280,height:800,minWidth:800,minHeight:600,useContentSize:true,show:true,
       fullscreen:!smoke && !process.argv.includes('--windowed'),backgroundColor:'#162327',title:'Zombie Bagarre',
       icon:path.join(__dirname,'icon.png'),autoHideMenuBar:true,
       webPreferences:{preload:path.join(__dirname,'preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,
         webSecurity:true,webgl:true,backgroundThrottling:true,additionalArguments:[...(deck?['--bagarre-deck']:[]),...(smoke?['--bagarre-smoke']:[])]}});
+    session.defaultSession.on('will-download', (event, item, contents) => {
+      if (contents !== win.webContents) {event.preventDefault();return;}
+      // Exports use the normal OS save dialog, so a backup never disappears
+      // into an invisible browser download tray in the standalone edition.
+      item.setSaveDialogOptions({title:'Export character backup',buttonLabel:'Save backup',filters:[{name:'Zombie Bagarre backup',extensions:['json']}]});
+    });
     log('WINDOW CREATED', JSON.stringify({visible:win.isVisible(),bounds:win.getBounds()}));
     win.once('ready-to-show', () => log('WINDOW', 'First frame painted'));
     win.webContents.on('dom-ready', () => startup.stage('initializing the game and graphics'));

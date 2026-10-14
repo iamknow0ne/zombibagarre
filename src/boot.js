@@ -6,6 +6,7 @@ try{
  if(!document.getElementById('error').hidden)throw new Error('Renderer initialization failed');
  await loadingStage(100,'The streets are ready');
  document.getElementById('loading').hidden=true;
+ document.getElementById('menu').inert=false;
  document.getElementById('start').focus();
  window.bagarreDesktop?.ready();
 }catch(error){

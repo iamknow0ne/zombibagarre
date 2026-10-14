@@ -29,11 +29,11 @@ export const ARMOUR=Object.fromEntries(['scout','warden','reaper'].flatMap((fami
  const scale=[.24,.5,.26][['head','chest','legs'].indexOf(slot)],rank=tier+1,id=`${family}-${slot}-${tier}`;
  return [id,{id,family,slot,tier,name:`${family==='scout'?'Pathfinder':family==='warden'?'Bastion':'Revenant'} ${slot==='head'?'Helm':slot==='chest'?'Coat':'Greaves'}`,price:Math.round([95,230,480,800][tier]*(slot==='chest'?1:.7)),level:[1,3,6,10][tier],health:Math.round((family==='warden'?24:family==='scout'?12:8)*rank*scale),resistance:(family==='warden'?.07:.025)*rank*scale,speed:(family==='scout'?.3:family==='warden'?-.15:.1)*rank*scale,damage:family==='reaper'?.05*rank*scale:0}];
 }))));
-const int=(n,max=1000000)=>Math.max(0,Math.min(max,Math.floor(Number(n)||0)));
+const int=(n,max=1000000)=>Math.max(0,Math.min(max,Math.floor((typeof n==='number'||typeof n==='string')&&Number.isFinite(Number(n))?Number(n):0)));
 export function levelForXP(xp){let level=1,spent=0;while(level<30&&xp>=spent+120+level*60){spent+=120+level*60;level++;}return{level,current:xp-spent,next:level===30?0:120+level*60};}
 export function normalizeProfile(raw={}){
  if(!raw||typeof raw!=='object')raw={};const xp=int(raw.xp),level=levelForXP(xp).level;
- const p={version:1,xp,appearance:normalizeAppearance(raw.appearance),attributes:{},skills:[],owned:['scout-chest-0'],equipment:{head:null,chest:'scout-chest-0',legs:null},relics:[],relic:null,dye:Object.hasOwn(DYES,raw.dye)?raw.dye:'olive'};let budget=3+(level-1)*2;
+ const p={version:1,xp,appearance:normalizeAppearance(raw.appearance),attributes:{},skills:[],owned:['scout-chest-0'],equipment:{head:null,chest:'scout-chest-0',legs:null},relics:[],relic:null,dye:typeof raw.dye==='string'&&Object.hasOwn(DYES,raw.dye)?raw.dye:'olive'};let budget=3+(level-1)*2;
  for(const [key,a]of Object.entries(ATTRIBUTES)){p.attributes[key]=Math.min(budget,int(raw.attributes?.[key],a.max));budget-=p.attributes[key];}
  const learned=new Set(Array.isArray(raw.skills)?raw.skills:[]);
  for(const [key,s]of Object.entries(SKILLS))if(learned.has(key)&&level>=s.level&&budget>=s.cost&&(!s.parent||p.skills.includes(s.parent))){p.skills.push(key);budget-=s.cost;}

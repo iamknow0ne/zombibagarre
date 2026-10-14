@@ -1,4 +1,5 @@
 import {ControllerSetup} from './ControllerSetup.js';
+import {usesTouchLayout,writeHUD} from './HUDPresentation.js';
 import {ControllerDiagram} from './ControllerDiagram.js';
 import {weaponTier,TIER_MARKS} from './Evolution.js';
 import {ACTION_NAMES,BINDINGS,CONTROL_DEFAULTS,buttonName,glyph,rebind} from './ControllerConfig.js';
@@ -32,23 +33,26 @@ export class ControllerUI{
  renderBindings(){const focus=document.activeElement?.id,family=this.input.family||'playstation';$('controller-bindings').replaceChildren(...Object.entries(ACTION_NAMES).map(([action,name])=>{const row=document.createElement('label');row.className='setting-row binding-row';row.innerHTML=`<span>${name}</span><select id="bind-${action}" aria-label="${name} button">${Array.from({length:16},(_,i)=>`<option value="${i}">${buttonName(i,family)}</option>`).join('')}</select>`;const select=row.querySelector('select');select.value=this.settings.bindings[action];select.onchange=()=>{this.settings.bindings=rebind(this.settings.bindings,action,Number(select.value));this.renderBindings();this.onSave();};return row;}));if(focus?.startsWith('bind-'))$(focus)?.focus();this.diagram?.update();}
  prompt(action,fallback){return this.input.source==='gamepad'&&this.input.pad?glyph(this.settings.bindings[action],this.input.family):`<kbd>${fallback}</kbd>`;}
  update(sim,world,auto){
-  const input=this.input,pad=input.source==='gamepad'&&input.pad,p=sim.player;
+  const input=this.input,pad=input.source==='gamepad'&&input.pad,p=sim.player,touch=usesTouchLayout(input);
   if($('settings-dialog').open)this.diagram.update();
   document.body.classList.toggle('using-gamepad',!!pad);
   if(this.lastFamily!==input.family){this.lastFamily=input.family;this.renderBindings();}
   $('controller-device').textContent=input.pad?`${input.family==='playstation'?'PLAYSTATION':input.family==='xbox'?'XBOX':'GAMEPAD'} · ${input.pad.id}`:input.rawPad?`${input.rawPad.id} · UNMAPPED · USE CONTROLLER SETUP BELOW`:'Press a button on your connected controller.';
   $('vibration-status').textContent=this.haptics.capability()?(this.haptics.status.startsWith('Connect')?'Vibration available · use Test vibration.':this.haptics.status):'Vibration is not exposed by the current browser / controller.';$('dualsense-status').textContent=this.dualsense.status;
-  for(const [id,action,key]of [['dash-action','dash','SPACE'],['melee-action','rightFire','F'],['grenade-action','grenade','E']])$(id).querySelector('kbd, .pad-key').outerHTML=this.prompt(action,key);
-  $('arsenal-action').innerHTML=`ARSENAL ${this.prompt('arsenal','B')}`;$('auto-action').disabled=!!world.viewRig?.active;$('auto-action').innerHTML=`${world.viewRig?.active?'CAMERA AIM':'AUTO FIRE'} <b>${world.viewRig?.active?'MANUAL':auto?'ON':'OFF'}</b> ${this.prompt('auto','T')}`;
-  $('map-action').querySelector('span').innerHTML=`STREET MAP ${this.prompt('map','M')}`;
-  $('pause').innerHTML=pad?this.prompt('pause','ESC'):'Ⅱ';
-  $('control-autoFire').checked=auto;$('auto-action').setAttribute('aria-pressed',String(auto));
-  $('weapon-controls').innerHTML=pad?`${this.prompt('leftWeapon','')} / ${this.prompt('nextWeapon','')} TAP / HOLD · ${this.prompt('reload','')} RELOAD`:'<kbd>1–0</kbd> / SCROLL · WEAPONS &nbsp; <kbd>R</kbd> RELOAD';
-  $('equipped-hud').innerHTML=p.equipped.map((key,i)=>`${pad?glyph(this.settings.bindings[i?'leftFire':'rightFire'],input.family):''} ${i?'LEFT':'RIGHT'} · ${weaponStats(p,key).name} ${TIER_MARKS[weaponTier(p,key)]} ${WEAPONS[key].melee?'BLADE':p.magazines[i&&p.equipped[0]===key?'offhand':key]}${p.reloads[i&&p.equipped[0]===key?'offhand':key]>0?' ↻':''}`).join('<br>');
+  $('control-autoFire').checked=auto;
+  if(!touch){
+   for(const [id,action,key]of [['dash-action','dash','SPACE'],['melee-action','rightFire','F'],['grenade-action','grenade','E']]){const node=$(id).querySelector('kbd, .pad-key'),html=this.prompt(action,key);if(node.outerHTML!==html)node.outerHTML=html;}
+   writeHUD($('arsenal-action'),`ARSENAL ${this.prompt('arsenal','B')}`);$('auto-action').disabled=!!world.viewRig?.active;writeHUD($('auto-action'),`${world.viewRig?.active?'CAMERA AIM':'AUTO FIRE'} <b>${world.viewRig?.active?'MANUAL':auto?'ON':'OFF'}</b> ${this.prompt('auto','T')}`);
+   writeHUD($('map-action').querySelector('span'),`STREET MAP ${this.prompt('map','M')}`);
+   writeHUD($('pause'),pad?this.prompt('pause','ESC'):'Ⅱ');
+   $('auto-action').setAttribute('aria-pressed',String(auto));
+   writeHUD($('weapon-controls'),pad?`${this.prompt('leftWeapon','')} / ${this.prompt('nextWeapon','')} TAP / HOLD · ${this.prompt('reload','')} RELOAD`:'<kbd>1–0</kbd> / SCROLL · WEAPONS &nbsp; <kbd>R</kbd> RELOAD');
+   writeHUD($('equipped-hud'),p.equipped.map((key,i)=>`${pad?glyph(this.settings.bindings[i?'leftFire':'rightFire'],input.family):''} ${i?'LEFT':'RIGHT'} · ${weaponStats(p,key).name} ${TIER_MARKS[weaponTier(p,key)]} ${WEAPONS[key].melee?'BLADE':p.magazines[i&&p.equipped[0]===key?'offhand':key]}${p.reloads[i&&p.equipped[0]===key?'offhand':key]>0?' ↻':''}`).join('<br>'));
+  }
   const car=p.vehicleId?sim.props.find(v=>v.id===p.vehicleId):sim.props.filter(v=>v.driveable&&v.health>0&&distance(v,p)<5).sort((a,b)=>distance(a,p)-distance(b,p))[0];
-  $('vehicle-action').innerHTML=`${p.vehicleId?'EXIT':'ENTER'} VEHICLE ${this.prompt('interact','V')}`;
-  const prompt=$('vehicle-world-prompt'),visible=car&&!p.vehicleId&&['playing','extracting'].includes(sim.state);prompt.hidden=!visible;
-  if(visible){const point=world.screenPoint(car.x,2.8,car.z);prompt.hidden=!point.visible;prompt.style.left=point.x+'px';prompt.style.top=point.y+'px';prompt.innerHTML=`${this.prompt('interact','V')} ENTER ${car.vehicleName||'VEHICLE'}`;}
+  if(!touch)writeHUD($('vehicle-action'),`${p.vehicleId?'EXIT':'ENTER'} VEHICLE ${this.prompt('interact','V')}`);
+  const prompt=$('vehicle-world-prompt'),visible=!touch&&car&&!p.vehicleId&&['playing','extracting'].includes(sim.state);prompt.hidden=!visible;
+  if(visible){const point=world.screenPoint(car.x,2.8,car.z);prompt.hidden=!point.visible;prompt.style.left=point.x+'px';prompt.style.top=point.y+'px';writeHUD(prompt,`${this.prompt('interact','V')} ENTER ${car.vehicleName||'VEHICLE'}`);}
   document.body.classList.toggle('driving',!!p.vehicleId);$('driving-hud').hidden=!p.vehicleId;
   if(p.vehicleId&&car){$('drive-name').textContent=car.vehicleName;$('drive-speed').textContent=String(Math.round(Math.abs(car.speed||0)*3.6));$('drive-gear').textContent=car.speed<-.1?'R':car.speed>.1?'D':'N';$('drive-hull').textContent=`${Math.max(0,Math.ceil(car.health/car.maxHealth*100))}% HULL`;
    $('drive-help').innerHTML=input.source==='touch'?'STICK TO DRIVE · RELEASE TO BRAKE':pad?`${glyph(7,input.family)} ACCEL · ${glyph(6,input.family)} BRAKE / REVERSE · ${glyph(1,input.family)} HANDBRAKE`:'W ACCEL · S BRAKE / REVERSE · A / D STEER · SPACE HANDBRAKE';
