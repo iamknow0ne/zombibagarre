@@ -1,3 +1,5 @@
+import {createThrowableFlight} from './ThrowableFlight.js';
+import {actorHeight,propHeight,boxHit3D} from './Ballistics.js';
 import {throwableLock} from './Progression.js';
 import {waterAt} from './City.js';
 import {distance,clamp} from './config.js';
@@ -11,25 +13,26 @@ export function throwOrdnance(sim,aim){
  const p=sim.player;if(throwableLock(sim,p.throwable)||p.grenades<=0||p.throwAnimation>0||p.vehicleId||p.dash>0)return false;
  const key=THROWABLES[p.throwable]?p.throwable:'frag',w=THROWABLES[key],a=aim||{x:p.x+Math.sin(p.angle)*6,z:p.z+Math.cos(p.angle)*6},d=distance(a,p),scale=Math.min(1,10/(d||1));
  p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.grenades--;p.throwAnimation=.5;
- sim.hazards.push({id:sim.nextId++,x:p.x+(a.x-p.x)*scale,z:p.z+(a.z-p.z)*scale,radius:w.radius*p.blastRadius,damage:w.damage*p.blast,timer:w.fuse,duration:w.fuse,flight:.65,originX:p.x,originZ:p.z,thrown:true,friendly:true,throwable:key,source:key});sim.emit('throw',{x:p.x,z:p.z,throwable:key});return true;
+ const h={id:sim.nextId++,x:p.x+(a.x-p.x)*scale,z:p.z+(a.z-p.z)*scale,radius:w.radius*p.blastRadius,damage:w.damage*p.blast,timer:w.fuse,duration:w.fuse,flight:.65,originX:p.x,originZ:p.z,thrown:true,friendly:true,throwable:key,source:key};h.projectile=createThrowableFlight(h);sim.hazards.push(h);sim.emit('throw',{x:p.x,z:p.z,throwable:key});return true;
 }
 export function detonateThrowable(sim,h){
- const key=h.throwable||'frag';if(key==='frag'){sim.blast(h.x,h.z,h.radius,h.damage,'explosion','grenade');return;}
- const water=waterAt(sim.layout,h.x,h.z),radius=h.radius*(key==='shock'&&water?1.3:1);
+ const key=h.throwable||'frag',y=h.projectile?.y??h.y??0;if(key==='frag'){sim.blast(h.x,h.z,h.radius,h.damage,'explosion','grenade',null,0,y);return;}
+ const water=y<.3&&waterAt(sim.layout,h.x,h.z),radius=h.radius*(key==='shock'&&water?1.3:1);
  if(water)sim.splashWater(h.x,h.z,2);
- if(key==='frost')sim.splashWater(h.x,h.z,Math.max(1,(radius-.6)/.7));
- const damp=water||(sim.wetGround||[]).some(w=>distance(w,h)<w.radius);
- if(key==='molotov'&&damp){sim.emit('steam',{x:h.x,z:h.z,power:4});return;}
- for(const e of sim.enemies){if(e.health<=0||distance(e,h)>radius+e.radius||sim.blocked(h,e,.05))continue;
+ if(key==='frost'&&y<radius)sim.splashWater(h.x,h.z,Math.max(1,(Math.sqrt(radius*radius-y*y)-.6)/.7));
+ const damp=water||(y<.4&&(sim.wetGround||[]).some(w=>distance(w,h)<w.radius));
+ if(key==='molotov'&&damp){sim.emit('steam',{x:h.x,y,z:h.z,power:4});return;}
+ const blocked=to=>sim.obstacles.some(o=>o.health>0&&boxHit3D({x:h.x,y:Math.max(.1,y),z:h.z},to,o)!==null);
+ for(const e of sim.enemies){if(e.health<=0||Math.hypot(distance(e,h),Math.max(0,y-actorHeight(e)))>radius+e.radius||blocked({x:e.x,y:actorHeight(e)*.6,z:e.z}))continue;
   const type=key==='molotov'?'fire':key==='frost'?'frost':'electric',damage=h.damage*(key==='shock'&&e.wet>0?1.5:1);
   sim.damageEnemy(e,damage,0,0,{kind:type});
   if(key==='molotov'&&!(e.wet>0)){e.burning=Math.max(e.burning||0,5);e.burnWeapon=null;sim.emit('ignite',{x:e.x,z:e.z});}
   if(key==='frost'){e.slow=Math.max(e.slow||0,5);e.chilled=Math.max(e.chilled||0,5);}
-  if(key==='shock'){e.electrified=Math.max(e.electrified||0,2.5);e.slow=Math.max(e.slow||0,2);sim.emit('arc',{x:h.x,z:h.z,toX:e.x,toZ:e.z,tier:2});}
+  if(key==='shock'){e.electrified=Math.max(e.electrified||0,2.5);e.slow=Math.max(e.slow||0,2);sim.emit('arc',{x:h.x,y,z:h.z,toX:e.x,toY:actorHeight(e)*.6,toZ:e.z,tier:2});}
  }
  if(key==='molotov'){
-  sim.addFire(h.x,h.z,radius*.65);
-  for(const prop of sim.props)if(prop.health>0){const x=clamp(h.x,prop.x-prop.w/2,prop.x+prop.w/2),z=clamp(h.z,prop.z-prop.d/2,prop.z+prop.d/2);if(Math.hypot(x-h.x,z-h.z)<radius&&!sim.blocked(h,{x:x+(h.x-x)*.02,z:z+(h.z-z)*.02},0))sim.igniteProp(prop,x,z,.9,6);}
+  if(y<.5)sim.addFire(h.x,h.z,radius*.65);
+  for(const prop of sim.props)if(prop.health>0){const x=clamp(h.x,prop.x-prop.w/2,prop.x+prop.w/2),z=clamp(h.z,prop.z-prop.d/2,prop.z+prop.d/2);const hitY=clamp(y,0,propHeight(prop));if(Math.hypot(x-h.x,z-h.z,y-hitY)<radius&&!blocked({x:x+(h.x-x)*.02,y:Math.max(.1,hitY),z:z+(h.z-z)*.02}))sim.igniteProp(prop,x,z,Math.max(.1,hitY),6);}
  }
- sim.emit('ordnance-burst',{x:h.x,z:h.z,radius,throwable:key,color:THROWABLES[key].color});
+ sim.emit('ordnance-burst',{x:h.x,y,z:h.z,radius,throwable:key,color:THROWABLES[key].color});
 }

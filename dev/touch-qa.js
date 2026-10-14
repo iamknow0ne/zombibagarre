@@ -7,6 +7,7 @@ export function installTouchQA(input,getSim,getWorld=()=>null){
  const click=id=>document.getElementById(id).click();
  let focusCheck=null;
  const actions={
+ 'keyboard-hud':()=>{input.source='keyboard';},
  focus:async()=>{const s=getSim();s.toSpawn=999;s.spawnTimer=99999;s.enemies=[];s.focus.energy=100;s.focus.cooldown=0;down('focus-action',76);up('focus-action',76);await wait(600);focusCheck={active:s.focus.active,scale:s.timeScale,energy:s.focus.energy};},
  'focus-dive':async()=>{const s=getSim();s.toSpawn=999;s.spawnTimer=99999;s.enemies=[];s.setLoadout(['smg']);s.focus.energy=100;s.focus.cooldown=0;s.player.dashCooldown=0;if(!s.focus.active){down('focus-action',76);up('focus-action',76);}await wait(300);down('move-zone',71);move('move-zone',71,.85,.5);down('aim-zone',72);move('aim-zone',72,.7,.2);await wait(100);const ammo=s.player.magazines.smg;down('touch-dash',75);up('touch-dash',75);await wait(400);focusCheck={active:s.focus.active,scale:s.timeScale,diving:s.player.focusDive,dash:s.player.dash,shots:ammo-s.player.magazines.smg,stickHeld:{...input.stick}};await wait(300);up('move-zone',71);up('aim-zone',72);},
  notices:()=>{const s=getSim();s.toSpawn=999;s.spawnTimer=99999;s.enemies=[];s.player.mastery.carbine=3500;s.profile.owned.push('warden-head-1');s.rpg.accepted.push('salvage');s.rpg.cases=['case-a','case-b'];for(const q of s.places.filter(q=>q.kind==='cache'))q.used=true;},

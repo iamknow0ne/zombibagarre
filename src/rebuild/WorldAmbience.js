@@ -5,6 +5,7 @@ import {seededRandom,pointBlocked,lineBlocked} from './config.js';
 import {waterAt} from './City.js';
 import {withinBoundary} from './CityTopology.js';
 import {applyCutaway} from './BuildingCutaway.js';
+import {uploadActiveInstances} from './RenderBatch.js';
 export function pedestrianPlan(layout){if(!layout.city)return [];const r=seededRandom(layout.mapSeed^91231),out=[],obstacles=[...layout.buildings,...layout.cover];for(const p of layout.streetPoints){const side=r()<.5?-1:1,d=p.width/2+1.3,a={x:p.x+Math.cos(p.angle)*d*side,z:p.z-Math.sin(p.angle)*d*side},b={x:a.x+Math.sin(p.angle)*5,z:a.z+Math.cos(p.angle)*5};if(!withinBoundary(layout.boundary,b.x,b.z,1)||waterAt(layout,a.x,a.z)||waterAt(layout,b.x,b.z)||pointBlocked(a.x,a.z,.7,obstacles)||lineBlocked(a,b,.7,obstacles))continue;out.push({a,b,phase:r()*6.28,coat:Math.floor(r()*3)});}return out.filter((_,i)=>i%Math.max(1,Math.ceil(out.length/48))===0).slice(0,48);}
 export class WorldAmbience{
  constructor(world){this.world=world;this.alive=true;this.clock=0;this.batches=[];this.props=[];this.people=pedestrianPlan(world.layout);this.dummy=new T.Object3D();this.buildPeople();this.buildNeon();if(world.layout.city)cityAsset('blackout-sprites-v1.webp').then(t=>{if(this.alive){this.buildProps(t);world.requestRender=true;}}).catch(()=>{this.failed=true;});}
@@ -19,7 +20,7 @@ export class WorldAmbience{
    items.forEach((b,i)=>{d.position.set(0,0,0);d.rotation.set(0,0,0);d.scale.set(1,1,1);if(decor){const owner=w.buildingMeshes.get(b.id);if(owner?.userData.collapsed||Math.hypot(b.x-p.x,b.z-p.z)>72||(i%20)/20>=density)return;
     if(kind==='neon-h'){d.position.set(b.x,Math.min(4.4,b.h-.7),b.z+b.d/2+.55);d.scale.set(b.w*.87,.16,.15);}else if(kind==='neon-v'){d.position.set(b.x-b.w*.4,b.h*.6,b.z+b.d/2+.6);d.scale.set(.12,b.h*.55,.14);}else if(kind==='billboard'){d.position.set(b.x,b.h*.65,b.z+b.d/2+1.65);d.scale.set(Math.min(7,b.w*.7),1.6,1);}else{d.position.set(b.x+b.w*.34,1.15,b.z+b.d/2+.7);d.scale.set(1.5,2.3,1);}
    }else{if((i%20)/20>=population)return;const t=.5+.5*Math.sin(this.clock*.23+b.phase),x=b.a.x+(b.b.x-b.a.x)*t,z=b.a.z+(b.b.z-b.a.z)*t;if(Math.hypot(x-p.x,z-p.z)>46)return;const direction=Math.cos(this.clock*.23+b.phase)>0?1:-1,yaw=Math.atan2((b.b.x-b.a.x)*direction,(b.b.z-b.a.z)*direction),left=kind.startsWith('left'),arm=kind.endsWith('Arm'),leg=kind.endsWith('Leg'),offset=(arm?.31:leg?.13:0)*(left?-1:1);d.position.set(x+Math.cos(yaw)*offset,mesh.userData.height,z-Math.sin(yaw)*offset);d.rotation.y=yaw;if(arm||leg)d.rotation.x=Math.sin(this.clock*6+b.phase+(left?0:Math.PI))*(arm?.28:.4);if(kind==='body')this.visiblePeople++;
-   }d.updateMatrix();mesh.setMatrixAt(count++,d.matrix);});mesh.count=count;mesh.instanceMatrix.needsUpdate=true;
+   }d.updateMatrix();mesh.setMatrixAt(count++,d.matrix);});mesh.count=count;uploadActiveInstances(mesh);
   }
  }
  dispose(){this.alive=false;for(const {mesh}of this.batches){mesh.removeFromParent();mesh.geometry.dispose();mesh.material.map?.dispose();mesh.material.dispose();mesh.dispose();}this.batches=[];}

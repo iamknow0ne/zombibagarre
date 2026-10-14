@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {seededRandom} from './config.js';
+import {uploadActiveInstances} from './RenderBatch.js';
 
 // Local precipitation, two reusable draw calls, no per-drop meshes or textures.
 export class WeatherVisuals{
@@ -44,11 +45,12 @@ export class WeatherVisuals{
   for(let i=0;i<count;i++){
    const d=this.drops[i],x=p.x+d.x,z=p.z+d.z,roof=this.roofAt(x,z);d.y-=dt*(snow?2.3:22);if(d.y<0)d.y+=30;
    const y=d.y+roof,wind=Math.sin(this.clock*.4+i)*.2;
-   this.rainPositions.set([x,y,z,x+.12,y+.8,z+.07],i*6);
-   this.snowPositions.set([x+Math.sin(this.clock+i)*.4,y,z+wind],i*3);
+   if(rain){const j=i*6,a=this.rainPositions;a[j]=x;a[j+1]=y;a[j+2]=z;a[j+3]=x+.12;a[j+4]=y+.8;a[j+5]=z+.07;}
+   if(snow){const j=i*3,a=this.snowPositions;a[j]=x+Math.sin(this.clock+i)*.4;a[j+1]=y;a[j+2]=z+wind;}
    if(rain&&i<48&&roof===0){const phase=(this.clock*1.9+i*.317)%1;this.dummy.position.set(x,.045,z);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.setScalar(.04+phase*.25);this.dummy.updateMatrix();this.ripple.setMatrixAt(ripples++,this.dummy.matrix);}
   }
-  this.ripple.count=ripples;this.ripple.instanceMatrix.needsUpdate=true;this.rain.geometry.attributes.position.needsUpdate=true;this.snow.geometry.attributes.position.needsUpdate=true;
+  this.ripple.count=ripples;uploadActiveInstances(this.ripple);
+  for(const [mesh,active,size]of [[this.rain,rain,6],[this.snow,snow,3]])if(active){const a=mesh.geometry.attributes.position;a.clearUpdateRanges();if(count){a.addUpdateRange(0,count*size);a.needsUpdate=true;}}
  }
  dispose(){for(const m of [this.rain,this.snow,this.ripple]){m.removeFromParent();m.geometry.dispose();m.material.dispose();m.dispose?.();}}
 }

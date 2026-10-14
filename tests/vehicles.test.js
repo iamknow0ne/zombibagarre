@@ -65,3 +65,27 @@ test('easy driving retains swept collisions and can reverse away from a wall',()
  const before=v.z;for(let i=0;i<90;i++)tick(s,1,{...assistedDrive(v,0,0),brake:1,throttle:0,handbrake:false});assert.ok(v.z<before-2);assert.ok(!vehicleOverlaps(v,wall));
  assert.equal(controlSettings().drivingStyle,'assisted');assert.equal(controlSettings({drivingStyle:'racing'}).drivingStyle,'racing');
 });
+
+test('vehicle entry cannot cross walls and selects a reachable car instead',()=>{
+ const layout={bounds:{minX:-30,maxX:30,minZ:-30,maxZ:30},cover:[vehiclePlan('sedan',3,0),vehiclePlan('coupe',-4,0),{kind:'barrier',x:1.5,z:0,w:.3,d:10}]};
+ const s=new Simulation({layout});s.start();s.player.x=s.player.z=0;
+ const blocked=s.props[0],reachable=s.props[1];reachable.health=0;s.obstacles=s.props.filter(p=>p.health>0);
+ assert.equal(s.interactVehicle(),false);assert.equal(s.player.vehicleId,null);assert.equal(s.player.x,0);
+ reachable.health=reachable.maxHealth;s.obstacles=s.props;assert.equal(s.interactVehicle(),true);assert.equal(s.player.vehicleId,reachable.id);assert.notEqual(s.player.vehicleId,blocked.id);
+});
+
+test('vehicle exit chooses a dry reachable side without crossing a thin wall',()=>{
+ const s=drive(),v=s.props[0];
+ // The default right-hand exit is across this narrow wall; the opposite side is water.
+ s.props.push({id:'exit-wall',kind:'barrier',x:2,z:0,w:.2,d:10,health:100});s.obstacles=s.props;
+ s.layout.water=[{x:-4,z:0,w:6,d:20}];s.layout.bridges=[];
+ assert.equal(s.interactVehicle(),true);assert.ok(s.player.x<1.5);assert.ok(s.player.x>-.55);assert.ok(Math.abs(s.player.z)>3);
+ // If all exit positions are flooded, stay in the vehicle rather than teleporting into water.
+ s.player.x=v.x;s.player.z=v.z;s.player.vehicleId=v.id;s.player.radius=1.25;s.layout.water=[{x:0,z:0,w:20,d:20}];
+ assert.equal(s.interactVehicle(),false);assert.equal(s.player.vehicleId,v.id);assert.equal(s.player.radius,1.25);
+});
+
+test('district regeneration leaves the old vehicle before prop identifiers are reused',()=>{
+ const s=new Simulation({seed:21});s.start();s.wave=4;s.player.vehicleId='prop-0';s.player.radius=1.25;s.nextWave();
+ assert.equal(s.wave,5);assert.equal(s.player.vehicleId,null);assert.equal(s.player.radius,.4);assert.equal(s.player.x,0);assert.equal(s.player.z,3);
+});

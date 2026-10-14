@@ -64,3 +64,8 @@ body[data-world-theme="cyberpunk"] .chapter>span{color:#80d8df}#world-lore{borde
 @media(max-width:600px){#view-crosshair span{display:none}}
 
 .weather-hud{font:10px/1.5 var(--mono);letter-spacing:.05em;color:#eee8d8;margin-bottom:3px}.living-world-settings{border:1px solid #41504f;margin:16px 0;padding:16px}.living-world-settings legend{font:12px monospace;color:#f18147;padding:0 8px}@media(max-width:740px){.weather-hud{font-size:8px;letter-spacing:0;margin:0}.living-world-settings{padding:12px}}
+
+/* Active effects belong to the weapon panel, clear of route and vehicle prompts.
+   Touch layouts keep their existing compact presentation. */
+.weapon-hud > .active-powers{left:0;top:auto;bottom:calc(100% + 10px);width:min(280px,42vw);display:flex;flex-direction:row;flex-wrap:wrap;gap:5px}
+.weapon-hud > .active-powers span{padding:6px 8px}

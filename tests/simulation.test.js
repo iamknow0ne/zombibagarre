@@ -136,5 +136,5 @@ test('surviving limb injuries become live crawlers and kill variants retain thei
 });
 test('grenades respect the cursor even while auto fire tracks an enemy',()=>{
  const s=isolated();s.spawnEnemy('brute',0,0);s.update(1/60,{auto:true,grenade:true,aim:{x:7,z:3}});
- assert.equal(s.hazards[0].x,7);assert.equal(s.hazards[0].z,3);
+ const h=s.hazards[0];assert.ok(h.projectile.vx>0);assert.equal(h.projectile.vz,0);step(s,38,{auto:false});assert.ok(Math.abs(h.x-7)<.05);assert.equal(h.z,3);
 });

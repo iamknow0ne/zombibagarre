@@ -4,7 +4,7 @@ The macOS test edition is an offline app for Apple Silicon Macs running macOS 13
 
 ## Try the local build
 
-Open **Zombie Bagarre.app** inside `release/Zombie Bagarre-darwin-arm64`. You can copy the app to your Applications folder; the game and its assets travel together. The matching `Zombie-Bagarre-4.41.0-macOS-arm64.zip` includes the app and this guide.
+Open **Zombie Bagarre.app** inside `release/Zombie Bagarre-darwin-arm64`. You can copy the app to your Applications folder; the game and its assets travel together. The matching `Zombie-Bagarre-4.42.0-macOS-arm64.zip` includes the app and this guide.
 
 This test app uses an **ad-hoc code signature**, which verifies its contents but does not establish an Apple-verified developer identity. It is **not notarized** and uses a local development signing profile without the distribution hardened runtime. A downloaded copy may be blocked by Gatekeeper; public distribution with a normal first-open experience remains pending Developer ID signing and Apple notarization. Do not disable Gatekeeper or remove quarantine attributes. The locally built app is the intended test route for now.
 

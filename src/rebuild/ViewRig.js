@@ -23,6 +23,9 @@ export class ViewRig{
   this.shoulder=damp(this.shoulder??(this.settings.shoulder==='left'?-1:1),this.settings.shoulder==='left'?-1:1,10,dt);
   const side=first?0:(.65-this.aimBlend*.15)*this.shoulder;
   this.target.set(this.origin.x-Math.sin(this.yaw)*distance-Math.cos(this.yaw)*side,this.origin.y+Math.sin(this.pitch)*distance+(first?0:.55),this.origin.z-Math.cos(this.yaw)*distance+Math.sin(this.yaw)*side);
+  // The street is not a prop collider. Upward free look otherwise sends the
+  // chase boom below it, especially behind vehicles with their longer boom.
+  if(!first)this.target.y=Math.max(.28,this.target.y);
   const nearby=(a,b)=>(sim.obstacles?collisionCandidates(sim,a,b,.24):sim.props).filter(o=>!p.vehicleId||o.id!==p.vehicleId),clear=cameraClearance(this.origin,this.target,nearby(this.origin,this.target));
   // Retract immediately to avoid clipping; ease only the return out of cover.
   this.clearance=clear<this.clearance?clear:initial?clear:damp(this.clearance,clear,6,dt);
@@ -46,6 +49,6 @@ export class ViewRig{
   this.hands.translateY(-(1.23*scale+.34)+aim*.035-wall*.15+Math.sin(phase*2)*walk*.012*motion+this.swayY*motion);
   this.hands.translateZ(-.80+wall*.20);this.hands.rotateY(Math.PI);this.hands.rotateX(wall*.38);this.hands.scale.setScalar(scale);
  }
- renderHands(renderer){if(!this.hands?.visible)return;const auto=renderer.autoClear;renderer.autoClear=false;renderer.clearDepth();renderer.render(this.handsScene,this.camera);renderer.autoClear=auto;}
+ renderHands(renderer){if(!this.hands?.visible)return;const auto=renderer.autoClear;renderer.autoClear=false;try{renderer.clearDepth();renderer.render(this.handsScene,this.camera);}finally{renderer.autoClear=auto;}}
  aim(player,sim){if(!sim)return{x:player.x+Math.sin(this.yaw)*20,z:player.z+Math.cos(this.yaw)*20};const origin=this.ready?this.camera.position:{x:player.x,y:(player.y||0)+1.55,z:player.z};const aim=perspectiveTarget(origin,this.yaw,this.pitch,sim.obstacles||sim.props,sim.enemies);this.aimTarget=aim;return aim;}
 }

@@ -35,4 +35,4 @@ export function deathMotion(variant,twist=0){
  return {...poses[variant%poses.length],twist};
 }
 
-export function grenadePosition(h){const age=h.duration-h.timer,u=Math.max(0,Math.min(1,age/h.flight));return {x:h.originX+(h.x-h.originX)*u,z:h.originZ+(h.z-h.originZ)*u,y:.16+1.2*(1-u)+5.5*u*(1-u)+(u===1?Math.abs(Math.sin((age-h.flight)*22))*.13:0)};}
+export function grenadePosition(h){if(h.projectile)return {x:h.projectile.x,y:h.projectile.y,z:h.projectile.z};const age=h.duration-h.timer,u=Math.max(0,Math.min(1,age/h.flight));return {x:h.originX+(h.x-h.originX)*u,z:h.originZ+(h.z-h.originZ)*u,y:.16+1.2*(1-u)+5.5*u*(1-u)+(u===1?Math.abs(Math.sin((age-h.flight)*22))*.13:0)};}

@@ -5,6 +5,7 @@ import {seededRandom,pointBlocked} from './config.js';
 import {roadDistance,withinBoundary} from './CityTopology.js';
 import {DENSITY} from './DisplaySettings.js';
 import {waterAt} from './City.js';
+import {uploadActiveInstances} from './RenderBatch.js';
 const assets=new Map();
 export function cityAsset(name){if(!assets.has(name))assets.set(name,new T.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}art/${name}`).then(t=>{t.colorSpace=T.SRGBColorSpace;t.minFilter=T.LinearMipmapLinearFilter;t.magFilter=T.LinearFilter;t.generateMipmaps=true;t.anisotropy=4;t.userData.shared=true;return t;}).catch(error=>{assets.delete(name);throw error;}));return assets.get(name);}
 const cells={plaster:[0,.5],brick:[.5,.5],slate:[0,0],roof:[0,0],paving:[.5,0]};
@@ -44,11 +45,11 @@ export class CityArt{
  buildSprites(atlas){this.lastUpdate=-1;const w=this.world;for(let tile=0;tile<8;tile++){
    const items=this.plan.filter(p=>p.tile===tile);if(!items.length)continue;const map=atlas.clone();map.repeat.set(.25,.5);map.offset.set((tile%4)*.25,tile<4?.5:0);map.needsUpdate=true;map.userData.shared=false;
    const material=new T.MeshStandardMaterial({map,alphaTest:.35,transparent:false,side:T.DoubleSide,roughness:1,color:0xffffff});material.onBeforeCompile=shader=>{shader.uniforms.cityWind=this.clock;shader.vertexShader='uniform float cityWind;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.x+=sin(cityWind*1.3+instanceMatrix[3].x*.7)*.025*uv.y;');};material.customProgramCacheKey=()=> 'city-foliage-wind-v1';if([2,3,4,5].includes(tile))applyCutaway(material,w.cutaway.uniforms);
-   const geo=new T.PlaneGeometry(1,1);geo.translate(0,.5,0);const mesh=new T.InstancedMesh(geo,material,items.length);mesh.frustumCulled=false;mesh.receiveShadow=true;w.scene.add(mesh);this.groups.push({mesh,items});
+   const geo=new T.PlaneGeometry(1,1);geo.translate(0,.5,0);const mesh=new T.InstancedMesh(geo,material,items.length);mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);mesh.count=0;mesh.frustumCulled=false;mesh.receiveShadow=true;w.scene.add(mesh);this.groups.push({mesh,items});
   }this.wallRotation=new T.Quaternion();this.matrix=new T.Matrix4();this.position=new T.Vector3();this.scale=new T.Vector3();
  }
  update(dt,player,camera,time){this.clock.value+=this.world.settings.reducedMotion?0:dt;if(time-this.lastUpdate<.1&&this.lastUpdate>=0)return;this.lastUpdate=time;
-  for(const {mesh,items}of this.groups){items.forEach((p,i)=>{const density=DENSITY[this.world.settings.foliageDetail]??.65,owner=p.owner&&this.world.buildingMeshes.get(p.owner),visible=(i%20)/20<density&&Math.hypot(p.x-player.x,p.z-player.z)<62&&(!owner||(!owner.userData.collapsed));this.position.set(p.x,p.y-p.h*.09,p.z);this.scale.set(visible?p.h*.5:0,visible?p.h:0,1);this.matrix.compose(this.position,p.owner&&[2,3].includes(p.tile)?this.wallRotation:camera.quaternion,this.scale);mesh.setMatrixAt(i,this.matrix);});mesh.instanceMatrix.needsUpdate=true;}
+  for(const {mesh,items}of this.groups){let count=0;const density=DENSITY[this.world.settings.foliageDetail]??.65;items.forEach((p,i)=>{const owner=p.owner&&this.world.buildingMeshes.get(p.owner);if((i%20)/20>=density||Math.hypot(p.x-player.x,p.z-player.z)>=62||owner?.userData.collapsed)return;this.position.set(p.x,p.y-p.h*.09,p.z);this.scale.set(p.h*.5,p.h,1);this.matrix.compose(this.position,p.owner&&[2,3].includes(p.tile)?this.wallRotation:camera.quaternion,this.scale);mesh.setMatrixAt(count++,this.matrix);});mesh.count=count;mesh.visible=count>0;uploadActiveInstances(mesh);}
  }
  dispose(){this.alive=false;for(const {mesh}of this.groups){mesh.removeFromParent();mesh.geometry.dispose();mesh.dispose();mesh.material.map.dispose();mesh.material.dispose();}this.groups=[];}
 }

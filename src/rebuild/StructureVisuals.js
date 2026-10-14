@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {fragmentGeometry} from './Effects.js';
+import {uploadActiveInstances} from './RenderBatch.js';
 
 export class StructureVisuals{
  constructor(scene){this.scene=scene;this.batches=new Map();this.transform=new T.Object3D();
@@ -17,7 +18,7 @@ export class StructureVisuals{
    if(batch.count>=1024)continue;
    const o=this.transform;o.position.set(p.x,p.y,p.z);o.rotation.set(p.rx,p.ry,p.rz);o.scale.set(p.w,p.h,p.d);o.updateMatrix();batch.setMatrixAt(batch.count++,o.matrix);
   }
-  for(const b of this.batches.values()){b.instanceMatrix.needsUpdate=true;b.visible=b.count>0;}
+  for(const b of this.batches.values()){uploadActiveInstances(b);b.visible=b.count>0;}
  }
- dispose(){for(const b of this.batches.values()){b.removeFromParent();b.geometry.dispose();b.material.dispose();}this.batches.clear();this.aggregate.dispose();}
+ dispose(){for(const b of this.batches.values()){b.removeFromParent();b.geometry.dispose();b.material.dispose();b.dispose();}this.batches.clear();this.aggregate.dispose();}
 }

@@ -1,4 +1,5 @@
 import {goreProfile,goreSettings} from './Gore.js';
+import {collisionCandidates} from './SpatialIndex.js';
 import {renderPixelRatio} from './DesktopProfile.js';
 import {focusDivePose} from './BulletTime.js';
 import {WeatherVisuals} from './WeatherVisuals.js';
@@ -630,7 +631,7 @@ export class World {
         else if(landed&&e.kind==='gib'&&!e.bled){this.decal(e.mesh.position.x,e.mesh.position.z,.12+this.random()*.14);e.bled=true;}
         else if(landed&&e.kind==='blood'){if(this.random()<.25)this.decal(e.mesh.position.x,e.mesh.position.z,.06+this.random()*.08);e.life=0;}
         if(['material','casing'].includes(e.kind)&&Math.hypot(e.vx,e.vz)>1){
-          const hit=sim.obstacles.find(o=>e.mesh.position.y<(o.kind==='building'?o.h||5:1.5)&&segmentBoxTime(old,e.mesh.position,o)!==null);
+          const hit=collisionCandidates(sim,old,e.mesh.position).find(o=>e.mesh.position.y<(o.kind==='building'?o.h||5:1.5)&&segmentBoxTime(old,e.mesh.position,o)!==null);
           if(hit){const normal=boxNormal(old,hit);Object.assign(e,reflectVelocity(e,normal,.3));e.mesh.position.x=old.x+normal.x*.025;e.mesh.position.z=old.z+normal.z*.025;}
         }
         if(e.kind==='streak'){e.mesh.material.opacity=Math.max(0,e.life/e.max);e.mesh.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),new T.Vector3(e.vx,e.vy,e.vz).normalize());}

@@ -1,3 +1,4 @@
+import {advanceThrowable} from './ThrowableFlight.js';
 import {boxHit3D,bodyHit3D,actorHeight,propHeight} from './Ballistics.js';
 import {SpatialIndex,collisionCandidates} from './SpatialIndex.js';
 import {createFocus,stepFocus,endFocus,rewardFocus,beginFocusDive,FOCUS} from './BulletTime.js';
@@ -41,7 +42,7 @@ export class Simulation {
   resume() { if (this.state === 'paused') this.state = this.previousState; }
   nextWave() {
     this.wave++;this.state='playing';const p=this.player;p.shield=Math.max(p.shield,p.waveShield||0);if(this.wave>1)p.grenades+=p.waveGrenades||0;const vehicle=this.props.find(v=>v.id===p.vehicleId);if(vehicle)vehicle.health=Math.min(vehicle.maxHealth,vehicle.health+vehicle.maxHealth*(p.vehicleRepair||0));const district=Math.floor((this.wave-1)/4);
-    if(district!==this.district&&!this.layout.city){this.district=district;this.player.x=0;this.player.z=3;this.layout=generateMap(this.seed,district);this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.navigation.clear();this.pickups=[];this.fires=[];this.structures=[];this.rubblePiles=new Map();this.wetGround=[];this.emit('district',{district});}
+    if(district!==this.district&&!this.layout.city){this.district=district;this.player.vehicleId=null;this.player.radius=.4;this.player.x=0;this.player.z=3;this.layout=generateMap(this.seed,district);this.props=this.layout.cover.map((o,i)=>({...o,id:`prop-${i}`,health:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind],maxHealth:o.driveable?vehicleSpec(o).health:PROP_HEALTH[o.kind]}));this.obstacles=this.props;this.navigation.clear();this.pickups=[];this.fires=[];this.structures=[];this.rubblePiles=new Map();this.wetGround=[];this.emit('district',{district});}
     this.toSpawn=this.wave%4===0?Math.min(12,6+district*2):12+(this.wave-1)*3;
     this.waveBaseCount=this.toSpawn;this.nightReinforced=false;this.spawnTimer=1;this.waveKills=0;this.waveTotal=this.toSpawn+(this.wave%4===0?1:0);
     if(this.layout.city)this.district=district;
@@ -224,6 +225,7 @@ export class Simulation {
     this.updateBullets(dt);
     for (const h of this.hazards) {
       if(h.bossOwner){const owner=this.enemies.find(e=>e.id===h.bossOwner);if(!owner||owner.health<=0||owner.phasePending||owner.bossState==='transition'){h.done=true;continue;}}
+      if(h.thrown)advanceThrowable(this,h,dt);
       h.timer -= dt;
       if (h.timer <= 0 && !h.done) { h.done = true; if (h.friendly) { if(h.throwable)detonateThrowable(this,h);else this.blast(h.x,h.z,h.radius,h.damage,'explosion',h.source||'grenade',h.weapon,h.tier||0);if(h.environment&&distance(p,h)<h.radius)this.damagePlayer(h.damage*.3); } else { if(!h.charge){this.emit('slam', h);if(h.bossOwner?bossContains(h,p):distance(p,h)<h.radius+p.radius)this.damagePlayer(h.damage);} } }
     }
@@ -281,8 +283,13 @@ export class Simulation {
   }
   interactVehicle(){
     const p=this.player;
-    if(p.vehicleId){const v=this.props.find(v=>v.id===p.vehicleId);if(!v)return false;if(Math.abs(v.speed||0)>1.5){this.emit('vehicle',{message:'BRAKE TO EXIT'});return false;}for(let i=0;i<12;i++){const a=v.angle+Math.PI/2+i*Math.PI/6,x=v.x+Math.sin(a)*3.4,z=v.z+Math.cos(a)*3.4;if(insideMap(this.layout,x,z,.5)&&!pointBlocked(x,z,.5,this.obstacles)){p.vehicleId=null;p.radius=.4;p.x=x;p.z=z;v.speed=0;v.vx=v.vz=0;this.emit('vehicle',{message:'ON FOOT'});return true;}}this.emit('vehicle',{message:'EXIT BLOCKED · MOVE TO CLEAR GROUND'});return false;}
-    const v=this.props.filter(v=>v.driveable&&v.health>0&&distance(v,p)<5).sort((a,b)=>distance(a,p)-distance(b,p))[0];if(!v)return false;
+    // An interaction must have a clear walking path, not merely a clear end
+    // point. Ignore the occupied vehicle itself, but never step through walls.
+    const accessible=(from,to,vehicle)=>segmentInMap(this.layout,from,to,.4)&&!lineBlocked(from,to,.4,this.obstacles.filter(o=>o!==vehicle));
+    if(p.vehicleId){const v=this.props.find(v=>v.id===p.vehicleId);if(!v)return false;if(Math.abs(v.speed||0)>1.5){this.emit('vehicle',{message:'BRAKE TO EXIT'});return false;}for(let i=0;i<12;i++){const a=v.angle+Math.PI/2+i*Math.PI/6,x=v.x+Math.sin(a)*3.4,z=v.z+Math.cos(a)*3.4;
+      const dry=[[0,0],[.45,0],[-.45,0],[0,.45],[0,-.45]].every(([dx,dz])=>!waterAt(this.layout,x+dx,z+dz));
+      if(dry&&insideMap(this.layout,x,z,.5)&&!pointBlocked(x,z,.5,this.obstacles)&&accessible(v,{x,z},v)){p.vehicleId=null;p.radius=.4;p.x=x;p.z=z;v.speed=0;v.vx=v.vz=0;this.emit('vehicle',{message:'ON FOOT'});return true;}}this.emit('vehicle',{message:'EXIT BLOCKED · MOVE TO CLEAR GROUND'});return false;}
+    const v=this.props.filter(v=>v.driveable&&v.health>0&&distance(v,p)<5&&accessible(p,v,v)).sort((a,b)=>distance(a,p)-distance(b,p))[0];if(!v)return false;
     p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;p.vehicleId=v.id;p.radius=1.25;v.angle=v.angle??0;v.speed=0;v.vx=v.vz=0;v.reverseHold=0;p.x=v.x;p.z=v.z;this.emit('vehicle',{message:`${v.vehicleName} · DRIVING CONTROLS ON HUD`});return true;
   }
   drive(dt,mx,mz,input){driveVehicle(this,dt,mx,mz,input);}

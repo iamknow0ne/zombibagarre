@@ -1,6 +1,12 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 const materials=new Map();
+// Reserve capacity once, but upload only the matrices that the next draw uses.
+// Empty batches keep their last GPU data until they become visible again.
+export function uploadActiveInstances(mesh){
+ const attribute=mesh.instanceMatrix;attribute.clearUpdateRanges();
+ if(mesh.count>0){attribute.addUpdateRange(0,mesh.count*16);attribute.needsUpdate=true;}
+}
 // Merge rigid, untextured pieces using vertex colours. Animated joints and
 // independently removable head/limb groups remain separate scene nodes.
 export function batchRigid(parent){
@@ -40,7 +46,7 @@ export class CharacterInstances{
    root.updateWorldMatrix(true,true);
    for(const {mesh,batch}of entry.parts){let visible=true;for(let p=mesh;p;p=p.parent)if(!p.visible){visible=false;break;}if(!visible||batch.count>=512)continue;batch.setMatrixAt(batch.count++,mesh.matrixWorld);}
   }
-  for(const b of this.batches.values()){b.visible=b.count>0;b.castShadow=quality==='high'&&b.userData.fullShadow;b.instanceMatrix.needsUpdate=true;}
+  for(const b of this.batches.values()){b.visible=b.count>0;b.castShadow=quality==='high'&&b.userData.fullShadow;uploadActiveInstances(b);}
  }
  dispose(){for(const {parts}of this.actors.values())for(const {mesh}of parts)mesh.layers.enable(0);for(const b of this.batches.values()){b.removeFromParent();b.geometry.dispose();b.dispose();}this.batches.clear();this.actors.clear();}
 }

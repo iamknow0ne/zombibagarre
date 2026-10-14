@@ -10,8 +10,8 @@ export function throwableMesh(key='frag'){
  g.userData.throwable=key;return g;
 }
 export function ordnanceBurst(world,e){
- const fire=e.throwable==='molotov',frost=e.throwable==='frost';
- if(fire){debris(world,{x:e.x,z:e.z,y:.35,material:'glass',count:16,power:5,scale:.28});world.flame(e.x,e.z,12,.3,null,true);world.smoke(e.x,e.z,5,.4,0x766856);}
- else{world.smoke(e.x,e.z,frost?10:3,.3,frost?0xcce4e8:0x779ca5);if(frost)debris(world,{x:e.x,z:e.z,y:.4,material:'glass',count:18,power:5,scale:.24});else world.effect(e.x,e.z,e.color,24,5);for(let i=0;i<(frost?0:7);i++){const a=i/7*Math.PI*2;world.lightning({x:e.x,z:e.z,toX:e.x+Math.sin(a)*e.radius,toZ:e.z+Math.cos(a)*e.radius,tier:1,y:.3,toY:.2});}}
- const ring=world.ring(e.radius,e.color,.035);ring.position.set(e.x,.12,e.z);world.scene.add(ring);world.effects.push({mesh:ring,life:.4,max:.4,ring:true});world.shake=Math.max(world.shake,fire?.12:.08);
+ const fire=e.throwable==='molotov',frost=e.throwable==='frost',y=e.y||0;
+ if(fire){debris(world,{x:e.x,z:e.z,y:y+.2,material:'glass',count:16,power:5,scale:.28});world.flame(e.x,e.z,12,y+.15,null,true);world.smoke(e.x,e.z,5,y+.2,0x766856);}
+ else{world.smoke(e.x,e.z,frost?10:3,y+.15,frost?0xcce4e8:0x779ca5);if(frost)debris(world,{x:e.x,z:e.z,y:y+.2,material:'glass',count:18,power:5,scale:.24});else world.effect(e.x,e.z,e.color,24,5,'spark',y+.15);for(let i=0;i<(frost?0:7);i++){const a=i/7*Math.PI*2;world.lightning({x:e.x,z:e.z,toX:e.x+Math.sin(a)*e.radius,toZ:e.z+Math.cos(a)*e.radius,tier:1,y:y+.15,toY:y+.05});}}
+ const ring=world.ring(e.radius,e.color,.035);ring.position.set(e.x,y+.05,e.z);world.scene.add(ring);world.effects.push({mesh:ring,life:.4,max:.4,ring:true});world.shake=Math.max(world.shake,fire?.12:.08);
 }

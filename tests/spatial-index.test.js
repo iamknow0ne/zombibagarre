@@ -14,3 +14,11 @@ test('moving vehicles, destroyed geometry and replaced worlds never leave stale 
 test('broad phase materially reduces city-sized local queries without changing combat obstruction',()=>{
  const s=new Simulation({mode:'city',seed:20261012}),a={x:0,z:3},b={x:10,z:8};const local=collisionCandidates(s,a,b);assert.ok(local.length<s.obstacles.length*.3);assert.equal(lineBlocked(a,b,.5,collisionCandidates(s,a,b,.5)),lineBlocked(a,b,.5,s.obstacles));
 });
+
+test('debris broad phase preserves first wall contact, height filtering and moved vehicle hits',()=>{
+ const sim=new Simulation({mode:'city',seed:20261012}),r=seededRandom(442);
+ const contact=(a,b,items)=>items.find(o=>b.y<(o.kind==='building'?o.h||5:1.5)&&segmentBoxTime(a,b,o)!==null);
+ for(let i=0;i<2000;i++){const obstacle=sim.obstacles[Math.floor(r()*sim.obstacles.length)],a={x:obstacle.x+(r()-.5)*30,z:obstacle.z+(r()-.5)*30},b={x:a.x+(r()-.5)*3,y:r()*15,z:a.z+(r()-.5)*3};assert.equal(contact(a,b,collisionCandidates(sim,a,b)),contact(a,b,sim.obstacles));}
+ const vehicle=sim.obstacles.find(o=>o.driveable);assert.ok(vehicle);vehicle.x=1000;vehicle.z=-1000;
+ const a={x:1000,z:-1005},b={x:1000,y:.3,z:-995};assert.equal(contact(a,b,collisionCandidates(sim,a,b)),vehicle);
+});

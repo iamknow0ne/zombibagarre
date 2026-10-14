@@ -18,3 +18,18 @@ test('animation direction blends reversals while controls stay immediate; pause 
 test('adding precision aim preserves custom legacy controller bindings without duplicates',()=>{const old=rebind(BINDINGS,'grenade',13);delete old.aim;const migrated=controlSettings({bindings:old}).bindings;for(const [key,value]of Object.entries(old))assert.equal(migrated[key],value);assert.equal(new Set(Object.values(migrated)).size,Object.keys(BINDINGS).length);});
 test('mouse aim and fire chords release independently and clear on focus loss',()=>{const i=Object.create(Input.prototype);Object.assign(i,{perspective:true,keys:new Set()});i.mouseButton(2,true);i.mouseButton(0,true);assert.equal(i.aimHeld,true);assert.equal(i.firing,true);i.mouseButton(0,false);assert.equal(i.aimHeld,true);assert.equal(i.firing,false);i.mouseButton(2,false);assert.equal(i.aimHeld,false);i.mouseButton(0,true);i.clear();assert.equal(i.firing,false);assert.equal(i.aimHeld,false);});
 test('first-person rigs exclude shoulder armour and scale down in narrow portrait viewports',()=>{const rig=new ViewRig(),p=new T.Group(),arm=new T.Group(),shoulder=new T.Group(),elbow=new T.Group(),forearm=new T.Mesh(new T.BoxGeometry(),new T.MeshStandardMaterial());arm.add(shoulder,elbow);elbow.add(forearm);arm.userData.elbow=elbow;p.add(arm);p.userData.arms=[arm];rig.active=true;rig.mode='first';rig.camera.aspect=16/9;const sim={player:{equipped:['carbine']},state:'playing'},scene=new T.Scene();rig.syncHands(p,sim,scene);const landscape=rig.hands.scale.x;assert.ok(!rig.pairs.some(([source])=>source===shoulder));assert.ok(rig.pairs.some(([source])=>source===forearm));rig.camera.aspect=390/844;rig.syncHands(p,sim,scene);assert.ok(rig.hands.scale.x<landscape*.7);assert.equal(shoulder.visible,true,'world character armour must remain visible');});
+
+test('looking upward never puts the chase camera below the street, including while driving',()=>{
+ for(const vehicle of [false,true]){const sim=simple(),rig=new ViewRig();rig.setMode('third');rig.pitch=-.95;
+  if(vehicle){sim.player.vehicleId='car';sim.props=[{id:'car',kind:'car',x:0,z:0,w:2,d:4,health:100}];sim.obstacles=sim.props;}
+  for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5]){sim.player.angle=angle;rig.ready=false;rig.update(sim,16/9,1/60);assert.ok(rig.camera.position.y>=.28-1e-9);const direction=new T.Vector3();rig.camera.getWorldDirection(direction);assert.ok(direction.y>0,'upward free look must remain available');}
+ }
+ const sim=simple(),rig=new ViewRig();sim.player.y=12;rig.setMode('third');rig.pitch=-.95;rig.update(sim,16/9,1/60);assert.ok(rig.camera.position.y>10&&rig.camera.position.y<sim.player.y,'an elevated camera can still descend behind the player');
+ rig.setMode('first');rig.update(sim,16/9,1/60);assert.equal(rig.camera.position.y,13.55);
+});
+
+test('weapon-overlay render errors restore the world clear state',()=>{
+ const rig=new ViewRig();rig.hands={visible:true};const renderer={autoClear:true,clearDepth(){},render(){throw Error('context lost');}};
+ assert.throws(()=>rig.renderHands(renderer),/context lost/);assert.equal(renderer.autoClear,true);
+ renderer.autoClear=false;assert.throws(()=>rig.renderHands(renderer),/context lost/);assert.equal(renderer.autoClear,false);
+});
