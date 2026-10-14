@@ -5,7 +5,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createRookMotionController} from '../../dev/RookMotionController.js';
 
-const bytes=await readFile(new URL('../../assets/characters/rook-prototype-v4.glb',import.meta.url));
+const bytes=await readFile(process.env.ROOK_TEST_MODEL||new URL('../../assets/characters/rook-prototype-v4.glb',import.meta.url));
 if(!globalThis.ProgressEvent)globalThis.ProgressEvent=class{};
 async function fixture(){
  const loader=new GLTFLoader();loader.register(parser=>{parser.loadImageSource=async()=>new T.DataTexture(new Uint8Array([255,255,255,255]),1,1);return{name:'NODE_TEST_IMAGE_PLACEHOLDER'};});

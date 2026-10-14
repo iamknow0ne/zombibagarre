@@ -12,6 +12,7 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
  if(!Number.isFinite(transitionDuration)||transitionDuration<0)throw new TypeError('Transition duration must be a nonnegative finite number.');
  let study=createRookMotionStudy(content),locomotion=createRookLocomotion(),bones=[],skins=[],source=null,weaponState=null,disposed=false,targetDiagnostics=null;
  content.traverse(o=>{if(o.isBone)bones.push(o);if(o.isSkinnedMesh)skins.push(o);});
+ let combatOptions={contact:false,direction:1};
  let selectedMode='bind',activeMode='bind',time=0,poseTime=0,blendTime=transitionDuration,fromMode='bind',demoIndex=0,demoStepTime=0;
  const requireLive=()=>{if(disposed)throw new Error('Rook motion controller is disposed.');};
  const snapshot=()=>bones.map(b=>({p:b.position.clone(),q:b.quaternion.clone(),s:b.scale.clone()}));
@@ -19,9 +20,9 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
  const modelQ=()=>content.getWorldQuaternion(new T.Quaternion());
  function localWeapon(){
   const p=study.getWeaponPose(),socket=study.getSocket('right');
-  return{q:modelQ().invert().multiply(p.quaternion),offset:p.position.clone().sub(socket.position).applyQuaternion(p.quaternion.clone().invert()),scale:p.scaleVector.clone(),opacity:p.visible?1:0,reload:p.reload};
+  return{weapon:p.weapon||'carbine',q:modelQ().invert().multiply(p.quaternion),offset:p.position.clone().sub(socket.position).applyQuaternion(p.quaternion.clone().invert()),scale:p.scaleVector.clone(),opacity:p.visible?1:0,reload:p.reload};
  }
- const copyWeapon=w=>({q:w.q.clone(),offset:w.offset.clone(),scale:w.scale.clone(),opacity:w.opacity,reload:w.reload});
+ const copyWeapon=w=>({weapon:w.weapon,q:w.q.clone(),offset:w.offset.clone(),scale:w.scale.clone(),opacity:w.opacity,reload:w.reload});
  const targetQuaternion=new T.Quaternion();
  refresh();weaponState=localWeapon();targetDiagnostics=study.diagnostics();
  function start(mode){
@@ -36,29 +37,31 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
  function sample(){
   if(activeMode==='bind'){study.reset();refresh();weaponState=localWeapon();targetDiagnostics=study.diagnostics();return;}
   const travel=selectedMode==='locomotion'?locomotion.frame():null;
-  study.pose(activeMode,poseTime,{locomotion:travel});targetDiagnostics=study.diagnostics();const targetWeapon=localWeapon();
+  study.pose(activeMode,poseTime,{locomotion:travel,...combatOptions});targetDiagnostics=study.diagnostics();const targetWeapon=localWeapon();
   const progress=transitionDuration===0?1:Math.min(1,blendTime/transitionDuration),weight=ease(progress);
   if(source&&progress<1){
    for(let i=0;i<bones.length;i++){const b=bones[i],from=source.bones[i];targetQuaternion.copy(b.quaternion);b.position.lerpVectors(from.p,b.position,weight);b.quaternion.slerpQuaternions(from.q,targetQuaternion,weight).normalize();b.scale.lerpVectors(from.s,b.scale,weight);}
    refresh();const before=source.weapon,w=copyWeapon(targetWeapon);w.q.slerpQuaternions(before.q,targetWeapon.q,weight);
-   if(before.opacity>0&&targetWeapon.opacity>0)w.offset.lerpVectors(before.offset,targetWeapon.offset,weight);
+   const switching=before.weapon!==targetWeapon.weapon;
+   if(switching){w.weapon=progress<.5?before.weapon:targetWeapon.weapon;w.offset.copy(progress<.5?before.offset:targetWeapon.offset);}
+   else if(before.opacity>0&&targetWeapon.opacity>0)w.offset.lerpVectors(before.offset,targetWeapon.offset,weight);
    else if(targetWeapon.opacity===0)w.offset.copy(before.offset);
-   w.scale.lerpVectors(before.scale,targetWeapon.scale,weight);w.reload=T.MathUtils.lerp(before.reload,targetWeapon.reload,weight);
+   if(switching)w.scale.copy(progress<.5?before.scale:targetWeapon.scale);else w.scale.lerpVectors(before.scale,targetWeapon.scale,weight);w.reload=T.MathUtils.lerp(before.reload,targetWeapon.reload,weight);
    // Unequipping hides the gun before the hands leave; equipping shows it only
    // near the incoming grip. Interrupted fades retain their actual opacity.
    const fade=targetWeapon.opacity===0?ease(progress/.35):before.opacity<1?ease((progress-.65)/.35):weight;
-   w.opacity=T.MathUtils.lerp(before.opacity,targetWeapon.opacity,fade);weaponState=w;
+   w.opacity=switching?(progress<.5?before.opacity*(1-ease(progress/.35)):targetWeapon.opacity*ease((progress-.65)/.35)):T.MathUtils.lerp(before.opacity,targetWeapon.opacity,fade);weaponState=w;
   }else{source=null;weaponState=targetWeapon;refresh();}
   // Correct feet after the visual crossfade as well as in the settled sampler;
   // interpolation alone would pull planted feet away from their ground anchors.
-  if(travel){study.applyLocomotionFeet(travel);targetDiagnostics.footContacts=study.diagnostics().footContacts;}
+  const footPlan=travel||targetDiagnostics.combat;if(footPlan){study.applyLocomotionFeet(footPlan);targetDiagnostics.footContacts=study.diagnostics().footContacts;}
  }
- function advance(dt){poseTime+=dt;blendTime+=dt;sample();}
+ function advance(dt){poseTime+=dt;const spec=ROOK_MOTION_MODES.find(m=>m.id===activeMode);if(spec?.once)poseTime=Math.min(poseTime,spec.duration);blendTime+=dt;sample();}
  function update(dt=0){
   requireLive();if(!Number.isFinite(dt)||dt<0)throw new TypeError('Motion delta must be a nonnegative finite number.');
   if(selectedMode==='demo')dt=Math.min(dt,Math.max(0,DEMO_DURATION-time));
   if(dt===0){refresh();return diagnostics();}
-  time+=dt;
+  time+=dt;const spec=ROOK_MOTION_MODES.find(m=>m.id===selectedMode);if(spec?.once)time=Math.min(time,spec.duration);
   if(selectedMode==='locomotion'){locomotion.update(dt);advance(dt);return diagnostics();}
   if(selectedMode!=='demo'){advance(dt);return diagnostics();}
   let remaining=dt;
@@ -71,7 +74,7 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
  }
  function seek(value){
   requireLive();if(!Number.isFinite(value)||value<0)throw new TypeError('Motion seek time must be a nonnegative finite number.');
-  if(selectedMode==='demo')value=Math.min(value,DEMO_DURATION);
+  if(selectedMode==='demo')value=Math.min(value,DEMO_DURATION);const spec=ROOK_MOTION_MODES.find(m=>m.id===selectedMode);if(spec?.once)value=Math.min(value,spec.duration);
   if(selectedMode==='bind'){time=0;sample();return diagnostics();}
   if(selectedMode==='demo'){
    // Inspection seeks intentionally settle the active pose rather than showing
@@ -83,11 +86,12 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
  }
  function getWeaponPose(){
   requireLive();refresh();const q=modelQ().multiply(weaponState.q),wrist=study.getSocket('right').position;
-  return{position:wrist.add(weaponState.offset.clone().applyQuaternion(q)),quaternion:q,scaleVector:weaponState.scale.clone(),visible:weaponState.opacity>1e-4,opacity:weaponState.opacity,reload:weaponState.reload};
+  return{weapon:weaponState.weapon,position:wrist.add(weaponState.offset.clone().applyQuaternion(q)),quaternion:q,scaleVector:weaponState.scale.clone(),visible:weaponState.opacity>1e-4,opacity:weaponState.opacity,reload:weaponState.reload};
  }
  function getSocket(side){requireLive();refresh();return study.getSocket(side);}
  function setLocomotion(input){requireLive();return locomotion.set(input);}
- function getTravelPose(){requireLive();const p=selectedMode==='locomotion'?locomotion.frame().position:{x:0,z:0};return new T.Vector3(p.x,0,p.z);}
+ function setCombat(options={}){requireLive();const next={...combatOptions,...options};if(typeof next.contact!=='boolean'||![1,-1].includes(next.direction))throw new TypeError('Combat contact must be boolean and direction must be +1 or -1.');combatOptions=next;return{...combatOptions};}
+ function getTravelPose(){requireLive();const p=selectedMode==='locomotion'?locomotion.frame().position:targetDiagnostics?.combat?.travel||{x:0,z:0};return new T.Vector3(p.x,0,p.z);}
  function reset(){
   requireLive();study.reset();refresh();selectedMode=activeMode=fromMode='bind';time=poseTime=0;blendTime=transitionDuration;demoIndex=demoStepTime=0;source=null;weaponState=localWeapon();targetDiagnostics=study.diagnostics();locomotion.reset();return diagnostics();
  }
@@ -96,5 +100,5 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
   return{...(targetDiagnostics||{}),reachErrorScope:'settled target sample; not a claim about blended hand contacts',mode:activeMode,selectedMode,time,poseTime,demoTime:selectedMode==='demo'?time:undefined,locomotion:selectedMode==='locomotion'?locomotion?.frame():undefined,duration:ROOK_CONTROLLER_MODES.find(m=>m.id===selectedMode)?.duration||0,transition:{active:!!source&&progress<1,progress,duration:transitionDuration,from:fromMode,to:activeMode},demoComplete:selectedMode==='demo'&&time>=DEMO_DURATION,disposed,bones:bones.length};
  }
  function dispose(){if(disposed)return;reset();disposed=true;source=weaponState=study=content=targetDiagnostics=locomotion=null;bones=[];skins=[];}
- return{modes:ROOK_CONTROLLER_MODES,select,update,seek,reset,dispose,getWeaponPose,getSocket,setLocomotion,getTravelPose,diagnostics};
+ return{modes:ROOK_CONTROLLER_MODES,select,update,seek,reset,dispose,getWeaponPose,getSocket,setLocomotion,setCombat,getTravelPose,diagnostics};
 }

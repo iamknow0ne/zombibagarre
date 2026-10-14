@@ -5,7 +5,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createRookMotionController} from '../../dev/RookMotionController.js';
 import {createRookLocomotion} from '../../dev/RookLocomotion.js';
-const bytes=await readFile(new URL('../../assets/characters/rook-prototype-v4.glb',import.meta.url));
+const bytes=await readFile(process.env.ROOK_TEST_MODEL||new URL('../../assets/characters/rook-prototype-v4.glb',import.meta.url));
 if(!globalThis.ProgressEvent)globalThis.ProgressEvent=class{};
 async function fixture(){const loader=new GLTFLoader();loader.register(p=>{p.loadImageSource=async()=>new T.DataTexture(new Uint8Array([255,255,255,255]),1,1);return{name:'NODE_PLACEHOLDER_IMAGES'};});const{scene}=await loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');const travelRoot=new T.Group();travelRoot.add(scene);const c=createRookMotionController(scene);return{scene,travelRoot,c,dispose(){c.dispose();const g=new Set(),m=new Set(),t=new Set(),s=new Set();scene.traverse(o=>{if(o.geometry)g.add(o.geometry);if(o.skeleton)s.add(o.skeleton);for(const mat of [].concat(o.material||[])){m.add(mat);for(const v of Object.values(mat))if(v?.isTexture)t.add(v);}});g.forEach(x=>x.dispose());m.forEach(x=>x.dispose());t.forEach(x=>x.dispose());s.forEach(x=>x.dispose());}};}
 function near(a,b,tol=1e-7){assert.ok(Math.abs(a-b)<tol,`${a} vs ${b}, tolerance ${tol}`);}

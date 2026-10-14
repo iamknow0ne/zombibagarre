@@ -5,8 +5,8 @@ import {createRookMotionController} from './RookMotionController.js';
 import {createWeaponMesh} from '../src/rebuild/WeaponModels.js';
 import {disposeObjectResources} from '../src/rebuild/ResourceDisposal.js';
 
-const $=id=>document.getElementById(id),models={v4:new URL('../assets/characters/rook-prototype-v4.glb',import.meta.url),v3:new URL('../assets/characters/rook-prototype-v3.glb',import.meta.url),v1:new URL('../assets/characters/rook-prototype-v1.glb',import.meta.url),v2:new URL('../assets/characters/rook-prototype-v2.glb',import.meta.url)},motion=matchMedia('(prefers-reduced-motion: reduce)');
-let motionStudy,studyMode=null,studyTime=0,studyWeapon,weaponMaterials=[],renderer,controls,mixer,content,action,clips=[],playing=false,turning=false,disposed=false,contextLost=false,loadRevision=0,raf=0,last=0,lastReport=0,height=1.8,width=.8,direction='front',normalMaterial;
+const $=id=>document.getElementById(id),models={v5:new URL('../assets/characters/rook-prototype-v5.glb',import.meta.url),v4:new URL('../assets/characters/rook-prototype-v4.glb',import.meta.url),v3:new URL('../assets/characters/rook-prototype-v3.glb',import.meta.url),v1:new URL('../assets/characters/rook-prototype-v1.glb',import.meta.url),v2:new URL('../assets/characters/rook-prototype-v2.glb',import.meta.url)},motion=matchMedia('(prefers-reduced-motion: reduce)');
+let motionStudy,studyMode=null,studyTime=0,studyWeapon,weaponKey=null,weaponMaterials=[],renderer,controls,mixer,content,action,clips=[],playing=false,turning=false,disposed=false,contextLost=false,loadRevision=0,raf=0,last=0,lastReport=0,height=1.8,width=.8,direction='front',normalMaterial;
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(38,1,.02,100),travelRoot=new T.Group(),pivot=new T.Group(),originalMaterials=new Map();scene.background=new T.Color(0x243332);scene.add(travelRoot);travelRoot.add(pivot);
 const floorGeometry=new T.PlaneGeometry(40,40),floorMaterial=new T.MeshStandardMaterial({color:0x293a38,roughness:1}),floor=new T.Mesh(floorGeometry,floorMaterial);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;floor.position.y=-.012;scene.add(floor);
 const travelGrid=new T.GridHelper(100,100,0x7b8979,0x425450);travelGrid.position.y=-.01;travelGrid.visible=false;scene.add(travelGrid);
@@ -28,23 +28,32 @@ function frameCamera(){
 }
 function resize(){if(!renderer)return;camera.aspect=innerWidth/innerHeight;renderer.setSize(innerWidth,innerHeight);frameCamera();}
 function disposeModel(root){if(!root)return;const geometries=new Set(),materials=new Set(),textures=new Set(),skeletons=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.skeleton)skeletons.add(o.skeleton);for(const material of [].concat(originalMaterials.get(o)||o.material||[])){materials.add(material);for(const value of Object.values(material))if(value?.isTexture)textures.add(value);}});for(const geometry of geometries)geometry.dispose();for(const texture of textures)texture.dispose();for(const material of materials)if(material!==normalMaterial)material.dispose();for(const skeleton of skeletons)skeleton.dispose();root.removeFromParent();}
-function clearModel(){studyMode=null;placeTravel();motionStudy?.dispose();motionStudy=null;studyMode=null;studyTime=0;if(studyWeapon){disposeObjectResources(studyWeapon);studyWeapon.removeFromParent();studyWeapon=null;}weaponMaterials=[];if(mixer){mixer.stopAllAction();if(content)mixer.uncacheRoot(content);}mixer=null;action=null;disposeModel(content);content=null;originalMaterials.clear();clips=[];pivot.clear();playing=false;turning=false;syncButtons();}
+function clearModel(){studyMode=null;placeTravel();motionStudy?.dispose();motionStudy=null;studyMode=null;studyTime=0;if(studyWeapon){disposeObjectResources(studyWeapon);studyWeapon.removeFromParent();studyWeapon=null;}weaponKey=null;weaponMaterials=[];if(mixer){mixer.stopAllAction();if(content)mixer.uncacheRoot(content);}mixer=null;action=null;disposeModel(content);content=null;originalMaterials.clear();clips=[];pivot.clear();playing=false;turning=false;syncButtons();}
 function surfaceMode(){if(!content)return;const normal=$('surface').value==='normal';normalMaterial??=new T.MeshNormalMaterial();content.traverse(o=>{if(o.isMesh){if(!originalMaterials.has(o))originalMaterials.set(o,o.material);o.material=normal?normalMaterial:originalMaterials.get(o);}});}
 
 function travelInput(){
  const vectors={forward:[0,1],backward:[0,-1],left:[1,0],right:[-1,0],stop:[0,0]},[x,z]=vectors[$('travel-direction').value]||[0,0],speed=Number($('travel-speed').value);
  $('travel-speed-label').textContent=`${speed.toFixed(1)} m/s`;motionStudy?.setLocomotion({x,z,speed});
 }
+function combatInput(){motionStudy?.setCombat({contact:$('combat-contact').checked,direction:Number($('dodge-direction').value)});}
 function placeTravel(){
- const next=studyMode==='locomotion'?motionStudy.getTravelPose():new T.Vector3(),delta=next.clone().sub(travelRoot.position);
+ const next=studyMode?motionStudy.getTravelPose():new T.Vector3(),delta=next.clone().sub(travelRoot.position);
  travelRoot.position.copy(next);camera.position.add(delta);controls?.target.add(delta);key.position.add(delta);key.target.position.add(delta);fill.position.add(delta);fill.target.position.add(delta);
- floor.position.x=next.x;floor.position.z=next.z;travelGrid.position.x=Math.floor(next.x);travelGrid.position.z=Math.floor(next.z);travelGrid.visible=studyMode==='locomotion';travelRoot.updateMatrixWorld(true);
+ floor.position.x=next.x;floor.position.z=next.z;travelGrid.position.x=Math.floor(next.x);travelGrid.position.z=Math.floor(next.z);travelGrid.visible=['locomotion','dodge'].includes(studyMode);travelRoot.updateMatrixWorld(true);
 }
 
+function selectWeapon(key){
+ if(studyWeapon&&weaponKey===key)return;
+ if(studyWeapon){disposeObjectResources(studyWeapon);studyWeapon.removeFromParent();}
+ weaponKey=key;studyWeapon=createWeaponMesh(key,{batch(){}},0);studyWeapon.visible=false;scene.add(studyWeapon);
+ // Own fade materials; never mutate the game's shared weapon cache.
+ const copies=new Map();studyWeapon.traverse(o=>{if(!o.isMesh)return;const clone=m=>{if(!copies.has(m)){const c=m.clone();c.userData={...c.userData,shared:false};copies.set(m,c);}return copies.get(m);};o.material=Array.isArray(o.material)?o.material.map(clone):clone(o.material);});weaponMaterials=[...copies.values()];
+}
+function oneShot(){return studyMode==='demo'||motionStudy?.modes.find(m=>m.id===studyMode)?.once;}
 function renderStudy(){
  if(!motionStudy||!studyMode)return;
  placeTravel();
- const pose=motionStudy.getWeaponPose();studyWeapon.visible=pose.visible;
+ const pose=motionStudy.getWeaponPose();selectWeapon(pose.weapon||'carbine');studyWeapon.visible=pose.visible;
  for(const material of weaponMaterials){const opacity=pose.opacity??1,transparent=opacity<.999;
   if(material.transparent!==transparent){material.transparent=transparent;material.needsUpdate=true;}
   material.opacity=opacity;material.depthWrite=!transparent;
@@ -67,12 +76,12 @@ function selectClip(){
  if(!mixer)return;const value=$('clip').value;
  if(!studyMode||!value.startsWith('study:')){mixer.stopAllAction();motionStudy?.reset();}
  studyTime=0;studyMode=null;action=null;if(studyWeapon)studyWeapon.visible=false;
- if(value.startsWith('study:')){studyMode=value.slice(6);travelInput();motionStudy.select(studyMode);if(motion.matches)motionStudy.seek(0);$('timeline').max=motionStudy.modes.find(m=>m.id===studyMode).duration;renderStudy();}
+ if(value.startsWith('study:')){studyMode=value.slice(6);travelInput();combatInput();motionStudy.select(studyMode);if(motion.matches)motionStudy.seek(0);$('timeline').max=motionStudy.modes.find(m=>m.id===studyMode).duration;renderStudy();}
  else {const clip=value===''?null:clips[Number(value)];action=clip?mixer.clipAction(clip):null;if(action){action.reset();action.play();$('timeline').max=clip.duration;}mixer.update(0);}
- $('locomotion-controls').hidden=studyMode!=='locomotion';$('turntable').disabled=studyMode==='locomotion';if(studyMode==='locomotion'){turning=false;pivot.rotation.y=0;}placeTravel();frameCamera();
+ $('combat-controls').hidden=!motionStudy?.modes.find(m=>m.id===studyMode)?.combat;$('dodge-direction').hidden=studyMode!=='dodge';document.querySelector('label[for="dodge-direction"]').hidden=studyMode!=='dodge';document.querySelector('label[for="combat-contact"]').hidden=studyMode==='dodge';$('locomotion-controls').hidden=studyMode!=='locomotion';$('turntable').disabled=['locomotion','dodge'].includes(studyMode);if(['locomotion','dodge'].includes(studyMode)){turning=false;pivot.rotation.y=0;}placeTravel();frameCamera();
  $('timeline').value=0;$('time-label').textContent='0.00s';playing=!!(action||studyMode)&&!motion.matches;syncButtons();
 }
-function timelinePosition(time){const duration=Number($('timeline').max);return studyMode==='demo'?Math.min(duration,Math.max(0,time)):time%duration;}
+function timelinePosition(time){const duration=Number($('timeline').max);return oneShot()?Math.min(duration,Math.max(0,time)):time%duration;}
 function seek(time){
  playing=false;studyTime=time;if(studyMode){motionStudy.seek(time);renderStudy();}else if(action){action.time=time;mixer.update(0);}
  $('timeline').value=timelinePosition(time);$('time-label').textContent=`${(timelinePosition(time)).toFixed(2)}s`;syncButtons();
@@ -86,23 +95,22 @@ async function loadModel(){
   const placement=new T.Group();placement.position.set(-center.x,-bounds.min.y,-center.z);placement.add(content);pivot.add(placement);pivot.rotation.set(0,0,0);
   let meshes=0,bones=0;content.traverse(o=>{if(o.isMesh){o.castShadow=o.receiveShadow=true;if(o.isSkinnedMesh)o.frustumCulled=false;meshes++;}if(o.isBone)bones++;});
   clips=gltf.animations||[];mixer=new T.AnimationMixer(content);motionStudy=createRookMotionController(content);
-  studyWeapon=createWeaponMesh('carbine',{batch(){}},0);studyWeapon.visible=false;scene.add(studyWeapon);
-  // Fade only review-owned clones; the game's shared weapon material cache is immutable.
-  const copies=new Map();studyWeapon.traverse(o=>{if(!o.isMesh)return;const clone=m=>{if(!copies.has(m)){const c=m.clone();c.userData={...c.userData,shared:false};copies.set(m,c);}return copies.get(m);};o.material=Array.isArray(o.material)?o.material.map(clone):clone(o.material);});weaponMaterials=[...copies.values()];
+  selectWeapon('carbine');
   $('clip').replaceChildren(new Option('Bind pose',''));for(const mode of motionStudy.modes)$('clip').append(new Option('Motion · '+mode.label,'study:'+mode.id));
   clips.forEach((clip,i)=>$('clip').append(new Option('Imported · '+(clip.name||`Clip ${i+1}`),String(i))));$('clip').disabled=false;$('clip').value='study:ready';selectClip();surfaceMode();frameCamera();status(`${meshes} meshes · ${bones} bones · ${clips.length} imported clips · ${height.toFixed(2)}m authored height`);
  }catch(error){if(disposed||revision!==loadRevision)return;clearModel();$('clip').replaceChildren(new Option('No model loaded',''));showError(`Could not load ${modelURL.pathname.split('/').at(-1)}. ${error.message} If export is still running, retry once the file is ready.`);}
 }
 function destroy(){if(disposed)return;disposed=true;loadRevision++;cancelAnimationFrame(raf);listeners.splice(0).forEach(remove=>remove());controls?.dispose();clearModel();normalMaterial?.dispose();floorGeometry.dispose();floorMaterial.dispose();travelGrid.geometry.dispose();travelGrid.material.dispose();key.shadow.map?.dispose();key.shadow.mapPass?.dispose();renderer?.renderLists.dispose();renderer?.dispose();renderer?.forceContextLoss();}
-function tick(now){if(disposed)return;const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(!document.hidden){if(turning)pivot.rotation.y+=dt*.3;if(studyMode){motionStudy.update(playing?dt:0);studyTime=motionStudy.diagnostics().time;renderStudy();if(playing&&studyMode==='demo'&&studyTime>=Number($('timeline').max)){playing=false;syncButtons();}}else if(playing&&mixer)mixer.update(dt);controls.update();renderer.render(scene,camera);if(now-lastReport>350){const info=renderer.info;const pose=studyMode?motionStudy.diagnostics():null;const shownTime=studyMode?studyTime:action?.time||0;$('timeline').value=timelinePosition(shownTime);$('time-label').textContent=`${(timelinePosition(shownTime)).toFixed(2)}s`;$('pose-stats').textContent=pose?.locomotion?`TRAVEL · ${Number(pose.locomotion.speed||0).toFixed(2)} m/s · x ${travelRoot.position.x.toFixed(2)} / z ${travelRoot.position.z.toFixed(2)} m`:pose?`${pose.mode}${pose.transition?.active?' · blending':''} · ${(pose.maxReachError*1000).toFixed(1)}mm settled-pose IK error · ${pose.clampedTargets} clamped targets`:'Imported GLB / bind pose';$('render-stats').textContent=`${info.render.calls.toLocaleString()} draw calls · ${info.render.triangles.toLocaleString()} triangles / frame · ${info.memory.geometries} geometries · ${info.memory.textures} textures`;lastReport=now;}}raf=requestAnimationFrame(tick);}
+function tick(now){if(disposed)return;const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(!document.hidden){if(turning)pivot.rotation.y+=dt*.3;if(studyMode){motionStudy.update(playing?dt:0);studyTime=motionStudy.diagnostics().time;renderStudy();if(playing&&oneShot()&&studyTime>=Number($('timeline').max)){playing=false;syncButtons();}}else if(playing&&mixer)mixer.update(dt);controls.update();renderer.render(scene,camera);if(now-lastReport>350){const info=renderer.info;const pose=studyMode?motionStudy.diagnostics():null;const shownTime=studyMode?studyTime:action?.time||0;$('timeline').value=timelinePosition(shownTime);$('time-label').textContent=`${(timelinePosition(shownTime)).toFixed(2)}s`;$('pose-stats').textContent=pose?.locomotion?`TRAVEL · ${Number(pose.locomotion.speed||0).toFixed(2)} m/s · x ${travelRoot.position.x.toFixed(2)} / z ${travelRoot.position.z.toFixed(2)} m`:pose?`${pose.mode}${pose.transition?.active?' · blending':''} · ${(pose.maxReachError*1000).toFixed(1)}mm settled-pose IK error · ${pose.clampedTargets} clamped targets`:'Imported GLB / bind pose';$('render-stats').textContent=`${info.render.calls.toLocaleString()} draw calls · ${info.render.triangles.toLocaleString()} triangles / frame · ${info.memory.geometries} geometries · ${info.memory.textures} textures`;lastReport=now;}}raf=requestAnimationFrame(tick);}
 try{
  renderer=new T.WebGLRenderer({canvas:$('view'),antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
  controls=new OrbitControls(camera,$('view'));controls.enableDamping=false;controls.maxPolarAngle=Math.PI*.49;
  listen(controls,'start',()=>{turning=false;direction='custom';syncButtons();});
  for(const button of document.querySelectorAll('[data-direction]'))listen(button,'click',()=>{direction=button.dataset.direction;turning=false;pivot.rotation.y=0;frameCamera();syncButtons();});
- listen($('turntable'),'click',()=>{turning=!turning;syncButtons();});listen($('framing'),'change',frameCamera);listen($('clip'),'change',selectClip);listen($('play'),'click',()=>{if(action||studyMode){if(!playing&&studyMode==='demo'&&studyTime>=Number($('timeline').max)){motionStudy.select('demo');studyTime=0;}playing=!playing;}syncButtons();});listen($('surface'),'change',surfaceMode);listen($('step'),'click',()=>{if(studyMode){playing=false;motionStudy.update(1/30);studyTime=motionStudy.diagnostics().time;renderStudy();$('timeline').value=timelinePosition(studyTime);$('time-label').textContent=`${timelinePosition(studyTime).toFixed(2)}s`;syncButtons();}else seek((action?.time||0)+1/30);});listen($('timeline'),'input',()=>seek(Number($('timeline').value)));
+ listen($('turntable'),'click',()=>{turning=!turning;syncButtons();});listen($('framing'),'change',frameCamera);listen($('clip'),'change',selectClip);listen($('play'),'click',()=>{if(action||studyMode){if(!playing&&oneShot()&&studyTime>=Number($('timeline').max)){motionStudy.select(studyMode);studyTime=0;}playing=!playing;}syncButtons();});listen($('surface'),'change',surfaceMode);listen($('step'),'click',()=>{if(studyMode){playing=false;motionStudy.update(1/30);studyTime=motionStudy.diagnostics().time;renderStudy();$('timeline').value=timelinePosition(studyTime);$('time-label').textContent=`${timelinePosition(studyTime).toFixed(2)}s`;syncButtons();}else seek((action?.time||0)+1/30);});listen($('timeline'),'input',()=>seek(Number($('timeline').value)));
  listen($('reference-toggle'),'click',()=>{const visible=$('reference').hidden;$('reference').hidden=!visible;$('reference-toggle').setAttribute('aria-pressed',String(visible));});
  listen($('travel-direction'),'change',travelInput);listen($('travel-speed'),'input',travelInput);listen($('travel-reset'),'click',()=>{if(studyMode==='locomotion'){motionStudy.select('locomotion');motionStudy.seek(0);studyTime=0;renderStudy();frameCamera();}});
+ listen($('combat-contact'),'change',()=>{combatInput();if(studyMode)seek(studyTime);});listen($('dodge-direction'),'change',()=>{combatInput();if(studyMode)seek(studyTime);});listen($('combat-replay'),'click',()=>{if(motionStudy?.modes.find(m=>m.id===studyMode)?.combat){motionStudy.seek(0);studyTime=0;playing=true;renderStudy();syncButtons();}});
  listen($('study'),'change',loadModel);listen($('retry'),'click',()=>contextLost?location.reload():loadModel());listen(window,'resize',resize);listen(window,'pagehide',destroy);listen(document,'visibilitychange',()=>{last=performance.now();});listen(motion,'change',()=>{if(motion.matches){playing=turning=false;syncButtons();}});
  listen($('view'),'webglcontextlost',event=>{event.preventDefault();contextLost=true;playing=turning=false;syncButtons();showError('The graphics context was lost. Reload this viewer to restore it.');$('retry').textContent='Reload viewer';});
  resize();last=performance.now();raf=requestAnimationFrame(tick);await loadModel();

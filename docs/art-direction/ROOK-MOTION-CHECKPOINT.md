@@ -110,3 +110,35 @@ of previous direction changes. This remains flat-ground development motion:
 fast strafing uses crossing steps, with no finished sprint, terrain adaptation,
 turn-in-place, melee/dodge animation or gameplay adapter. Likeness and garments
 remain unfinished. The production game still uses its existing stylized hero.
+
+## V5 material and three-strike study — 14 October 2026
+
+The development viewer now loads the separately preserved v5 candidate by default
+and can still compare v1–v4. See [the candidate review](ROOK-V5-CANDIDATE.md):
+cloth scale, cap silhouette and material colour improved, but the face and garment
+construction are still visibly short of the portrait. This is not a production
+hero replacement.
+
+New authored studies include a diagonal slash, rising reverse cut, finishing
+thrust, a 3.5-second three-strike sequence and a lateral dodge in either direction.
+Each attack has anticipation, contact and recovery; an optional contact reaction
+adds bounded recoil. Rifle/blade switches fade completely out before the mesh and
+scale change. One-shot playback stops, scrubs and replays without automatic loops.
+The viewer shows only the controls relevant to the selected action.
+
+Validation: **43 art tests pass** (including v4 motion and v5 asset preservation);
+all **28 motion tests also pass against the actual v5 geometry**. These inspect
+real skinned positions, bind matrices, grip targets, forearm clearance and planted
+feet; image decoding is replaced in Node, so this does not substitute for visual
+review. Production build passes. Browser review checked the face, reverse cut,
+thrust profile and both dodge directions. A transient hot-reload syntax error
+during implementation was corrected before the final pose review and tests.
+
+![Reverse cut in the actual browser renderer](rook-v5-combo-reverse.png)
+![Thrust profile](rook-v5-combo-thrust.png)
+![Right dodge](rook-v5-dodge.png)
+
+These are authored flat-ground review motions. Runtime attack timing, collision,
+aiming layers, terrain adaptation, production equipment, LODs and a full animation
+library remain open. The dodge travel resets when leaving its development study;
+it is not yet connected to the production character's world movement.

@@ -7,7 +7,7 @@ import {createRookMotionStudy,ROOK_MOTION_MODES} from '../../dev/RookMotionStudy
 
 // Real GLB geometry, skeletons and skins; no Node raster decoding claims.
 if(!globalThis.ProgressEvent)globalThis.ProgressEvent=class{constructor(type,init){Object.assign(this,{type},init);}};
-const bytes=await readFile(new URL('../../assets/characters/rook-prototype-v4.glb',import.meta.url));
+const bytes=await readFile(process.env.ROOK_TEST_MODEL||new URL('../../assets/characters/rook-prototype-v4.glb',import.meta.url));
 const loader=new GLTFLoader();loader.register(parser=>{parser.loadImageSource=async()=>new T.DataTexture(new Uint8Array([255,255,255,255]),1,1);return{name:'ROOK_MOTION_NODE_IMAGE_PLACEHOLDER'};});
 const {scene}=await loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
 const bones=[],skins=[];scene.traverse(o=>{if(o.isBone)bones.push(o);if(o.isSkinnedMesh)skins.push(o);});
@@ -30,7 +30,10 @@ test('all study modes deform actual loaded skins, stay finite and preserve bind 
    const report=motion.pose(mode.id,mode.duration*frame/24);assert.ok(report.maxReachError<.003,`${mode.id} reach error ${report.maxReachError}`);
    for(const bone of bones){assert.ok([...bone.position,...bone.quaternion,...bone.scale].every(Number.isFinite));assert.ok(Math.abs(bone.quaternion.length()-1)<1e-6,`${bone.name}: ${bone.quaternion.length()}`);}
    const points=vertices();for(let i=0;i<points.length;i++){assert.ok(points[i].toArray().every(Number.isFinite));deformation=Math.max(deformation,points[i].distanceTo(restVertices[i]));}
-   const bounds=new T.Box3().setFromPoints(points),size=bounds.getSize(v());assert.ok(size.y>1.6&&size.y<2.05,`${mode.id} deformed height ${size.y}`);assert.ok(size.x<1.2&&size.z<1.2,`${mode.id} exploding bounds`);
+   const bounds=new T.Box3().setFromPoints(points),size=bounds.getSize(v()),restHeight=new T.Box3().setFromPoints(restVertices).getSize(v()).y;
+   // Dodge lowers the hips by 14 cm plus the guarded knee bend. The shorter
+   // v5 cap must not fail an absolute height threshold for a valid crouch.
+   const minHeight=mode.id==='dodge'?restHeight-.26:1.6;assert.ok(size.y>minHeight&&size.y<2.05,`${mode.id} deformed height ${size.y}`);assert.ok(size.x<1.2&&size.z<1.2,`${mode.id} exploding bounds`);
   }
   assert.ok(deformation>.15,`${mode.id} must visibly remove the A-pose`);
  }

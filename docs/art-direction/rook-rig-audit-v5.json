@@ -1,0 +1,3473 @@
+{
+  "file": "assets/characters/rook-prototype-v5.glb",
+  "sha256": "abf92e6a9e25b3667e00eb01ad2e279dc2f51429c4786c1e92596a75d4c7b575",
+  "scope": "Rest-pose coordinates, skin weights and isolated bone deformation. No raster decoding, intersection detection, correct pose assertion or production readiness claim.",
+  "coordinateConvention": "Y up; facial surface faces positive Z; anatomical left is positive X. Coordinates are imported scene meters.",
+  "skinMeshCount": 10,
+  "boneCount": 163,
+  "restBones": [
+    {
+      "name": "root",
+      "parent": "Rook_Deform_Rig",
+      "position": [
+        0,
+        0.964487,
+        -0.063227
+      ],
+      "localQuaternion": [
+        0.452625,
+        -0.543259,
+        -0.452625,
+        0.543259
+      ],
+      "worldAxes": [
+        [
+          0.000001,
+          -0.98357,
+          0.180522
+        ],
+        [
+          0,
+          0.180523,
+          0.98357
+        ],
+        [
+          -0.999999,
+          0,
+          0.000001
+        ]
+      ]
+    },
+    {
+      "name": "pelvisL",
+      "parent": "root",
+      "position": [
+        0,
+        0.977381,
+        0.007027
+      ],
+      "localQuaternion": [
+        -0.741829,
+        -0.05347,
+        0.035882,
+        0.66749
+      ],
+      "worldAxes": [
+        [
+          -0.018146,
+          -0.952446,
+          0.304167
+        ],
+        [
+          0.994164,
+          -0.049544,
+          -0.095827
+        ],
+        [
+          0.106339,
+          0.300653,
+          0.947787
+        ]
+      ]
+    },
+    {
+      "name": "upperleg01L",
+      "parent": "pelvisL",
+      "position": [
+        0.114278,
+        0.971686,
+        -0.003988
+      ],
+      "localQuaternion": [
+        0.559921,
+        0.51912,
+        -0.473547,
+        0.43904
+      ],
+      "worldAxes": [
+        [
+          0.059462,
+          -0.316623,
+          -0.946686
+        ],
+        [
+          -0.093169,
+          -0.945985,
+          0.310536
+        ],
+        [
+          -0.993873,
+          0.069737,
+          -0.08575
+        ]
+      ]
+    },
+    {
+      "name": "upperleg02L",
+      "parent": "upperleg01L",
+      "position": [
+        0.105931,
+        0.886934,
+        0.023834
+      ],
+      "localQuaternion": [
+        -0.111409,
+        -0.010199,
+        -0.151829,
+        0.982055
+      ],
+      "worldAxes": [
+        [
+          0.030748,
+          -0.018251,
+          -0.999361
+        ],
+        [
+          0.145708,
+          -0.989071,
+          0.022546
+        ],
+        [
+          -0.98885,
+          -0.146308,
+          -0.027753
+        ]
+      ]
+    },
+    {
+      "name": "lowerleg01L",
+      "parent": "upperleg02L",
+      "position": [
+        0.158798,
+        0.528071,
+        0.032014
+      ],
+      "localQuaternion": [
+        0.023593,
+        0.000229,
+        -0.02415,
+        0.99943
+      ],
+      "worldAxes": [
+        [
+          0.025259,
+          0.029739,
+          -0.999239
+        ],
+        [
+          0.100238,
+          -0.994595,
+          -0.027067
+        ],
+        [
+          -0.994643,
+          -0.099478,
+          -0.028104
+        ]
+      ]
+    },
+    {
+      "name": "lowerleg02L",
+      "parent": "lowerleg01L",
+      "position": [
+        0.181614,
+        0.301686,
+        0.025854
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "worldAxes": [
+        [
+          0.02526,
+          0.029739,
+          -0.999239
+        ],
+        [
+          0.100238,
+          -0.994595,
+          -0.027067
+        ],
+        [
+          -0.994643,
+          -0.099478,
+          -0.028104
+        ]
+      ]
+    },
+    {
+      "name": "footL",
+      "parent": "lowerleg02L",
+      "position": [
+        0.20443,
+        0.075302,
+        0.019693
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        0.537109,
+        0.843513
+      ],
+      "worldAxes": [
+        [
+          0.101514,
+          -0.888639,
+          -0.44723
+        ],
+        [
+          0.019515,
+          -0.447687,
+          0.893977
+        ],
+        [
+          -0.994642,
+          -0.099479,
+          -0.028105
+        ]
+      ]
+    },
+    {
+      "name": "pelvisR",
+      "parent": "root",
+      "position": [
+        0,
+        0.977381,
+        0.007027
+      ],
+      "localQuaternion": [
+        0.741828,
+        0.053471,
+        0.035882,
+        0.667491
+      ],
+      "worldAxes": [
+        [
+          0.018145,
+          -0.952446,
+          0.304169
+        ],
+        [
+          -0.994165,
+          -0.049543,
+          -0.095825
+        ],
+        [
+          0.106337,
+          -0.300655,
+          -0.947787
+        ]
+      ]
+    },
+    {
+      "name": "upperleg01R",
+      "parent": "pelvisR",
+      "position": [
+        -0.114278,
+        0.971686,
+        -0.003987
+      ],
+      "localQuaternion": [
+        -0.55992,
+        -0.51912,
+        -0.473547,
+        0.439041
+      ],
+      "worldAxes": [
+        [
+          -0.059462,
+          -0.316623,
+          -0.946686
+        ],
+        [
+          0.093168,
+          -0.945985,
+          0.310536
+        ],
+        [
+          -0.993873,
+          -0.069736,
+          0.085749
+        ]
+      ]
+    },
+    {
+      "name": "upperleg02R",
+      "parent": "upperleg01R",
+      "position": [
+        -0.105931,
+        0.886935,
+        0.023834
+      ],
+      "localQuaternion": [
+        0.111409,
+        0.010198,
+        -0.151829,
+        0.982055
+      ],
+      "worldAxes": [
+        [
+          -0.03075,
+          -0.018251,
+          -0.99936
+        ],
+        [
+          -0.145708,
+          -0.989071,
+          0.022547
+        ],
+        [
+          -0.98885,
+          0.146309,
+          0.027755
+        ]
+      ]
+    },
+    {
+      "name": "lowerleg01R",
+      "parent": "upperleg02R",
+      "position": [
+        -0.158798,
+        0.528071,
+        0.032015
+      ],
+      "localQuaternion": [
+        -0.023593,
+        -0.000229,
+        -0.02415,
+        0.99943
+      ],
+      "worldAxes": [
+        [
+          -0.025261,
+          0.029739,
+          -0.999238
+        ],
+        [
+          -0.100239,
+          -0.994595,
+          -0.027066
+        ],
+        [
+          -0.994643,
+          0.099479,
+          0.028106
+        ]
+      ]
+    },
+    {
+      "name": "lowerleg02R",
+      "parent": "lowerleg01R",
+      "position": [
+        -0.181614,
+        0.301686,
+        0.025854
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "worldAxes": [
+        [
+          -0.025261,
+          0.029739,
+          -0.999238
+        ],
+        [
+          -0.100239,
+          -0.994595,
+          -0.027066
+        ],
+        [
+          -0.994643,
+          0.099478,
+          0.028106
+        ]
+      ]
+    },
+    {
+      "name": "footR",
+      "parent": "lowerleg02R",
+      "position": [
+        -0.20443,
+        0.075302,
+        0.019693
+      ],
+      "localQuaternion": [
+        0.000001,
+        0,
+        0.537109,
+        0.843513
+      ],
+      "worldAxes": [
+        [
+          -0.101515,
+          -0.888639,
+          -0.447231
+        ],
+        [
+          -0.019516,
+          -0.447688,
+          0.893977
+        ],
+        [
+          -0.994642,
+          0.099481,
+          0.028105
+        ]
+      ]
+    },
+    {
+      "name": "spine05",
+      "parent": "root",
+      "position": [
+        0,
+        0.977381,
+        0.007027
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        0.76415,
+        0.645039
+      ],
+      "worldAxes": [
+        [
+          0.000001,
+          0.343053,
+          0.939316
+        ],
+        [
+          0,
+          0.939316,
+          -0.343053
+        ],
+        [
+          -1,
+          0,
+          0.000001
+        ]
+      ]
+    },
+    {
+      "name": "spine04",
+      "parent": "spine05",
+      "position": [
+        0,
+        1.068817,
+        -0.026366
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        -0.239321,
+        0.97094
+      ],
+      "worldAxes": [
+        [
+          0.000001,
+          -0.132774,
+          0.991146
+        ],
+        [
+          0,
+          0.991146,
+          0.132774
+        ],
+        [
+          -1,
+          0,
+          0.000001
+        ]
+      ]
+    },
+    {
+      "name": "spine03",
+      "parent": "spine04",
+      "position": [
+        0,
+        1.142298,
+        -0.016523
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        0.133528,
+        0.991045
+      ],
+      "worldAxes": [
+        [
+          0.000001,
+          0.134281,
+          0.990943
+        ],
+        [
+          0,
+          0.990943,
+          -0.134281
+        ],
+        [
+          -1,
+          0,
+          0.000001
+        ]
+      ]
+    },
+    {
+      "name": "spine02",
+      "parent": "spine03",
+      "position": [
+        0,
+        1.206145,
+        -0.025174
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        0.012415,
+        0.999923
+      ],
+      "worldAxes": [
+        [
+          0.000001,
+          0.158843,
+          0.987304
+        ],
+        [
+          0,
+          0.987304,
+          -0.158843
+        ],
+        [
+          -1,
+          0,
+          0.000001
+        ]
+      ]
+    },
+    {
+      "name": "spine01",
+      "parent": "spine02",
+      "position": [
+        0,
+        1.349287,
+        -0.048204
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        -0.220995,
+        0.975275
+      ],
+      "worldAxes": [
+        [
+          0.000001,
+          -0.282261,
+          0.959338
+        ],
+        [
+          0,
+          0.959338,
+          0.282261
+        ],
+        [
+          -1,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "clavicleL",
+      "parent": "spine01",
+      "position": [
+        0.024042,
+        1.488007,
+        0.027849
+      ],
+      "localQuaternion": [
+        -0.632727,
+        -0.13815,
+        0.151114,
+        0.746817
+      ],
+      "worldAxes": [
+        [
+          -0.01512,
+          0.12565,
+          0.991961
+        ],
+        [
+          0.986817,
+          0.161758,
+          -0.00545
+        ],
+        [
+          -0.161143,
+          0.9788,
+          -0.12644
+        ]
+      ]
+    },
+    {
+      "name": "shoulder01L",
+      "parent": "clavicleL",
+      "position": [
+        0.114533,
+        1.50284,
+        0.02735
+      ],
+      "localQuaternion": [
+        -0.327,
+        0.041636,
+        0.053564,
+        0.942586
+      ],
+      "worldAxes": [
+        [
+          0.076086,
+          0.025306,
+          0.996781
+        ],
+        [
+          0.870672,
+          -0.48889,
+          -0.05405
+        ],
+        [
+          0.485947,
+          0.871981,
+          -0.059233
+        ]
+      ]
+    },
+    {
+      "name": "upperarm01L",
+      "parent": "shoulder01L",
+      "position": [
+        0.195911,
+        1.457146,
+        0.022298
+      ],
+      "localQuaternion": [
+        -0.195965,
+        0.001088,
+        0.008351,
+        0.980575
+      ],
+      "worldAxes": [
+        [
+          0.087337,
+          0.012791,
+          0.996098
+        ],
+        [
+          0.615651,
+          -0.786799,
+          -0.043877
+        ],
+        [
+          0.783165,
+          0.61708,
+          -0.076593
+        ]
+      ]
+    },
+    {
+      "name": "upperarm02L",
+      "parent": "upperarm01L",
+      "position": [
+        0.23745,
+        1.40406,
+        0.019337
+      ],
+      "localQuaternion": [
+        0.033813,
+        0.000889,
+        -0.026262,
+        0.999083
+      ],
+      "worldAxes": [
+        [
+          0.052163,
+          0.051822,
+          0.997294
+        ],
+        [
+          0.670861,
+          -0.741578,
+          0.003444
+        ],
+        [
+          0.739748,
+          0.668865,
+          -0.07345
+        ]
+      ]
+    },
+    {
+      "name": "lowerarm01L",
+      "parent": "upperarm02L",
+      "position": [
+        0.369893,
+        1.257657,
+        0.020016
+      ],
+      "localQuaternion": [
+        0,
+        0.000002,
+        -0.387488,
+        0.921875
+      ],
+      "worldAxes": [
+        [
+          -0.442782,
+          0.566057,
+          0.695356
+        ],
+        [
+          0.506674,
+          -0.481866,
+          0.714901
+        ],
+        [
+          0.739745,
+          0.668865,
+          -0.073443
+        ]
+      ]
+    },
+    {
+      "name": "lowerarm02L",
+      "parent": "lowerarm01L",
+      "position": [
+        0.439106,
+        1.191833,
+        0.117674
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "worldAxes": [
+        [
+          -0.442781,
+          0.566057,
+          0.695356
+        ],
+        [
+          0.506673,
+          -0.481866,
+          0.714901
+        ],
+        [
+          0.739745,
+          0.668865,
+          -0.073443
+        ]
+      ]
+    },
+    {
+      "name": "wristL",
+      "parent": "lowerarm02L",
+      "position": [
+        0.50832,
+        1.126009,
+        0.215332
+      ],
+      "localQuaternion": [
+        -0.044466,
+        0.007253,
+        -0.08872,
+        0.995037
+      ],
+      "worldAxes": [
+        [
+          -0.53039,
+          0.638099,
+          0.558133
+        ],
+        [
+          0.35239,
+          -0.432845,
+          0.829737
+        ],
+        [
+          0.771041,
+          0.636766,
+          0.004719
+        ]
+      ]
+    },
+    {
+      "name": "clavicleR",
+      "parent": "spine01",
+      "position": [
+        -0.024042,
+        1.488007,
+        0.02785
+      ],
+      "localQuaternion": [
+        0.632726,
+        0.13815,
+        0.151114,
+        0.746818
+      ],
+      "worldAxes": [
+        [
+          0.015117,
+          0.125648,
+          0.991961
+        ],
+        [
+          -0.986816,
+          0.161758,
+          -0.00545
+        ],
+        [
+          -0.161144,
+          -0.978799,
+          0.126436
+        ]
+      ]
+    },
+    {
+      "name": "shoulder01R",
+      "parent": "clavicleR",
+      "position": [
+        -0.114533,
+        1.502841,
+        0.02735
+      ],
+      "localQuaternion": [
+        0.327,
+        -0.041636,
+        0.053564,
+        0.942586
+      ],
+      "worldAxes": [
+        [
+          -0.076087,
+          0.025306,
+          0.996781
+        ],
+        [
+          -0.870672,
+          -0.48889,
+          -0.054048
+        ],
+        [
+          0.485946,
+          -0.871981,
+          0.05923
+        ]
+      ]
+    },
+    {
+      "name": "upperarm01R",
+      "parent": "shoulder01R",
+      "position": [
+        -0.195911,
+        1.457146,
+        0.022298
+      ],
+      "localQuaternion": [
+        0.195965,
+        -0.001088,
+        0.008351,
+        0.980575
+      ],
+      "worldAxes": [
+        [
+          -0.087337,
+          0.012791,
+          0.996098
+        ],
+        [
+          -0.615651,
+          -0.786798,
+          -0.043876
+        ],
+        [
+          0.783165,
+          -0.61708,
+          0.07659
+        ]
+      ]
+    },
+    {
+      "name": "upperarm02R",
+      "parent": "upperarm01R",
+      "position": [
+        -0.23745,
+        1.40406,
+        0.019337
+      ],
+      "localQuaternion": [
+        -0.033813,
+        -0.000889,
+        -0.026262,
+        0.999083
+      ],
+      "worldAxes": [
+        [
+          -0.052164,
+          0.051822,
+          0.997294
+        ],
+        [
+          -0.670861,
+          -0.741578,
+          0.003445
+        ],
+        [
+          0.739748,
+          -0.668865,
+          0.073447
+        ]
+      ]
+    },
+    {
+      "name": "lowerarm01R",
+      "parent": "upperarm02R",
+      "position": [
+        -0.369893,
+        1.257658,
+        0.020017
+      ],
+      "localQuaternion": [
+        -0.000001,
+        -0.000002,
+        -0.387488,
+        0.921875
+      ],
+      "worldAxes": [
+        [
+          0.442784,
+          0.566063,
+          0.69535
+        ],
+        [
+          -0.506673,
+          -0.481857,
+          0.714905
+        ],
+        [
+          0.739744,
+          -0.668864,
+          0.073453
+        ]
+      ]
+    },
+    {
+      "name": "lowerarm02R",
+      "parent": "lowerarm01R",
+      "position": [
+        -0.439106,
+        1.191834,
+        0.117675
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "worldAxes": [
+        [
+          0.442784,
+          0.566063,
+          0.69535
+        ],
+        [
+          -0.506673,
+          -0.481858,
+          0.714904
+        ],
+        [
+          0.739745,
+          -0.668863,
+          0.073453
+        ]
+      ]
+    },
+    {
+      "name": "wristR",
+      "parent": "lowerarm02R",
+      "position": [
+        -0.50832,
+        1.126009,
+        0.215334
+      ],
+      "localQuaternion": [
+        0.044465,
+        -0.007252,
+        -0.08872,
+        0.995037
+      ],
+      "worldAxes": [
+        [
+          0.530392,
+          0.638104,
+          0.558127
+        ],
+        [
+          -0.352389,
+          -0.432837,
+          0.829739
+        ],
+        [
+          0.771041,
+          -0.636765,
+          -0.00471
+        ]
+      ]
+    },
+    {
+      "name": "neck01",
+      "parent": "spine01",
+      "position": [
+        0,
+        1.566302,
+        0.015648
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        0.061735,
+        0.998093
+      ],
+      "worldAxes": [
+        [
+          0.000001,
+          -0.161887,
+          0.986809
+        ],
+        [
+          0,
+          0.986809,
+          0.161887
+        ],
+        [
+          -1,
+          0,
+          0.000001
+        ]
+      ]
+    },
+    {
+      "name": "neck02",
+      "parent": "neck01",
+      "position": [
+        0,
+        1.590195,
+        0.019567
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        -0.060244,
+        0.998184
+      ],
+      "worldAxes": [
+        [
+          0.000001,
+          -0.279394,
+          0.960176
+        ],
+        [
+          0,
+          0.960177,
+          0.279394
+        ],
+        [
+          -1,
+          0,
+          0.000001
+        ]
+      ]
+    },
+    {
+      "name": "neck03",
+      "parent": "neck02",
+      "position": [
+        0,
+        1.627704,
+        0.030482
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        -0.079366,
+        0.996846
+      ],
+      "worldAxes": [
+        [
+          0.000001,
+          -0.427805,
+          0.903871
+        ],
+        [
+          0,
+          0.903871,
+          0.427805
+        ],
+        [
+          -1,
+          0,
+          0.000001
+        ]
+      ]
+    },
+    {
+      "name": "head",
+      "parent": "neck03",
+      "position": [
+        0,
+        1.666685,
+        0.048932
+      ],
+      "localQuaternion": [
+        0,
+        0,
+        0.220837,
+        0.975311
+      ],
+      "worldAxes": [
+        [
+          0.000001,
+          0.003283,
+          0.999995
+        ],
+        [
+          0,
+          0.999995,
+          -0.003283
+        ],
+        [
+          -1,
+          0,
+          0.000001
+        ]
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "Eyes__mapped_hazel",
+      "material": "Eyes / ivory",
+      "vertices": 1076,
+      "verticesByInfluenceCount": [
+        0,
+        1076,
+        0,
+        0,
+        0
+      ],
+      "rigidVertexFraction": 1,
+      "dominantJoints": [
+        {
+          "bone": "head",
+          "vertexWeightSum": 1076,
+          "vertices": 1076,
+          "worldBounds": {
+            "min": [
+              -0.046917,
+              1.691945,
+              0.126884
+            ],
+            "max": [
+              0.046916,
+              1.723272,
+              0.153573
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hair__swept_textured_crop",
+      "material": "Hair / umber",
+      "vertices": 1794,
+      "verticesByInfluenceCount": [
+        0,
+        1794,
+        0,
+        0,
+        0
+      ],
+      "rigidVertexFraction": 1,
+      "dominantJoints": [
+        {
+          "bone": "head",
+          "vertexWeightSum": 1794,
+          "vertices": 1794,
+          "worldBounds": {
+            "min": [
+              -0.09409,
+              1.625601,
+              -0.04937
+            ],
+            "max": [
+              0.088323,
+              1.761,
+              0.177289
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rook_v5__Canvas__seam_thread",
+      "material": "Canvas / seam thread",
+      "vertices": 5256,
+      "verticesByInfluenceCount": [
+        0,
+        0,
+        0,
+        0,
+        5256
+      ],
+      "rigidVertexFraction": 0,
+      "dominantJoints": [
+        {
+          "bone": "spine02",
+          "vertexWeightSum": 1451.558,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine01",
+          "vertexWeightSum": 1164.185,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "breastL",
+          "vertexWeightSum": 903.647,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "breastR",
+          "vertexWeightSum": 903.457,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine03",
+          "vertexWeightSum": 301.304,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine04",
+          "vertexWeightSum": 222.767,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine05",
+          "vertexWeightSum": 75.855,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperarm01R",
+          "vertexWeightSum": 63.492,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperarm01L",
+          "vertexWeightSum": 63.39,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "clavicleR",
+          "vertexWeightSum": 45.403,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "clavicleL",
+          "vertexWeightSum": 45.288,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "pelvisR",
+          "vertexWeightSum": 5.205,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "pelvisL",
+          "vertexWeightSum": 5.059,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperleg01R",
+          "vertexWeightSum": 2.745,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperleg01L",
+          "vertexWeightSum": 2.645,
+          "vertices": 0,
+          "worldBounds": null
+        }
+      ]
+    },
+    {
+      "name": "Rook_v5__Field_jacket__moss_canvas",
+      "material": "Field jacket / moss canvas",
+      "vertices": 3924,
+      "verticesByInfluenceCount": [
+        0,
+        1583,
+        332,
+        218,
+        1791
+      ],
+      "rigidVertexFraction": 0.4034,
+      "dominantJoints": [
+        {
+          "bone": "head",
+          "vertexWeightSum": 1551.837,
+          "vertices": 1551,
+          "worldBounds": {
+            "min": [
+              -0.097638,
+              1.76,
+              -0.062642
+            ],
+            "max": [
+              0.097624,
+              1.807362,
+              0.178642
+            ]
+          }
+        },
+        {
+          "bone": "spine01",
+          "vertexWeightSum": 381.385,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine02",
+          "vertexWeightSum": 356.082,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine03",
+          "vertexWeightSum": 136.597,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperarm02R",
+          "vertexWeightSum": 132.625,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperarm02L",
+          "vertexWeightSum": 132.625,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "lowerarm01R",
+          "vertexWeightSum": 122.721,
+          "vertices": 16,
+          "worldBounds": {
+            "min": [
+              -0.455068,
+              1.179526,
+              -0.001118
+            ],
+            "max": [
+              -0.370097,
+              1.305999,
+              0.120792
+            ]
+          }
+        },
+        {
+          "bone": "lowerarm01L",
+          "vertexWeightSum": 122.721,
+          "vertices": 16,
+          "worldBounds": {
+            "min": [
+              0.370097,
+              1.179526,
+              -0.001119
+            ],
+            "max": [
+              0.455068,
+              1.305999,
+              0.120791
+            ]
+          }
+        },
+        {
+          "bone": "spine04",
+          "vertexWeightSum": 118.516,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine05",
+          "vertexWeightSum": 113.887,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperarm01L",
+          "vertexWeightSum": 83.582,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperarm01R",
+          "vertexWeightSum": 83.579,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "breastL",
+          "vertexWeightSum": 67.477,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "breastR",
+          "vertexWeightSum": 66.565,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "neck01",
+          "vertexWeightSum": 58.338,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperleg01L",
+          "vertexWeightSum": 39.193,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "clavicleL",
+          "vertexWeightSum": 39.152,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperleg01R",
+          "vertexWeightSum": 39.047,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "neck02",
+          "vertexWeightSum": 38.364,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "clavicleR",
+          "vertexWeightSum": 36.539,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "pelvisL",
+          "vertexWeightSum": 31.191,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "pelvisR",
+          "vertexWeightSum": 31.05,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "lowerarm02R",
+          "vertexWeightSum": 25.317,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "lowerarm02L",
+          "vertexWeightSum": 25.317,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "shoulder01L",
+          "vertexWeightSum": 23.881,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "shoulder01R",
+          "vertexWeightSum": 23.881,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperleg02R",
+          "vertexWeightSum": 15.771,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperleg02L",
+          "vertexWeightSum": 15.771,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "wristR",
+          "vertexWeightSum": 4.323,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "wristL",
+          "vertexWeightSum": 4.323,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "jaw",
+          "vertexWeightSum": 1.967,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "metacarpal4R",
+          "vertexWeightSum": 0.137,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "metacarpal4L",
+          "vertexWeightSum": 0.137,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "finger1-1R",
+          "vertexWeightSum": 0.052,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "finger1-1L",
+          "vertexWeightSum": 0.052,
+          "vertices": 0,
+          "worldBounds": null
+        }
+      ]
+    },
+    {
+      "name": "Rook_v5__Hair__sculpted_chestnut_locks",
+      "material": "Hair / sculpted chestnut locks",
+      "vertices": 288,
+      "verticesByInfluenceCount": [
+        0,
+        288,
+        0,
+        0,
+        0
+      ],
+      "rigidVertexFraction": 1,
+      "dominantJoints": [
+        {
+          "bone": "head",
+          "vertexWeightSum": 288,
+          "vertices": 288,
+          "worldBounds": {
+            "min": [
+              -0.074827,
+              1.715,
+              0.134863
+            ],
+            "max": [
+              0.072563,
+              1.7714,
+              0.155788
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rook_v5__Hardware__aged_brass",
+      "material": "Hardware / aged brass",
+      "vertices": 981,
+      "verticesByInfluenceCount": [
+        0,
+        56,
+        0,
+        0,
+        925
+      ],
+      "rigidVertexFraction": 0.0571,
+      "dominantJoints": [
+        {
+          "bone": "spine02",
+          "vertexWeightSum": 344.476,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine04",
+          "vertexWeightSum": 144.87,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine01",
+          "vertexWeightSum": 122.501,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine03",
+          "vertexWeightSum": 110.931,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "breastL",
+          "vertexWeightSum": 84.326,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "breastR",
+          "vertexWeightSum": 81.29,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine05",
+          "vertexWeightSum": 67.7,
+          "vertices": 56,
+          "worldBounds": {
+            "min": [
+              -0.023,
+              0.973,
+              0.15
+            ],
+            "max": [
+              0.023,
+              1.007,
+              0.155
+            ]
+          }
+        },
+        {
+          "bone": "clavicleR",
+          "vertexWeightSum": 12.457,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "clavicleL",
+          "vertexWeightSum": 12.45,
+          "vertices": 0,
+          "worldBounds": null
+        }
+      ]
+    },
+    {
+      "name": "Rook_v5__Leather__dark_chestnut",
+      "material": "Leather / dark chestnut",
+      "vertices": 7714,
+      "verticesByInfluenceCount": [
+        0,
+        2536,
+        2832,
+        1362,
+        984
+      ],
+      "rigidVertexFraction": 0.3288,
+      "dominantJoints": [
+        {
+          "bone": "spine05",
+          "vertexWeightSum": 1207.172,
+          "vertices": 1200,
+          "worldBounds": {
+            "min": [
+              -0.184996,
+              0.967,
+              -0.13434
+            ],
+            "max": [
+              0.184996,
+              1.003,
+              0.149801
+            ]
+          }
+        },
+        {
+          "bone": "footR",
+          "vertexWeightSum": 190.475,
+          "vertices": 92,
+          "worldBounds": {
+            "min": [
+              -0.278798,
+              -0.020019,
+              -0.053587
+            ],
+            "max": [
+              -0.1429,
+              0.074042,
+              0.143253
+            ]
+          }
+        },
+        {
+          "bone": "footL",
+          "vertexWeightSum": 190.475,
+          "vertices": 92,
+          "worldBounds": {
+            "min": [
+              0.1429,
+              -0.02002,
+              -0.053587
+            ],
+            "max": [
+              0.278798,
+              0.074042,
+              0.143253
+            ]
+          }
+        },
+        {
+          "bone": "finger2-3R",
+          "vertexWeightSum": 190.342,
+          "vertices": 78,
+          "worldBounds": {
+            "min": [
+              -0.549835,
+              1.023232,
+              0.378126
+            ],
+            "max": [
+              -0.529201,
+              1.04159,
+              0.395373
+            ]
+          }
+        },
+        {
+          "bone": "finger2-3L",
+          "vertexWeightSum": 190.342,
+          "vertices": 78,
+          "worldBounds": {
+            "min": [
+              0.529201,
+              1.023232,
+              0.378125
+            ],
+            "max": [
+              0.549835,
+              1.04159,
+              0.395372
+            ]
+          }
+        },
+        {
+          "bone": "finger3-3R",
+          "vertexWeightSum": 176.44,
+          "vertices": 71,
+          "worldBounds": {
+            "min": [
+              -0.578492,
+              0.990271,
+              0.35259
+            ],
+            "max": [
+              -0.559355,
+              1.009198,
+              0.375078
+            ]
+          }
+        },
+        {
+          "bone": "finger3-3L",
+          "vertexWeightSum": 176.44,
+          "vertices": 71,
+          "worldBounds": {
+            "min": [
+              0.559355,
+              0.99027,
+              0.352589
+            ],
+            "max": [
+              0.578492,
+              1.009197,
+              0.375076
+            ]
+          }
+        },
+        {
+          "bone": "finger1-3R",
+          "vertexWeightSum": 168.523,
+          "vertices": 75,
+          "worldBounds": {
+            "min": [
+              -0.47967,
+              1.070895,
+              0.332259
+            ],
+            "max": [
+              -0.455614,
+              1.090171,
+              0.357661
+            ]
+          }
+        },
+        {
+          "bone": "finger1-3L",
+          "vertexWeightSum": 168.523,
+          "vertices": 75,
+          "worldBounds": {
+            "min": [
+              0.455615,
+              1.070895,
+              0.332258
+            ],
+            "max": [
+              0.47967,
+              1.090171,
+              0.35766
+            ]
+          }
+        },
+        {
+          "bone": "finger5-3R",
+          "vertexWeightSum": 163.407,
+          "vertices": 87,
+          "worldBounds": {
+            "min": [
+              -0.586126,
+              0.9876,
+              0.278389
+            ],
+            "max": [
+              -0.572286,
+              1.002857,
+              0.29573
+            ]
+          }
+        },
+        {
+          "bone": "finger5-3L",
+          "vertexWeightSum": 163.407,
+          "vertices": 87,
+          "worldBounds": {
+            "min": [
+              0.572286,
+              0.987599,
+              0.278388
+            ],
+            "max": [
+              0.586126,
+              1.002856,
+              0.295728
+            ]
+          }
+        },
+        {
+          "bone": "finger4-3R",
+          "vertexWeightSum": 163.134,
+          "vertices": 94,
+          "worldBounds": {
+            "min": [
+              -0.593875,
+              0.979876,
+              0.318054
+            ],
+            "max": [
+              -0.574464,
+              0.998607,
+              0.340219
+            ]
+          }
+        },
+        {
+          "bone": "finger4-3L",
+          "vertexWeightSum": 163.134,
+          "vertices": 94,
+          "worldBounds": {
+            "min": [
+              0.574464,
+              0.979875,
+              0.318053
+            ],
+            "max": [
+              0.593875,
+              0.998606,
+              0.340217
+            ]
+          }
+        },
+        {
+          "bone": "finger4-1R",
+          "vertexWeightSum": 153.022,
+          "vertices": 11,
+          "worldBounds": {
+            "min": [
+              -0.578458,
+              1.032238,
+              0.284731
+            ],
+            "max": [
+              -0.556454,
+              1.051523,
+              0.296675
+            ]
+          }
+        },
+        {
+          "bone": "finger4-1L",
+          "vertexWeightSum": 153.022,
+          "vertices": 11,
+          "worldBounds": {
+            "min": [
+              0.556455,
+              1.032237,
+              0.28473
+            ],
+            "max": [
+              0.578458,
+              1.051522,
+              0.296674
+            ]
+          }
+        },
+        {
+          "bone": "head",
+          "vertexWeightSum": 146,
+          "vertices": 146,
+          "worldBounds": {
+            "min": [
+              -0.09,
+              1.74672,
+              0.107
+            ],
+            "max": [
+              0.09,
+              1.769356,
+              0.237
+            ]
+          }
+        },
+        {
+          "bone": "lowerarm01R",
+          "vertexWeightSum": 145.661,
+          "vertices": 26,
+          "worldBounds": {
+            "min": [
+              -0.431641,
+              1.206379,
+              0.008693
+            ],
+            "max": [
+              -0.393098,
+              1.289344,
+              0.093213
+            ]
+          }
+        },
+        {
+          "bone": "lowerarm01L",
+          "vertexWeightSum": 145.661,
+          "vertices": 26,
+          "worldBounds": {
+            "min": [
+              0.393098,
+              1.206379,
+              0.008692
+            ],
+            "max": [
+              0.431642,
+              1.289344,
+              0.093213
+            ]
+          }
+        },
+        {
+          "bone": "finger3-1R",
+          "vertexWeightSum": 144.902,
+          "vertices": 3,
+          "worldBounds": {
+            "min": [
+              -0.567558,
+              1.051174,
+              0.31227
+            ],
+            "max": [
+              -0.553988,
+              1.05999,
+              0.328111
+            ]
+          }
+        },
+        {
+          "bone": "finger3-1L",
+          "vertexWeightSum": 144.902,
+          "vertices": 3,
+          "worldBounds": {
+            "min": [
+              0.553988,
+              1.051173,
+              0.312269
+            ],
+            "max": [
+              0.567558,
+              1.059989,
+              0.32811
+            ]
+          }
+        },
+        {
+          "bone": "finger1-2R",
+          "vertexWeightSum": 140.025,
+          "vertices": 21,
+          "worldBounds": {
+            "min": [
+              -0.486697,
+              1.086789,
+              0.30191
+            ],
+            "max": [
+              -0.467784,
+              1.111285,
+              0.320178
+            ]
+          }
+        },
+        {
+          "bone": "finger1-2L",
+          "vertexWeightSum": 140.025,
+          "vertices": 21,
+          "worldBounds": {
+            "min": [
+              0.467784,
+              1.086788,
+              0.301909
+            ],
+            "max": [
+              0.486697,
+              1.111285,
+              0.320177
+            ]
+          }
+        },
+        {
+          "bone": "finger2-2R",
+          "vertexWeightSum": 136.904,
+          "vertices": 1,
+          "worldBounds": {
+            "min": [
+              -0.535177,
+              1.044621,
+              0.351924
+            ],
+            "max": [
+              -0.535177,
+              1.044621,
+              0.351924
+            ]
+          }
+        },
+        {
+          "bone": "finger2-2L",
+          "vertexWeightSum": 136.904,
+          "vertices": 1,
+          "worldBounds": {
+            "min": [
+              0.535177,
+              1.044621,
+              0.351923
+            ],
+            "max": [
+              0.535177,
+              1.044621,
+              0.351923
+            ]
+          }
+        },
+        {
+          "bone": "finger2-1R",
+          "vertexWeightSum": 130.424,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "finger2-1L",
+          "vertexWeightSum": 130.424,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "finger3-2R",
+          "vertexWeightSum": 129.543,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "finger3-2L",
+          "vertexWeightSum": 129.543,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "finger5-1R",
+          "vertexWeightSum": 127.213,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "finger5-1L",
+          "vertexWeightSum": 127.213,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "finger4-2R",
+          "vertexWeightSum": 109.922,
+          "vertices": 5,
+          "worldBounds": {
+            "min": [
+              -0.576038,
+              1.011518,
+              0.301356
+            ],
+            "max": [
+              -0.565997,
+              1.01636,
+              0.31282
+            ]
+          }
+        },
+        {
+          "bone": "finger4-2L",
+          "vertexWeightSum": 109.922,
+          "vertices": 5,
+          "worldBounds": {
+            "min": [
+              0.565997,
+              1.011517,
+              0.301355
+            ],
+            "max": [
+              0.576038,
+              1.016359,
+              0.312818
+            ]
+          }
+        },
+        {
+          "bone": "finger5-2R",
+          "vertexWeightSum": 108.287,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "finger5-2L",
+          "vertexWeightSum": 108.287,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "lowerarm02R",
+          "vertexWeightSum": 105.781,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "lowerarm02L",
+          "vertexWeightSum": 105.781,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "lowerleg02R",
+          "vertexWeightSum": 95.32,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "lowerleg02L",
+          "vertexWeightSum": 95.32,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "metacarpal1R",
+          "vertexWeightSum": 92.692,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "metacarpal1L",
+          "vertexWeightSum": 92.692,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "metacarpal4R",
+          "vertexWeightSum": 73.921,
+          "vertices": 8,
+          "worldBounds": {
+            "min": [
+              -0.555519,
+              1.055407,
+              0.228053
+            ],
+            "max": [
+              -0.542574,
+              1.067056,
+              0.23555
+            ]
+          }
+        },
+        {
+          "bone": "metacarpal4L",
+          "vertexWeightSum": 73.921,
+          "vertices": 8,
+          "worldBounds": {
+            "min": [
+              0.542574,
+              1.055407,
+              0.228052
+            ],
+            "max": [
+              0.555519,
+              1.067055,
+              0.235548
+            ]
+          }
+        },
+        {
+          "bone": "wristR",
+          "vertexWeightSum": 72.346,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "wristL",
+          "vertexWeightSum": 72.346,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine02",
+          "vertexWeightSum": 65.014,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "metacarpal2R",
+          "vertexWeightSum": 53.569,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "metacarpal2L",
+          "vertexWeightSum": 53.569,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "metacarpal3R",
+          "vertexWeightSum": 47.5,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "metacarpal3L",
+          "vertexWeightSum": 47.5,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine01",
+          "vertexWeightSum": 31.481,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine04",
+          "vertexWeightSum": 30.312,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "finger1-1R",
+          "vertexWeightSum": 29.944,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "finger1-1L",
+          "vertexWeightSum": 29.944,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe1-2R",
+          "vertexWeightSum": 28.074,
+          "vertices": 15,
+          "worldBounds": {
+            "min": [
+              -0.187541,
+              -0.012972,
+              0.216707
+            ],
+            "max": [
+              -0.154846,
+              0.044743,
+              0.246682
+            ]
+          }
+        },
+        {
+          "bone": "toe1-2L",
+          "vertexWeightSum": 28.074,
+          "vertices": 15,
+          "worldBounds": {
+            "min": [
+              0.154846,
+              -0.012973,
+              0.216707
+            ],
+            "max": [
+              0.18754,
+              0.044743,
+              0.246682
+            ]
+          }
+        },
+        {
+          "bone": "spine03",
+          "vertexWeightSum": 25.102,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "lowerleg01R",
+          "vertexWeightSum": 22.868,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "lowerleg01L",
+          "vertexWeightSum": 22.868,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "breastR",
+          "vertexWeightSum": 20.614,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperarm01R",
+          "vertexWeightSum": 17.138,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe3-3R",
+          "vertexWeightSum": 16.13,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe3-3L",
+          "vertexWeightSum": 16.13,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe4-3R",
+          "vertexWeightSum": 15.73,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe4-3L",
+          "vertexWeightSum": 15.73,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "clavicleR",
+          "vertexWeightSum": 15.378,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe2-3R",
+          "vertexWeightSum": 15.304,
+          "vertices": 8,
+          "worldBounds": {
+            "min": [
+              -0.215835,
+              0.017443,
+              0.234345
+            ],
+            "max": [
+              -0.195651,
+              0.037869,
+              0.247453
+            ]
+          }
+        },
+        {
+          "bone": "toe2-3L",
+          "vertexWeightSum": 15.304,
+          "vertices": 8,
+          "worldBounds": {
+            "min": [
+              0.195651,
+              0.017442,
+              0.234345
+            ],
+            "max": [
+              0.215835,
+              0.037869,
+              0.247452
+            ]
+          }
+        },
+        {
+          "bone": "shoulder01R",
+          "vertexWeightSum": 11.789,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe1-1R",
+          "vertexWeightSum": 8.909,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe1-1L",
+          "vertexWeightSum": 8.909,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe5-3R",
+          "vertexWeightSum": 3.984,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe5-3L",
+          "vertexWeightSum": 3.984,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe5-1R",
+          "vertexWeightSum": 1.89,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe5-1L",
+          "vertexWeightSum": 1.89,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe4-2R",
+          "vertexWeightSum": 1.792,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe4-2L",
+          "vertexWeightSum": 1.792,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe4-1R",
+          "vertexWeightSum": 1.54,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe4-1L",
+          "vertexWeightSum": 1.54,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe2-1R",
+          "vertexWeightSum": 1.492,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe2-1L",
+          "vertexWeightSum": 1.492,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe3-1R",
+          "vertexWeightSum": 1.429,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe3-1L",
+          "vertexWeightSum": 1.429,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe3-2R",
+          "vertexWeightSum": 1.146,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe3-2L",
+          "vertexWeightSum": 1.146,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe5-2R",
+          "vertexWeightSum": 1.136,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe5-2L",
+          "vertexWeightSum": 1.136,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe2-2R",
+          "vertexWeightSum": 0.78,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "toe2-2L",
+          "vertexWeightSum": 0.78,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperarm02R",
+          "vertexWeightSum": 0.496,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperarm02L",
+          "vertexWeightSum": 0.496,
+          "vertices": 0,
+          "worldBounds": null
+        }
+      ]
+    },
+    {
+      "name": "Rook_v5__Scarf__rust_wool",
+      "material": "Scarf / rust wool",
+      "vertices": 2958,
+      "verticesByInfluenceCount": [
+        0,
+        2776,
+        0,
+        0,
+        182
+      ],
+      "rigidVertexFraction": 0.9385,
+      "dominantJoints": [
+        {
+          "bone": "neck01",
+          "vertexWeightSum": 2776.897,
+          "vertices": 2776,
+          "worldBounds": {
+            "min": [
+              -0.102932,
+              1.527205,
+              -0.065904
+            ],
+            "max": [
+              0.102668,
+              1.608894,
+              0.134024
+            ]
+          }
+        },
+        {
+          "bone": "spine02",
+          "vertexWeightSum": 74.194,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine01",
+          "vertexWeightSum": 62.344,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "neck02",
+          "vertexWeightSum": 11.566,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "breastL",
+          "vertexWeightSum": 7.149,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "clavicleL",
+          "vertexWeightSum": 6.928,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine03",
+          "vertexWeightSum": 5.821,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "clavicleR",
+          "vertexWeightSum": 4.818,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "breastR",
+          "vertexWeightSum": 3.31,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine04",
+          "vertexWeightSum": 2.387,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "jaw",
+          "vertexWeightSum": 2.205,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "head",
+          "vertexWeightSum": 0.382,
+          "vertices": 0,
+          "worldBounds": null
+        }
+      ]
+    },
+    {
+      "name": "Rook_WorkingBody",
+      "material": "Skin / warm matte",
+      "vertices": 4464,
+      "verticesByInfluenceCount": [
+        0,
+        1068,
+        1252,
+        719,
+        1425
+      ],
+      "rigidVertexFraction": 0.2392,
+      "dominantJoints": [
+        {
+          "bone": "head",
+          "vertexWeightSum": 2725.992,
+          "vertices": 1054,
+          "worldBounds": {
+            "min": [
+              -0.091964,
+              1.607854,
+              -0.046642
+            ],
+            "max": [
+              0.091963,
+              1.798469,
+              0.168716
+            ]
+          }
+        },
+        {
+          "bone": "jaw",
+          "vertexWeightSum": 203.821,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "neck01",
+          "vertexWeightSum": 108.004,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "levator06L",
+          "vertexWeightSum": 105.449,
+          "vertices": 7,
+          "worldBounds": {
+            "min": [
+              0.006529,
+              1.662188,
+              0.168261
+            ],
+            "max": [
+              0.009729,
+              1.663718,
+              0.17238
+            ]
+          }
+        },
+        {
+          "bone": "levator06R",
+          "vertexWeightSum": 105.295,
+          "vertices": 7,
+          "worldBounds": {
+            "min": [
+              -0.00973,
+              1.662188,
+              0.168261
+            ],
+            "max": [
+              -0.006529,
+              1.663718,
+              0.17238
+            ]
+          }
+        },
+        {
+          "bone": "oris03R",
+          "vertexWeightSum": 101.477,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "oris03L",
+          "vertexWeightSum": 101.477,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "oris05",
+          "vertexWeightSum": 96.016,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "neck02",
+          "vertexWeightSum": 94.077,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "levator05L",
+          "vertexWeightSum": 78.618,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "levator05R",
+          "vertexWeightSum": 78.039,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "orbicularis04R",
+          "vertexWeightSum": 68.068,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "orbicularis04L",
+          "vertexWeightSum": 68.068,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "oris01",
+          "vertexWeightSum": 67.147,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine01",
+          "vertexWeightSum": 62.446,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "orbicularis03R",
+          "vertexWeightSum": 57.27,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "orbicularis03L",
+          "vertexWeightSum": 57.27,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "risorius03R",
+          "vertexWeightSum": 45.68,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "risorius03L",
+          "vertexWeightSum": 45.68,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "oris07L",
+          "vertexWeightSum": 45.658,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "oris07R",
+          "vertexWeightSum": 45.246,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "oculi01R",
+          "vertexWeightSum": 36.067,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "oculi01L",
+          "vertexWeightSum": 36.067,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "neck03",
+          "vertexWeightSum": 16.404,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "clavicleR",
+          "vertexWeightSum": 4.853,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "clavicleL",
+          "vertexWeightSum": 4.853,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "eyeR",
+          "vertexWeightSum": 1.353,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "eyeL",
+          "vertexWeightSum": 1.353,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "shoulder01R",
+          "vertexWeightSum": 0.614,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "shoulder01L",
+          "vertexWeightSum": 0.614,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperarm01R",
+          "vertexWeightSum": 0.512,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperarm01L",
+          "vertexWeightSum": 0.512,
+          "vertices": 0,
+          "worldBounds": null
+        }
+      ]
+    },
+    {
+      "name": "Trousers__knee_folds",
+      "material": "Trousers / charcoal olive",
+      "vertices": 1063,
+      "verticesByInfluenceCount": [
+        0,
+        38,
+        324,
+        426,
+        275
+      ],
+      "rigidVertexFraction": 0.0357,
+      "dominantJoints": [
+        {
+          "bone": "upperleg02L",
+          "vertexWeightSum": 209.215,
+          "vertices": 18,
+          "worldBounds": {
+            "min": [
+              0.056047,
+              0.617126,
+              -0.051908
+            ],
+            "max": [
+              0.208481,
+              0.647148,
+              0.130138
+            ]
+          }
+        },
+        {
+          "bone": "upperleg02R",
+          "vertexWeightSum": 209.196,
+          "vertices": 18,
+          "worldBounds": {
+            "min": [
+              -0.208481,
+              0.617126,
+              -0.051908
+            ],
+            "max": [
+              -0.056047,
+              0.647148,
+              0.130138
+            ]
+          }
+        },
+        {
+          "bone": "lowerleg01R",
+          "vertexWeightSum": 103.777,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "lowerleg01L",
+          "vertexWeightSum": 103.777,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine05",
+          "vertexWeightSum": 91.252,
+          "vertices": 2,
+          "worldBounds": {
+            "min": [
+              0,
+              0.893982,
+              0.014496
+            ],
+            "max": [
+              0,
+              0.893982,
+              0.014496
+            ]
+          }
+        },
+        {
+          "bone": "lowerleg02R",
+          "vertexWeightSum": 74.425,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "lowerleg02L",
+          "vertexWeightSum": 74.425,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperleg01L",
+          "vertexWeightSum": 60.127,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "upperleg01R",
+          "vertexWeightSum": 59.938,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "pelvisL",
+          "vertexWeightSum": 25.787,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "pelvisR",
+          "vertexWeightSum": 25.638,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "spine04",
+          "vertexWeightSum": 12.572,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "footR",
+          "vertexWeightSum": 6.436,
+          "vertices": 0,
+          "worldBounds": null
+        },
+        {
+          "bone": "footL",
+          "vertexWeightSum": 6.436,
+          "vertices": 0,
+          "worldBounds": null
+        }
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "bone": "upperarm01L",
+      "worldAxis": [
+        0,
+        0,
+        1
+      ],
+      "radians": -0.6,
+      "deformation": [
+        {
+          "name": "Eyes__mapped_hazel",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Hair__swept_textured_crop",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Canvas__seam_thread",
+          "displacedVertices": 704,
+          "maxDisplacement": 0.013787,
+          "meanDisplacement": 0.000609
+        },
+        {
+          "name": "Rook_v5__Field_jacket__moss_canvas",
+          "displacedVertices": 586,
+          "maxDisplacement": 0.280032,
+          "meanDisplacement": 0.012086
+        },
+        {
+          "name": "Rook_v5__Hair__sculpted_chestnut_locks",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Hardware__aged_brass",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Leather__dark_chestnut",
+          "displacedVertices": 2664,
+          "maxDisplacement": 0.366231,
+          "meanDisplacement": 0.10752
+        },
+        {
+          "name": "Rook_v5__Scarf__rust_wool",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_WorkingBody",
+          "displacedVertices": 3,
+          "maxDisplacement": 0.016191,
+          "meanDisplacement": 0.000009
+        },
+        {
+          "name": "Trousers__knee_folds",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        }
+      ],
+      "seamTracking": {
+        "method": "Change in distance to nearest rest-pose canvas vertex; heuristic attachment drift, not surface intersection detection.",
+        "vertices": 5256,
+        "maxDistanceChange": 0.003181,
+        "meanDistanceChange": 0.0001
+      }
+    },
+    {
+      "bone": "upperarm01R",
+      "worldAxis": [
+        0,
+        0,
+        1
+      ],
+      "radians": 0.6,
+      "deformation": [
+        {
+          "name": "Eyes__mapped_hazel",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Hair__swept_textured_crop",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Canvas__seam_thread",
+          "displacedVertices": 704,
+          "maxDisplacement": 0.013787,
+          "meanDisplacement": 0.000609
+        },
+        {
+          "name": "Rook_v5__Field_jacket__moss_canvas",
+          "displacedVertices": 584,
+          "maxDisplacement": 0.280032,
+          "meanDisplacement": 0.012086
+        },
+        {
+          "name": "Rook_v5__Hair__sculpted_chestnut_locks",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Hardware__aged_brass",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Leather__dark_chestnut",
+          "displacedVertices": 2728,
+          "maxDisplacement": 0.366231,
+          "meanDisplacement": 0.107634
+        },
+        {
+          "name": "Rook_v5__Scarf__rust_wool",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_WorkingBody",
+          "displacedVertices": 3,
+          "maxDisplacement": 0.016191,
+          "meanDisplacement": 0.000009
+        },
+        {
+          "name": "Trousers__knee_folds",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        }
+      ],
+      "seamTracking": {
+        "method": "Change in distance to nearest rest-pose canvas vertex; heuristic attachment drift, not surface intersection detection.",
+        "vertices": 5256,
+        "maxDistanceChange": 0.003284,
+        "meanDistanceChange": 0.0001
+      }
+    },
+    {
+      "bone": "lowerarm01L",
+      "worldAxis": [
+        1,
+        0,
+        0
+      ],
+      "radians": -0.5,
+      "deformation": [
+        {
+          "name": "Eyes__mapped_hazel",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Hair__swept_textured_crop",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Canvas__seam_thread",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Field_jacket__moss_canvas",
+          "displacedVertices": 229,
+          "maxDisplacement": 0.138795,
+          "meanDisplacement": 0.002272
+        },
+        {
+          "name": "Rook_v5__Hair__sculpted_chestnut_locks",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Hardware__aged_brass",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Leather__dark_chestnut",
+          "displacedVertices": 2664,
+          "maxDisplacement": 0.217685,
+          "meanDisplacement": 0.059121
+        },
+        {
+          "name": "Rook_v5__Scarf__rust_wool",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_WorkingBody",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Trousers__knee_folds",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        }
+      ],
+      "seamTracking": {
+        "method": "Change in distance to nearest rest-pose canvas vertex; heuristic attachment drift, not surface intersection detection.",
+        "vertices": 5256,
+        "maxDistanceChange": 0,
+        "meanDistanceChange": 0
+      }
+    },
+    {
+      "bone": "upperleg01L",
+      "worldAxis": [
+        1,
+        0,
+        0
+      ],
+      "radians": 0.4,
+      "deformation": [
+        {
+          "name": "Eyes__mapped_hazel",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Hair__swept_textured_crop",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Canvas__seam_thread",
+          "displacedVertices": 33,
+          "maxDisplacement": 0.005708,
+          "meanDisplacement": 0.000032
+        },
+        {
+          "name": "Rook_v5__Field_jacket__moss_canvas",
+          "displacedVertices": 152,
+          "maxDisplacement": 0.064231,
+          "meanDisplacement": 0.000662
+        },
+        {
+          "name": "Rook_v5__Hair__sculpted_chestnut_locks",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Hardware__aged_brass",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_v5__Leather__dark_chestnut",
+          "displacedVertices": 408,
+          "maxDisplacement": 0.402338,
+          "meanDisplacement": 0.019112
+        },
+        {
+          "name": "Rook_v5__Scarf__rust_wool",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Rook_WorkingBody",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        },
+        {
+          "name": "Trousers__knee_folds",
+          "displacedVertices": 538,
+          "maxDisplacement": 0.326559,
+          "meanDisplacement": 0.071213
+        }
+      ],
+      "seamTracking": {
+        "method": "Change in distance to nearest rest-pose canvas vertex; heuristic attachment drift, not surface intersection detection.",
+        "vertices": 5256,
+        "maxDistanceChange": 0.000137,
+        "meanDistanceChange": 0
+      }
+    },
+    {
+      "bone": "spine01",
+      "worldAxis": [
+        0,
+        1,
+        0
+      ],
+      "radians": 0.3,
+      "deformation": [
+        {
+          "name": "Eyes__mapped_hazel",
+          "displacedVertices": 1076,
+          "maxDisplacement": 0.061084,
+          "meanDisplacement": 0.058386
+        },
+        {
+          "name": "Hair__swept_textured_crop",
+          "displacedVertices": 1794,
+          "maxDisplacement": 0.06741,
+          "meanDisplacement": 0.033532
+        },
+        {
+          "name": "Rook_v5__Canvas__seam_thread",
+          "displacedVertices": 4680,
+          "maxDisplacement": 0.059513,
+          "meanDisplacement": 0.019885
+        },
+        {
+          "name": "Rook_v5__Field_jacket__moss_canvas",
+          "displacedVertices": 3415,
+          "maxDisplacement": 0.172322,
+          "meanDisplacement": 0.042557
+        },
+        {
+          "name": "Rook_v5__Hair__sculpted_chestnut_locks",
+          "displacedVertices": 288,
+          "maxDisplacement": 0.06336,
+          "meanDisplacement": 0.059019
+        },
+        {
+          "name": "Rook_v5__Hardware__aged_brass",
+          "displacedVertices": 555,
+          "maxDisplacement": 0.025514,
+          "meanDisplacement": 0.01149
+        },
+        {
+          "name": "Rook_v5__Leather__dark_chestnut",
+          "displacedVertices": 5628,
+          "maxDisplacement": 0.212948,
+          "meanDisplacement": 0.134856
+        },
+        {
+          "name": "Rook_v5__Scarf__rust_wool",
+          "displacedVertices": 2958,
+          "maxDisplacement": 0.056463,
+          "meanDisplacement": 0.031608
+        },
+        {
+          "name": "Rook_WorkingBody",
+          "displacedVertices": 4464,
+          "maxDisplacement": 0.070031,
+          "meanDisplacement": 0.050035
+        },
+        {
+          "name": "Trousers__knee_folds",
+          "displacedVertices": 0,
+          "maxDisplacement": 0,
+          "meanDisplacement": 0
+        }
+      ],
+      "seamTracking": {
+        "method": "Change in distance to nearest rest-pose canvas vertex; heuristic attachment drift, not surface intersection detection.",
+        "vertices": 5256,
+        "maxDistanceChange": 0.006129,
+        "meanDistanceChange": 0.000327
+      }
+    }
+  ],
+  "reviewNotes": [
+    "Split upperarm01/02 and lowerarm01/02 chains: lowerarm01 is anatomical elbow; wrist is hand root.",
+    "Single-influence vertices are not inherently defects; rigid cap/hardware are expected. Spatial envelopes identify where rigid vertices need rendered inspection.",
+    "V3 additional seam-thread tubes are created after the build script weight-transfer pass; they inherit tube default spine02 binding. Inspect against canvas during chest/arm pose changes.",
+    "A-pose clips and finite bounds do not establish usable locomotion, weapon grips or cloth clearance."
+  ]
+}

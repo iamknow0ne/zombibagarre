@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {ROOK_COMBAT_MODES,sampleRookCombat} from './RookCombatMotion.js';
 
 // Development-only poses for the authored Rook rig. These do not replace the
 // production actor or alter GLB bind matrices. Targets live in authored model
@@ -10,6 +11,7 @@ export const ROOK_MOTION_MODES=Object.freeze([
  {id:'fire',label:'Rifle recoil',duration:1.2},
  {id:'reload',label:'Reload study',duration:3.2},
  {id:'guard',label:'Melee guard',duration:2.8},
+ ...ROOK_COMBAT_MODES,
 ]);
 const V=(x=0,y=0,z=0)=>new T.Vector3(x,y,z),clamp=T.MathUtils.clamp;
 const CARBINE_SCALE=.62;
@@ -51,12 +53,12 @@ export function createRookMotionStudy(content){
    fingerFlex.push({b,axis,amount:[.62,.84,.46][joint-1]});
   }
  }
- let mode='bind',sampleTime=0,maxReachError=0,clampedTargets=0,weaponPitch=0,weaponPosition=V(),contactTargets={},footContacts={};
+ let mode='bind',sampleTime=0,maxReachError=0,clampedTargets=0,weaponPitch=0,weaponPosition=V(),contactTargets={},footContacts={},combatFrame=null;
  const wp=b=>b.getWorldPosition(V());
  const worldPoint=p=>content.localToWorld(p.clone());
  const modelQ=()=>content.getWorldQuaternion(new T.Quaternion());
  const worldOrientation=(b,q)=>{const parentQ=b.parent.getWorldQuaternion(new T.Quaternion());b.quaternion.copy(parentQ.invert().multiply(q)).normalize();b.updateWorldMatrix(false,true);};
- const reset=()=>{for(const[b,r]of rest){b.position.copy(r.p);b.quaternion.copy(r.q);b.scale.copy(r.s);}content.updateWorldMatrix(true,true);mode='bind';sampleTime=0;maxReachError=0;clampedTargets=0;weaponPitch=0;contactTargets={};footContacts={};};
+ const reset=()=>{for(const[b,r]of rest){b.position.copy(r.p);b.quaternion.copy(r.q);b.scale.copy(r.s);}content.updateWorldMatrix(true,true);mode='bind';sampleTime=0;maxReachError=0;clampedTargets=0;weaponPitch=0;contactTargets={};footContacts={};combatFrame=null;};
  function turn(b,axis,angle){const worldAxis=axis.clone().applyQuaternion(modelQ()),q=new T.Quaternion().setFromAxisAngle(worldAxis,angle).multiply(b.getWorldQuaternion(new T.Quaternion()));worldOrientation(b,q);}
  function aim(b,child,target){const origin=wp(b),from=wp(child).sub(origin).normalize(),to=target.clone().sub(origin).normalize();if(to.lengthSq()<.5)return;worldOrientation(b,new T.Quaternion().setFromUnitVectors(from,to).multiply(b.getWorldQuaternion(new T.Quaternion())));}
  function solve(chain,target,pole){
@@ -111,12 +113,28 @@ export function createRookMotionStudy(content){
   for(const side of ['L','R'])locomotionFoot(side,frame);
   content.updateWorldMatrix(true,true);for(const skin of skins)skin.skeleton.update();return diagnostics();
  }
- function pose(id,time=0,{locomotion=null}={}){
+ function poseCombat(id,time,options){
+  combatFrame=sampleRookCombat(id,time,options);const f=combatFrame,root=bone('root');
+  root.position.copy(root.parent.worldToLocal(worldPoint(point('root').add(V(f.rootOffset.x,f.rootOffset.y,f.rootOffset.z)))));root.updateWorldMatrix(false,true);
+  for(const [name,rotation]of [['spine05',f.torso],['head',f.head]]){turn(bone(name),V(0,1,0),rotation.yaw);turn(bone(name),V(1,0,0),rotation.pitch);turn(bone(name),V(0,0,1),rotation.roll);}
+  for(const side of ['L','R'])locomotionFoot(side,f);
+  const bladeQ=new T.Quaternion().setFromEuler(new T.Euler(f.weapon.pitch,f.weapon.yaw,f.weapon.roll,'YXZ'));
+  for(const side of ['L','R']){
+   const target=f.hands[side],sign=side==='L'?1:-1;
+   solve(chains['arm'+side],V(target.x,target.y,target.z),V(sign*.46,1.05,-.02));
+   if(side==='R'&&f.weapon.visible){const q=handFrame(side,V(0,-1,.1).applyQuaternion(bladeQ),V(1,0,0).applyQuaternion(bladeQ));worldOrientation(bone('wrist'+side),q);}
+   else orientHand(side,V(0,.5,1));
+  }
+  for(const {b,axis,amount}of fingerFlex)b.quaternion.multiply(new T.Quaternion().setFromAxisAngle(axis,amount*f.grip)).normalize();
+  content.updateWorldMatrix(true,true);for(const skin of skins)skin.skeleton.update();return diagnostics();
+ }
+ function pose(id,time=0,{locomotion=null,contact:combatContact=false,direction=1}={}){
   const spec=ROOK_MOTION_MODES.find(m=>m.id===id);if(!spec)throw new RangeError(`Unknown Rook motion ${id}.`);if(!Number.isFinite(time))throw new TypeError('Rook motion time must be finite.');
   reset();mode=id;sampleTime=time;maxReachError=0;clampedTargets=0;
   // SkinnedMesh.updateMatrixWorld refreshes its inverse bind transform when
   // the viewer has moved the loaded root; updateWorldMatrix alone does not.
   for(const skin of skins)skin.updateMatrixWorld(true);
+  if(ROOK_COMBAT_MODES.some(m=>m.id===id))return poseCombat(id,time,{contact:combatContact,direction});
   const t=locomotion?locomotion.phase:loop(time,spec.duration),phase=t*Math.PI*2,walking=id==='walk',armed=['rifle','fire','reload'].includes(id),guard=id==='guard',gaitWeight=locomotion?clamp(locomotion.speed/.4,0,1):1;
   const breath=Math.sin(locomotion?time/3.2*Math.PI*2:phase)*.003,drop=walking?-.025-(locomotion?.speed||0)*.025:armed?-.035:guard?-.055:-.012;
   const root=bone('root'),targetRoot=worldPoint(point('root').add(V(walking?.012*Math.sin(phase)*gaitWeight:id==='ready'?.008:0,drop+(walking?.006*Math.cos(phase*2)*gaitWeight+breath*(1-gaitWeight):breath),0)));
@@ -177,9 +195,10 @@ export function createRookMotionStudy(content){
  }
  function getSocket(side){const suffix=side==='left'?'L':side==='right'?'R':null;if(!suffix)throw new RangeError('Socket side must be left or right.');const wrist=bone('wrist'+suffix),palm=bone('metacarpal2'+suffix);return{position:wp(wrist),palmPosition:palmPosition(suffix),quaternion:wrist.getWorldQuaternion(new T.Quaternion()),forward:wp(palm).sub(wp(wrist)).normalize()};}
  function getWeaponPose(){
+  if(combatFrame){const f=combatFrame.weapon,q=modelQ().multiply(new T.Quaternion().setFromEuler(new T.Euler(f.pitch,f.yaw,f.roll,'YXZ'))),scaleVector=V(f.scale,f.scale,f.scale),position=palmPosition('R').sub(V(-.045,.015,0).multiply(scaleVector).applyQuaternion(q));return{weapon:'katana',position,quaternion:q,scaleVector,visible:f.visible,reload:0};}
   const q=modelQ().multiply(new T.Quaternion().setFromAxisAngle(V(1,0,0),weaponPitch));
-  return{position:worldPoint(weaponPosition),quaternion:q,scaleVector:V(-CARBINE_SCALE,CARBINE_SCALE,CARBINE_SCALE),visible:['rifle','fire','reload'].includes(mode),reload:mode==='reload'?loop(sampleTime,3.2):0};
+  return{weapon:'carbine',position:worldPoint(weaponPosition),quaternion:q,scaleVector:V(-CARBINE_SCALE,CARBINE_SCALE,CARBINE_SCALE),visible:['rifle','fire','reload'].includes(mode),reload:mode==='reload'?loop(sampleTime,3.2):0};
  }
- function diagnostics(){const contactError=['rifle','fire'].includes(mode)?Math.max(...['L','R'].map(s=>palmPosition(s).distanceTo(worldPoint(contactTargets[s==='L'?'left':'right'])))):0;return{palmContactError:contactError,soleSampleCounts:{left:soles.L.length,right:soles.R.length},footContacts,mode,time:sampleTime,bones:rest.size,maxReachError,clampedTargets,modelSpace:'Y-up, +Z facing; anatomical L is +X',imageDecodeValidated:false};}
+ function diagnostics(){const contactError=['rifle','fire'].includes(mode)?Math.max(...['L','R'].map(s=>palmPosition(s).distanceTo(worldPoint(contactTargets[s==='L'?'left':'right'])))):0;return{combat:combatFrame,palmContactError:contactError,soleSampleCounts:{left:soles.L.length,right:soles.R.length},footContacts,mode,time:sampleTime,bones:rest.size,maxReachError,clampedTargets,modelSpace:'Y-up, +Z facing; anatomical L is +X',imageDecodeValidated:false};}
  return{modes:ROOK_MOTION_MODES,pose,reset,diagnostics,getSocket,getWeaponPose,applyLocomotionFeet};
 }

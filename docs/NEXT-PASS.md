@@ -53,18 +53,17 @@ full playthrough, physical device validation or final art completion is claimed.
 
 ## Next concrete slice
 
-Detailed Rook v4 now has corrected jacket-seam weights, measured palm/thumb/
-stock contacts and heel/toe gait correction using actual boot vertices. A new
-transition controller preserves interrupted poses and offers a 9.84-second
-walk/equip/recoil/reload/ready sequence. 24 art tests and the production build
-pass; actual browser grip/gait/reload/sequence controls were reviewed. See
-[motion checkpoint](art-direction/ROOK-MOTION-CHECKPOINT.md) and
-[v4 asset evidence](art-direction/ROOK-VALIDATION.md).
-This is a development checkpoint, not a shipped hero replacement. Public game
-and Mac advance through the runtime checkpoints above. Next: portrait likeness
-and garment/material detail; terrain/turning and aim layers for the new travel
-motion; then LOD and the production adapter. Verify saved equipment and FPS
-hands before enabling it in gameplay.
+The detailed development character now has preserved v5 material/cap refinements,
+a three-strike katana study, both-direction dodge, rifle/reload and travel motion.
+43 art tests pass; 28 motion checks also pass on actual v5 geometry. Browser pose
+review and production build pass. See [motion evidence](art-direction/ROOK-MOTION-CHECKPOINT.md)
+and [v5 limits](art-direction/ROOK-V5-CANDIDATE.md). It is not the production hero.
+
+Next: replace the flat garment panels with properly constructed pockets/collar
+and surface-bound seams; continue facial likeness. Then terrain/turning, aim
+layers, LOD and production integration, including saved armour and FPS hands.
+A separate perspective audit is checking elevated weapon occlusion; do not mark
+that gate complete merely because the roof route works.
 
 
 4.48.1 follow-up audit: corrected enemy geometry ownership during corpse
