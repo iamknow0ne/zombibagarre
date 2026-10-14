@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {alignSurvivorFeet} from './CharacterMotion.js';
 
 // Fixed geometry: anchors are authored with the support plan; only the cable
 // buffer and landing ring change each frame. No particle/mesh growth per jump.
@@ -42,4 +43,5 @@ export function applyTraversalPose(character,p){
  d.legs.forEach((leg,i)=>{if(air){leg.rotation.x=i?-.25:.45;leg.userData.knee.rotation.x=i?.8:1.1;}else leg.userData.knee.rotation.x+=landing;});
  if(p.traversal!=='campaign'||p.grapple)d.arms.forEach((arm,i)=>{arm.rotation.x=p.grapple?-2.6:air?-.9:-.2;arm.rotation.z=(i?1:-1)*(air?.35:.08);arm.userData.elbow.rotation.x=p.grapple?-.25:-.7;});
  if(p.grapple)for(const rig of d.weaponRigs||[])if(rig)rig.visible=false;
+ alignSurvivorFeet(character,air);
 }

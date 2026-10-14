@@ -31,6 +31,22 @@ export function survivorLegPose(phase,walk,forward=1,strafe=0,{stride=.165,lift=
  return {hip:hip*weight,knee:knee*weight,ankle:-(hip+knee)*weight,roll:Math.atan2(x,-y)*weight,planted:stance,footLift:up*weight};
 }
 
+// Run after the final torso/thigh/knee pose, including hit and traversal layers.
+// Euler-angle subtraction only cancels one-axis rotations and leaves the boots
+// tilted when a later layer bends the knees. Reuse each ankle's quaternion to
+// cancel the complete parent rotation without allocating per-frame objects.
+export function alignSurvivorFeet(character,airborne=false){
+ const {body,legs=[]}=character.userData;
+ if(!body)return;
+ for(const leg of legs){
+  const {knee,ankle}=leg.userData;
+  if(!knee||!ankle)continue;
+  ankle.quaternion.copy(body.quaternion).multiply(leg.quaternion).multiply(knee.quaternion).invert();
+  // A small, consistent toe-down pose in the air; never inherit the last stride.
+  if(airborne)ankle.rotateX(.25);
+ }
+}
+
 export const SURVIVOR_MOTION={
  scout:{stride:.165,lift:.075,breath:1,weight:1},
  medic:{stride:.15,lift:.065,breath:.8,weight:.85},

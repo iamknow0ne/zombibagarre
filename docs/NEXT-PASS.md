@@ -30,6 +30,12 @@ Root: browser profiling, normal playthrough, integration and release. Performanc
 
 ## Next concrete slice
 
+4.48.1 follow-up audit: corrected enemy geometry ownership during corpse
+settling and final ankle orientation after recoil, melee and traversal layers.
+559 tests and production build pass; a real WebGL 30-cycle corpse check returns
+to its geometry baseline after every removal. See [patch evidence](RELEASE-4.48.1.md).
+The detailed character production/animation gate below remains open.
+
 4.48 visual checkpoint: live survivor clothing/proportion/gait refinements and
 six rebuilt ordinary enemies are implemented; 553 tests, production build and
 Apple Silicon GPU startup pass. Browser rifle/paired-blade animation sequences
@@ -38,7 +44,7 @@ still a separate development asset; authored combat animation, material/LOD
 optimization and a production adapter remain the next substantial art gate.
 Runtime commit `c538ec1` is published: Pages `38601520008` passed and the public
 menu displays 4.48.0. The Mac download digest matches the hardware-tested local
-archive. Independent Mac CI `38601576344` is queued; check its result next.
+archive. Independent Mac CI `38601576344` passed, including Metal hardware startup.
 
 Latest user priority: close the visual gap between the lore portraits and playable characters. The source/art review and first Rook reference sheet are saved in [character art direction](art-direction/CHARACTER-DIRECTION.md). A real anatomical/rigged prototype and reproducible Blender source now exist in `assets/characters` and `assets/source/rook`, with a standalone `/dev/character-art-qa.html` viewer and `scripts/art/validate-rook.mjs` check. This is a development asset only: no replacement character has shipped. Next refine Rook's facial likeness, garment construction and PBR maps, then authored combat animation and a rest-pose-aware runtime adapter. Validate the result in actual gameplay before expanding the pipeline. Do not claim the anatomical base or further procedural detail alone satisfies the art request.
 

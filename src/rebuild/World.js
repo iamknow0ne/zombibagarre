@@ -21,7 +21,7 @@ import {throwableMesh,ordnanceBurst} from './ThrowableVisuals.js';
 import {buildSurvivor,animateSurvivorDetails} from './SurvivorVisuals.js';
 import {reuseSceneForAO,CharacterInstances,freezeLocalTransforms,visibleAOOnly} from './RenderBatch.js';
 import {SurfaceMaterials} from './SurfaceMaterials.js';
-import {stepCharacterMotion,hitRecoil,survivorLegPose,SURVIVOR_MOTION} from './CharacterMotion.js';
+import {stepCharacterMotion,hitRecoil,survivorLegPose,SURVIVOR_MOTION,alignSurvivorFeet} from './CharacterMotion.js';
 import {buildBossModel,animateBossModel,bossWarning,animateBossWarning} from './BossVisuals.js';
 import {dressArmour,rpgPlaceMesh} from './RPGVisuals.js';
 import {StructureVisuals} from './StructureVisuals.js';
@@ -631,6 +631,7 @@ export class World {
     if(this.player.userData.skin!==p.skin||(p.appearanceKey&&this.player.userData.appearanceKey!==p.appearanceKey)){this.removeDynamic(this.player);this.player=this.character('player',null,p.skin,p.appearance);this.player.position.set(p.x,0,p.z);this.player.rotation.y=p.angle;this.scene.add(this.player);}
     dressArmour(this.player,p);this.player.position.lerp(new T.Vector3(p.x,p.y||0,p.z),1-Math.exp(-dt*22));this.player.rotation.y+=Math.atan2(Math.sin(p.angle-this.player.rotation.y),Math.cos(p.angle-this.player.rotation.y))*(1-Math.exp(-aimDt*20));this.animateCharacter(this.player,t,p.moving,p.dash>0,motionDt,p);
     if(!p.traversal||p.traversal==='campaign')animateWeapons(this.player,p,t,motionDt,{firstPerson:this.viewRig.active&&this.viewRig.mode==='first',box,sphere,cylinder,batch:(a,b)=>this.batchStatic(a,b),remove:m=>this.removeDynamic(m)});
+    alignSurvivorFeet(this.player);
     if(p.traversal)applyTraversalPose(this.player,p);
     const dive=focusDivePose(p),hero=this.player.userData;hero.body.position.y+=dive.lift;hero.body.rotation.x+=dive.pitch;hero.body.rotation.z+=dive.roll;
     updateBladeTrails(this.player,p,motionDt,!!this.settings.reducedMotion);
@@ -736,6 +737,7 @@ export class World {
     if(state.windup>0){const strike=Math.sin((1-state.windup)*Math.PI);d.arms.forEach(a=>{a.rotation.x=-1.2*strike;a.userData.elbow.rotation.x=-.8;});d.body.rotation.y+=strike*.25;d.body.rotation.x-=strike*.12;}
     if(player&&WEAPONS[state.weapon]?.melee){d.body.rotation.x+=dash?.15:.1;d.arms.forEach((a,i)=>{a.rotation.x=-.45;a.rotation.z=i?.35:-.35;});}
     if(d.impact){d.impact.age+=dt;const kick=hitRecoil(d.impact.age,d.impact.amount);d.body.rotation.x+=Math.cos(d.impact.angle)*kick;d.body.rotation.z-=Math.sin(d.impact.angle)*kick;if(d.impact.age>.24)d.impact=null;}
+    if(player)alignSurvivorFeet(m);
     if(dt>0&&pose.footfall&&(!state.traversal||state.grounded)&&!state.crawling&&!state.vehicleId&&(player||Math.hypot(m.position.x-this.player.position.x,m.position.z-this.player.position.z)<13)){
       const x=m.position.x+Math.cos(m.rotation.y)*pose.side*.17,z=m.position.z-Math.sin(m.rotation.y)*pose.side*.17;if((state.y||0)<.15&&waterAt(this.layout,x,z))this.splash(x,z,.16);else if(!this.settings.reducedMotion&&player&&!(this.weatherState?.wetness>.1)&&!(this.weatherState?.snowCover>.1))plume(this,x,(state.y||0)+.08,z,.16,.24,0x989380);
     }

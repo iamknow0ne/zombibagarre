@@ -16,6 +16,9 @@ const palettes={
  volatile:{coat:0x745d44,skin:0xa69c77,dark:0x443d33,accent:0xc49955},
 };
 function mesh(parent,geometry,color,kind,x=0,y=0,z=0,sx=1,sy=1,sz=1){
+ // Corpse settling replaces these meshes with static batches. Unlike cached
+ // primitive geometry, every enemy piece is owned and must be released there.
+ geometry.userData.surfaceOwned=true;
  const p=geometry.attributes.position,colors=new Float32Array(p.count*3),base=new T.Color(color);
  geometry.computeBoundingBox();const bounds=geometry.boundingBox,dy=Math.max(.001,bounds.max.y-bounds.min.y);
  for(let i=0;i<p.count;i++){const shade=(kind==='cloth'?.82:.9)+.1*(p.getY(i)-bounds.min.y)/dy+.035*Math.sin(p.getX(i)*19+p.getY(i)*11);colors[i*3]=base.r*shade;colors[i*3+1]=base.g*shade;colors[i*3+2]=base.b*shade;}
@@ -36,6 +39,7 @@ function mergeBones(parent){
   const geometries=pieces.map(m=>{m.updateMatrix();const g=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();return g.applyMatrix4(m.matrix);});
   const geometry=mergeGeometries(geometries);for(const g of geometries)g.dispose();
   if(!geometry)throw new Error('Enemy bone geometry attributes must match');
+  geometry.userData.surfaceOwned=true;
   const merged=new T.Mesh(geometry,material);merged.castShadow=merged.receiveShadow=true;parent.add(merged);
   for(const piece of pieces){piece.geometry.dispose();piece.removeFromParent();}
  }
