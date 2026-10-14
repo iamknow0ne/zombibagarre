@@ -9,7 +9,7 @@ const $=id=>document.getElementById(id),keys=new Set(),once={};
 // A developer console over the game canvas: restrained olive/amber, compact
 // controls, monospace diagnostics, no decorative UI motion or saved preferences.
 const settings={quality:'balanced',gore:true,goreLevel:4,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,viewMode:'diorama',dayCycle:'day',weatherMode:'clear',populationDetail:'off',environmentDetail:'minimal',foliageDetail:'sparse'};
-let scene='jump',sim,world,running=false,stage=0,freezeAt=Infinity,freezeReason='',events=[],lastFrame=0,autoFreeze=true,target=null,firing=false,lastAim=null,burstUntil=0,walkUntil=0;
+let scene='jump',sim,world,running=false,stage=0,freezeAt=Infinity,freezeReason='',events=[],lastFrame=0,autoFreeze=true,target=null,firing=false,lastAim=null,burstUntil=0,walkUntil=0,maxHeadPenetration=0;
 const pointer={x:.5,y:.5};
 const round=n=>Number.isFinite(n)?Number(n.toFixed(3)):null;
 function fail(error){running=false;$('error').hidden=false;$('error').textContent=error.message||String(error);report();}
@@ -21,10 +21,13 @@ function lowCanopyLayout(){
   {kind:'platform',x:0,y:2.15,z:4,w:4,d:12,h:.5,maxHealth:100000},
  ],traversal:{anchors:[{id:'low-anchor',supportId:'prop-0',x:0,y:2,z:8,label:'LOW CANOPY'}]}};
 }
+function canopyEntryLayout(){
+ return {...generateMap(73,0),cover:[{kind:'platform',x:0,z:0,w:4,d:3,y:2.7,h:.4,maxHealth:100000}],traversal:{anchors:[]}};
+}
 function setup(){
- running=false;firing=false;burstUntil=0;walkUntil=0;target=null;lastAim=null;keys.clear();for(const k of Object.keys(once))delete once[k];world?.destroy();events=[];stage=0;freezeAt=Infinity;freezeReason='';autoFreeze=true;
- sim=new Simulation({seed:73,mode:'city',environment:settings,...(scene==='canopy'?{layout:lowCanopyLayout()}: {})});sim.start(scene==='roof-arc'?'arc':'carbine');sim.toSpawn=999;sim.spawnTimer=99999;sim.player.invulnerable=999;sim.enemies=[];sim.events=[];
- const anchors=sim.layout.traversal.anchors,centre=scene==='canopy'?{x:0,z:4}:{x:(anchors[0].x+anchors[1].x)/3,z:(anchors[0].z+anchors[1].z+3)/3};
+ running=false;maxHeadPenetration=0;firing=false;burstUntil=0;walkUntil=0;target=null;lastAim=null;keys.clear();for(const k of Object.keys(once))delete once[k];world?.destroy();events=[];stage=0;freezeAt=Infinity;freezeReason='';autoFreeze=true;
+ sim=new Simulation({seed:73,mode:'city',environment:settings,...(scene==='canopy'?{layout:lowCanopyLayout()}:scene==='canopy-entry'?{layout:canopyEntryLayout()}: {})});sim.start(scene==='roof-arc'?'arc':'carbine');sim.toSpawn=999;sim.spawnTimer=99999;sim.player.invulnerable=999;sim.enemies=[];sim.events=[];
+ const anchors=sim.layout.traversal.anchors,centre=scene==='canopy'?{x:0,z:4}:scene==='canopy-entry'?{x:0,z:0}:{x:(anchors[0].x+anchors[1].x)/3,z:(anchors[0].z+anchors[1].z+3)/3};
  world=new World($('game'),settings,0,sim.layout);world.applySettings(settings);world.portrait=25;world.inspectionTarget=centre;world.focus.set(centre.x,0,centre.z);world.update(sim,0);
  if(scene.startsWith('roof')){const roof=sim.layout.traversal.roofs[0];if(!roof)throw new Error('No service roof for this seed.');const a=roof.anchor,start=scene==='roof-manual'?a:roof.approach;Object.assign(sim.player,{x:start.x,z:start.z,y:scene==='roof-manual'?roof.top:0,grounded:true,supportId:scene==='roof-manual'?a.supportId:null,supportY:scene==='roof-manual'?roof.top:0,angle:Math.atan2(-roof.approach.nx,-roof.approach.nz)});centre.x=a.x;centre.z=a.z;world.focus.set(a.x,0,a.z);}
  if(scene==='roof-arc'){
@@ -34,15 +37,17 @@ function setup(){
   centre.x=sim.player.x;centre.z=sim.player.z;world.focus.set(centre.x,0,centre.z);
  }
  if(scene==='canopy'){Object.assign(sim.player,{x:0,z:0,angle:0});target=sim.spawnEnemy('walker',4,8);target.health=target.maxHealth=10000;target.speed=0;target.attack=999;}
+ if(scene==='canopy-entry')Object.assign(sim.player,{x:0,y:.805,z:2.12,grounded:false,coyote:0,vy:4.2,vz:-6.2,speed:6.2,angle:Math.PI});
  if(scene==='edge'){const a=anchors[0],support=sim.props.find(p=>p.id===a.supportId);Object.assign(sim.player,{x:a.x+support.w/2+.1,z:a.z,y:support.h+.1,vy:-5,grounded:false,supportId:null,supportY:0,angle:-Math.PI/2});centre.x=a.x;centre.z=a.z;world.focus.set(a.x,0,a.z);}
  if(scene==='shooting'){const a=anchors[0],support=sim.props.find(p=>p.id===a.supportId);Object.assign(sim.player,{x:a.x,z:a.z,y:support.h,grounded:true,supportId:support.id,supportY:support.h,angle:Math.atan2(-a.x,3-a.z)});target=sim.spawnEnemy('walker',0,3);target.health=target.maxHealth=10000;target.speed=0;target.attack=999;centre.x=(a.x+target.x)/2;centre.z=(a.z+target.z)/2;world.focus.set(centre.x,0,centre.z);}
  $('grapple-test').hidden=$('walk-test').hidden=scene!=='canopy';
  applyCamera();$('aim-target').disabled=!target;$('fire-burst').disabled=!['manual','shooting','roof-manual','roof-arc','canopy'].includes(scene);
  document.querySelectorAll('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.scene===scene)));$('error').hidden=true;
- running=true;lastFrame=performance.now();report();
+ running=scene!=='canopy-entry';if(scene==='canopy-entry'){freezeReason='ready · Step 0.1s';world.update(sim,0);}lastFrame=performance.now();report();
 }
 function actionInput(){
  const input={auto:false};
+ if(scene==='canopy-entry')return {...input,z:-1};
  if(scene==='edge')return {...input,x:-1,z:0};
  if(['manual','shooting','roof-manual','roof-arc','canopy'].includes(scene)){
   input.x=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
@@ -59,6 +64,7 @@ function actionInput(){
 }
 function advance(dt){
  sim.update(dt,actionInput());
+ if(scene==='canopy-entry'){const p=sim.player,b=sim.props[0];if(Math.abs(p.x-b.x)<b.w/2+p.radius-.001&&Math.abs(p.z-b.z)<b.d/2+p.radius-.001&&p.y<b.y+b.h-.001)maxHeadPenetration=Math.max(maxHeadPenetration,p.y+1.75-b.y);}
  for(const event of sim.events){
   world.onEvent(event);if(event.type.startsWith('traversal-')||event.type==='progression'||event.type==='destroy'){events.push({type:event.type,time:round(sim.time),support:event.supportId||null,message:event.message||event.title||null});if(events.length>12)events.shift();}
   if(event.type==='traversal-land'&&scene==='canopy'&&stage===1){freezeAt=sim.time+.12;freezeReason='blocked grapple released';stage=2;}
@@ -78,7 +84,7 @@ function report(){
  const p=sim.player,anchorTarget=sim.traversalTarget;
  $('status').textContent=`${scene.toUpperCase()} · ${running?'RUNNING':`FROZEN ${freezeReason}`} · ${round(sim.time)}s`;
  $('pause').textContent=running?'Freeze':'Resume';
- $('report').textContent=JSON.stringify({position:{x:round(p.x),y:round(p.y),z:round(p.z)},grounded:p.grounded,support:p.supportId,grapple:p.grapple?.anchorId||null,grappleBlockedFor:round(p.grapple?.blockedTime||0),velocityY:round(p.vy),target:anchorTarget?{id:anchorTarget.id,available:anchorTarget.available,reason:anchorTarget.reason||null}:null,camera:{mode:settings.viewMode,x:round(world.camera.position.x),y:round(world.camera.position.y),z:round(world.camera.position.z)},aim:lastAim?{x:round(lastAim.x),y:round(lastAim.y),z:round(lastAim.z),targetId:lastAim.targetId??null}:null,targetHealth:target?round(target.health):null,weapon:p.weapon,shots:p.shotCounts[p.weapon]||0,magazine:p.magazines[p.weapon],rewardClaimed:!!sim.traversalRewardClaimed,grenades:p.grenades,lastEvents:events.slice(-5)},null,2);
+ $('report').textContent=JSON.stringify({...(scene==='canopy-entry'?{maxHeadPenetration:round(maxHeadPenetration),collisionClear:maxHeadPenetration<=.001}:{}),position:{x:round(p.x),y:round(p.y),z:round(p.z)},grounded:p.grounded,support:p.supportId,grapple:p.grapple?.anchorId||null,grappleBlockedFor:round(p.grapple?.blockedTime||0),velocityY:round(p.vy),target:anchorTarget?{id:anchorTarget.id,available:anchorTarget.available,reason:anchorTarget.reason||null}:null,camera:{mode:settings.viewMode,x:round(world.camera.position.x),y:round(world.camera.position.y),z:round(world.camera.position.z)},aim:lastAim?{x:round(lastAim.x),y:round(lastAim.y),z:round(lastAim.z),targetId:lastAim.targetId??null}:null,targetHealth:target?round(target.health):null,weapon:p.weapon,shots:p.shotCounts[p.weapon]||0,magazine:p.magazines[p.weapon],rewardClaimed:!!sim.traversalRewardClaimed,grenades:p.grenades,lastEvents:events.slice(-5)},null,2);
 }
 for(const b of document.querySelectorAll('[data-scene]'))b.onclick=()=>{scene=b.dataset.scene;try{setup();}catch(e){fail(e);}};
 $('replay').onclick=()=>{try{setup();}catch(e){fail(e);}};$('freeze').onchange=$('replay').onclick;

@@ -1,0 +1,36 @@
+{
+  "maxHeadPenetration": 0,
+  "collisionClear": true,
+  "position": {
+    "x": 0,
+    "y": 0,
+    "z": -2.554
+  },
+  "grounded": true,
+  "support": null,
+  "grapple": null,
+  "grappleBlockedFor": 0,
+  "velocityY": 0,
+  "target": null,
+  "camera": {
+    "mode": "diorama",
+    "x": 26,
+    "y": 35,
+    "z": 32
+  },
+  "aim": null,
+  "targetHealth": null,
+  "weapon": "carbine",
+  "shots": 0,
+  "magazine": 24,
+  "rewardClaimed": false,
+  "grenades": 3,
+  "lastEvents": [
+    {
+      "type": "traversal-land",
+      "time": 0.483,
+      "support": null,
+      "message": null
+    }
+  ]
+}

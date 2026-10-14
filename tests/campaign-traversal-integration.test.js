@@ -45,3 +45,14 @@ test('blocked full-body grapple returns campaign movement and firing without ano
  s.update(1/60,{firing:true,aim:{x:0,y:1.4,z:15},auto:false});
  assert.ok(s.player.shotCounts.carbine>shots,'the stuck grapple no longer blocks the equipped weapon');
 });
+
+test('campaign jump approaching a raised canopy keeps the hero outside its underside',()=>{
+ const l={cover:[{kind:'platform',x:0,z:0,w:4,d:3,y:2.7,h:.4}],bounds:{minX:-20,maxX:20,minZ:-20,maxZ:20},traversal:{anchors:[]}};
+ const s=new Simulation({layout:l});s.start();s.toSpawn=999;s.spawnTimer=1e6;
+ const p=s.player;Object.assign(p,{x:0,y:.805,z:2.12,grounded:false,coyote:0,vy:4.2,vz:-6.2,speed:6.2});
+ for(let i=0;i<120;i++){
+  s.update(1/120,{z:-1,auto:false});
+  if(Math.abs(p.x)<2+p.radius-.001&&Math.abs(p.z)<1.5+p.radius-.001)assert.ok(p.y+1.75<=2.701||p.y>=3.099,'head entered the canopy collision volume');
+ }
+ assert.equal(p.grounded,true);assert.equal(p.y,0);assert.equal(p.supportY,0);assert.ok(p.z<1.5,'hero can continue under cover after descending');
+});

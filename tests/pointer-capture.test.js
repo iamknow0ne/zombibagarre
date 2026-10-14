@@ -21,3 +21,21 @@ test('map capture failure, cancellation and outside release cannot leave a stale
  send(canvas,'pointerdown');send(canvas,'pointermove',{clientX:90,buttons:0});assert.equal(map.view.x,x);send(canvas,'pointermove',{clientX:90});assert.equal(map.view.x,x);
  send(canvas,'pointerdown');send(canvas,'pointermove',{pointerId:2,clientX:90});assert.equal(map.view.x,x);dialog.dispatchEvent(new Event('close'));send(canvas,'pointermove',{clientX:90});assert.equal(map.view.x,x);
 }));
+
+test('unlocked perspective aim keeps turning while firing and releases each mouse button independently',()=>env(()=>{
+ const canvas=new Canvas(),input=new Input(canvas,()=>{});input.perspective=true;input.playing=true;input.lockUnavailable=true;
+ send(canvas,'pointerdown',{button:2,buttons:2});send(canvas,'mousedown',{button:2,buttons:2});
+ send(canvas,'pointermove',{buttons:2,movementX:8,movementY:-3});
+ assert.equal(input.lookX,8);assert.equal(input.lookY,-3);assert.equal(input.aimHeld,true);
+ // A second button produces mousedown, not a second pointerdown.
+ send(canvas,'mousedown',{button:0,buttons:3});send(canvas,'pointermove',{buttons:3,movementX:11,movementY:4});
+ assert.equal(input.firing,true);assert.equal(input.aimHeld,true);assert.equal(input.lookX,19);assert.equal(input.lookY,1);
+ send(window,'mouseup',{button:0,buttons:2});send(canvas,'pointermove',{buttons:2,movementX:5,movementY:2});
+ assert.equal(input.firing,false);assert.equal(input.aimHeld,true);assert.equal(input.lookX,24);assert.equal(input.lookY,3);
+ send(window,'mouseup',{button:2,buttons:0});send(canvas,'pointermove',{buttons:0,movementX:40,movementY:40});
+ assert.equal(input.aimHeld,false);assert.equal(input.lookX,24);assert.equal(input.lookY,3);
+ // Free mouse movement while only firing must not turn the unlocked camera.
+ send(canvas,'mousedown',{button:0,buttons:1});send(canvas,'pointermove',{buttons:1,movementX:40,movementY:40});
+ assert.equal(input.lookX,24);assert.equal(input.firing,true);
+ input.perspective=false;send(canvas,'pointermove',{buttons:2,movementX:40,movementY:40});assert.equal(input.lookX,24);
+}));

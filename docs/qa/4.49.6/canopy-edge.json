@@ -1,0 +1,29 @@
+{
+  "maxHeadPenetration": 0,
+  "collisionClear": true,
+  "position": {
+    "x": 0,
+    "y": 1.095,
+    "z": 1.9
+  },
+  "grounded": false,
+  "support": null,
+  "grapple": null,
+  "grappleBlockedFor": 0,
+  "velocityY": 1.8,
+  "target": null,
+  "camera": {
+    "mode": "diorama",
+    "x": 26,
+    "y": 35,
+    "z": 32
+  },
+  "aim": null,
+  "targetHealth": null,
+  "weapon": "carbine",
+  "shots": 0,
+  "magazine": 24,
+  "rewardClaimed": false,
+  "grenades": 3,
+  "lastEvents": []
+}

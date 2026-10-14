@@ -231,3 +231,16 @@ The cropped public menu follow-up is addressed in 4.49.5; see the checkpoint bel
 - [x] Publish and verify browser and exact Mac package. Runtime `5de4869`; Pages `38641595937` passed; public BUILD 4.49.5 confirmed without startup errors; uploaded Mac digest matches the hardware-tested archive. See [4.49.5 evidence](RELEASE-4.49.5.md).
 
 Next remains wider perspective/traversal validation and production character art, ordinary expedition and sustained native soak. Hangar/orbit/moon remain downstream. No physical controller/phone result is claimed.
+
+
+## 4.49.6 — perspective input and canopy collision
+
+- [x] Fix fallback mouse look stopping when right-button aim and left-button fire are held together; preserve independent releases.
+- [x] Align side/underside clearance so rising edge entry cannot pass through a canopy.
+- [x] Move grapple marker masts beside the roof landing lane; retain original ring/cable targets and physics.
+- [x] Browser checks: four simulated mouse sequences, zero canopy penetration and recovered ground movement, generated service-roof grapple/landing in TPS and FPS, clear FPS view after the marker fix.
+- [x] Standard Open City automated 32-wave campaign completed. Ordinary full playthrough and hardware device checks remain open.
+- [x] 597 final tests, production build and exact Apple Silicon package signature/offline GPU startup.
+- [ ] Publication verification. See [4.49.6 evidence](RELEASE-4.49.6.md).
+
+Next: production character art and animation integration remains a major visual gap; wider perspective/collision checks, ordinary full expedition and sustained native soak remain open. Do not promote the development Rook asset until its likeness, equipment/LOD, aim layers and FPS adapters pass actual gameplay review. Hangar/orbit/moon remain downstream.

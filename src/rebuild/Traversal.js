@@ -3,6 +3,9 @@
 import {boxHit3D,feetHeight,propSpan} from './Ballistics.js';
 export const TRAVERSAL={gravity:24,jumpSpeed:9.4,speed:6.2,airControl:7,range:23,grappleSpeed:14,bodyHeight:1.75};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+// Side entry and upward sweeps must agree on underside clearance. A wider side
+// tolerance can admit the head inside a slab, past the next ceiling sweep.
+const HEAD_CLEARANCE=.001;
 const alive=b=>b.health===undefined||b.health>0;
 const top=b=>propSpan(b).max;
 const onBox=(p,b,margin=0)=>Math.abs(p.x-b.x)<b.w/2-margin&&Math.abs(p.z-b.z)<b.d/2-margin;
@@ -26,7 +29,7 @@ export function grappleAvailability(p,anchor,boxes){
 function moveAxis(p,delta,axis,boxes,bounds,bodyHeight){
  if(!delta)return false;const other=axis==='x'?'z':'x',size=axis==='x'?'w':'d',cross=axis==='x'?'d':'w',r=p.radius,old=p[axis];
  let next=clamp(old+delta,bounds[axis==='x'?'minX':'minZ']+r,bounds[axis==='x'?'maxX':'maxZ']-r);
- for(const b of boxes){if(!alive(b)||p.y>=top(b)-.015||p.y+bodyHeight<=feetHeight(b)+.01||Math.abs(p[other]-b[other])>=b[cross]/2+r-.001)continue;
+ for(const b of boxes){if(!alive(b)||p.y>=top(b)-.015||p.y+bodyHeight<=feetHeight(b)+HEAD_CLEARANCE||Math.abs(p[other]-b[other])>=b[cross]/2+r-.001)continue;
   const lo=b[axis]-b[size]/2-r,hi=b[axis]+b[size]/2+r;
   if(delta>0&&old<=lo+.001&&next>lo)next=Math.min(next,lo);
   else if(delta<0&&old>=hi-.001&&next<hi)next=Math.max(next,hi);
@@ -69,7 +72,7 @@ export function stepTraversal(p,input,dt,boxes,anchors,bounds,movement={}){
   const beforeY=p.y;let nextY=p.y+p.vy*h;
   // Ascend before lateral collision so feet can clear a ledge. Descend after
   // lateral movement so swept landing selects the surface actually underneath.
-  if(p.vy>0){let ceiling=Infinity;for(const b of boxes)if(alive(b)&&feetHeight(b)>0&&onBox(p,b,-p.radius)&&beforeY+bodyHeight<=feetHeight(b)+.001&&nextY+bodyHeight>=feetHeight(b))ceiling=Math.min(ceiling,feetHeight(b)-bodyHeight);p.y=Math.min(nextY,ceiling);if(ceiling<Infinity){p.vy=0;nextY=p.y;hitCeiling=true;}}
+  if(p.vy>0){let ceiling=Infinity;for(const b of boxes)if(alive(b)&&feetHeight(b)>0&&onBox(p,b,-p.radius)&&beforeY+bodyHeight<=feetHeight(b)+HEAD_CLEARANCE&&nextY+bodyHeight>=feetHeight(b))ceiling=Math.min(ceiling,feetHeight(b)-bodyHeight);p.y=Math.min(nextY,ceiling);if(ceiling<Infinity){p.vy=0;nextY=p.y;hitCeiling=true;}}
   const hitX=moveAxis(p,p.vx*h,'x',boxes,bounds,bodyHeight),hitZ=moveAxis(p,p.vz*h,'z',boxes,bounds,bodyHeight);
   if(hitX)p.vx=0;if(hitZ)p.vz=0;
   if(p.vy<=0){const support=supportBelow(p,boxes,beforeY+.025);p.y=nextY;if(p.y<=support.y){const falling=p.vy;p.y=support.y;p.vy=0;if(!p.grounded&&falling<-.8){p.landing=clamp(-falling/23,.12,.75);events.push({type:'land',speed:-falling,supportId:support.id});}p.grounded=true;p.supportId=support.id;}}

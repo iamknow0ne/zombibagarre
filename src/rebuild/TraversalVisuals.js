@@ -1,6 +1,15 @@
 import * as T from 'three';
 import {alignSurvivorFeet} from './CharacterMotion.js';
 
+// Keep the marker's mast beside the landing lane. The ring/cable stay at the
+// authored endpoint; a straight post there occupies the landed hero and FPS eye.
+function anchorMastPosition(anchor,owner,plan){
+ const roof=plan?.roofs?.find(r=>r.anchor?.id===anchor.id),normal=roof?.approach;
+ const directions=normal?[[-normal.nz,normal.nx],[normal.nz,-normal.nx]]:[[1,0],[-1,0],[0,1],[0,-1]];
+ if(!Number.isFinite(owner.w)||!Number.isFinite(owner.d))return null;
+ return directions.map(([x,z])=>({x:anchor.x+x*1.1,z:anchor.z+z*1.1})).find(p=>Math.abs(p.x-owner.x)<=owner.w/2-.12&&Math.abs(p.z-owner.z)<=owner.d/2-.12)||null;
+}
+
 // Fixed geometry: anchors are authored with the support plan; only the cable
 // buffer and landing ring change each frame. No particle/mesh growth per jump.
 export class TraversalVisuals{
@@ -10,7 +19,12 @@ export class TraversalVisuals{
   for(const anchor of (plan?.anchors||[]).slice(0,16)){
    const owner=props.find(p=>p.id===anchor.supportId);if(!owner)continue;
    const group=new T.Group(),base=(owner.y||0)+owner.h,height=Math.max(.05,anchor.y-base);
-   const post=new T.Mesh(new T.CylinderGeometry(.045,.065,height,8),metal);post.position.set(anchor.x,base+height/2,anchor.z);group.add(post);
+   const mast=anchorMastPosition(anchor,owner,plan);
+   if(mast){
+    const post=new T.Mesh(new T.CylinderGeometry(.045,.065,height,8),metal);post.name='anchor-mast';post.position.set(mast.x,base+height/2,mast.z);group.add(post);
+    const from=new T.Vector3(mast.x,anchor.y,mast.z),to=new T.Vector3(anchor.x,anchor.y,anchor.z),arm=new T.Mesh(new T.CylinderGeometry(.035,.035,from.distanceTo(to),8),metal);
+    arm.name='anchor-overhead-arm';arm.position.copy(from).add(to).multiplyScalar(.5);arm.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),to.sub(from).normalize());group.add(arm);
+   }
    const material=new T.MeshStandardMaterial({color:0xc9ae79,emissive:0x8c5126,emissiveIntensity:.2,roughness:.35,metalness:.55});
    const ring=new T.Mesh(new T.TorusGeometry(.29,.055,7,24),material);ring.position.set(anchor.x,anchor.y,anchor.z);group.add(ring);this.root.add(group);this.anchors.push({anchor,group,ring});
   }

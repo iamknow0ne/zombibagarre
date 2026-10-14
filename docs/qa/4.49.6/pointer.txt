@@ -1,0 +1,18 @@
+Perspective mouse chord QA
+
+Explicit simulated mouse events through the game's real input listeners and camera. Tests the fallback when pointer lock is unavailable. This fixture has no save profile and does not test a physical mouse or controller.
+
+Reset
+1 · Right-drag aim
+2 · Add left fire + drag
+3 · Release fire + drag
+4 · Release aim + move
+Pointer lock: disabled for this fixture
+Fire: false · Aim held: false
+Camera yaw: -0.06000 · Camera pitch: 0.12600
+Next: Complete — all four event sequences checked
+Simulated action	Look X / Y	Yaw change	Fire / aim	Result
+Right drag	8 / -3	-0.02000	false / true	PASS
+Aim + fire drag	11 / 4	-0.02750	true / true	PASS
+Release fire; keep aiming	5 / 2	-0.01250	false / true	PASS
+Release aim; free movement	0 / 0	0.00000	false / false	PASS

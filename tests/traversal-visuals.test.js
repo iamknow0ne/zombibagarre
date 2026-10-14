@@ -33,3 +33,20 @@ test('elevated fire emits muzzle flashes and cartridge cases at shooter height',
  const world={scene:new T.Scene(),effects:[],random:()=>.5,shake:0,muzzleLight:new T.PointLight(),smoke(){},smokeTex:new T.Texture()};ejectCasing(world,{x:0,y:5.1,z:0,weapon:'carbine'});assert.equal(world.effects[0].mesh.position.y,5.25);
  weaponShot(world,{x:0,y:5.1,z:0,weapon:'carbine',angle:0,variant:1});assert.ok(world.muzzleLight.position.y>5);assert.ok(world.effects.every(e=>e.mesh.position.y>5));
 });
+
+test('grapple marker mast stays beside the roof landing lane while ring and cable retain the authored endpoint',()=>{
+ for(const [nx,nz] of [[0,1],[1,0],[0,-1],[-1,0]]){
+  const owner={id:'roof',x:0,y:3,z:0,w:8,d:8,h:.3,health:100},anchor={id:'roof-anchor',supportId:'roof',x:nx*2.5,y:6.6,z:nz*2.5};
+  const scene=new T.Scene(),visuals=new TraversalVisuals(scene,{anchors:[anchor],roofs:[{anchor,approach:{nx,nz}}]},[owner]);
+  const group=visuals.anchors[0].group,mast=group.getObjectByName('anchor-mast'),arm=group.getObjectByName('anchor-overhead-arm');
+  assert.ok(mast&&arm);assert.ok(Math.abs(Math.hypot(mast.position.x-anchor.x,mast.position.z-anchor.z)-1.1)<1e-9);
+  assert.ok(Math.abs((mast.position.x-anchor.x)*nx+(mast.position.z-anchor.z)*nz)<1e-9,'mast sits beside, not in front of, the arrival lane');
+  assert.ok(Math.abs(mast.position.x-owner.x)<owner.w/2&&Math.abs(mast.position.z-owner.z)<owner.d/2,'mast has roof support');
+  assert.deepEqual(visuals.anchors[0].ring.position.toArray(),[anchor.x,anchor.y,anchor.z]);
+  visuals.update({player:{traversal:'campaign',x:anchor.x,y:3.3,z:anchor.z,grapple:{anchorId:anchor.id}},props:[owner]},0,new T.Camera());
+  const points=visuals.cable.geometry.attributes.position;assert.ok(Math.abs(points.getX(16)-anchor.x)<1e-6&&Math.abs(points.getY(16)-anchor.y)<1e-6&&Math.abs(points.getZ(16)-anchor.z)<1e-6);
+  assert.ok(arm.position.y>3.3+1.75,'horizontal support stays above the landed hero');visuals.dispose();assert.equal(scene.children.length,0);
+ }
+ const owner={id:'tiny',x:0,z:0,w:.6,d:.6,h:1,health:100},anchor={id:'tiny-anchor',supportId:'tiny',x:0,y:3.1,z:0},visuals=new TraversalVisuals(new T.Scene(),{anchors:[anchor]},[owner]);
+ assert.equal(visuals.anchors[0].group.getObjectByName('anchor-mast'),undefined,'a narrow support never puts a pole back inside the landing body');assert.ok(visuals.anchors[0].ring);visuals.dispose();
+});

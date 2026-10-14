@@ -101,3 +101,20 @@ test('clearing a briefly blocked grapple lets the same pull finish normally',()=
  assert.equal(cleared,true);assert.equal(p.grapple,null);assert.equal(p.supportId,owner.id);
  assert.ok(events.some(e=>e.type==='reel-complete'));assert.ok(!events.some(e=>e.type==='blocked'||e.type==='release'));
 });
+
+test('rising diagonal entry cannot slip through a canopy between side and ceiling sweeps',()=>{
+ const slab={id:'canopy',x:0,z:0,w:4,d:3,y:2.7,h:.4};
+ for(const bodyHeight of [TRAVERSAL.bodyHeight,2.1])for(const hz of [20,60,120])for(const [nx,nz] of [[0,1],[0,-1],[1,0],[-1,0]]){
+  // At the fifth physics substep the head has just crossed the underside while
+  // the body reaches the edge. Side and upward sweeps must agree on clearance.
+  const p=player({x:nx*(slab.w/2+.62),y:.805+TRAVERSAL.bodyHeight-bodyHeight,z:nz*(slab.d/2+.62)});
+  Object.assign(p,{grounded:false,coyote:0,vy:4.2,vx:-nx*6.2,vz:-nz*6.2});
+  for(let i=0;i<hz;i++){
+   stepTraversal(p,{x:-nx,z:-nz},1/hz,[slab],[],bounds,{bodyHeight});
+   const withinFootprint=Math.abs(p.x)<slab.w/2+p.radius-.001&&Math.abs(p.z)<slab.d/2+p.radius-.001;
+   assert.ok(!withinFootprint||p.y+bodyHeight<=slab.y+.001||p.y>=slab.y+slab.h-.001,`penetrated canopy at ${hz} Hz: ${JSON.stringify(p)}`);
+  }
+  assert.equal(p.y,0);assert.equal(p.grounded,true);
+  assert.ok(nx?p.x*nx<slab.w/2:p.z*nz<slab.d/2,'movement continues beneath the canopy after descent');
+ }
+});

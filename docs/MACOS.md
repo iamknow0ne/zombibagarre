@@ -4,7 +4,7 @@ The macOS test edition is an offline app for Apple Silicon Macs running macOS 13
 
 ## Try the local build
 
-Open **Zombie Bagarre.app** inside `release/4.49.5/Zombie Bagarre-darwin-arm64`. You can copy the app to your Applications folder; the game and its assets travel together. The matching `Zombie-Bagarre-4.49.5-macOS-arm64.zip` includes the app and this guide.
+Open **Zombie Bagarre.app** inside `release/4.49.6/Zombie Bagarre-darwin-arm64`. You can copy the app to your Applications folder; the game and its assets travel together. The matching `Zombie-Bagarre-4.49.6-macOS-arm64.zip` includes the app and this guide.
 
 This test app uses an **ad-hoc code signature**, which verifies its contents but does not establish an Apple-verified developer identity. It is **not notarized** and uses a local development signing profile without the distribution hardened runtime. A downloaded copy may be blocked by Gatekeeper; public distribution with a normal first-open experience remains pending Developer ID signing and Apple notarization. Do not disable Gatekeeper or remove quarantine attributes. The locally built app is the intended test route for now.
 
@@ -30,7 +30,7 @@ npm run desktop:mac
 node scripts/smoke-desktop.mjs --mac
 ```
 
-To preserve an older running build, pass `--output-dir=release/4.49.5` to both build and smoke scripts. The app, archive, checksum and smoke log then share that versioned directory.
+To preserve an older running build, pass `--output-dir=release/4.49.6` to both build and smoke scripts. The app, archive, checksum and smoke log then share that versioned directory.
 
 The build uses the host's native architecture, creates the app icon, signs the complete bundle ad hoc, verifies nested signatures and creates a ZIP with a SHA-256 checksum. The smoke test launches that exact packaged app with temporary save storage, loads the offline world and shaders, checks the desktop bridge and quits. Its log appears in `release/darwin-arm64-smoke.log` on Apple Silicon. No live character data is touched.
 
