@@ -266,3 +266,15 @@ Remaining major gates: character likeness/scarf, animation and production adapte
 - [x] Published runtime `7b6548f`; Pages `38693865678` passed and actual public BUILD 4.49.8 loaded without errors. GitHub Mac asset digest matches the exact tested ZIP. See [4.49.8 evidence](RELEASE-4.49.8.md).
 
 Next: wider perspective/visibility checks and production character art remain the immediate gates, with ordinary expedition and sustained native gameplay still open. The first accurate service roof is complete; additional roofs/elevated enemy encounters and hangar/orbit/moon remain unfinished.
+
+## 4.49.9 — paused camera visibility and development aim
+
+- [x] Restore solid facades immediately when switching to FPS/TPS, including zero-delta paused frames; restore the current hero cutaway on returning to diorama.
+- [x] 606 gameplay tests, production build and actual rendered browser camera roundtrip with no simulation advance or browser errors.
+- [x] Rook v7 development-only rifle/recoil aim layer: 36 art/motion tests, 72 envelope samples, planted skin geometry and grip checks; actual front/profile browser inspection and compact keyboard-accessible viewer controls.
+- [ ] Finish exact Mac package and browser publication verification. See [4.49.9 evidence](RELEASE-4.49.9.md).
+
+Next: detailed character likeness and production integration, including moving aim,
+turning, armour, LOD and FPS hands. Broader perspective/collision QA, ordinary full
+expedition and sustained native gameplay remain open. The first roof is complete;
+additional elevated encounters and hangar/orbit/moon remain unfinished.

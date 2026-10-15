@@ -58,6 +58,11 @@ export class BuildingCutaway{
   if(camera.isOrthographicCamera)this.uniforms.cutawayPixels.value.set(width*camera.zoom/(camera.right-camera.left),height*camera.zoom/(camera.top-camera.bottom));
  }
  update(player,camera,dt,enabled=true,reducedMotion=false){
+  // The aperture is an orthographic readability aid, not transparent cover in
+  // FPS/TPS. A view change can render with zero delta while paused: easing here
+  // would leave a hole in the facade until gameplay resumes. Reset readiness so
+  // returning to diorama also gets readable cover on its first paused frame.
+  if(!camera.isOrthographicCamera){this.uniforms.cutawayRadius.value=0;this.ready=false;return;}
   const hero=this.uniforms.cutawayHero.value;hero.copy(player.position);hero.y+=1;hero.applyMatrix4(camera.matrixWorldInverse);
   this.uniforms.cutawayUp.value.set(0,1,0).transformDirection(camera.matrixWorldInverse);
   const radius=enabled?2.9:0,u=this.uniforms.cutawayRadius;

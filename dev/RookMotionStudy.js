@@ -15,6 +15,11 @@ export const ROOK_MOTION_MODES=Object.freeze([
 ]);
 const V=(x=0,y=0,z=0)=>new T.Vector3(x,y,z),clamp=T.MathUtils.clamp;
 const CARBINE_SCALE=.62;
+export const ROOK_AIM_LIMITS=Object.freeze({yaw:Math.PI*35/180,pitch:Math.PI/6});
+export function normalizeRookAim({yaw=0,pitch=0}={}){
+ if(!Number.isFinite(yaw)||!Number.isFinite(pitch))throw new TypeError('Rook aim angles must be finite.');
+ return{yaw:clamp(yaw,-ROOK_AIM_LIMITS.yaw,ROOK_AIM_LIMITS.yaw),pitch:clamp(pitch,-ROOK_AIM_LIMITS.pitch,ROOK_AIM_LIMITS.pitch)};
+}
 const ease=x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
 const loop=(time,duration)=>((time%duration)+duration)%duration/duration;
 
@@ -24,7 +29,7 @@ export function createRookMotionStudy(content){
  const bones=new Map(),rest=new Map(),skins=[];
  content.traverse(b=>{if(b.isBone){bones.set(b.name.replaceAll('.',''),b);rest.set(b,{p:b.position.clone(),q:b.quaternion.clone(),s:b.scale.clone(),worldQ:b.getWorldQuaternion(new T.Quaternion()),point:content.worldToLocal(b.getWorldPosition(V()))});}if(b.isSkinnedMesh)skins.push(b);});
  for(const skin of skins)skin.updateMatrixWorld(true);
- const required=['root','spine05','spine02','head',...['L','R'].flatMap(s=>['upperarm01','lowerarm01','wrist','upperleg01','lowerleg01','foot'].map(n=>n+s))];
+ const required=['root','spine05','spine02','spine01','head',...['L','R'].flatMap(s=>['upperarm01','lowerarm01','wrist','upperleg01','lowerleg01','foot'].map(n=>n+s))];
  for(const name of required)if(!bones.has(name))throw new Error(`Rook motion cannot find required bone ${name}.`);
  const bone=name=>bones.get(name),point=name=>rest.get(bone(name)).point.clone();
  const chains={};for(const s of ['L','R'])for(const [kind,names]of Object.entries({arm:['upperarm01','lowerarm01','wrist'],leg:['upperleg01','lowerleg01','foot'],thumb:['finger1-1','finger1-2','finger1-3']})){
@@ -53,12 +58,12 @@ export function createRookMotionStudy(content){
    fingerFlex.push({b,axis,amount:[.62,.84,.46][joint-1]});
   }
  }
- let mode='bind',sampleTime=0,maxReachError=0,clampedTargets=0,weaponPitch=0,weaponPosition=V(),contactTargets={},footContacts={},combatFrame=null;
+ let mode='bind',sampleTime=0,maxReachError=0,clampedTargets=0,weaponPitch=0,weaponPosition=V(),contactTargets={},footContacts={},combatFrame=null,aimFrame={yaw:0,pitch:0,active:false},weaponAim=new T.Quaternion();
  const wp=b=>b.getWorldPosition(V());
  const worldPoint=p=>content.localToWorld(p.clone());
  const modelQ=()=>content.getWorldQuaternion(new T.Quaternion());
  const worldOrientation=(b,q)=>{const parentQ=b.parent.getWorldQuaternion(new T.Quaternion());b.quaternion.copy(parentQ.invert().multiply(q)).normalize();b.updateWorldMatrix(false,true);};
- const reset=()=>{for(const[b,r]of rest){b.position.copy(r.p);b.quaternion.copy(r.q);b.scale.copy(r.s);}content.updateWorldMatrix(true,true);mode='bind';sampleTime=0;maxReachError=0;clampedTargets=0;weaponPitch=0;contactTargets={};footContacts={};combatFrame=null;};
+ const reset=()=>{for(const[b,r]of rest){b.position.copy(r.p);b.quaternion.copy(r.q);b.scale.copy(r.s);}content.updateWorldMatrix(true,true);mode='bind';sampleTime=0;maxReachError=0;clampedTargets=0;weaponPitch=0;contactTargets={};footContacts={};combatFrame=null;aimFrame={yaw:0,pitch:0,active:false};weaponAim.identity();};
  function turn(b,axis,angle){const worldAxis=axis.clone().applyQuaternion(modelQ()),q=new T.Quaternion().setFromAxisAngle(worldAxis,angle).multiply(b.getWorldQuaternion(new T.Quaternion()));worldOrientation(b,q);}
  function aim(b,child,target){const origin=wp(b),from=wp(child).sub(origin).normalize(),to=target.clone().sub(origin).normalize();if(to.lengthSq()<.5)return;worldOrientation(b,new T.Quaternion().setFromUnitVectors(from,to).multiply(b.getWorldQuaternion(new T.Quaternion())));}
  function solve(chain,target,pole){
@@ -128,7 +133,28 @@ export function createRookMotionStudy(content){
   for(const {b,axis,amount}of fingerFlex)b.quaternion.multiply(new T.Quaternion().setFromAxisAngle(axis,amount*f.grip)).normalize();
   content.updateWorldMatrix(true,true);for(const skin of skins)skin.skeleton.update();return diagnostics();
  }
- function pose(id,time=0,{locomotion=null,contact:combatContact=false,direction=1}={}){
+ // Share aiming through lumbar, thoracic and upper-chest joints. The arms,
+ // head and weapon all inherit the same final chest transform, retaining the
+ // solved contacts while the planted lower body and bind matrices stay intact.
+ // Reload/locomotion/melee deliberately own their poses in this first layer.
+ function applyAim(input){
+  const angles=normalizeRookAim(input),active=['rifle','fire'].includes(mode);
+  aimFrame={...angles,active};if(!active||(!angles.yaw&&!angles.pitch))return;
+  const chest=bone('spine01'),before=chest.matrixWorld.clone();
+  weaponAim.setFromEuler(new T.Euler(-angles.pitch,angles.yaw,0,'YXZ'));
+  const worldAim=modelQ().multiply(weaponAim).multiply(modelQ().invert());
+  for(const [name,weight]of [['spine05',.35],['spine02',.4],['spine01',.25]]){
+   const b=bone(name),q=new T.Quaternion().slerp(worldAim,weight);
+   worldOrientation(b,q.multiply(b.getWorldQuaternion(new T.Quaternion())));
+  }
+  const chestDelta=chest.matrixWorld.clone().multiply(before.invert());
+  const transform=p=>content.worldToLocal(worldPoint(p).applyMatrix4(chestDelta));
+  weaponPosition.copy(transform(weaponPosition));
+  for(const p of Object.values(contactTargets))p.copy(transform(p));
+  content.updateWorldMatrix(true,true);for(const skin of skins)skin.skeleton.update();
+ }
+ function pose(id,time=0,{locomotion=null,contact:combatContact=false,direction=1,aim:aimInput={}}={}){
+  normalizeRookAim(aimInput);
   const spec=ROOK_MOTION_MODES.find(m=>m.id===id);if(!spec)throw new RangeError(`Unknown Rook motion ${id}.`);if(!Number.isFinite(time))throw new TypeError('Rook motion time must be finite.');
   reset();mode=id;sampleTime=time;maxReachError=0;clampedTargets=0;
   // SkinnedMesh.updateMatrixWorld refreshes its inverse bind transform when
@@ -191,14 +217,14 @@ export function createRookMotionStudy(content){
    solve(chains.thumbL,contact(.06,.06,.39).add(handTravel),contact(.03,.15,.36).add(handTravel));
   }
   content.updateWorldMatrix(true,true);for(const skin of skins)skin.skeleton.update();
-  return diagnostics();
+  applyAim(aimInput);return diagnostics();
  }
  function getSocket(side){const suffix=side==='left'?'L':side==='right'?'R':null;if(!suffix)throw new RangeError('Socket side must be left or right.');const wrist=bone('wrist'+suffix),palm=bone('metacarpal2'+suffix);return{position:wp(wrist),palmPosition:palmPosition(suffix),quaternion:wrist.getWorldQuaternion(new T.Quaternion()),forward:wp(palm).sub(wp(wrist)).normalize()};}
  function getWeaponPose(){
   if(combatFrame){const f=combatFrame.weapon,q=modelQ().multiply(new T.Quaternion().setFromEuler(new T.Euler(f.pitch,f.yaw,f.roll,'YXZ'))),scaleVector=V(f.scale,f.scale,f.scale),position=palmPosition('R').sub(V(-.045,.015,0).multiply(scaleVector).applyQuaternion(q));return{weapon:'katana',position,quaternion:q,scaleVector,visible:f.visible,reload:0};}
-  const q=modelQ().multiply(new T.Quaternion().setFromAxisAngle(V(1,0,0),weaponPitch));
+  const q=modelQ().multiply(weaponAim).multiply(new T.Quaternion().setFromAxisAngle(V(1,0,0),weaponPitch));
   return{weapon:'carbine',position:worldPoint(weaponPosition),quaternion:q,scaleVector:V(-CARBINE_SCALE,CARBINE_SCALE,CARBINE_SCALE),visible:['rifle','fire','reload'].includes(mode),reload:mode==='reload'?loop(sampleTime,3.2):0};
  }
- function diagnostics(){const contactError=['rifle','fire'].includes(mode)?Math.max(...['L','R'].map(s=>palmPosition(s).distanceTo(worldPoint(contactTargets[s==='L'?'left':'right'])))):0;return{combat:combatFrame,palmContactError:contactError,soleSampleCounts:{left:soles.L.length,right:soles.R.length},footContacts,mode,time:sampleTime,bones:rest.size,maxReachError,clampedTargets,modelSpace:'Y-up, +Z facing; anatomical L is +X',imageDecodeValidated:false};}
+ function diagnostics(){const contactError=['rifle','fire'].includes(mode)?Math.max(...['L','R'].map(s=>palmPosition(s).distanceTo(worldPoint(contactTargets[s==='L'?'left':'right'])))):0;return{aim:{...aimFrame},combat:combatFrame,palmContactError:contactError,soleSampleCounts:{left:soles.L.length,right:soles.R.length},footContacts,mode,time:sampleTime,bones:rest.size,maxReachError,clampedTargets,modelSpace:'Y-up, +Z facing; anatomical L is +X',imageDecodeValidated:false};}
  return{modes:ROOK_MOTION_MODES,pose,reset,diagnostics,getSocket,getWeaponPose,applyLocomotionFeet};
 }

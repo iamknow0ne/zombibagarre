@@ -59,6 +59,25 @@ test('anchor labels leave the survivor clear and stay on a narrow screen',async(
  }
 });
 
+test('FPS and TPS transitions restore solid facades immediately, including paused frames',()=>{
+ const player=new T.Object3D(),cutaway=new BuildingCutaway();
+ const diorama=new T.OrthographicCamera(-20,20,15,-15,.1,160);
+ diorama.position.set(26,35,32);diorama.lookAt(0,0,0);diorama.updateMatrixWorld();
+ for(const position of [[0,1.55,0],[.65,2.1,-4.5]])for(const dt of [0,1/60]){
+  cutaway.update(player,diorama,0,true);assert.equal(cutaway.uniforms.cutawayRadius.value,2.9);
+  const perspective=new T.PerspectiveCamera(70,16/9,.06,180);
+  perspective.position.set(...position);perspective.lookAt(0,1.55,10);perspective.updateMatrixWorld();
+  cutaway.update(player,perspective,dt,false);
+  assert.equal(cutaway.uniforms.cutawayRadius.value,0,'perspective walls cannot retain a diorama opening');
+  // Changing the hero position before returning also checks that the opening
+  // follows the current body instead of restoring the old view-space anchor.
+  player.position.x+=3;cutaway.update(player,diorama,0,true);
+  assert.equal(cutaway.uniforms.cutawayRadius.value,2.9,'returning while paused must reveal the hero immediately');
+  const expected=player.position.clone().add(new T.Vector3(0,1,0)).applyMatrix4(diorama.matrixWorldInverse);
+  assert.ok(cutaway.uniforms.cutawayHero.value.distanceTo(expected)<1e-8);
+ }
+});
+
 test('AO scratch survives nested passes, material arrays, removals and a failed render',()=>{
  const scene=new T.Scene(),cutaway=new BuildingCutaway(),geometry=new T.BoxGeometry();
  const plain=new T.MeshStandardMaterial(),facade=new T.MeshStandardMaterial();cutaway.bind(new T.Mesh(geometry,facade));
