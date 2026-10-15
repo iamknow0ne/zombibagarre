@@ -7,8 +7,8 @@
 - [x] Separate bounded/versioned device checkpoint with explicit RNG state, active/parked regions and permanent-hero compatibility checks.
 - [x] One-use paused restoration with pre-render validation and shared browser transaction locks.
 - [x] Actual browser save/reload/restore, wave-one combat and wave-two upgrade/state preservation; compact landscape pause and portrait review.
-- [x] Full 655 regressions plus final 21 checkpoint/UI checks (one additional edge case).
-- [ ] Publish verified browser/Mac artifacts and update the local Android test APK.
+- [x] Full final 656 regressions and 89 model checks passed in CI; 21 checkpoint/UI checks passed locally.
+- [x] Publish browser/Mac 4.52.0 and update the local Android test APK without wiping saves. Source f82eed4; Pages 38734267560 passed 656 gameplay and 89 model checks; public BUILD 4.52.0 verified. Exact Mac archive passed hardware startup; upload digest matches.
 - [ ] Finish clean physical-phone gameplay/performance/picker checks after the recurring Dolby system crash overlay is resolved.
 
 See [release scope](RELEASE-4.52.0.md) and [QA evidence](qa/4.52.0/README.md).

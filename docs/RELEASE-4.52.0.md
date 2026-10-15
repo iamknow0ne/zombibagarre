@@ -36,3 +36,25 @@ No changes to that unrelated system app were made.
 The Mac edition is ad-hoc signed, not Developer ID signed or notarized.
 Spaceflight, additional regional destinations, indoor combat and full-expedition
 endurance remain future milestones.
+
+## Publication and artifact evidence
+
+Source `f82eed4707ee8ade06fd7adf91cb1e6bf0b7e57b`. Pages run
+`38734267560` passed the final **656 gameplay tests**, **89 model checks**,
+production build and deployment. Public title reports BUILD 4.52.0 with no
+captured console errors.
+
+- [Mac download](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.52.0):
+  `Zombie-Bagarre-4.52.0-macOS-arm64.zip`, SHA-256
+  `6e2847a707b3395a820cec18a63746982ec20435bb3beaefe4c17e13a5112d25`.
+  Exact packaged app passed ad-hoc verification and hardware GPU startup;
+  GitHub uploaded digest matches. This is not native endurance evidence.
+- Local Android `Zombie-Bagarre-4.52.0-Android-test.apk`, SHA-256
+  `d27909c8aa369118e5ef49099957768b4ec44399b9fa3a21875e222291c2148f`.
+  All 48 bundled assets compared successfully (59,206,432 bytes), v2 signature
+  verified, same-key update returned Success. Cold activity launch 701 ms;
+  menu rendered. Recurring Dolby dialog still owns focus. No public Android
+  artifact was promoted.
+- Tag-triggered Steam Deck workflow 38734523454 cancelled because that port is deferred.
+
+![Published browser build](qa/4.52.0/public-menu.jpg)

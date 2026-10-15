@@ -27,3 +27,13 @@ OnePlus 7 Pro GM1913, Android 11, WebView 150.0.7871.46. User unlocked it for th
 ## Limits
 
 Explicit safe-point saving only, one device-local checkpoint, no automatic crash recovery or expedition export/cloud sync. Character backup format unchanged. New destinations, indoor combat, hangar/space and full-run/endurance acceptance remain outstanding.
+
+## Final package confirmation
+
+CI 38734267560 passed all 656 gameplay regressions and 89 authored-model checks.
+Public BUILD 4.52.0 and no captured startup errors verified. The exact Mac
+archive passed hardware startup and its uploaded checksum matches; see release
+notes for digests. Final Android 4.52.0 APK passed 48-asset byte comparison, v2
+signature and same-key device update. Its menu rendered, but a fresh window
+inspection still identified the Dolby crash dialog as the focused window.
+Remaining Android acceptance gates above therefore remain open.
