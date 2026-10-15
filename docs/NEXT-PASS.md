@@ -1,6 +1,15 @@
 # Next gameplay and performance pass
 
-14 October 2026. Apple signing/notarization, Steam Deck troubleshooting and other ports remain deferred, except the newly authorized SNES demake. Work is staged into tested releases, not an assertion that the whole game is finished.
+15 October 2026. Apple signing/notarization and Steam Deck troubleshooting remain deferred. The SNES demake and Android test edition are authorized; other ports remain deferred. Work is staged into tested releases, not an assertion that the whole game is finished.
+
+## Reliability follow-up — 4.51.1
+
+- [x] Prevent immediate falling-debris damage on region return and interior exit; cover both with actual collapse physics regressions.
+- [x] Retry Android audio recovery after a rejected resume, without stale failures overriding later recovery.
+- [x] Pass 635 regressions and a 6,000-frame browser combat resource check. Concurrent builds mean this is not an isolated FPS benchmark.
+- [ ] Publish and verify browser/macOS patch and update the Android test install.
+
+See [4.51.1 evidence](RELEASE-4.51.1.md). The Android physical gameplay gate remains pending below.
 
 ## Android test edition — newly authorized
 

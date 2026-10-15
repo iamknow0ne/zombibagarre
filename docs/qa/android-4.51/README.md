@@ -36,3 +36,11 @@ movement/aim/dodge/throw/reload; compact landscape HUD; native Back and fullscre
 Home/resume with audio stopped and game remaining paused; backup export/import;
 training return; restart and short combat performance samples. A physical
 controller and human multi-finger ergonomics remain separate evidence gates.
+
+## 4.51.1 follow-up
+
+The reliability patch APK was built, signature-verified and installed as a
+same-key, data-preserving update on 15 October. It includes the audio retry fix
+and region/interior debris-arrival protection. All 635 regression tests pass.
+The phone remains locked, so the physical-device checks above remain pending.
+See [4.51.1 artifact hashes and evidence](../../RELEASE-4.51.1.md).

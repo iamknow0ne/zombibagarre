@@ -104,3 +104,23 @@ test('city district advancement retains the same damaged road and independent ma
 test('actual update requests travel before combat, reload or movement can consume the transition frame',()=>{
  const s=game();gate(s);s.player.reloads.carbine=.7;s.player.weaponTimers.carbine=.3;s.player.health=27;s.player.magazines.carbine=3;const hero=heroResources(s.player),time=s.time;s.update(.05,{interact:true,fire:true,x:1,z:1,auto:true});assert.equal(s.state,'travelling');for(let i=0;i<9;i++)s.update(.05,{interact:true,fire:true,x:1,z:1,auto:true});assert.equal(s.time,time);assert.deepEqual(heroResources(s.player),hero);assert.equal(s.events.filter(e=>e.type==='region-travel').length,1);assert.equal(completeRegionTravel(s).ok,true);assert.deepEqual(heroResources(s.player),hero);
 });
+
+test('returning to a parked region avoids a structural fragment that lands on the first resumed tick',()=>{
+ const s=game();cross(s);const g=travelGate(s);
+ // A real collapsing floor is frozen just above the road with downward momentum.
+ s.structures=[{id:'falling-floor',buildingId:'destroyed-building',x:g.x,y:.62,z:g.z,w:2,h:.22,d:2,age:1,delay:0,vx:0,vy:-10,vz:0,rx:0,rz:0,spinX:0,spinZ:0,restX:0,restZ:0,bounces:0,canBreak:false,sleep:false}];
+ s.rubblePiles=new Map();const structures=s.structures;s.structures=[];cross(s);
+ s.regions.get('country-road').structures=structures;
+ cross(s);assert.ok(distance(s.player,g)>1.3,'arrival must avoid the pending debris impact');
+ s.player.health=83;s.player.invulnerable=0;const health=s.player.health;
+ s.update(.05,{auto:false});assert.equal(structures[0].struck,true,'real collapse physics produces the impact');assert.equal(s.player.health,health,'arrival does not take immediate debris damage');
+});
+
+test('arrival clearance predicts moving collapse footprints without blocking spent or distant debris',()=>{
+ const s=game();cross(s);const g=travelGate(s),view={...s,props:[],enemies:[],hazards:[],fires:[],bullets:[]};
+ const slab={x:g.x-3,z:g.z,y:.8,w:2,d:2,age:1,delay:0,vx:10,vy:-8,vz:0};
+ view.structures=[slab];assert.equal(safeRegionPoint(view,g),false,'a slab moving into the arrival is dangerous');
+ for(const patch of [{sleep:true},{struck:true},{delay:3},{y:30},{x:g.x+20}]){
+  view.structures=[{...slab,...patch}];assert.equal(safeRegionPoint(view,g),true,JSON.stringify(patch));
+ }
+});

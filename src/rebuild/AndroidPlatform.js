@@ -14,7 +14,7 @@ export function cancelTopDialog(document){
 }
 
 export function installAndroidPlatform({window,document,getAudio=()=>null,closeRetro=()=>{},onPause=()=>{},onForeground=()=>{},onBack=()=>{}}){
- let background=false,audioSuspended=false,disposed=false;
+ let background=false,audioSuspended=false,disposed=false,audioAttempt=0;
  const listeners=[];
  const listen=(target,name,handler,options)=>{target.addEventListener(name,handler,options);listeners.push(()=>target.removeEventListener(name,handler,options));};
  const settle=action=>{try{action()?.catch?.(()=>{});}catch{/* Audio may be unavailable or already closed. */}};
@@ -22,10 +22,16 @@ export function installAndroidPlatform({window,document,getAudio=()=>null,closeR
   if(disposed||background||document.hidden||!audioSuspended)return;
   const context=getAudio()?.ctx;
   if(!context)return;
-  audioSuspended=false;settle(()=>context.resume());
+  // A renderer/audio-device interruption can reject resume. Keep a failed
+  // attempt retryable on the next gesture, without letting an old rejection
+  // overwrite a newer pause/resume cycle.
+  const attempt=++audioAttempt;
+  const retry=()=>{if(!disposed&&audioAttempt===attempt)audioSuspended=true;};
+  audioSuspended=false;
+  try{context.resume()?.catch?.(retry);}catch{retry();}
  }
  function pause(){
-  background=true;audioSuspended=true;
+  background=true;audioSuspended=true;audioAttempt++;
   // Removing the cartridge frame stops its independent audio and simulation.
   // It can resume the main context during cleanup, so suspend that context last.
   closeRetro();onPause();settle(()=>getAudio()?.ctx?.suspend());

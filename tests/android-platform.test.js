@@ -56,3 +56,20 @@ test('teardown removes every listener and unavailable/closed audio is tolerated'
  assert.doesNotThrow(()=>f.send('pause'));f.send('resume');assert.doesNotThrow(()=>f.adapter.resumeAudioOnGesture());
  f.adapter.dispose();const before=f.calls.length;for(const event of ['pause','resume','back'])f.send(event);f.document.dispatchEvent(new Event('pointerdown'));f.adapter.resumeAudioOnGesture();assert.equal(f.calls.length,before);
 });
+test('failed audio resume retries on the next foreground gesture',async()=>{
+ for(const failure of ['throw','reject']){
+  const f=fixture();let attempts=0;
+  f.ctx.resume=()=>{attempts++;if(attempts===1){if(failure==='throw')throw new Error('audio interrupted');return Promise.reject(new Error('audio interrupted'));}return Promise.resolve();};
+  f.send('pause');f.send('resume');f.adapter.resumeAudioOnGesture();await Promise.resolve();
+  f.document.dispatchEvent(new Event('pointerdown'));await Promise.resolve();
+  f.document.dispatchEvent(new Event('keydown'));assert.equal(attempts,2);f.adapter.dispose();
+ }
+});
+test('an older failed resume does not invalidate a later successful foreground cycle',async()=>{
+ const f=fixture();let attempts=0,rejectOld;
+ f.ctx.resume=()=>{attempts++;return attempts===1?new Promise((resolve,reject)=>{rejectOld=reject;}):Promise.resolve();};
+ f.send('pause');f.send('resume');f.adapter.resumeAudioOnGesture();
+ f.send('pause');f.send('resume');f.adapter.resumeAudioOnGesture();
+ rejectOld(new Error('old audio interruption'));await Promise.resolve();
+ f.document.dispatchEvent(new Event('pointerdown'));assert.equal(attempts,2);f.adapter.dispose();
+});

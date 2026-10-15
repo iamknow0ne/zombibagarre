@@ -98,3 +98,11 @@ test('shelter exit avoids the far end of a frozen boss harpoon lane',()=>{
  const exit=resolveExteriorExit(s);assert.ok(exit);assert.equal(bossContains(lane,{...exit,radius:.65}),false);
  assert.equal(endInterior(s),true);assert.equal(bossContains(lane,s.player),false);
 });
+
+test('leaving shelter avoids falling structural debris before its outdoor impact resumes',()=>{
+ const s=game(),room=enter(s),d=room.door;
+ s.structures=[{id:'falling-wall',buildingId:room.buildingId,x:d.x,y:.62,z:d.z,w:2,h:.22,d:2,age:1,delay:0,vx:0,vy:-10,vz:0,rx:0,rz:0,spinX:0,spinZ:0,restX:0,restZ:0,bounces:0,canBreak:false,sleep:false}];s.rubblePiles=new Map();
+ const exit=resolveExteriorExit(s);assert.ok(exit);assert.ok(distance(exit,d)>1.3);
+ assert.equal(endInterior(s),true);s.player.health=83;s.player.invulnerable=0;s.update(.05,{auto:false});
+ assert.equal(s.structures[0].struck,true);assert.equal(s.player.health,83,'the first outdoor frame must not land a slab on the returning hero');
+});

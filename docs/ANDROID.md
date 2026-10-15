@@ -16,7 +16,7 @@ pinned. The wrapper verifies the distribution checksum.
 npm ci
 npm run android:build
 adb devices
-adb -s YOUR_DEVICE_SERIAL install -r release/4.51.0/Zombie-Bagarre-4.51.0-Android-test.apk
+adb -s YOUR_DEVICE_SERIAL install -r release/4.51.1/Zombie-Bagarre-4.51.1-Android-test.apk
 adb -s YOUR_DEVICE_SERIAL shell am start -n games.zombibagarre.quarantine/.MainActivity
 ```
 

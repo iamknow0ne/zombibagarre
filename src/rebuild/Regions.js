@@ -13,6 +13,20 @@ function projectileThreat(view,p,radius){
   return Math.min(y,endY)<2&&Math.max(y,endY)>-.3&&segmentCircle(b.x,b.z,end.x,end.z,p.x,p.z,radius+(b.radius||.15));
  });
 }
+function collapseThreat(view,p,radius){
+ return (view.structures||[]).some(c=>{
+  const waking=c.sleep&&c.supportId&&!(view.props||[]).some(o=>o.health>0&&o.kind!=='rubble'&&o.id===c.supportId);
+  if((c.sleep||c.struck)&&!waking)return false;
+  const remaining=.35-Math.max(0,(c.delay||0)-(c.age||0));if(remaining<=0)return false;
+  const vy=c.vy||0,endY=c.y+vy*remaining-4.905*remaining*remaining;
+  // Collapse impacts land on rubble beds up to 1.7m, plus up to .48m
+  // fragment thickness. Use the swept footprint, including a small physics
+  // step margin, so a frozen slab cannot strike the arrival next frame.
+  if(endY>2.18||vy-9.81*remaining>=-3)return false;
+  const reach=Math.max(.8,Math.min(2.5,Math.hypot(c.w,c.d)*.45));
+  return segmentCircle(c.x,c.z,c.x+(c.vx||0)*remaining,c.z+(c.vz||0)*remaining,p.x,p.z,reach+radius);
+ });
+}
 function regionalView(sim,saved,id){
  const view=Object.assign(Object.create(Object.getPrototypeOf(sim)),sim,saved,{activeRegionId:id,interior:null,player:sim.player,navigation:new Map(),collisionIndex:null,questRoute:null,guideRoute:null,traversalTarget:null});
  view.obstacles=solids(view);return view;
@@ -24,7 +38,7 @@ export function safeRegionPoint(view,p,radius=.65){
  !(view.props||[]).some(o=>o.health>0&&o.burning>0&&distance(o,p)<Math.hypot(o.w||1,o.d||1)/2+radius)&&
  // Boss lane radius describes half its width, not its full 19m footprint.
  // Use the combat predicate with the arrival body's ground height and margin.
- !(view.hazards||[]).some(h=>!h.done&&(h.bossOwner&&h.shape==='lane'?bossContains(h,{x:p.x,y:0,z:p.z,radius}):distance(h,p)<(h.radius||1)+radius))&&!projectileThreat(view,p,radius);
+ !(view.hazards||[]).some(h=>!h.done&&(h.bossOwner&&h.shape==='lane'?bossContains(h,{x:p.x,y:0,z:p.z,radius}):distance(h,p)<(h.radius||1)+radius))&&!projectileThreat(view,p,radius)&&!collapseThreat(view,p,radius);
 }
 // Reuse Simulation's real pedestrian flow field, rooted at the expedition spawn.
 // A safe point can still belong to a detached road/island: require a reachable
