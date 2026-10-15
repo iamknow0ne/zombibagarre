@@ -9,7 +9,7 @@
 - [x] Persist active/cleared/claimed/lost state through region travel and expedition checkpoints; one-time rewards and destroyed-host handling.
 - [x] Reuse compact touch action and keyboard/controller interaction prompts; cache lamp/lid reflects its state.
 - [x] 703 gameplay regressions, 89 model checks, 64 checkpoint continuations, production build, real browser grapple/combat/collection/collapse and map route review.
-- [ ] Publish tested browser/Mac 4.53.0; hardware startup passed; public artifact verification pending.
+- [x] Publish browser/Mac 4.53.0: source cfd5972, Pages 38741021613 passed, public BUILD 4.53.0 and clean captured startup checked. Mac hardware startup passed; uploaded ZIP digest matches.
 
 See [release scope](RELEASE-4.53.0.md) and [QA evidence](qa/4.53.0/README.md). The cache's damaged flight manifest is lore foreshadowing only; it does not unlock a hangar or spacecraft yet.
 
