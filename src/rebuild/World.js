@@ -20,6 +20,8 @@ import {junctionClearance} from './StreetGraph.js';
 import {bossImpactFX,stepBossEffect} from './BossFX.js';
 import {THROWABLES} from './Throwables.js';
 import {throwableMesh,ordnanceBurst} from './ThrowableVisuals.js';
+import {animateEnemyDetails} from './EnemyMotion.js';
+import {DetailedSurvivorLibrary} from './DetailedSurvivor.js';
 import {buildSurvivor,animateSurvivorDetails} from './SurvivorVisuals.js';
 import {reuseSceneForAO,CharacterInstances,freezeLocalTransforms,visibleAOOnly} from './RenderBatch.js';
 import {SurfaceMaterials} from './SurfaceMaterials.js';
@@ -98,7 +100,7 @@ export class World {
     try{this.initialize(canvas,settings,district,layout);}catch(error){this.destroy();throw error;}
   }
   initialize(canvas,settings,district,layout){
-    this.feedback=new CombatOverlay(canvas);this.feedback.applySettings(settings);this.layout=layout;this.district=district;this.biome=DISTRICTS[district];
+    this.detailedSurvivors=new DetailedSurvivorLibrary({onChange:()=>{this.requestRender=true;}});this.feedback=new CombatOverlay(canvas);this.feedback.applySettings(settings);this.layout=layout;this.district=district;this.biome=DISTRICTS[district];
     this.cutaway=new BuildingCutaway();this.surfaces=new SurfaceMaterials();this.fireClock={value:0};this.settings=settings;this.random=seededRandom(layout.mapSeed);this.canvas=canvas;
     this.renderer=createWorldRenderer(canvas);
     this.cutawayMSAA=!!this.renderer.getContext().getContextAttributes()?.antialias;
@@ -415,7 +417,7 @@ export class World {
     // Construction can fail before assignment to the caller. Release every
     // owner that exists, and do not mask the original failure if one cleanup fails.
     const release=fn=>{try{fn();}catch(error){this.disposeErrors.push(error);}};
-    for(const owner of [this.interiorView,this.interiorDoors,this.regionVisuals,this.traversalVisuals,this.ambience,this.weatherVisuals,this.cutaway,this.cityArt,this.characterInstances,this.surfaces,this.structuralVisuals])release(()=>owner?.dispose());
+    for(const owner of [this.interiorView,this.interiorDoors,this.regionVisuals,this.traversalVisuals,this.ambience,this.weatherVisuals,this.cutaway,this.cityArt,this.characterInstances,this.surfaces,this.structuralVisuals,this.detailedSurvivors])release(()=>owner?.dispose());
     release(()=>this.viewRig?.clearHands());release(()=>this.feedback?.destroy());release(()=>this.reflectionTarget?.dispose());
     if(this.scene)release(()=>disposeObjectResources(this.scene,{geometries:[boxGeo,sphereGeo],ownedTextures:[this.smokeTex,this.fireTex,this.scarTex,this.wallTex,this.charTex,...(this.bloodTextures?.values()||[])]}));
     const passes=new Set([...(this.composer?.passes||[]),this.ao,this.pixelArtPass,this.bloom].filter(Boolean));
@@ -549,7 +551,7 @@ export class World {
     for(const {mat,geos,shadow}of batches.values()){const merged=mergeGeometries(geos);if(merged){const m=new T.Mesh(merged,mat);m.castShadow=shadow;m.receiveShadow=true;destination.add(m);}for(const g of geos)g.dispose();}
   }
   character(type,bossKind=null,skinId='scout',appearance=0){
-    if(type==='player'){const hero=buildSurvivor(skinId,appearance);contact(hero,0,0,1.4,1,.55);return hero;}
+    if(type==='player'){const hero=buildSurvivor(skinId,appearance);this.detailedSurvivors?.request(hero);contact(hero,0,0,1.4,1,.55);return hero;}
     const group=buildEnemy(type,appearance);group.userData.bossKind=bossKind;
     const frost=this.ring(.7,0x91d9ef,.065);frost.visible=false;group.add(frost);group.userData.frost=frost;
     contact(group,0,0,1.4,1,.55);return group;
@@ -570,7 +572,7 @@ export class World {
     // First-person meshes borrow their source resources; discard references,
     // never dispose the overlay independently of the owning character/weapon.
     if(this.viewRig?.sources?.some(source=>{for(let node=source;node;node=node.parent)if(node===mesh)return true;return false;}))this.viewRig.clearHands();
-    mesh.removeFromParent();disposeObjectResources(mesh,{geometries:[boxGeo,sphereGeo],textures:[shadowTexture,this.smokeTex,this.fireTex,this.scarTex,this.wallTex,this.charTex]});}
+    this.detailedSurvivors?.release(mesh);mesh.removeFromParent();disposeObjectResources(mesh,{geometries:[boxGeo,sphereGeo],textures:[shadowTexture,this.smokeTex,this.fireTex,this.scarTex,this.wallTex,this.charTex]});}
 
   effect(x,z,color,count=8,power=3,kind='spark',height=.8){
     if(['debris','glass'].includes(kind)){debris(this,{x,z,y:height,material:kind==='glass'?'glass':'concrete',count,power:power*.55});return;}
@@ -640,6 +642,7 @@ export class World {
     alignSurvivorFeet(this.player);
     if(p.traversal)applyTraversalPose(this.player,p);
     const dive=focusDivePose(p),hero=this.player.userData;hero.body.position.y+=dive.lift;hero.body.rotation.x+=dive.pitch;hero.body.rotation.z+=dive.roll;
+    this.detailedSurvivors?.update(this.player);
     updateBladeTrails(this.player,p,motionDt,!!this.settings.reducedMotion);
     this.player.visible=!p.vehicleId&&(sim.state!=='dead'||Math.sin(t*20)>-.5);
     this.playerRing.position.set(p.x,(p.supportY||0)+.045,p.z);this.playerRing.material.opacity=p.invulnerable>0?.4+.3*Math.sin(t*30):.8;
@@ -734,12 +737,7 @@ export class World {
     d.body.rotation.y=Math.sin(phase)*walk*(player?.035:.055)-(pose.turn||0);d.body.rotation.z=pose.roll+Math.sin(phase*.5)*walk*.015;d.body.rotation.x=pose.pitch+(pose.brace||0)*.045;
     if(player&&d.head){d.head.rotation.y=-d.body.rotation.y*.7;d.head.rotation.z=-d.body.rotation.z*.45;d.head.rotation.x=-pose.pitch*.4;}
     d.arms.forEach((arm,i)=>{arm.rotation.x=player?-.6:-.35+(i?1:-1)*Math.sin(phase)*walk*.25;arm.rotation.z=i?.1:-.1;arm.userData.elbow.rotation.x=player?-.85:-.35+Math.sin(phase+i)*walk*.15;});
-    if(!player){
-      const lean=d.type==='runner'?.19:d.type==='spitter'?.14:d.type==='brute'?.1:.065;
-      d.body.rotation.x+=lean;d.body.rotation.z+=Math.sin(t*1.1+(d.variant||0))*.018;
-      if(d.head){d.head.rotation.x=-lean*.35;d.head.rotation.z=((d.variant||0)%3-1)*.055+Math.sin(t*.7)*.012;}
-      d.arms.forEach((arm,i)=>{arm.rotation.x+=(i?-.08:.06)+(d.type==='runner'?-.25:0);arm.userData.elbow.rotation.x+=i?.08:-.06;});
-    }
+    if(!player)animateEnemyDetails(m,t,pose,state);
     if(state.windup>0){const strike=Math.sin((1-state.windup)*Math.PI);d.arms.forEach(a=>{a.rotation.x=-1.2*strike;a.userData.elbow.rotation.x=-.8;});d.body.rotation.y+=strike*.25;d.body.rotation.x-=strike*.12;}
     if(player&&WEAPONS[state.weapon]?.melee){d.body.rotation.x+=dash?.15:.1;d.arms.forEach((a,i)=>{a.rotation.x=-.45;a.rotation.z=i?.35:-.35;});}
     if(d.impact){d.impact.age+=dt;const kick=hitRecoil(d.impact.age,d.impact.amount);d.body.rotation.x+=Math.cos(d.impact.angle)*kick;d.body.rotation.z-=Math.sin(d.impact.angle)*kick;if(d.impact.age>.24)d.impact=null;}

@@ -13,8 +13,9 @@ const texturesOf=material=>{
 };
 export function disposeObjectResources(root,{geometries=[],textures=[],ownedTextures=[]}={}){
  const keepGeometry=new Set(geometries),keepTexture=new Set(textures),ownedTexture=new Set(ownedTextures.filter(Boolean));
- const geometrySet=new Set(),materialSet=new Set(),textureSet=new Set(),targets=new Set();
+ const geometrySet=new Set(),materialSet=new Set(),textureSet=new Set(),targets=new Set(),skeletons=new Set();
  root.traverse(node=>{
+  if(node.skeleton)skeletons.add(node.skeleton);
   if(node.geometry&&!node.isSprite&&!node.geometry.userData?.shared&&!keepGeometry.has(node.geometry))geometrySet.add(node.geometry);
   for(const material of materialsOf(node)){
    if(material.userData?.shared){for(const texture of texturesOf(material))keepTexture.add(texture);}
@@ -35,5 +36,6 @@ export function disposeObjectResources(root,{geometries=[],textures=[],ownedText
  for(const resource of materialSet)resource.dispose();
  for(const resource of textureSet)resource.dispose();
  for(const target of targets)target.dispose();
+ for(const skeleton of skeletons)skeleton.dispose();
  return {geometries:geometrySet.size,materials:materialSet.size,textures:textureSet.size};
 }

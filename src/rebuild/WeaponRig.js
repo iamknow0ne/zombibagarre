@@ -6,13 +6,14 @@ import {WEAPON_MOTION,recoilAt,meleePose,smooth,shotPose,weaponReloadPose} from 
 import {WEAPONS} from './config.js';
 import {slotKey,normalizeLoadout} from './Loadout.js';
 const diveRotation=new T.Quaternion(),diveEuler=new T.Euler();
-const down=new T.Vector3(0,-1,0),upperLength=.34,lowerLength=.32;
+const down=new T.Vector3(0,-1,0);
 
 export const buildWeapon=(key,kit,tier=0)=>createWeaponMesh(key,kit,tier);
 
 // Solve both bones in body space. Hands remain on their grips through recoil,
 // aim, movement and weapon-specific reloads instead of floating alongside guns.
 export function solveArm(arm,target,orientation,side){
+ const upperLength=arm.userData.upperLength??.34,lowerLength=arm.userData.lowerLength??.32;
  const shoulder=arm.position,dir=target.clone().sub(shoulder),distance=Math.min(upperLength+lowerLength-.002,Math.max(.025,dir.length()));dir.normalize();
  const pole=new T.Vector3(side*.65,-1,-.22);pole.addScaledVector(dir,-pole.dot(dir)).normalize();
  const along=(upperLength*upperLength-lowerLength*lowerLength+distance*distance)/(2*distance),height=Math.sqrt(Math.max(0,upperLength*upperLength-along*along));
@@ -63,6 +64,7 @@ export function animateWeapons(character,state,t,dt,kit){
    totalRecoil+=recoil*profile.kick;
   }
   if(!blade&&state.focusDive){const dive=focusDivePose(state);g.position.z-=dive.lift*.2;diveRotation.setFromEuler(diveEuler.set(dive.pitch,0,dive.roll)).invert();g.quaternion.premultiply(diveRotation);}
+  if(d.weaponCarryOffset)g.position.add(d.weaponCarryOffset);
   g.updateMatrix();const grip=new T.Vector3(0,0,0).applyMatrix4(g.matrix);
   if(state.throwAnimation>.12&&hand===0){const f=1-state.throwAnimation/.5;g.visible=false;const q=smooth(f/.55);grip.set(.34,1.65+Math.sin(f*Math.PI)*.22,-.26+q*.77);}else g.visible=true;
   d.gripError=Math.max(d.gripError,solveArm(arm,grip,g.quaternion,side));

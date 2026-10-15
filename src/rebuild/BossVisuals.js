@@ -1,12 +1,24 @@
 import {surfaceUV,SURFACES} from './SurfaceMaterials.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import * as T from 'three';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 // Sculpted in a six-metre reference space. All joints remain separate for combat poses.
 export function buildBossModel(e,surfaces){
  const root=new T.Group(),body=new T.Group();root.add(body);const profile=e.bossProfile,kind=profile.kind,pale=profile.color===0xd8e9ee;
  const mats={iron:new T.MeshStandardMaterial({color:pale?0x778e97:0x303d3e,roughness:.58,metalness:.65}),rust:new T.MeshStandardMaterial({color:0x77533e,roughness:.91}),bone:new T.MeshStandardMaterial({color:pale?0xe0e8de:0xb4ab8c,roughness:.78}),dark:new T.MeshStandardMaterial({color:0x182525,roughness:.9}),bark:new T.MeshStandardMaterial({color:0x4c5740,roughness:1}),glow:new T.MeshStandardMaterial({color:profile.color,emissive:profile.color,emissiveIntensity:1.3,roughness:.3}),red:new T.MeshStandardMaterial({color:0x795144,roughness:.85})};
- const mesh=(parent,geometry,material,x,y,z,sx=1,sy=1,sz=1)=>{const m=new T.Mesh(geometry,mats[material]);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=m.receiveShadow=true;parent.add(m);return m;};
- const box=(p,m,x,y,z,w,h,d)=>mesh(p,new T.BoxGeometry(w,h,d),m,x,y,z);
+ for(const material of Object.values(mats))material.vertexColors=true;
+ const mesh=(parent,geometry,material,x,y,z,sx=1,sy=1,sz=1)=>{
+  const p=geometry.attributes.position,n=geometry.attributes.normal,colors=new Float32Array(p.count*3);
+  for(let i=0;i<p.count;i++){
+   const px=p.getX(i)*sx+x,py=p.getY(i)*sy+y,pz=p.getZ(i)*sz+z;
+   const grain=Math.sin(px*7.3+py*3.9)*Math.sin(pz*8.1-py*6.2);
+   const grime=material==='glow'?1:.81+.1*Math.max(0,n.getY(i))+.075*grain;
+   const corrosion=['iron','rust'].includes(material)?Math.max(0,grain-.28)*.11:0;
+   colors[i*3]=grime+corrosion;colors[i*3+1]=grime-corrosion*.35;colors[i*3+2]=grime-corrosion*.7;
+  }
+  geometry.setAttribute('color',new T.Float32BufferAttribute(colors,3));
+  const m=new T.Mesh(geometry,mats[material]);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=m.receiveShadow=true;parent.add(m);return m;};
+ const box=(p,m,x,y,z,w,h,d)=>mesh(p,new RoundedBoxGeometry(w,h,d,1,Math.min(w,h,d)*.13),m,x,y,z);
  const orb=(p,m,x,y,z,a,b=a,c=a)=>mesh(p,new T.IcosahedronGeometry(1,1),m,x,y,z,a,b,c);
  const rod=(p,m,a,b,r=.09,r2=r)=>{const va=new T.Vector3(...a),vb=new T.Vector3(...b),d=vb.clone().sub(va);const o=mesh(p,new T.CylinderGeometry(r2,r,d.length(),8),m,...va.clone().add(vb).multiplyScalar(.5).toArray());o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o;};
  const hoop=(p,m,x,y,z,r,t=.07)=>mesh(p,new T.TorusGeometry(r,t,6,24),m,x,y,z);
@@ -24,7 +36,7 @@ export function buildBossModel(e,surfaces){
   for(const side of [-1,1])for(const front of [-1,1]){const leg=joint(side*.7,2.6,front*.45);legs.push(leg);rod(leg,'iron',[0,0,0],[side*.85,-1.1,front*.5],.15);orb(leg,'rust',side*.85,-1.1,front*.5,.23);rod(leg,'bone',[side*.85,-1.1,front*.5],[side*1.1,-2.5,front*.8],.1,.025);box(leg,'iron',side*1.05,-2.45,front*.75,.5,.18,.65);}
   box(body,'iron',0,2.75,0,1.6,.65,1.35);for(const side of [-1,1]){rod(body,'iron',[side*.7,2.6,0],[side*.8,5.8,-.25],.16);rod(body,'rust',[side*.8,5.8,-.25],[side*.75,5.4,1.15],.12);for(let i=0;i<6;i++)rod(body,'rust',[side*.8,3+i*.42,0],[side*.8,3.4+i*.42,-.25],.045);}
   rod(body,'iron',[-.8,5.75,-.25],[.8,5.75,-.25],.16);const cage=joint(0,4.6,.6);arms.push(cage);orb(cage,'dark',0,-.4,0,.59,.95,.52);orb(cage,'glow',0,-.25,.15,.28,.39,.3);for(let i=0;i<8;i++){const a=i*Math.PI/4;rod(cage,'bone',[Math.sin(a)*.58,.25,Math.cos(a)*.5],[Math.sin(a)*.58,-1.25,Math.cos(a)*.5],.055);}for(const y of [.25,-1.25])hoop(cage,'rust',0,y,0,.6,.08).rotation.x=Math.PI/2;
-  for(const side of [-1,1]){const chain=joint(side*.75,5.45,.9);chains.push(chain);for(let i=0;i<10;i++){const h=hoop(chain,'rust',0,-i*.23,0,.13,.036);h.rotation.y=i%2*Math.PI/2;}const hook=hoop(chain,'bone',0,-2.55,0,.37,.1);hook.geometry.dispose();hook.geometry=new T.TorusGeometry(.37,.1,6,18,Math.PI*1.65);rod(chain,'bone',[.33,-2.58,0],[.19,-2.25,0],.07,.01);}
+  for(const side of [-1,1]){const chain=joint(side*.75,5.45,.9);chains.push(chain);for(let i=0;i<10;i++){const h=hoop(chain,'rust',0,-i*.23,0,.13,.036);h.rotation.y=i%2*Math.PI/2;}mesh(chain,new T.TorusGeometry(.37,.1,6,18,Math.PI*1.65),'bone',0,-2.55,0);rod(chain,'bone',[.33,-2.58,0],[.19,-2.25,0],.07,.01);}
  }else if(kind==='bloom'){
   for(let i=0;i<6;i++){const a=i*Math.PI/3,leg=joint(0,1.55,0);legs.push(leg);leg.userData.a=a;const x=Math.sin(a),z=Math.cos(a);rod(leg,'bark',[0,0,0],[x*1.15,-.45,z*1.15],.3,.18);rod(leg,'bone',[x*1.15,-.45,z*1.15],[x*1.8,-1.5,z*1.8],.15,.025);}
   orb(body,'bark',0,2.8,0,.92,1.65,.8);for(let i=0;i<9;i++){const a=i*2.4;rod(body,'bone',[Math.sin(a)*.5,1.4,Math.cos(a)*.5],[Math.sin(a)*1,3.7,Math.cos(a)*.9],.09,.035);}
@@ -45,7 +57,7 @@ export function buildBossModel(e,surfaces){
  if(profile.name==='THE FEN KING'){for(const side of [-1,1]){rod(body,'bark',[side*.9,4.1,0],[side*1.4,5.9,-.2],.15,.01);for(let i=0;i<3;i++)rod(body,'bone',[side*(1+i*.1),4.6+i*.3,-.1],[side*(1.7+i*.13),4.9+i*.3,-.2],.065,.01);}mats.iron.color.setHex(0x384e46);mats.rust.color.setHex(0x697d62);}
  root.scale.setScalar(profile.height/6);
  if(surfaces){for(const [key,material]of Object.entries(mats)){if(key==='glow')continue;const kind=key==='bark'?'bark':['iron','rust'].includes(key)?'metal':'plaster',maps=surfaces.textures(kind);material.map=maps.albedo;material.bumpMap=maps.relief;material.bumpScale=SURFACES[kind].bump;material.roughnessMap=maps.relief;}root.traverse(m=>{if(m.isMesh&&m.material!==mats.glow){const old=m.geometry;surfaceUV(m,1.8);old.dispose();}});}
- root.userData={boss:true,body,legs,arms,petals,doors,chains,mats,height:profile.height};batchBoss(body);return root;
+ root.userData={boss:true,visualRevision:2,body,legs,arms,petals,doors,chains,mats,height:profile.height};batchBoss(body);return root;
 }
 export function animateBossModel(root,e,time){
  const u=root.userData,phase=e.bossPhase===2,opening=phase?(e.bossState==='transition'?1-e.bossTimer/e.bossDuration:1):0,walk=e.bossState==='pursuit',wind=e.bossState==='telegraph'?1-e.bossTimer/e.bossDuration:0,strike=e.bossState==='strike',recover=e.bossState==='recovery';

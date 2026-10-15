@@ -7,13 +7,14 @@ import {CUSTOMIZATION,PALETTES,resolveAppearance,appearanceSignature} from './Cu
 const fabricMaps=new Map();
 function fabric(kind){
  if(fabricMaps.has(kind))return fabricMaps.get(kind);
- const size=128,data=new Uint8Array(size*size*4);
+ const size=256,data=new Uint8Array(size*size*4);
  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
   // Low-contrast dye variation and diagonal twill, not high-contrast checker noise.
   const u=x/size*Math.PI*2,v=y/size*Math.PI*2;
   const dye=Math.sin(u*2+Math.sin(v*3))*.45+Math.cos(v*2-u)*.25+Math.sin(u*7+v*5)*.13;
-  const weave=kind==='cloth'?((x+y*2)%6<2?3:-1):Math.sin(u*17+Math.sin(v*13))*2;
-  const value=Math.round(233+dye*13+weave),i=(y*size+x)*4;
+  const weave=kind==='cloth'?((x+y*2)%6<2?3:-1):Math.sin(u*17+Math.sin(v*13))*3;
+  const wear=Math.max(0,Math.sin(u*5+Math.cos(v*4))*.7+Math.sin(v*11-u*3)*.3-.55)*18;
+  const value=Math.round(230+dye*13+weave+wear),i=(y*size+x)*4;
   data[i]=data[i+1]=data[i+2]=value;data[i+3]=255;
  }
  const map=new T.DataTexture(data,size,size);map.wrapS=map.wrapT=T.RepeatWrapping;map.repeat.set(2,2);map.generateMipmaps=true;map.minFilter=T.LinearMipmapLinearFilter;map.magFilter=T.LinearFilter;map.needsUpdate=true;map.userData.shared=true;fabricMaps.set(kind,map);return map;
@@ -43,21 +44,63 @@ function scarfPanel(p,m){
  const back=g.clone();const index=back.index;for(let i=0;i<index.count;i+=3){const v=index.getX(i);index.setX(i,index.getX(i+2));index.setX(i+2,v);}back.computeVertexNormals();const rear=attach(p,back,m,-.145,1.215,.289);rear.rotation.z=-.16;
 }
 function seam(p,m,points,r=.007){const curve=new T.CatmullRomCurve3(points.map(a=>new T.Vector3(...a)));return attach(p,new T.TubeGeometry(curve,Math.max(4,points.length*3),r,5,false),m,0,0,0);}
+// Closed, curved cloth panels retain a tailored silhouette instead of a slab hem.
+function coatTail(parent,material,width,length,side,split){
+ const g=new T.PlaneGeometry(width,length,6,10),a=g.attributes.position;
+ for(let i=0;i<a.count;i++){const u=a.getX(i)/(width/2),v=(a.getY(i)+length/2)/length;
+  a.setXYZ(i,u*width/2*(1.12-v*.2)+side*(1-v)*.025,a.getY(i)-length/2,
+   -.035-Math.cos(u*Math.PI/2)*.027+Math.sin(v*5+u*2)*.012-(split?.045:0)*(1-v));
+ }
+ g.computeVertexNormals();attach(parent,g,material,0,0,0);
+ const back=g.clone(),index=back.index;for(let i=0;i<index.count;i+=3){const x=index.getX(i);index.setX(i,index.getX(i+2));index.setX(i+2,x);}back.computeVertexNormals();attach(parent,back,material,0,0,-.003);
+}
+export const SURVIVOR_DESIGN=Object.freeze({
+ scout:{shoulder:1,waist:1,head:1,signature:'Patrol canvas / courier sling'},
+ medic:{shoulder:.94,waist:.91,head:.97,signature:'Rescue coat / field supplies'},
+ biker:{shoulder:1.12,waist:1.08,head:1.04,signature:'Reinforced leather / engine hardware'},
+ ronin:{shoulder:.94,waist:.9,head:.95,signature:'Layered wrap / split travelling coat'}
+});
+function identityDetails(body,M,id){
+ if(id==='medic'){
+  // Ivory rescue tabard with a rust identification stripe and compact supplies.
+  for(const side of [-1,1]){const tab=rounded(body,M.accent,side*.205,1.2,.165,.045,.28,.018,.004);tab.rotation.z=side*.1;}
+  rounded(body,M.accent,-.16,1.2,.224,.075,.065,.012,.004);
+  for(let i=0;i<3;i++){tube(body,M.white,.18+i*.035,.91,.2,.012,.012,.09);tube(body,M.accent,.18+i*.035,.964,.2,.014,.014,.018);}
+  seam(body,M.leather,[[-.26,1.4,.14],[-.04,1.16,.235],[.26,.91,.16]],.014);
+ }else if(id==='biker'){
+  for(const side of [-1,1]){const lapel=rounded(body,M.leather,side*.15,1.29,.2,.13,.24,.035,.014);lapel.rotation.z=side*-.4;
+   for(let i=0;i<3;i++)rounded(body,M.trim,side*.25,1.28-i*.045,.154,.018,.019,.012,.004);}
+  seam(body,M.trim,[[.18,.9,.17],[.1,1.1,.205],[-.02,1.34,.2]],.004);
+  rounded(body,M.leather,0,1.15,-.181,.34,.28,.025,.02);
+  seam(body,M.trim,[[-.11,1.16,-.203],[0,1.26,-.22],[.11,1.16,-.203],[0,1.08,-.22],[-.11,1.16,-.203]],.007);
+ }else if(id==='ronin'){
+  for(let i=0;i<3;i++){const wrap=rounded(body,M.cloth,0,1.08+i*.08,.19,.39,.066,.024,.01);wrap.rotation.z=-.2;}
+  rounded(body,M.accent,0,.89,.173,.43,.105,.045,.02);
+  for(const side of [-1,1])seam(body,M.accent,[[side*.22,1.32,.115],[side*.2,1.19,.18],[side*.18,1.04,.19]],.008);
+  // A folded sash at the hip; weapon silhouettes remain exclusively loadout-owned.
+  const sash=rounded(body,M.accent,-.21,.78,.13,.095,.26,.04,.012);sash.rotation.z=-.25;
+ }else{
+  rounded(body,M.leather,-.255,.96,-.03,.14,.22,.17,.025);
+  for(let i=0;i<3;i++)rounded(body,M.trim,-.16+i*.026,1.18,.225,.014,.019,.008,.003);
+ }
+}
 function mergeBone(parent){for(const child of [...parent.children])if(child.isGroup)mergeBone(child);const groups=new Map();for(const m of parent.children)if(m.isMesh&&!m.children.length){const list=groups.get(m.material)||[];list.push(m);groups.set(m.material,list);}for(const [material,list]of groups){if(list.length<2)continue;const geos=list.map(m=>{m.updateMatrix();const g=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();g.applyMatrix4(m.matrix);return g;});const geometry=mergeGeometries(geos);geos.forEach(g=>g.dispose());if(geometry){geometry.userData.surfaceOwned=true;const out=new T.Mesh(geometry,material);out.castShadow=out.receiveShadow=true;parent.add(out);for(const m of list){m.geometry.dispose();m.removeFromParent();}}}}
 export function buildSurvivor(skinId='scout',custom={}){
+ const design=SURVIVOR_DESIGN[skinId]||SURVIVOR_DESIGN.scout;
  const a=resolveAppearance(skinId,custom),c=PALETTES[a.palette],color=key=>CUSTOMIZATION[key].options[a[key]].color;
  const M={cloth:mat(c.cloth),dark:mat(0x263538),leather:mat(c.leather,'leather'),trim:mat(new T.Color(c.trim).multiplyScalar(.83),'metal'),accent:mat(c.accent),skin:mat(color('skin'),'skin'),shadow:mat(new T.Color(color('skin')).multiplyScalar(.72),'skin'),hair:mat(color('hairColor')),eye:mat(color('eyes')),white:mat(0xc5c9b7,'skin'),black:mat(0x172321),scar:mat(0xa97564)};
  const root=new T.Group(),body=new T.Group();root.add(body);root.userData={body,skin:skinId,type:'player',appearanceKey:appearanceSignature(skinId,custom),custom:a};
- tailored(body,M.cloth,0,.77,0,[[0,0],[.21,.02],[.245,.2],[.29,.48],[.26,.6],[.15,.66],[0,.66]],.68);
+ tailored(body,a.coat==='bomber'?M.leather:M.cloth,0,.77,0,[[0,0],[.21*design.waist,.02],[.245*design.waist,.2],[.29*design.shoulder,.48],[.26*design.shoulder,.6],[.15,.66],[0,.66]],.68);
+ identityDetails(body,M,skinId);root.userData.designSignature=design.signature;
  rounded(body,M.leather,0,.81,0,.48,.085,.33,.025);rounded(body,M.trim,.025,.815,.18,.085,.064,.025,.009);
  for(const side of [-1,1]){const lapel=rounded(body,M.cloth,side*.115,1.31,.161,.116,.26,.023,.012);lapel.rotation.z=side*-.27;rounded(body,M.cloth,side*.16,1.12,.18,.16,.16,.07);rounded(body,M.trim,side*.16,1.175,.222,.018,.018,.014);seam(body,M.dark,[[side*.22,.94,.165],[side*.235,1.15,.155],[side*.24,1.3,.13]],.004);}
  seam(body,M.dark,[[0,.86,.17],[0,1.1,.2],[0,1.32,.18]],.008);
  // Split hems are separate joints, with restrained secondary motion.
- const tails=[];if(['trench','split'].includes(a.coat))for(const side of [-1,1]){const tail=new T.Group();tail.position.set(side*.15,.87,-.11);body.add(tail);const flap=rounded(tail,M.cloth,0,-.23,-.025,a.coat==='trench'?.3:.22,.49,.1,.035);flap.rotation.x=-.1;seam(tail,M.leather,[[side*.12,-.03,.015],[side*.12,-.43,.015]],.01);tails.push(tail);}if(a.coat==='bomber'){oval(body,M.leather,0,.91,0,.26,.07,.18);oval(body,M.leather,0,1.39,0,.2,.08,.15);}
- const neck=tube(body,M.skin,0,1.47,0,.095,.11,.15),head=new T.Group();head.position.set(0,1.68,.015);head.scale.setScalar(.87);body.add(head);root.userData.head=head;
+ const tails=[];if(['trench','split'].includes(a.coat))for(const side of [-1,1]){const tail=new T.Group();tail.position.set(side*.15,.87,-.11);body.add(tail);coatTail(tail,M.cloth,a.coat==='trench'?.3:.22,a.coat==='trench'?.56:.49,side,a.coat==='split');seam(tail,M.leather,[[side*.12,-.03,.015],[side*.12,-.43,.015]],.01);tails.push(tail);}if(a.coat==='bomber'){oval(body,M.leather,0,.91,0,.26,.07,.18);oval(body,M.leather,0,1.39,0,.2,.08,.15);}
+ const neck=tube(body,M.skin,0,1.47,0,.095,.11,.15),head=new T.Group();head.position.set(0,1.68,.015);head.scale.setScalar(.87*design.head);body.add(head);root.userData.head=head;
  const width=a.face==='broad'?.185:a.face==='soft'?.159:.17,jaw=a.face==='angular'?.82:a.face==='soft'?.78:.97;
  // Shaped jaw, cheek planes and brow ridge, rather than a spherical toy head.
- const headGeo=new T.SphereGeometry(1,24,18),pos=headGeo.attributes.position;for(let i=0;i<pos.count;i++){const y=pos.getY(i),x=pos.getX(i),z=pos.getZ(i);pos.setXYZ(i,x*width*(1-(1-jaw)*Math.max(0,Math.min(1,(-y-.15)/.7))),y*.218,z*.162+(z>0&&y<-.3?.015:0));}headGeo.computeVertexNormals();
+ const headGeo=new T.SphereGeometry(1,24,18),pos=headGeo.attributes.position;for(let i=0;i<pos.count;i++){const y=pos.getY(i),x=pos.getX(i),z=pos.getZ(i);pos.setXYZ(i,x*width*(1-(1-jaw)*Math.max(0,Math.min(1,(-y-.15)/.7))),y*.218,z*.162+(z>0&&y<-.3?.015:0)+(z>0?Math.exp(-((Math.abs(x)-.55)**2*18+(y+.05)**2*30))*.012:0));}headGeo.computeVertexNormals();
  // Stubble is a soft pigmentation transition on skin, not a jagged shell.
  const faceMat=M.skin.clone(),skinColor=new T.Color(color('skin')),beardColor=new T.Color(color('hairColor')),faceColors=[];
  faceMat.vertexColors=true;faceMat.color.set(0xffffff);
@@ -67,6 +110,7 @@ export function buildSurvivor(skinId='scout',custom={}){
  }
  headGeo.setAttribute('color',new T.Float32BufferAttribute(faceColors,3));attach(head,headGeo,faceMat,0,0,0);
  for(const side of [-1,1]){
+  seam(head,M.shadow,[[side*.038,.009,.153],[side*.069,.004,.158],[side*.1,.012,.147]],.002);
   oval(head,M.skin,side*(width-.003),-.014,-.012,.028,.05,.028);oval(head,M.shadow,side*(width+.009),-.016,.005,.01,.023,.011);
   oval(head,M.shadow,side*.068,.026,.146,.038,.015,.011);oval(head,M.white,side*.068,.027,.153,.03,.009,.007);oval(head,M.eye,side*.067,.027,.159,.011,.01,.004);oval(head,M.black,side*.067,.027,.162,.0045,.007,.002);oval(head,M.white,side*.063,.031,.164,.002,.002,.001);
   const brow=oval(head,M.hair,side*.07,.058,.15,.037,.006,.008);brow.rotation.z=side*(a.face==='angular'?-.13:.04);

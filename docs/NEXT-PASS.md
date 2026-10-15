@@ -2,6 +2,17 @@
 
 14 October 2026. Apple signing/notarization, Steam Deck troubleshooting and other ports remain deferred, except the newly authorized SNES demake. Work is staged into tested releases, not an assertion that the whole game is finished.
 
+## Current character checkpoint — 4.50.0
+
+- [x] Integrate authored default Rook v7 into the live world and interiors, preserving weapon grips, armour, fallback and resource ownership.
+- [x] Refine all four survivor identities and three static traders; preserve customization and shop draw budgets.
+- [x] Refine six ordinary enemy archetypes and eight boss surfaces; retain instancing, gore and authored combat poses.
+- [x] 609 regression tests, 48 actual-model art checks, production build and browser cast/FPS/TPS/city/boss reviews.
+- [ ] Complete authored Saint/Torque/Vesper and enemy assets with lore-art likeness, dedicated detailed FPS hands and LODs. Current procedural refinements are not final art parity.
+- [ ] Sustain native and physical-device performance sessions; retain existing gameplay and traversal gates below.
+
+See [4.50.0 evidence](RELEASE-4.50.0.md). The older development-only Rook notes below describe historical checkpoints; default Rook is now integrated in production.
+
 ## Completed milestone — performance and reliability
 
 - [x] Capture fixed-seed city and combat frame-time baselines; add destruction/weather/long-session coverage.

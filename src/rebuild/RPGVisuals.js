@@ -1,6 +1,7 @@
 import {disposeObjectResources} from './ResourceDisposal.js';
 import * as T from 'three';
-import {rounded} from './SurvivorVisuals.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {rounded,buildSurvivor} from './SurvivorVisuals.js';
 import {resolveAppearance} from './Customization.js';
 import {batchRigid} from './RenderBatch.js';
 import {ARMOUR,DYES,RARITY_COLORS} from './RPG.js';
@@ -28,6 +29,21 @@ export function dressArmour(character,p){
   if(slot==='legs')for(const leg of character.userData.legs){const g=group(leg);plate(g,color,0,-.15,.074,.2,.24,.1);const knee=group(leg.userData.knee);plate(knee,dark,0,-.025,.078,.2,.15,.12);plate(knee,trim,0,-.01,.143,.13,.022,.013,.65);if(a.tier>=2)plate(knee,dark,0,-.18,.081,.16,.18,.08);}
  }for(const g of groups)batchRigid(g);character.userData.armourParts=groups;
 }
+// Traders hold a fixed pose. Bake their articulated geometry into four surface
+// draws while preserving cloth textures, vertex colours and material response.
+function bakeTrader(trader){
+ trader.updateMatrixWorld(true);const inverse=trader.matrixWorld.clone().invert(),groups=new Map();
+ trader.traverse(o=>{if(!o.isMesh)return;const m=o.material,key=m.userData.surfaceKind||'cloth';let batch=groups.get(key);
+  if(!batch){const material=m.clone();material.color.setHex(0xffffff);material.vertexColors=true;material.userData.shared=false;batch={material,geometry:[]};groups.set(key,batch);}
+  const geo=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();geo.applyMatrix4(new T.Matrix4().multiplyMatrices(inverse,o.matrixWorld));
+  const n=geo.attributes.position.count,old=m.vertexColors?geo.attributes.color:null,colors=new Float32Array(n*3);
+  for(let i=0;i<n;i++){colors[i*3]=m.color.r*(old?old.getX(i):1);colors[i*3+1]=m.color.g*(old?old.getY(i):1);colors[i*3+2]=m.color.b*(old?old.getZ(i):1);}
+  geo.setAttribute('color',new T.BufferAttribute(colors,3));for(const key of Object.keys(geo.attributes))if(!['position','normal','uv','color'].includes(key))geo.deleteAttribute(key);
+  if(!geo.attributes.uv)geo.setAttribute('uv',new T.BufferAttribute(new Float32Array(n*2),2));batch.geometry.push(geo);
+ });
+ const baked=[];for(const batch of groups.values()){const geometry=mergeGeometries(batch.geometry);batch.geometry.forEach(g=>g.dispose());if(!geometry){batch.material.dispose();continue;}geometry.userData.surfaceOwned=true;const mesh=new T.Mesh(geometry,batch.material);mesh.castShadow=mesh.receiveShadow=true;baked.push(mesh);}
+ disposeObjectResources(trader);trader.clear();trader.userData={staticTrader:true};trader.add(...baked);return trader;
+}
 export function rpgPlaceMesh(place){const g=new T.Group(),c=place.color;
  if(place.kind==='shop'){
   const facade=new T.Group();g.add(facade);g.userData.facade=facade;const width=Math.min(place.frontWidth||6,8),medic=place.id==='medic',smith=place.id==='smith';
@@ -43,10 +59,14 @@ export function rpgPlaceMesh(place){const g=new T.Group(),c=place.color;
    if(!medic&&!smith){for(let i=0;i<5;i++)mesh(facade,[0xc1a88a,0x948c71,0x6b8887][i%3],-width*.32-.4+i*.18,1.4,-2.73,.12,.5,.2);}
    mesh(facade,0x9f9581,0,.07,-2.15,2.2,.14,1.4);
   }else{mesh(facade,0x34484a,0,.45,-2,2.5,.9,.8);}
-  // A human-sized trader and a separate service lamp survive loss of the premises.
-  const head=new T.Mesh(new T.IcosahedronGeometry(.22,2),new T.MeshStandardMaterial({color:medic?0x8f674b:0xb88d70}));head.position.set(-.7,1.76,-1.4);g.add(head);mesh(g,medic?0xc9c7ad:c,-.7,1.23,-1.4,.5,.7,.38);
-  for(const x of [-.84,-.56])mesh(g,0x344348,x,.49,-1.4,.18,.85,.22);
-  for(const x of [-1.04,-.36])mesh(g,medic?0xc9c7ad:c,x,1.23,-1.4,.16,.6,.2);
+  // Traders use the same tailored cast construction, with their own appearance.
+  const trader=buildSurvivor(medic?'medic':smith?'biker':'ronin',medic?
+   {hair:'crop',hairColor:'silver',headwear:'none',accessory:'radio',scar:'none',coat:'trench'}:smith?
+   {hair:'shaved',headwear:'none',accessory:'goggles',coat:'bomber',palette:'desert',scar:'cheek'}:
+   {hair:'swept',hairColor:'silver',headwear:'hood',accessory:'satchel',coat:'trench',palette:'oxblood',scar:'none'});
+  trader.position.set(-.7,0,-1.4);trader.rotation.y=.12;
+  trader.userData.arms.forEach((arm,i)=>{arm.rotation.x=i?-.12:-.35;arm.rotation.z=i?.06:-.09;arm.userData.elbow.rotation.x=i?-.25:-.55;});
+  g.add(bakeTrader(trader));
   mesh(g,0x405357,1.5,1.5,-.5,.07,3,.07);const lamp=mesh(g,c,1.5,2.9,-.5,.32,.25,.32);lamp.material.emissive.setHex(c);lamp.material.emissiveIntensity=.5;
   g.rotation.y=place.angle||0;
  }else if(place.kind==='cache'){mesh(g,0x74684b,0,.4,0,1.1,.8,.8);for(const x of [-.35,.35])mesh(g,c,x,.43,.41,.1,.65,.03);}
