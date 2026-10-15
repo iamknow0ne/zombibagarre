@@ -15,5 +15,5 @@ test('authored roof collision and visible solids agree in world space; details s
 
 test('roof map destination is the safe street approach and disappears with its host',async()=>{
  const {serviceRoofPlaces}=await import('../src/rebuild/Atlas.js');const roof={id:'roof',buildingId:'host',approach:{x:3,z:7},anchor:{x:3,z:2,y:7}};const sim={layout:{traversal:{roofs:[roof]}},props:[{id:'host',health:100}]};
- assert.deepEqual(serviceRoofPlaces(sim),[{x:3,z:7,id:'roof',name:'MAINTENANCE ROOF',kind:'travel'}]);assert.equal(roof.approach.name,undefined);sim.props[0].health=0;assert.deepEqual(serviceRoofPlaces(sim),[]);
+ assert.deepEqual(serviceRoofPlaces(sim),[{x:3,z:7,id:'roof',name:'LAST SIGNAL / ROOFTOP',kind:'travel'}]);assert.equal(roof.approach.name,undefined);sim.rooftopEncounters={roof:{state:'cleared',guardId:1}};assert.equal(serviceRoofPlaces(sim)[0].name,'LAST SIGNAL / CACHE READY');sim.rooftopEncounters.roof.state='claimed';assert.equal(serviceRoofPlaces(sim)[0].name,'LAST SIGNAL / RECOVERED');sim.props[0].health=0;assert.deepEqual(serviceRoofPlaces(sim),[]);
 });

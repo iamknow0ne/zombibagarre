@@ -73,6 +73,13 @@ function validateRegion(r){
  for(const p of r.props)if(!finite(p.health)||!finite(p.maxHealth)||!finite(p.w)||!finite(p.d))fail('The expedition contains an invalid object.');
  if(r.rubblePiles!==undefined&&!(r.rubblePiles instanceof Map))fail('The expedition rubble is invalid.');
  if(r.interiorState!==undefined&&(!plain(r.interiorState)||!['manifest','visited','collected'].every(k=>Array.isArray(r.interiorState[k]))))fail('The expedition interiors are invalid.');
+ if(r.rooftopEncounters!==undefined){
+  if(!plain(r.rooftopEncounters))fail('The expedition rooftop encounters are invalid.');
+  const roofs=new Set((r.layout.traversal?.roofs||[]).map(roof=>roof.id));
+  for(const [id,encounter]of Object.entries(r.rooftopEncounters)){
+   if(!roofs.has(id)||!plain(encounter)||Object.keys(encounter).some(key=>!['state','guardId'].includes(key))||!['dormant','active','cleared','claimed','lost'].includes(encounter.state)||!(encounter.guardId===null||Number.isInteger(encounter.guardId)&&encounter.guardId>0)||encounter.state==='active'&&encounter.guardId===null||encounter.state==='dormant'&&encounter.guardId!==null)fail('The expedition rooftop encounter is invalid.');
+  }
+ }
 }
 export function parseExpedition(text){
  if(typeof text!=='string'||new TextEncoder().encode(text).length>MAX_EXPEDITION_BYTES)fail('The expedition checkpoint exceeds its size limit.');
@@ -91,6 +98,7 @@ export function parseExpedition(text){
  if(data.regions!==null&&!(data.regions instanceof Map))fail('The expedition region ledger is invalid.');
  if(data.regions){if(!['city','country-road'].includes(g.activeRegionId)||!plain(g.regionGates)||data.regions.size>1)fail('The expedition region ledger is invalid.');for(const[id,r]of data.regions){if(!['city','country-road'].includes(id)||id===g.activeRegionId)fail('The expedition region is invalid.');validateRegion(r);if(!['playing','extracting'].includes(r.state)||!finite(r.parkedAt))fail('The parked expedition is invalid.');}}
  for(const r of [data.current,...(data.regions?.values()||[])])for(const list of [r.enemies,r.bullets,r.pickups,r.props])for(const e of list)if(typeof e.id==='number'&&(!Number.isInteger(e.id)||e.id>=g.nextId))fail('The expedition entity sequence is invalid.');
+ for(const r of [data.current,...(data.regions?.values()||[])])for(const encounter of Object.values(r.rooftopEncounters||{}))if(encounter.guardId!==null&&encounter.guardId>=g.nextId)fail('The expedition rooftop guard sequence is invalid.');
  const random=seededRandom();random.setState(data.randomState);
  return {data,savedAt:envelope.savedAt};
 }

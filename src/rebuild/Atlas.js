@@ -1,8 +1,9 @@
+import {roofEncounter} from './RooftopEncounters.js';
 import {retroRoomPlaces} from './RetroPlaces.js';
 import {travelGate} from './Regions.js';
 import {waterOutline} from './City.js';
 import {questGuide} from './QuestNavigation.js';
-export function serviceRoofPlaces(sim){return (sim.layout.traversal?.roofs||[]).filter(r=>sim.props.some(p=>p.id===r.buildingId&&p.health>0)).map(r=>({...r.approach,id:r.id,name:'MAINTENANCE ROOF',kind:'travel'}));}
+export function serviceRoofPlaces(sim){return (sim.layout.traversal?.roofs||[]).filter(r=>sim.props.some(p=>p.id===r.buildingId&&p.health>0)).map(r=>({...r.approach,id:r.id,name:roofEncounter(sim,r).state==='claimed'?'LAST SIGNAL / RECOVERED':roofEncounter(sim,r).state==='cleared'?'LAST SIGNAL / CACHE READY':'LAST SIGNAL / ROOFTOP',kind:'travel'}));}
 export function atlasTransform(canvas,layout,view={},large=true,player={x:0,z:0}){
  const b=layout.bounds,extent=large?Math.max(b.maxX-b.minX,b.maxZ-b.minZ)+12:82,cx=large?(view.x??(b.minX+b.maxX)/2):player.x,cz=large?(view.z??(b.minZ+b.maxZ)/2):player.z,scale=canvas.width/extent*(large?(view.zoom||1):1);
  return {scale,cx,cz,X:x=>(x-cx)*scale+canvas.width/2,Z:z=>(z-cz)*scale+canvas.height/2};

@@ -299,7 +299,7 @@ function hud(){const p=sim.player,w=weaponStats(p);$('weather-hud').textContent=
   $('street-job').hidden=!sim.layout.city;const job=sim.layout.country?{title:'OLD MILL SUPPLY YARD',detail:sim.rpg?.countrySupplies?'Medicine recovered · Return to Lenoir':'Clear the yard · Search the medical supplies'}:streetStatus(sim);$('street-job-name').textContent=job.title;$('street-job-detail').textContent=job.detail;
   $('health-number').textContent=`${Math.ceil(p.health)} / ${p.maxHealth}`;$('health-fill').style.width=`${p.health/p.maxHealth*100}%`;$('health-fill').style.background=p.health/p.maxHealth<.3?'var(--danger)':'var(--green)';
   $('wave-label').textContent=sim.layout.country?'COUNTRY ROUTE':`WAVE ${String(sim.wave).padStart(2,'0')} / ${TOTAL_WAVES}`;
-  $('objective').textContent=sim.state==='extracting'?`EXTRACTION ${Math.floor(sim.extraction/4*100)}%`:`${Math.max(0,(sim.toSpawn||0)+sim.enemies.length)} HOSTILES REMAINING`;
+  $('objective').textContent=sim.state==='extracting'?`EXTRACTION ${Math.floor(sim.extraction/4*100)}%`:`${Math.max(0,(sim.toSpawn||0)+sim.enemies.filter(e=>!e.optionalEncounter).length)} HOSTILES REMAINING`;
   $('wave-fill').style.width=`${sim.state==='extracting'?sim.extraction/4*100:(sim.waveKills||0)/(sim.waveTotal||1)*100}%`;
   $('score').textContent=String(sim.score).padStart(6,'0');$('weapon-name').textContent=`${w.name} / ${TIER_MARKS[w.tier]} ${w.tier===3?WEAPON_FINISHES[p.weapon].signature:TIER_NAMES[w.tier]}`;
   $('ammo').innerHTML=w.melee?`COMBO <small>${sim.time-(p.lastSwing??-99)<1.3?p.swingCombo+1:1} / 3</small>`:`${p.magazines[p.weapon]} <small>/ ${magazineSize(p)}</small>`;

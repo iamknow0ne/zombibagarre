@@ -50,3 +50,14 @@ test('grapple marker mast stays beside the roof landing lane while ring and cabl
  const owner={id:'tiny',x:0,z:0,w:.6,d:.6,h:1,health:100},anchor={id:'tiny-anchor',supportId:'tiny',x:0,y:3.1,z:0},visuals=new TraversalVisuals(new T.Scene(),{anchors:[anchor]},[owner]);
  assert.equal(visuals.anchors[0].group.getObjectByName('anchor-mast'),undefined,'a narrow support never puts a pole back inside the landing body');assert.ok(visuals.anchors[0].ring);visuals.dispose();
 });
+
+test('roof cache visuals track reward state without allocating during updates and release owned resources',()=>{
+ const host={id:'host',health:100},deck={id:'deck',x:2,z:3,y:4,h:.3,w:8,d:8,health:100},roof={id:'roof',buildingId:'host',parts:[deck],top:4.3,anchor:{supportId:'deck'}};
+ const scene=new T.Scene(),v=new TraversalVisuals(scene,{roofs:[roof]},[host,deck]),camera=new T.Camera(),sim={player:{traversal:'campaign',x:2,z:3},props:[host,deck],rooftopEncounters:{roof:{state:'active',guardId:1}}};
+ const cache=v.roofCaches[0],geometries=new Set(),materials=new Set();v.root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)materials.add(o.material);});let disposed=0;for(const r of [...geometries,...materials])r.addEventListener('dispose',()=>disposed++);
+ v.update(sim,0,camera);assert.equal(cache.group.visible,true);assert.equal(cache.hinge.rotation.x,0);assert.equal(cache.group.position.y,4.3);
+ sim.rooftopEncounters.roof.state='cleared';v.update(sim,0,camera);assert.equal(cache.lamp.color.getHex(),0x94d5b2);
+ sim.rooftopEncounters.roof.state='claimed';for(let i=0;i<300;i++)v.update(sim,.016,camera);assert.equal(cache.hinge.rotation.x,-1.2);assert.equal(cache.lamp.emissiveIntensity,0);
+ const after=new Set();v.root.traverse(o=>{if(o.geometry)after.add(o.geometry);});assert.deepEqual(after,geometries);
+ host.health=0;v.update(sim,0,camera);assert.equal(cache.group.visible,false);v.dispose();assert.equal(disposed,geometries.size+materials.size);assert.equal(scene.children.length,0);
+});

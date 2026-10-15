@@ -1,3 +1,4 @@
+import {roofEncounter,roofCachePosition} from './RooftopEncounters.js';
 import * as T from 'three';
 import {alignSurvivorFeet} from './CharacterMotion.js';
 
@@ -28,6 +29,16 @@ export class TraversalVisuals{
    const material=new T.MeshStandardMaterial({color:0xc9ae79,emissive:0x8c5126,emissiveIntensity:.2,roughness:.35,metalness:.55});
    const ring=new T.Mesh(new T.TorusGeometry(.29,.055,7,24),material);ring.position.set(anchor.x,anchor.y,anchor.z);group.add(ring);this.root.add(group);this.anchors.push({anchor,group,ring});
   }
+  this.roofCaches=[];
+  for(const roof of (plan?.roofs||[]).filter(r=>r.parts?.length&&Number.isFinite(r.top))){
+   const group=new T.Group(),point=roofCachePosition(roof),paint=new T.MeshStandardMaterial({color:0x416958,roughness:.65,metalness:.25}),trim=new T.MeshStandardMaterial({color:0xc6ad7e,roughness:.5,metalness:.55}),lamp=new T.MeshStandardMaterial({color:0xe1b474,emissive:0x9b591e,emissiveIntensity:.35});
+   const block=(w,h,d,x,y,z,material)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;group.add(m);return m;};
+   block(.95,.5,.65,0,.25,0,paint);for(const x of [-.34,.34])block(.055,.51,.67,x,.26,0,trim);
+   const hinge=new T.Group();hinge.position.set(0,.51,-.325);const lid=new T.Mesh(new T.BoxGeometry(.98,.08,.68),paint);lid.position.z=.325;hinge.add(lid);group.add(hinge);
+   block(.14,.08,.025,0,.3,.34,lamp);block(.3,.16,.22,-.23,.62,-.08,metal);
+   const antenna=new T.Mesh(new T.CylinderGeometry(.012,.018,.65,5),metal);antenna.position.set(-.32,.98,-.13);group.add(antenna);
+   group.position.set(point.x,point.y,point.z);this.root.add(group);this.roofCaches.push({roof,group,hinge,lamp});
+  }
   this.cable=new T.Line(new T.BufferGeometry().setAttribute('position',new T.BufferAttribute(new Float32Array(17*3),3)),new T.LineBasicMaterial({color:0xe8c48a}));this.cable.frustumCulled=false;this.cable.visible=false;this.root.add(this.cable);
   this.landing=new T.Mesh(new T.RingGeometry(.42,.47,32),new T.MeshBasicMaterial({color:0xd7c5a0,transparent:true,opacity:0,depthWrite:false}));this.landing.rotation.x=-Math.PI/2;this.landing.visible=false;this.root.add(this.landing);this.landLife=0;
   if(this.rewardPlan){const reward=this.reward=new T.Group(),body=new T.Mesh(new T.BoxGeometry(.85,.46,.58),metal);body.position.y=.23;reward.add(body);const trim=new T.MeshStandardMaterial({color:0xc5ab76,roughness:.6,emissive:0x49351c,emissiveIntensity:.2});for(const x of [-.27,.27]){const band=new T.Mesh(new T.BoxGeometry(.07,.48,.6),trim);band.position.set(x,.24,0);reward.add(band);}const latch=new T.Mesh(new T.BoxGeometry(.18,.14,.035),trim);latch.position.set(0,.24,.31);reward.add(latch);this.root.add(reward);}
@@ -37,6 +48,10 @@ export class TraversalVisuals{
   const p=sim.player;this.root.visible=p.traversal==='campaign';if(!this.root.visible)return;
   const selected=sim.traversalTarget;
   if(this.reward){const r=this.rewardPlan,owner=sim.props.find(o=>o.id===r.supportId);this.reward.visible=!sim.traversalRewardClaimed&&Math.hypot(r.x-p.x,r.z-p.z)<50;this.reward.position.set(r.x,owner?.health>0?r.y:0,r.z);}
+  for(const {roof,group,hinge,lamp} of this.roofCaches){
+   const record=roofEncounter(sim,roof),alive=sim.props.some(o=>o.id===roof.buildingId&&o.health>0);group.visible=alive&&record.state!=='lost'&&Math.hypot(group.position.x-p.x,group.position.z-p.z)<50;
+   hinge.rotation.x=record.state==='claimed'?-1.2:0;lamp.color.setHex(record.state==='cleared'?0x94d5b2:record.state==='claimed'?0x546a5a:0xe1b474);lamp.emissive.setHex(record.state==='cleared'?0x396c4c:0x593919);lamp.emissiveIntensity=record.state==='claimed'?0:.35;
+  }
   for(const entry of this.anchors){const {anchor,group,ring}=entry,owner=sim.props.find(o=>o.id===anchor.supportId);group.visible=!!owner&&owner.health>0&&Math.hypot(anchor.x-p.x,anchor.z-p.z)<50;if(!group.visible)continue;
    const active=selected?.id===anchor.id||p.grapple?.anchorId===anchor.id,ready=active&&(selected?.available||!!p.grapple);
    ring.quaternion.copy(camera.quaternion);ring.material.color.setHex(ready?0xf3c782:0x8c9689);ring.material.emissiveIntensity=ready?.65:.08;ring.scale.setScalar(active?1.18:1);

@@ -2,6 +2,17 @@
 
 15 October 2026. Apple signing/notarization and Steam Deck troubleshooting remain deferred. The SNES demake and Android test edition are authorized; other ports remain deferred. Work is staged into tested releases, not an assertion that the whole game is finished.
 
+## The Last Signal rooftop encounter — 4.53.0
+
+- [x] Add one optional guardian/cache on the generated service roof, activated by an actual landing; map route leads to its street approach.
+- [x] Floor-aware enemy movement, cover navigation, gravity/support loss, crowd separation and falling loot. Optional guardian does not block waves or inflate wave kills.
+- [x] Persist active/cleared/claimed/lost state through region travel and expedition checkpoints; one-time rewards and destroyed-host handling.
+- [x] Reuse compact touch action and keyboard/controller interaction prompts; cache lamp/lid reflects its state.
+- [x] 703 gameplay regressions, 89 model checks, 64 checkpoint continuations, production build, real browser grapple/combat/collection/collapse and map route review.
+- [ ] Publish tested browser/Mac 4.53.0; hardware startup passed; public artifact verification pending.
+
+See [release scope](RELEASE-4.53.0.md) and [QA evidence](qa/4.53.0/README.md). The cache's damaged flight manifest is lore foreshadowing only; it does not unlock a hangar or spacecraft yet.
+
 ## Vertical combat prerequisites — 4.52.1
 
 - [x] Preserve actor-floor heights through wounds, remains, elemental reactions, melee/evolution effects and dropped loot; correct elevated nova/thermal origins.
@@ -9,9 +20,9 @@
 - [x] Stop paused corpse drift/particle accumulation; restore checkpoint weather controls consistently.
 - [x] 679 regressions, 64 checkpoint continuations, production build and real browser effect/pause/weather-resume review.
 - [x] Publish browser/Mac 4.52.1: source fcc3312, Pages 38737369692 passed, public BUILD 4.52.1 and clean captured startup checked. Mac hardware startup passed and uploaded ZIP digest matches.
-- [ ] Before a roof encounter: floor-aware enemy movement/crowding, support-loss gravity, optional encounter isolation from wave completion, regional checkpoint ledger and height-aware reward support loss. Proposed first slice: one optional service-roof spitter guarding a cache, activated only on arrival.
+- [x] Roof encounter prerequisites and the first optional guardian/cache shipped in the 4.53.0 milestone above.
 
-See [release scope](RELEASE-4.52.1.md) and [QA evidence](qa/4.52.1/README.md). The developer elevated victim is staged; no rooftop enemy encounter is shipped yet.
+See [release scope](RELEASE-4.52.1.md) and [QA evidence](qa/4.52.1/README.md). The developer elevated victim was staged in this patch; 4.53.0 adds the first real optional rooftop encounter.
 
 ## Resumable expeditions — 4.52.0
 
@@ -56,7 +67,7 @@ These items supersede historical “next” notes further down this file.
 
 1. Finish the authorized Android physical-device checks once the recurring system crash dialog is resolved. Do not treat an activity launch, browser viewport emulation or CI build as phone gameplay evidence.
 2. Add resumable expeditions before expanding travel: a separate versioned, bounded snapshot with explicit RNG state, region-qualified identities, corruption recovery and atomic restore. Permanent character saves must remain independently recoverable; 4.52.0 implements explicit safe-point Save & exit and paused resume; no automatic crash recovery or portable expedition backup.
-3. Extend useful interiors and curated vertical encounters, with reliable return/collision/quest rewards and controller/touch interaction. The workshop/apartment and one service roof are implemented; indoor combat, indoor TPS/FPS and elevated enemy encounters are not complete.
+3. Extend useful interiors and curated vertical encounters, with reliable return/collision/quest rewards and controller/touch interaction. The workshop/apartment and one service roof are implemented; the first optional elevated enemy encounter is implemented in 4.53.0. Indoor combat, indoor TPS/FPS and more varied vertical encounters remain.
 4. Expand regional destinations and a late-run hidden-hangar quest, then ship launch/orbit/return and the first moon as separate tested slices. None of the spacecraft/planet milestones is implemented yet.
 
 Continue ordinary full-expedition playthrough, native endurance and perspective

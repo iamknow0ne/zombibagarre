@@ -4,7 +4,7 @@ import {waterAt} from './City.js';
 import {bossContains} from './Bosses.js';
 
 // In-memory expedition state only. Nothing here is written into SaveStore.
-export const REGION_FIELDS=['layout','props','enemies','bullets','hazards','pickups','fires','structures','rubblePiles','wetGround','streetEvents','places','visited','interiorState','traversalRewardClaimed','geometryRevision','toSpawn','spawnTimer','waveKills','waveTotal','waveBaseCount','nightReinforced','extraction','countryEncounter'];
+export const REGION_FIELDS=['layout','props','enemies','bullets','hazards','pickups','fires','structures','rubblePiles','wetGround','streetEvents','places','visited','interiorState','traversalRewardClaimed','geometryRevision','toSpawn','spawnTimer','waveKills','waveTotal','waveBaseCount','nightReinforced','extraction','countryEncounter','rooftopEncounters'];
 const solids=view=>(view.props||[]).filter(o=>o.health>0);
 function projectileThreat(view,p,radius){
  return (view.bullets||[]).some(b=>{

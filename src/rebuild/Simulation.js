@@ -1,3 +1,5 @@
+import {updateRooftopEncounters,collectRoofCache} from './RooftopEncounters.js';
+import {stepElevatedEnemy,moveElevatedEnemy,elevatedWaypoint,enemiesShareFloor,stepElevatedPickup} from './ElevatedEnemies.js';
 import {initializeRegions,captureRegion,requestRegionTravel,collectCountrySupply} from './Regions.js';
 import {generateCountryRoad} from './CountryRoad.js';
 import {stepInterior} from './Interiors.js';
@@ -44,7 +46,7 @@ export class Simulation {
   }
   // Actor FX carry feet-relative baseY; projectile/contact y remains absolute world height.
   emit(type, data = {}) { this.events.push({ ...data, type }); }
-  start(weapon = 'carbine') { this.interior=null;this.interiorState={manifest:[],visited:[],collected:[]};this.traversalRewardClaimed=false;this.traversalTarget=null;this.focus=createFocus();this.timeScale=1; this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave();initializeRegions(this); }
+  start(weapon = 'carbine') { this.rooftopEncounters={};this.interior=null;this.interiorState={manifest:[],visited:[],collected:[]};this.traversalRewardClaimed=false;this.traversalTarget=null;this.focus=createFocus();this.timeScale=1; this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave();initializeRegions(this); }
   createCountryRegion(){
     const layout=generateCountryRoad(this.seed^0x4d494c4c),region=new Simulation({seed:this.seed^0x4d494c4c,difficulty:this.difficulty,layout,mode:'campaign',progression:this.progression,environment:this.weather.options});
     region.wave=this.wave;region.district=this.district;region.nextId=this.nextId;region.state='playing';region.toSpawn=0;region.spawnTimer=0;region.waveKills=0;region.waveTotal=layout.region.encounterSpawns.length;region.places=[];region.streetEvents=[];region.interiorState={manifest:[],visited:[],collected:[]};
@@ -100,6 +102,7 @@ export class Simulation {
     }
   }
   move(body, dx, dz) {
+    if(body.elevated)return moveElevatedEnemy(this,body,dx,dz);
     const r = body.radius,oldX=body.x,oldZ=body.z,bounds=this.layout.bounds||ARENA;
     body.x = clamp(body.x + dx, bounds.minX + r, bounds.maxX - r);
     for (const o of this.obstacles) if (o.id!==body.vehicleId&&o!==body&&(Math.abs(body.x - o.x) < o.w / 2 + r - 1e-7 && Math.abs(body.z - o.z) < o.d / 2 + r - 1e-7))
@@ -149,7 +152,7 @@ export class Simulation {
     this.emit('damage',{enemyId:e.id,x:e.x,y:feetHeight(e),z:e.z,enemyType:e.type,bossHeight:e.bossHeight,crawling:!!e.crawling,amount,dealt,health:Math.max(0,e.health),maxHealth:e.maxHealth,weapon:impact.weapon,kind:impact.kind,tier:impact.tier,critical:crit.critical,headshot:!!impact.headshot,finisher:!!impact.finisher,execution:!!impact.execution,periodic:!!impact.periodic,killed:e.health<=0});
     if(amount>=1)this.emit('hit' , { x:e.x,baseY:feetHeight(e),z:e.z,enemyId:e.id,amount,enemyType:e.type,weapon:impact.weapon,tier:impact.tier||0,dx,dz,kind:impact.kind,crawling:!!e.crawling,headshot:!!impact.headshot });
     if (e.health <= 0) {
-      bossDefeated(this,e);rpgKill(this,e);rewardFocus(this,{...impact,critical:crit.critical});this.kills++; this.waveKills++; this.combo++; this.comboTimer = 3.5;
+      bossDefeated(this,e);rpgKill(this,e);rewardFocus(this,{...impact,critical:crit.critical});this.kills++; if(!e.optionalEncounter)this.waveKills++; this.combo++; this.comboTimer = 3.5;
       this.score += Math.round(e.score * (1 + Math.min(4, Math.floor(this.combo / 5)) * .25) * (this.player.doubleScore>0?2:1));
       this.player.health = Math.min(this.player.maxHealth, this.player.health+this.player.lifeSteal*(this.player.regen>0?2:1));
       if(e.type==='volatile')this.hazards.push({id:this.nextId++,x:e.x,y:feetHeight(e),z:e.z,radius:2.4,timer:.7,duration:.7,friendly:false,damage:24});
@@ -194,7 +197,7 @@ export class Simulation {
     if (input.reload) p.equipped.forEach((key,i)=>this.reload(key,slotKey(p.equipped,key,i)));
     let mx = input.x || 0, mz = input.z || 0, length = Math.hypot(mx, mz);
     if (length > 1) { mx /= length; mz /= length; }
-    if(input.interact&&nearGround(p)){if(!this.profile||!interactPlace(this))this.interactVehicle();if(['paused','interior'].includes(this.state))return;}
+    if(input.interact&&!collectRoofCache(this)&&nearGround(p)){if(!this.profile||!interactPlace(this))this.interactVehicle();if(['paused','interior'].includes(this.state))return;}
     if (input.dash && !p.vehicleId&& p.dashCooldown === 0) {
       p.grapple=null;p.jumpBuffer=0;p.ambushTime=3;p.shield=Math.max(p.shield,p.dashShield||0);p.meleeAttack=null;p.meleeBuffer=null;p.swing=0;const dive=!isMelee(p)&&beginFocusDive(this);p.focusDive=!!dive;p.dash = dive?FOCUS.diveDuration:isMelee(p)?.26:.2; p.invulnerable = Math.max(p.invulnerable, isMelee(p)?.4:.3); p.dashCooldown = isMelee(p)?Math.min(1.1,1.1*p.dashMax/2.7):p.dashMax;
       p.dashX = length > .1 ? mx / Math.hypot(mx, mz) : Math.sin(p.angle); p.dashZ = length > .1 ? mz / Math.hypot(mx, mz) : Math.cos(p.angle); this.emit('dash');
@@ -208,6 +211,7 @@ export class Simulation {
     else{const stanceSpeed=isMelee(p)?1.22:1;const drift=weatherMovement(p,mx,mz,p.speed*stanceSpeed*(p.aiming?.78:1),dt,this.weather),x=p.x,z=p.z;this.move(p,drift.x,drift.z);if(Math.abs(p.x-x)<Math.abs(drift.x)*.1)p.slideX=0;if(Math.abs(p.z-z)<Math.abs(drift.z)*.1)p.slideZ=0;}
     p.moveX=dt?(p.x-beforeMove.x)/dt:0;p.moveZ=dt?(p.z-beforeMove.z)/dt:0;p.moving=Math.hypot(p.moveX,p.moveZ)>.08;if(!p.vehicleId&&p.dash<=0&&(!p.traversal||p.grounded)){p.footTravel=(p.footTravel||0)+distance(p,beforeMove);if(p.footTravel>1.53){p.footTravel%=1.53;this.emit('footstep',{water:!!waterAt(this.layout,p.x,p.z)});}}
     if(p.dash<=0)p.focusDive=false;
+    updateRooftopEncounters(this);
     const w = weaponStats(p);
     const target = this.enemies.filter(e => e.health > 0 && distance(p, e) < w.range).sort((a, b) => distance(p, a) - distance(p, b)).find(e=>!combatBlocked(this,muzzlePoint(p),bodyPoint(e)));
     let aim = input.aim;
@@ -252,13 +256,14 @@ export class Simulation {
     }
     this.hazards = this.hazards.filter(h => !h.done);
     for (const item of this.pickups) {
-      item.life -= dt;
+      stepElevatedPickup(this,item,dt);item.life -= dt;
       if ((item.type!=='health'||p.health<p.maxHealth) && Math.hypot(distance(p,item),feetHeight(p)-feetHeight(item))<p.pickupRange) { this.collect(item.type); item.life=0; }
     }
     this.pickups = this.pickups.filter(i => i.life > 0);
     updateStreetEvents(this,dt);updateNightQuests(this);
     this.enemies = this.enemies.filter(e => e.health > 0);
-    if (!this.layout.country && this.state === 'playing' && this.toSpawn === 0 && this.enemies.length === 0) {
+    updateRooftopEncounters(this);
+    if (!this.layout.country && this.state === 'playing' && this.toSpawn === 0 && !this.enemies.some(e=>!e.optionalEncounter)) {
       this.bullets = []; this.hazards = [];
       if (this.wave === TOTAL_WAVES) { this.state = 'extracting'; this.emit('extraction'); }
       else { this.state = 'upgrade';if(this.wave%4===0)this.rerolls=Math.min(5,this.rerolls+1);this.offerUpgrades(); }
@@ -372,6 +377,7 @@ export class Simulation {
     };
     for (const e of this.enemies) {
       if (e.health <= 0) continue;
+      stepElevatedEnemy(this,e,dt);
       e.chilled=Math.max(0,(e.chilled||0)-dt);e.electrified=Math.max(0,(e.electrified||0)-dt);e.exposed=Math.max(0,(e.exposed||0)-dt);e.shockCooldown=Math.max(0,(e.shockCooldown||0)-dt);
       e.flash = Math.max(0, e.flash - dt); e.attack -= dt; e.slow=Math.max(0,(e.slow||0)-dt);
       if(e.burning>0){
@@ -395,24 +401,25 @@ export class Simulation {
         }
       } else if(e.attack<=0&&supportContact(e)){
         e.windup=e.type==='runner'?.3:e.type==='brute'?.7:.55;e.attack=1.5;e.supportTargetId=support.id;e.targetX=p.x;e.targetZ=p.z;
-      } else if (e.attack <= 0 && ((e.type === 'spitter' && bodyDistance(e,p) < 13 && !combatBlocked(this,bodyPoint(e),bodyPoint(p))) || (e.type === 'boss' && d < 9) || d < e.radius + p.radius + .5)) {
+      } else if (e.attack <= 0 && ((e.type === 'spitter' && bodyDistance(e,p) < 13 && !combatBlocked(this,bodyPoint(e),bodyPoint(p))) || (e.type === 'boss' && d < 9) || (e.type!=='spitter'&&d < e.radius + p.radius + .5&&verticalGap(actorSpan(e),actorSpan(p))===0&&!combatBlocked(this,bodyPoint(e),bodyPoint(p))))) {
         e.windup=e.type==='boss'?1:e.type==='runner'?.3:.55;e.attack=e.type==='boss'? (e.health<e.maxHealth*.5?2.8:3.8) : e.type === 'spitter' ? 2.6 : 1.5; e.targetX = p.x; e.targetZ = p.z;e.targetY=bodyPoint(p).y;
       } else {
         let nx = dx / d, nz = dz / d;
-        const shouldMove = e.type !== 'spitter' || d > 8 || this.blocked(e, p);
+        const upstairs=e.elevated&&feetHeight(e)>.1;
+        const shouldMove = e.type !== 'spitter' || d > 8 || (upstairs?combatBlocked(this,bodyPoint(e),bodyPoint(p)):this.blocked(e,p));
         if (shouldMove && d > e.radius + p.radius) {
-          if (this.blocked(e, p, e.radius + .08)) {
-            const waypoint = this.navigate(e);
-            if (waypoint) { const len = distance(e, waypoint) || 1; nx = (waypoint.x-e.x)/len; nz = (waypoint.z-e.z)/len; }
+          const waypoint=upstairs?elevatedWaypoint(this,e,p):this.blocked(e,p,e.radius+.08)?(this.navigate(e)||p):p;
+          if(waypoint){const len=distance(e,waypoint)||1;nx=(waypoint.x-e.x)/len;nz=(waypoint.z-e.z)/len;
+           const slow=p.freeze>0?.25:e.chilled>0?.3:e.slow>0?.55:1,step=upstairs?Math.min(len,e.speed*dt*slow):e.speed*dt*slow;
+           if(upstairs)moveElevatedEnemy(this,e,nx*step,nz*step,{avoidEdges:true});else this.move(e,nx*step,nz*step);
           }
-          const slow=p.freeze>0?.25:e.chilled>0?.3:e.slow>0?.55:1;this.move(e, nx * e.speed * dt * slow, nz * e.speed * dt * slow);
         }
       }
       if (Math.abs(e.knockX) + Math.abs(e.knockZ) > .1) { this.move(e, e.knockX * dt, e.knockZ * dt); e.knockX *= Math.exp(-9*dt); e.knockZ *= Math.exp(-9*dt); }
     }
     for (let i = 0; i < this.enemies.length; i++) for (let j = i + 1; j < this.enemies.length; j++) {
       const a = this.enemies[i], b = this.enemies[j], d = distance(a,b) || .01, gap = a.radius + b.radius;
-      if (d < gap) { const push = (gap - d) * .5, x = (a.x-b.x)/d*push, z=(a.z-b.z)/d*push; this.move(a,x,z); this.move(b,-x,-z); }
+      if (d < gap && enemiesShareFloor(a,b)) { const push = (gap - d) * .5, x = (a.x-b.x)/d*push, z=(a.z-b.z)/d*push; this.move(a,x,z); this.move(b,-x,-z); }
     }
   }
   addFire(x,z,radius=1.6){
