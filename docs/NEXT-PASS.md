@@ -278,3 +278,15 @@ Next: detailed character likeness and production integration, including moving a
 turning, armour, LOD and FPS hands. Broader perspective/collision QA, ordinary full
 expedition and sustained native gameplay remain open. The first roof is complete;
 additional elevated encounters and hangar/orbit/moon remain unfinished.
+
+## Development checkpoint — moving rifle aim
+
+- [x] Detailed v7 rifle travel combines bounded aiming with forward/backward/strafe/stop foot placement and preserves armed/unarmed travel continuity.
+- [x] Paused aim edits retain movement history instead of replaying the last direction; actual browser position check and new regression cover this.
+- [x] Collapsible character inspector gives the model more room while retaining labeled keyboard controls. Actual forward/backward/strafe/stop browser review passed without errors.
+- [x] Add a reproducible candidate-model character suite to browser CI. See [implementation and QA](art-direction/ROOK-MOVING-AIM.md).
+
+Production release stays 4.49.9. Independent 70-test perspective/traversal audit
+found no new reproducible defect. Next art gates are turning/terrain, moving
+combat, likeness/garments and the equipment/LOD/FPS production adapter. The wider
+ordinary-expedition and native-soak gates above remain open.

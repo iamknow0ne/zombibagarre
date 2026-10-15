@@ -1,0 +1,6 @@
+{
+  "before": "TRAVEL · 0.00 m/s · x -42.14 / z 7.22 m · aim 7° / 6°",
+  "after": "TRAVEL · 0.00 m/s · x -42.14 / z 7.22 m · aim -35° / 30°",
+  "reset": "TRAVEL · 0.00 m/s · x -42.14 / z 7.22 m · aim 0° / 0°",
+  "errors": []
+}

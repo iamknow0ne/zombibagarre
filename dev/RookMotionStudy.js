@@ -136,7 +136,8 @@ export function createRookMotionStudy(content){
  // Share aiming through lumbar, thoracic and upper-chest joints. The arms,
  // head and weapon all inherit the same final chest transform, retaining the
  // solved contacts while the planted lower body and bind matrices stay intact.
- // Reload/locomotion/melee deliberately own their poses in this first layer.
+ // Reload, unarmed locomotion and melee own their poses; rifle travel shares
+ // the aimed upper body above independently planted locomotion feet.
  function applyAim(input){
   const angles=normalizeRookAim(input),active=['rifle','fire'].includes(mode);
   aimFrame={...angles,active};if(!active||(!angles.yaw&&!angles.pitch))return;
@@ -161,12 +162,12 @@ export function createRookMotionStudy(content){
   // the viewer has moved the loaded root; updateWorldMatrix alone does not.
   for(const skin of skins)skin.updateMatrixWorld(true);
   if(ROOK_COMBAT_MODES.some(m=>m.id===id))return poseCombat(id,time,{contact:combatContact,direction});
-  const t=locomotion?locomotion.phase:loop(time,spec.duration),phase=t*Math.PI*2,walking=id==='walk',armed=['rifle','fire','reload'].includes(id),guard=id==='guard',gaitWeight=locomotion?clamp(locomotion.speed/.4,0,1):1;
-  const breath=Math.sin(locomotion?time/3.2*Math.PI*2:phase)*.003,drop=walking?-.025-(locomotion?.speed||0)*.025:armed?-.035:guard?-.055:-.012;
-  const root=bone('root'),targetRoot=worldPoint(point('root').add(V(walking?.012*Math.sin(phase)*gaitWeight:id==='ready'?.008:0,drop+(walking?.006*Math.cos(phase*2)*gaitWeight+breath*(1-gaitWeight):breath),0)));
+  const t=locomotion?locomotion.phase:loop(time,spec.duration),phase=t*Math.PI*2,walking=id==='walk',armed=['rifle','fire','reload'].includes(id),guard=id==='guard',gaitWeight=locomotion?clamp(locomotion.speed/.4,0,1):1,movingRifle=armed&&!!locomotion;
+  const breath=Math.sin(locomotion?time/3.2*Math.PI*2:phase)*.003,drop=walking||movingRifle?-.025-(locomotion?.speed||0)*.025:armed?-.035:guard?-.055:-.012;
+  const root=bone('root'),targetRoot=worldPoint(point('root').add(V(walking||movingRifle?.012*Math.sin(phase)*gaitWeight:id==='ready'?.008:0,drop+(walking||movingRifle?.006*Math.cos(phase*2)*gaitWeight+breath*(1-gaitWeight):breath),0)));
   root.position.copy(root.parent.worldToLocal(targetRoot));root.updateWorldMatrix(false,true);
   turn(bone('spine05'),V(0,1,0),walking?.035*Math.sin(phase)*gaitWeight:armed?-.09:guard?.18:.018*Math.sin(phase));
-  turn(bone('spine02'),V(1,0,0),walking?(locomotion?.velocity.z??1)*.035:armed?.04:guard?.06:0);
+  turn(bone('spine02'),V(1,0,0),walking||movingRifle?(locomotion?.velocity.z??1)*.035+(movingRifle?.04:0):armed?.04:guard?.06:0);
   if(locomotion)turn(bone('spine05'),V(0,0,1),-locomotion.velocity.x*.025);
   turn(bone('head'),V(0,1,0),walking?-.035*Math.sin(phase)*gaitWeight:armed?.09:guard?-.18:-.01*Math.sin(phase));
   for(const s of ['L','R']){

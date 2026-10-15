@@ -4,8 +4,9 @@ import {createRookLocomotion} from './RookLocomotion.js';
 
 const ease=t=>{t=T.MathUtils.clamp(t,0,1);return t*t*(3-2*t);};
 const DEMO=Object.freeze([{mode:'walk',duration:2.24},{mode:'rifle',duration:1.6},{mode:'fire',duration:1.2},{mode:'reload',duration:3.2},{mode:'ready',duration:1.6}]);
+const isTravel=mode=>mode==='locomotion'||mode==='rifle-locomotion';
 const DEMO_DURATION=DEMO.reduce((sum,step)=>sum+step.duration,0);
-export const ROOK_CONTROLLER_MODES=Object.freeze([...ROOK_MOTION_MODES,{id:'locomotion',label:'Travel locomotion',duration:12},{id:'demo',label:'Combat motion sequence',duration:DEMO_DURATION}]);
+export const ROOK_CONTROLLER_MODES=Object.freeze([...ROOK_MOTION_MODES,{id:'locomotion',label:'Travel locomotion',duration:12},{id:'rifle-locomotion',label:'Travel with rifle',duration:12},{id:'demo',label:'Combat motion sequence',duration:DEMO_DURATION}]);
 
 // Development-only transition layer. Bind matrices and the GLB are never changed.
 export function createRookMotionController(content,{transitionDuration=.32}={}){
@@ -30,13 +31,14 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
  }
  function select(mode){
   requireLive();if(!ROOK_CONTROLLER_MODES.some(m=>m.id===mode))throw new RangeError(`Unknown Rook motion ${mode}.`);
-  selectedMode=mode;time=0;demoIndex=0;demoStepTime=0;locomotion.reset();start(mode==='demo'?DEMO[0].mode:mode==='locomotion'?'walk':mode);
+  const keepTravel=isTravel(selectedMode)&&isTravel(mode);
+  selectedMode=mode;time=0;demoIndex=0;demoStepTime=0;if(!keepTravel)locomotion.reset();start(mode==='demo'?DEMO[0].mode:mode==='locomotion'?'walk':mode==='rifle-locomotion'?'rifle':mode);
   // Do not apply the new target until update: selecting/interrupting cannot pop.
   return diagnostics();
  }
  function sample(){
   if(activeMode==='bind'){study.reset();refresh();weaponState=localWeapon();targetDiagnostics=study.diagnostics();return;}
-  const travel=selectedMode==='locomotion'?locomotion.frame():null;
+  const travel=isTravel(selectedMode)?locomotion.frame():null;
   study.pose(activeMode,poseTime,{locomotion:travel,...combatOptions,aim:aimCurrent});targetDiagnostics=study.diagnostics();const targetWeapon=localWeapon();
   const progress=transitionDuration===0?1:Math.min(1,blendTime/transitionDuration),weight=ease(progress);
   if(source&&progress<1){
@@ -62,7 +64,7 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
   if(selectedMode==='demo')dt=Math.min(dt,Math.max(0,DEMO_DURATION-time));
   if(dt===0){refresh();return diagnostics();}
   time+=dt;const spec=ROOK_MOTION_MODES.find(m=>m.id===selectedMode);if(spec?.once)time=Math.min(time,spec.duration);
-  if(selectedMode==='locomotion'){locomotion.update(dt);advance(dt);return diagnostics();}
+  if(isTravel(selectedMode)){locomotion.update(dt);advance(dt);return diagnostics();}
   if(selectedMode!=='demo'){advance(dt);return diagnostics();}
   let remaining=dt;
   // Split at exact showcase boundaries so 30/60/120Hz and a single large step
@@ -81,7 +83,7 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
    // a crossfade. Playback through the same point can include a transition.
    time=value;demoIndex=0;let local=value;while(demoIndex<DEMO.length-1&&local>=DEMO[demoIndex].duration){local-=DEMO[demoIndex++].duration;}
    activeMode=DEMO[demoIndex].mode;demoStepTime=local;poseTime=local;
-  }else{time=value;poseTime=value;if(selectedMode==='locomotion')locomotion.seek(value);}
+  }else{time=value;poseTime=value;if(isTravel(selectedMode))locomotion.seek(value);}
   aimCurrent={...aimTarget};source=null;blendTime=transitionDuration;sample();return diagnostics();
  }
  function getWeaponPose(){
@@ -90,16 +92,18 @@ export function createRookMotionController(content,{transitionDuration=.32}={}){
  }
  function getSocket(side){requireLive();refresh();return study.getSocket(side);}
  function setAim(input={}){requireLive();aimTarget=normalizeRookAim(input);return{...aimTarget};}
+ // Paused aim edits settle the current pose without replaying travel history.
+ function settleAim(){requireLive();aimCurrent={...aimTarget};source=null;blendTime=transitionDuration;sample();return diagnostics();}
  function setLocomotion(input){requireLive();return locomotion.set(input);}
  function setCombat(options={}){requireLive();const next={...combatOptions,...options};if(typeof next.contact!=='boolean'||![1,-1].includes(next.direction))throw new TypeError('Combat contact must be boolean and direction must be +1 or -1.');combatOptions=next;return{...combatOptions};}
- function getTravelPose(){requireLive();const p=selectedMode==='locomotion'?locomotion.frame().position:targetDiagnostics?.combat?.travel||{x:0,z:0};return new T.Vector3(p.x,0,p.z);}
+ function getTravelPose(){requireLive();const p=isTravel(selectedMode)?locomotion.frame().position:targetDiagnostics?.combat?.travel||{x:0,z:0};return new T.Vector3(p.x,0,p.z);}
  function reset(){
   requireLive();study.reset();refresh();selectedMode=activeMode=fromMode='bind';time=poseTime=0;blendTime=transitionDuration;demoIndex=demoStepTime=0;source=null;weaponState=localWeapon();targetDiagnostics=study.diagnostics();locomotion.reset();aimTarget={yaw:0,pitch:0};aimCurrent={yaw:0,pitch:0};return diagnostics();
  }
  function diagnostics(){
   const progress=transitionDuration===0?1:Math.min(1,blendTime/transitionDuration);
-  return{...(targetDiagnostics||{}),aimTarget:{...aimTarget},aimCurrent:{...aimCurrent},reachErrorScope:'settled target sample; not a claim about blended hand contacts',mode:activeMode,selectedMode,time,poseTime,demoTime:selectedMode==='demo'?time:undefined,locomotion:selectedMode==='locomotion'?locomotion?.frame():undefined,duration:ROOK_CONTROLLER_MODES.find(m=>m.id===selectedMode)?.duration||0,transition:{active:!!source&&progress<1,progress,duration:transitionDuration,from:fromMode,to:activeMode},demoComplete:selectedMode==='demo'&&time>=DEMO_DURATION,disposed,bones:bones.length};
+  return{...(targetDiagnostics||{}),aimTarget:{...aimTarget},aimCurrent:{...aimCurrent},reachErrorScope:'settled target sample; not a claim about blended hand contacts',mode:activeMode,selectedMode,time,poseTime,demoTime:selectedMode==='demo'?time:undefined,locomotion:isTravel(selectedMode)?locomotion?.frame():undefined,duration:ROOK_CONTROLLER_MODES.find(m=>m.id===selectedMode)?.duration||0,transition:{active:!!source&&progress<1,progress,duration:transitionDuration,from:fromMode,to:activeMode},demoComplete:selectedMode==='demo'&&time>=DEMO_DURATION,disposed,bones:bones.length};
  }
  function dispose(){if(disposed)return;reset();disposed=true;source=weaponState=study=content=targetDiagnostics=locomotion=null;bones=[];skins=[];}
- return{modes:ROOK_CONTROLLER_MODES,select,update,seek,reset,dispose,getWeaponPose,getSocket,setAim,setLocomotion,setCombat,getTravelPose,diagnostics};
+ return{modes:ROOK_CONTROLLER_MODES,select,update,seek,reset,dispose,getWeaponPose,getSocket,setAim,settleAim,setLocomotion,setCombat,getTravelPose,diagnostics};
 }

@@ -11,7 +11,8 @@
     "test:campaign": "node scripts/campaign-check.mjs",
     "desktop:dev": "npm run build && electron . --steam-deck --windowed",
     "desktop:linux": "npm run build && node scripts/build-desktop.mjs",
-    "desktop:mac": "npm run build && node scripts/build-desktop.mjs --mac"
+    "desktop:mac": "npm run build && node scripts/build-desktop.mjs --mac",
+    "test:rook": "node scripts/art/test-rook.mjs"
   },
   "dependencies": {
     "three": "^0.169.0"
