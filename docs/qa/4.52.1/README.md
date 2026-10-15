@@ -27,3 +27,20 @@ Local isolated origin `127.0.0.1:3015`; no player production saves touched.
 ## Limits
 
 No sustained FPS comparison, full-expedition endurance or new physical phone/controller acceptance this pass. Cosmetic fragments use bounded existing pools and the live collision index; performance claims require actual device measurement. These checks do not establish finished rooftop enemy AI or a completed game.
+
+## Packaged Mac verification
+
+- 89/89 authored-model checks passed locally.
+- `release/4.52.1/Zombie-Bagarre-4.52.1-macOS-arm64.zip` built from source commit `fcc3312a251b0e1982182e570e192934db6b311b`; deep/strict ad-hoc signature verification passed.
+- Exact packaged app launched on this Mac and reported hardware GPU enabled, version 4.52.1, offline world/shaders/menu/desktop bridge ready. Smoke process exited successfully. No Developer ID signature/notarization or sustained native session is claimed.
+- ZIP SHA-256: `d250426af3bb725f51524a48a4fd283fe56976888204fd9a499bedea0311ca91`.
+
+## Publication
+
+Pages run **38737369692** passed test/model/build/deploy jobs for source
+`fcc3312a251b0e1982182e570e192934db6b311b`. Public title **BUILD 4.52.1**
+verified in the in-app browser with no captured startup console errors.
+[GitHub release](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.52.1)
+published; GitHub's uploaded ZIP digest matches the local smoke-tested archive.
+Tag-triggered Steam Deck run 38737575372 was cancelled because that platform
+remains deferred. Android stays on the previously installed 4.52.0 test build.

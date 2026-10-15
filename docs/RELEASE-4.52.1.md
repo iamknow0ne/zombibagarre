@@ -15,3 +15,9 @@
 ## Boundaries
 
 Elevated enemy encounters still need floor-aware navigation, gravity/support loss, wave-completion isolation and persistent regional encounter state. The staged elevated victim is a developer fixture. No new indoor combat, regions, hangar, spacecraft or planet exploration in this patch. Android's clean physical acceptance remains interrupted by the previously documented Dolby system dialog; no phone or FPS improvement is claimed. Steam Deck and Apple notarization remain deferred.
+
+## Mac test package
+
+Apple Silicon ZIP: `Zombie-Bagarre-4.52.1-macOS-arm64.zip`.
+SHA-256: `d250426af3bb725f51524a48a4fd283fe56976888204fd9a499bedea0311ca91`.
+Deep/strict ad-hoc signature verification and hardware-GPU startup passed on this Mac. This is a local test edition, not Developer ID signed/notarized, and not an endurance benchmark.

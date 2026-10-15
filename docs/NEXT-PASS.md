@@ -8,7 +8,7 @@
 - [x] Let hard cosmetic fragments land on roofs and remains fall after support loss; project raised blood onto nearby actual surfaces.
 - [x] Stop paused corpse drift/particle accumulation; restore checkpoint weather controls consistently.
 - [x] 679 regressions, 64 checkpoint continuations, production build and real browser effect/pause/weather-resume review.
-- [ ] Publish tested browser and ad-hoc Mac 4.52.1 patch; packaging in progress.
+- [x] Publish browser/Mac 4.52.1: source fcc3312, Pages 38737369692 passed, public BUILD 4.52.1 and clean captured startup checked. Mac hardware startup passed and uploaded ZIP digest matches.
 - [ ] Before a roof encounter: floor-aware enemy movement/crowding, support-loss gravity, optional encounter isolation from wave completion, regional checkpoint ledger and height-aware reward support loss. Proposed first slice: one optional service-roof spitter guarding a cache, activated only on arrival.
 
 See [release scope](RELEASE-4.52.1.md) and [QA evidence](qa/4.52.1/README.md). The developer elevated victim is staged; no rooftop enemy encounter is shipped yet.
