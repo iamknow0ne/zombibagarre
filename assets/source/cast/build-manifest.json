@@ -1,0 +1,82 @@
+{
+  "builtAt": "2026-10-15T10:14:51.551415+00:00",
+  "builder": "scripts/art/build_survivor_cast.py",
+  "builderSha256": "3225b5b626bd7b8d1b0c30a41733c5a748ffdf8a45257d7689fed3caa8e4a64e",
+  "blender": "5.1.2",
+  "previewRenderer": "EEVEE",
+  "testCommand": "node --test scripts/art/survivor-cast.test.mjs",
+  "files": [
+    {
+      "identity": "saint",
+      "glb": "assets/characters/saint-v1.glb",
+      "bytes": 8056296,
+      "sha256": "22a94548c402dd21f076cc8d83a7a883a32f3b0d3ec2dee3c031c8b60ec59498",
+      "triangles": {
+        "0": 44822,
+        "1": 19263
+      },
+      "draws": {
+        "0": 13,
+        "1": 13
+      },
+      "images": {
+        "full": {
+          "path": "assets/source/cast/saint-full.png",
+          "sha256": "d931351c2b193283dd14e8e29e516d05d4694f0b9bae185d854d7cdb98fdde47"
+        },
+        "face": {
+          "path": "assets/source/cast/saint-face.png",
+          "sha256": "9a800a9cd719a9e7b552447407e1daca6f339f06cc500db1a6613c8668bfe47c"
+        }
+      }
+    },
+    {
+      "identity": "torque",
+      "glb": "assets/characters/torque-v1.glb",
+      "bytes": 7756524,
+      "sha256": "6958ba079a7f62f6fa94419610a25ba0ddc0c87f2054d0bcacc63477efb7bf39",
+      "triangles": {
+        "0": 37862,
+        "1": 16266
+      },
+      "draws": {
+        "0": 12,
+        "1": 12
+      },
+      "images": {
+        "full": {
+          "path": "assets/source/cast/torque-full.png",
+          "sha256": "cb803fa9987c0f9d76bcfbbdac35631ed9c1beb32861931f55e57c30f8097e9b"
+        },
+        "face": {
+          "path": "assets/source/cast/torque-face.png",
+          "sha256": "cee9530b1f35465785119e6f76ce8168feefc5bee2b17b1eaaceccac11ad8f3e"
+        }
+      }
+    },
+    {
+      "identity": "vesper",
+      "glb": "assets/characters/vesper-v1.glb",
+      "bytes": 7399964,
+      "sha256": "8bb92b165de8aed3acfdefe5fadafb5f9e874c8fdfe2a5ec7d30375ec9b52815",
+      "triangles": {
+        "0": 32194,
+        "1": 13832
+      },
+      "draws": {
+        "0": 12,
+        "1": 12
+      },
+      "images": {
+        "full": {
+          "path": "assets/source/cast/vesper-full.png",
+          "sha256": "9b35636af731d01d8463755b55bafb1edb10605bb36939a123eeff607d2555fa"
+        },
+        "face": {
+          "path": "assets/source/cast/vesper-face.png",
+          "sha256": "563b7a1635f5150374ce4febeebe6b30cd1f803ebbdf2060e08eff6286b2d8f1"
+        }
+      }
+    }
+  ]
+}

@@ -1,13 +1,19 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import headAsset from '../../assets/characters/infected-head.json' with {type:'json'};
 import {CIVILIAN_COATS,characterVariant} from './CharacterDetails.js';
 
 // Broad value changes survive the street camera without a repeating microtexture.
-// Three shared material responses keep horde instancing bounded; every actor owns
+// Six shared material responses keep horde instancing bounded; every actor owns
 // its merged geometry, so removing a corpse cannot invalidate another enemy.
-const materials=Object.fromEntries(Object.entries({cloth:[.94,0],skin:[.84,0],leather:[.73,.03],metal:[.53,.38]}).map(([kind,[roughness,metalness]])=>{
- const m=new T.MeshStandardMaterial({vertexColors:true,roughness,metalness});m.userData.shared=true;return[kind,m];
+const materials=Object.fromEntries(Object.entries({cloth:[.94,0],skin:[.84,0],face:[.86,0],leather:[.73,.03],metal:[.53,.38],membrane:[.56,0]}).map(([kind,[roughness,metalness]])=>{
+ const m=new T.MeshStandardMaterial({vertexColors:true,roughness,metalness});m.userData.shared=true;m.name=`infected-${kind}`;return[kind,m];
 }));
+// Reuse the pinned CC0 atlas unchanged. Its original UVs survive the head
+// extraction; only the anatomical face samples it. Shared cache lifetime keeps
+// corpses and streamed variants from disposing a live enemy's texture.
+const faceTexture=typeof document==='undefined'?new T.Texture():new T.TextureLoader().load(new URL('../../assets/characters/infected-skin.png',import.meta.url).href);
+faceTexture.colorSpace=T.SRGBColorSpace;faceTexture.userData.shared=true;faceTexture.name='infected-anatomical-skin';materials.face.map=faceTexture;
 const palettes={
  runner:{coat:0x815044,skin:0xa09e84,dark:0x393d3b,accent:0xb39b77},
  brute:{coat:0x52605a,skin:0x979780,dark:0x353d3b,accent:0x9b8260},
@@ -44,6 +50,23 @@ const tube=(p,c,x,y,z,top,bottom,h,kind='cloth')=>mesh(p,new T.CylinderGeometry(
 function tailored(parent,color,x,y,z,levels,depth=1,kind='cloth'){
  return mesh(parent,new T.LatheGeometry(levels.map(([r,h])=>new T.Vector2(r,h)),10),color,kind,x,y,z,1,1,depth);
 }
+// A single closed organic shell replaces intersecting stacked spheres. The
+// lobes deform the anatomy continuously, with pigmentation following tension.
+function organicMass(parent,base,accent,x,y,z,w,h,d,lobes){
+ const geometry=new T.SphereGeometry(1,14,10),p=geometry.attributes.position,weights=[];
+ for(let i=0;i<p.count;i++){
+  const px=p.getX(i),py=p.getY(i),pz=p.getZ(i);let swelling=0;
+  for(const [lx,ly,lz,strength]of lobes){const distance=(px-lx)**2+(py-ly)**2+(pz-lz)**2;swelling+=strength*Math.exp(-distance*6);}
+  const rib=.018*Math.sin(py*14+px*3)*Math.max(0,pz);
+  p.setXYZ(i,px*(1+swelling*.45),py*(1+swelling*.3),pz*(1+swelling+rib));weights.push(swelling);
+ }
+ geometry.computeVertexNormals();const out=mesh(parent,geometry,base,'membrane',x,y,z,w,h,d),colors=geometry.attributes.color,highlight=new T.Color(accent),bodyColor=new T.Color(base);
+ for(let i=0;i<p.count;i++){
+  const t=Math.min(.65,weights[i]*1.5),shade=colors.getX(i)/bodyColor.r;
+  colors.setXYZ(i,(bodyColor.r+(highlight.r-bodyColor.r)*t)*shade,(bodyColor.g+(highlight.g-bodyColor.g)*t)*shade,(bodyColor.b+(highlight.b-bodyColor.b)*t)*shade);
+ }
+ return out;
+}
 function joint(parent,name,x,y,z=0){const g=new T.Group();g.name=name;g.position.set(x,y,z);parent.add(g);return g;}
 function mergeBones(parent){
  for(const child of [...parent.children])if(child.isGroup)mergeBones(child);
@@ -53,45 +76,44 @@ function mergeBones(parent){
   const geometry=mergeGeometries(geometries);for(const g of geometries)g.dispose();
   if(!geometry)throw new Error('Enemy bone geometry attributes must match');
   geometry.userData.surfaceOwned=true;
+  // Preserve painted-surface ranges through batching without adding another
+  // shader attribute or draw. QA can test exact wound ownership after merging.
+  let vertexOffset=0;geometry.userData.woundRanges=[];
+  for(const piece of pieces){const count=piece.geometry.index?.count||piece.geometry.attributes.position.count;if(piece.geometry.userData.wound)geometry.userData.woundRanges.push([vertexOffset,count]);vertexOffset+=count;}
   const merged=new T.Mesh(geometry,material);merged.castShadow=merged.receiveShadow=true;parent.add(merged);
   for(const piece of pieces){piece.geometry.dispose();piece.removeFromParent();}
  }
 }
+// Shared immutable anatomical source; actor-owned clones are merged/disposed by
+// the same rigid-bone path as clothing. UV seams survive for later skin atlases.
+const headSource=new T.BufferGeometry();
+headSource.setAttribute('position',new T.Float32BufferAttribute(headAsset.position,3));
+headSource.setAttribute('normal',new T.Float32BufferAttribute(headAsset.normal,3));
+headSource.setAttribute('uv',new T.Float32BufferAttribute(headAsset.uv,2));
+headSource.setIndex(headAsset.index);headSource.userData.shared=true;
 function face(head,p,variant,type){
  const width=type==='brute'?.184:type==='runner'?.153:.167;
- const geometry=new T.SphereGeometry(1,16,12),pos=geometry.attributes.position;
+ const geometry=headSource.clone(),pos=geometry.attributes.position;delete geometry.userData.shared;
+ // Broad, continuous facial identity changes, rather than glued-on features.
  for(let i=0;i<pos.count;i++){
-  const y=pos.getY(i),z=pos.getZ(i),x=pos.getX(i),jaw=1-.34*Math.max(0,-y);
-  const cheek=1+.09*Math.exp(-(((y+.18)/.24)**2)),temple=1-.065*Math.exp(-(((y-.3)/.18)**2));
-  const front=Math.max(0,z),eyeHollow=.018*Math.exp(-(((y-.1)/.19)**2))*Math.min(1,Math.abs(x)*2);
-  const brow=.01*Math.exp(-(((y-.31)/.12)**2)),jawline=.014*Math.exp(-(((y+.64)/.16)**2));
-  pos.setXYZ(i,x*width*jaw*cheek*temple,y*.222,z*.153+front*(brow+jawline-eyeHollow)+(z>0&&y<-.18?.018:0));
+  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+  const jaw=Math.exp(-(((y+.13)/.07)**2)),cheek=Math.exp(-(((y+.03)/.06)**2));
+  const identity=(variant-2.5)*.012;
+  const neck=Math.max(0,Math.min(1,(-y-.16)/.07));
+  pos.setXYZ(i,x*width/.156*(1+identity*jaw+(type==='brute'?.08*jaw:0))*(1-neck*.48),y,((z+(variant%2?-.003:.003)*cheek)+.023)*(1-neck*.48)-.023);
  }
- geometry.computeVertexNormals();const skull=mesh(head,geometry,p.skin,'skin');
+ geometry.computeVertexNormals();const skull=mesh(head,geometry,p.faceSkin,'face');
  const skinColors=skull.geometry.attributes.color;
  for(let i=0;i<pos.count;i++){
-  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i),underEye=Math.exp(-((Math.abs(x)-.066)**2/.002+(y+.012)**2/.0008))*Math.max(0,z/.16);
+  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i),underEye=Math.exp(-((Math.abs(x)-.057)**2/.001+(y-.003)**2/.0006))*Math.max(0,z/.16);
   const bruise=Math.exp(-((x-(variant%2?-.105:.105))**2/.0018+(y+.08)**2/.003))*Math.max(0,z/.16);
-  skinColors.setXYZ(i,skinColors.getX(i)*(1-underEye*.16-bruise*.09),skinColors.getY(i)*(1-underEye*.12-bruise*.14),skinColors.getZ(i)*(1-underEye*.07-bruise*.08));
+  skinColors.setXYZ(i,skinColors.getX(i)*(1-underEye*.2-bruise*.09),skinColors.getY(i)*(1-underEye*.16-bruise*.14),skinColors.getZ(i)*(1-underEye*.09-bruise*.08));
  }
+ // Eye inserts live in actual orbital openings. Ears, nose, lips, jaw and neck
+ // now belong to the continuous source mesh, not overlapping primitives.
  for(const side of [-1,1]){
-  detailOval(head,p.skin,side*width,-.016,-.005,.025,.045,.022,'skin');
-  detailOval(head,0x51564a,side*.066,.025,.141,.033,.012,.008,'skin');
-  detailOval(head,0xb5b69b,side*.067,.025,.15,.012,.004,.003,'skin');
-  const brow=detailOval(head,0x737961,side*.068,.049,.137,.034,.004,.007,'skin');brow.rotation.z=side*-.14;
- }
- detailOval(head,p.skin,0,-.005,.146,.022,.047,.029,'skin');
- detailOval(head,p.skin,0,-.04,.162,.024,.015,.019,'skin');
- for(const side of [-1,1])detailOval(head,0x666452,side*.015,-.049,.17,.007,.003,.007,'skin');
- // A slack, irregular jaw and a faded cheek wound keep the infected from
- // reading as healthy civilians with green skin. All details follow the head.
- const mouth=mesh(head,new T.CircleGeometry(1,10),0x3c2927,'skin',.006,-.102,.174,.033,.013,1);mouth.rotation.z=.13;
- for(const [x,y]of [[-.016,-.091],[.002,-.088],[.02,-.094]])block(head,0xaaa58b,x,y,.173,.008,.006,.005,'skin');
- // Angular cheek planes and a slack lower lip break the smooth doll-like oval.
- for(const sign of [-1,1]){
-
-  const lip=block(head,0x8a7962,sign*.018,-.128,.161,.029,.008,.012,'skin');lip.rotation.z=sign*.15;
-  const tendon=block(head,0x7f856d,sign*.046,-.203,.077,.019,.078,.016,'skin');tendon.rotation.z=sign*-.2;
+  detailOval(head,side===1?0x777b6f:0x94978a,side*.056*width/.167,.029,.126,.025,.012,.027,'skin');
+  detailOval(head,0x4a5048,side*.056*width/.167,.029,.151,.006,.004,.003,'skin');
  }
  const side=variant%2?1:-1;
  // Paint the irregular cheek lesion onto the skull surface instead of a
@@ -100,11 +122,11 @@ function face(head,p,variant,type){
  const lesion=(color,rx,ry,phase)=>{
   // Project interior vertices too: a fan spanning only the outline cuts into
   // a convex cheek, hiding most of the wound despite correct edge placement.
-  const vertices=[],indices=[],segments=16,rings=4,center=side*width*.665;rx*=width/.167;
-  const project=(x,y)=>{origin.copy(head.localToWorld(new T.Vector3(x,y,.5)));ray.set(origin,direction);const hit=ray.intersectObject(skull)[0];vertices.push(x,y,hit?head.worldToLocal(hit.point).z+.0035+phase:.12);};
+  const vertices=[],indices=[],segments=16,rings=4,center=side*width*.51;rx*=width/.167;
+  const project=(x,y)=>{origin.copy(head.localToWorld(new T.Vector3(x,y,.5)));ray.set(origin,direction);const hit=ray.intersectObject(skull)[0];vertices.push(x,y,hit?head.worldToLocal(hit.point).z+.007+phase:.12);};
   project(center,-.043);
   for(let ring=1;ring<=rings;ring++)for(let i=0;i<segments;i++){
-   const a=i/segments*Math.PI*2,r=ring/rings*(.94+.06*Math.sin(a*3+variant));
+   const a=i/segments*Math.PI*2,r=ring/rings*(.78+.16*Math.sin(a*3+variant)+.11*Math.cos(a*5+variant*.6)+.05*Math.sin(a*7));
    project(center+Math.cos(a)*rx*r,-.043+Math.sin(a)*ry*r);
   }
   for(let i=0;i<segments;i++)indices.push(0,1+i,1+(i+1)%segments);
@@ -112,12 +134,19 @@ function face(head,p,variant,type){
    const a=1+(ring-1)*segments+i,b=1+(ring-1)*segments+(i+1)%segments,c=a+segments,d=b+segments;
    indices.push(a,c,d,a,d,b);
   }
-  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setAttribute('uv',new T.Float32BufferAttribute(new Array(vertices.length/3*2).fill(0),2));g.setIndex(indices);g.computeVertexNormals();mesh(head,g,color,'skin');
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setAttribute('uv',new T.Float32BufferAttribute(new Array(vertices.length/3*2).fill(0),2));g.setIndex(indices);g.computeVertexNormals();mesh(head,g,color,'skin');g.userData.wound=true;
+  // Ragged pigmented rim settles into surrounding skin; the torn center stays
+  // dark and uneven rather than forming a contrasting target-like inset.
+  const colors=g.attributes.color,skin=new T.Color(p.faceSkin).multiply(new T.Color(.674,.244,.164));
+  for(let i=0;i<colors.count;i++){
+   const ring=i===0?0:Math.ceil(i/segments),edge=phase?0:Math.max(0,(ring/rings-.45)/.55)*.72;
+   colors.setXYZ(i,colors.getX(i)*(1-edge)+skin.r*.84*edge,colors.getY(i)*(1-edge)+skin.g*.84*edge,colors.getZ(i)*(1-edge)+skin.b*.84*edge);
+  }
  };
- lesion(0x765346,.027,.046,0);lesion(0x8d8268,.012,.023,.001);
+ lesion(0x62413a,.029,.047,0);lesion(0x3d2b29,.011,.024,.001);
  if(type==='armored'){
   mesh(head,new T.SphereGeometry(1,12,6,0,Math.PI*2,0,Math.PI*.52),p.coat,'metal',0,.04,-.022,.206,.213,.19);
-  block(head,p.dark,0,.049,.012,.423,.035,.38,'leather');
+  block(head,p.dark,0,.049,.012,.423,.035,.38,'metal');
   block(head,p.accent,0,.128,.166,.053,.052,.012,'metal');
  }else if(variant===1&&type==='walker'){
   mesh(head,new T.SphereGeometry(1,10,5,0,Math.PI*2,0,Math.PI*.5),0xa79463,'cloth',0,.11,0,.205,.145,.19);
@@ -142,7 +171,9 @@ function costume(body,p,type,variant){
  for(const side of [-1,1]){const collar=block(body,p.dark,side*.072,1.428,.06,.075,.095,.185);collar.rotation.z=side*-.24;}
  // Open lapels, raised seams and broken hems are large enough to read at distance.
  for(const side of [-1,1]){
-  const lapel=block(body,p.accent,side*.096,1.32,front-.01,.085,.22,.033);lapel.rotation.z=side*-.27;
+  // Folded lapels share a raised crease, not thick rectangular bars.
+  patch(body,p.coat,[[side*.025,1.39,front-.012],[side*.095,1.435,front-.02],[side*.172,1.34,front+.018],[side*.074,1.155,front+.018]]);
+  patch(body,p.accent,[[side*.025,1.39,front-.012],[side*.074,1.155,front+.018],[side*.06,1.34,front+.035]]);
   block(body,p.dark,side*.16,1.05,front+.003,.135,.115,.04);
   block(body,p.coat,side*.16,1.105,front+.026,.15,.035,.018);
  }
@@ -171,20 +202,22 @@ function costume(body,p,type,variant){
   for(const side of [-1,1])block(body,p.dark,side*.215,1.19,.14,.06,.43,.13,'leather');
  }
  if(type==='spitter'){
-  oval(body,0x7c8a55,0,1.24,-.23,.296,.354,.205,'skin');
-  for(const side of [-1,1])oval(body,p.accent,side*.19,1.39,-.24,.13,.177,.132,'skin');
+  organicMass(body,0x718052,p.accent,0,1.24,-.23,.315,.365,.21,[[-.55,.55,-.5,.27],[.5,.45,-.6,.34],[0,-.35,-.85,.15]]);
   oval(body,p.skin,0,1.4,.18,.143,.19,.128,'skin');
  }
  if(type==='volatile'){
-  oval(body,0x7c6643,0,1.14,.205,.268,.31,.15,'skin');
-  for(const [x,y,s]of [[-.13,1.27,.13],[.13,1.16,.145],[-.075,.99,.12]])oval(body,p.accent,x,y,.3,s,s*1.15,.09,'skin');
+  organicMass(body,0x8a7250,p.accent,0,1.14,.205,.275,.32,.18,[[-.5,.4,.7,.28],[.5,.08,.8,.38],[-.25,-.6,.65,.22]]);
   const strap=block(body,p.dark,-.08,1.16,.37,.045,.51,.022,'leather');strap.rotation.z=.32;
  }
 }
 export function buildEnemy(type='walker',appearance=0){
- const variant=characterVariant(appearance),p=palettes[type]||{coat:CIVILIAN_COATS[variant],skin:[0xa1a18a,0x919985,0xa39c83][variant%3],dark:0x3c4540,accent:0xb1a58a};
+ const variant=characterVariant(appearance),p={...(palettes[type]||{coat:CIVILIAN_COATS[variant],skin:[0xa1a18a,0x919985,0xa39c83][variant%3],dark:0x3c4540,accent:0xb1a58a})};
+ // Linear RGB averages sampled from the unchanged source atlas at neck UVs.
+ // Match bare limbs/neck to that complexion, while the textured head retains
+ // its original palette multiplier. Never mutate a shared archetype palette.
+ p.faceSkin=p.skin;p.skin=new T.Color(p.skin).multiply(new T.Color(.707,.352,.208));
  const root=new T.Group(),body=joint(root,'body',0,0),brute=type==='brute',runner=type==='runner';
- root.name=`enemy-${type}`;root.scale.setScalar(brute?1.5:runner?.85:1);root.userData={body,type,variant,skin:'scout',visualRevision:3};
+ root.name=`enemy-${type}`;root.scale.setScalar(brute?1.5:runner?.85:1);root.userData={body,type,variant,skin:'scout',visualRevision:4};
  const chest=brute?.354:runner?.25:.285,waist=runner?.173:type==='volatile'?.26:.205;
  tailored(body,p.coat,0,.78,0,[[0,0],[waist,.02],[waist*.98,.16],[chest*.92,.39],[chest,.48],[chest*.84,.59],[.135,.65],[0,.65]],brute?.74:runner?.61:.66);
  tube(body,p.skin,0,1.47,.015,.08,.1,.15,'skin');costume(body,p,type,variant);
@@ -203,12 +236,11 @@ export function buildEnemy(type='walker',appearance=0){
  const arms=[];
  for(const side of [-1,1]){
   const arm=joint(body,side<0?'left-shoulder':'right-shoulder',side*(brute?.406:runner?.309:.348),1.35,brute?.03:0),upper=.29,lower=.28;
-  oval(arm,p.coat,0,-.055,0,brute?.143:.109,.105,.108);
-  tailored(arm,p.coat,0,-.31,0,[[0,0],[brute?.115:.079,.015],[brute?.129:.089,.09],[brute?.144:.105,.21],[brute?.133:.1,.28],[0,.28]],.88);
+  tailored(arm,p.coat,0,-.31,0,[[0,0],[brute?.115:.079,.015],[brute?.129:.089,.09],[brute?.15:.112,.22],[brute?.135:.1,.31],[brute?.07:.045,.355],[0,.365]],.88);
   if(type==='armored')oval(arm,0x60716a,side*.02,-.035,.015,.145,.102,.141,'metal');
   if(type==='runner')block(arm,p.accent,0,-.08,.114,.06,.155,.018);
   const elbow=joint(arm,'elbow',0,-upper,.012),bare=runner||type==='spitter'||variant===5;
-  tube(elbow,bare?p.skin:p.coat,0,-.13,0,brute?.109:.082,brute?.09:.065,lower,bare?'skin':'cloth');
+  tailored(elbow,bare?p.skin:p.coat,0,-.27,0,[[0,0],[brute?.075:.055,.012],[brute?.09:.065,.08],[brute?.115:.084,.19],[brute?.098:.076,.27],[0,.28]],.86,bare?'skin':'cloth');
   if(!bare)tube(elbow,p.dark,0,-.252,0,.073,.073,.042);
   const wrist=joint(elbow,'wrist',0,-lower,.024);
   oval(wrist,p.skin,0,-.018,0,brute?.092:.068,.084,.045,'skin');

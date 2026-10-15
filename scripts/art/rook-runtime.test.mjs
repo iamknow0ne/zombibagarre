@@ -77,7 +77,8 @@ test('actual detailed Rook keeps a visible first-person weapon and independently
  assert.equal(rig.hands.visible,true);assert.ok([...rig.hands.position,...rig.hands.scale].every(Number.isFinite));let visibleSleeves=0,visibleWeapon=0;
  const frustum=new T.Frustum().setFromProjectionMatrix(new T.Matrix4().multiplyMatrices(rig.camera.projectionMatrix,rig.camera.matrixWorldInverse));
  for(const[source,copy]of rig.pairs){if(!copy.isMesh||!copy.visible)continue;assert.ok(copy.layers.test(rig.camera.layers));if(frustum.intersectsObject(copy)){if(source.layers.mask===4)visibleSleeves++;else visibleWeapon++;}}
- assert.ok(visibleSleeves>0,'No source sleeve is visible in camera');assert.ok(visibleWeapon>0,'No weapon mesh is visible in camera');rig.clearHands();adapter.dispose();disposeObjectResources(hero);
+ if(rig.detailedArms)for(const[,view]of rig.detailedArms.pairs)if(view.visible&&frustum.intersectsObject(view))visibleSleeves++;
+ assert.ok(visibleSleeves>0,'No detailed or fallback sleeve is visible in camera');assert.ok(visibleWeapon>0,'No weapon mesh is visible in camera');rig.clearHands();adapter.dispose();disposeObjectResources(hero);
 });
 
 test('equipped helmets hide only the authored cap and hair; hideHelmet restores exact original indices',()=>{
@@ -98,7 +99,7 @@ test('equipped helmets hide only the authored cap and hair; hideHelmet restores 
 test('late detail load preserves an already-created FPS overlay through paused camera changes',async()=>{
  const {ViewRig}=await import('../../src/rebuild/ViewRig.js');let finish;const pending=new Promise(resolve=>{finish=resolve;}),library=new DetailedSurvivorLibrary({load:()=>pending}),hero=buildSurvivor(),sim=new Simulation({seed:5});sim.start('carbine');sim.props=[];sim.obstacles=[];
  library.request(hero);animateWeapons(hero,sim.player,0,0,{...kit,firstPerson:true});const rig=new ViewRig(),scene=new T.Scene();rig.active=true;rig.setMode('first');rig.update(sim,16/9,0);rig.syncHands(hero,sim,scene);const overlay=rig.hands;
- finish(await load());await library.promise;await Promise.resolve();animateWeapons(hero,sim.player,0,0,{...kit,firstPerson:true});library.update(hero);rig.syncHands(hero,sim,scene);assert.equal(rig.hands,overlay);assert.ok(rig.pairs.some(([source,copy])=>source.layers.mask===4&&copy.isMesh&&copy.visible&&copy.layers.test(rig.camera.layers)));
+ finish(await load());await library.promise;await Promise.resolve();animateWeapons(hero,sim.player,0,0,{...kit,firstPerson:true});library.update(hero);rig.syncHands(hero,sim,scene);assert.equal(rig.hands,overlay);assert.ok(rig.detailedArms?.triangles>0);assert.ok(rig.pairs.some(([source,copy])=>source.layers.mask===4&&copy.isMesh&&!copy.visible));
  for(const mode of ['third','first','third','first']){rig.setMode(mode);rig.update(sim,16/9,0);rig.distance=.4;rig.fadeAvatar(hero);rig.syncHands(hero,sim,scene);assert.equal(rig.hands.visible,mode==='first');if(mode==='first')for(const[,copy]of rig.pairs)if(copy.isMesh&&copy.visible)assert.ok(copy.material.opacity>0);}
  rig.clearHands();library.dispose();disposeObjectResources(hero);
 });

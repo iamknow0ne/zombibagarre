@@ -1,6 +1,7 @@
 import {surfaceUV,SURFACES} from './SurfaceMaterials.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import * as T from 'three';
+import anatomicalHead from '../../assets/characters/infected-head.json' with {type:'json'};
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 // Sculpted in a six-metre reference space. All joints remain separate for combat poses.
 export function buildBossModel(e,surfaces){
@@ -35,12 +36,29 @@ export function buildBossModel(e,surfaces){
  }else if(kind==='dredger'){
   for(const side of [-1,1])for(const front of [-1,1]){const leg=joint(side*.7,2.6,front*.45);legs.push(leg);rod(leg,'iron',[0,0,0],[side*.85,-1.1,front*.5],.15);orb(leg,'rust',side*.85,-1.1,front*.5,.23);rod(leg,'bone',[side*.85,-1.1,front*.5],[side*1.1,-2.5,front*.8],.1,.025);box(leg,'iron',side*1.05,-2.45,front*.75,.5,.18,.65);}
   box(body,'iron',0,2.75,0,1.6,.65,1.35);for(const side of [-1,1]){rod(body,'iron',[side*.7,2.6,0],[side*.8,5.8,-.25],.16);rod(body,'rust',[side*.8,5.8,-.25],[side*.75,5.4,1.15],.12);for(let i=0;i<6;i++)rod(body,'rust',[side*.8,3+i*.42,0],[side*.8,3.4+i*.42,-.25],.045);}
-  rod(body,'iron',[-.8,5.75,-.25],[.8,5.75,-.25],.16);const cage=joint(0,4.6,.6);arms.push(cage);orb(cage,'dark',0,-.4,0,.59,.95,.52);orb(cage,'glow',0,-.25,.15,.28,.39,.3);for(let i=0;i<8;i++){const a=i*Math.PI/4;rod(cage,'bone',[Math.sin(a)*.58,.25,Math.cos(a)*.5],[Math.sin(a)*.58,-1.25,Math.cos(a)*.5],.055);}for(const y of [.25,-1.25])hoop(cage,'rust',0,y,0,.6,.08).rotation.x=Math.PI/2;
+  rod(body,'iron',[-.8,5.75,-.25],[.8,5.75,-.25],.16);const cage=joint(0,4.6,.6);arms.push(cage);// The shroud sits behind the captive. The old full-depth oval buried the
+  // entire anatomical face despite the face geometry being present.
+  orb(cage,'dark',0,-.6,-.18,.48,.66,.22);// A drowned captive is bound inside the machine, not a scaled zombie.
+  const captive=new T.BufferGeometry();captive.setAttribute('position',new T.Float32BufferAttribute(anatomicalHead.position,3));captive.setAttribute('uv',new T.Float32BufferAttribute(anatomicalHead.uv,2));captive.setIndex(anatomicalHead.index);
+  const facePoints=captive.attributes.position,reaper=profile.name==='THE DUST REAPER';
+  for(let i=0;i<facePoints.count;i++){const x=facePoints.getX(i),y=facePoints.getY(i),z=facePoints.getZ(i);facePoints.setXYZ(i,x*(reaper?.88:1),y*(y<0?1.18:1),z+(y<-.08?-.014:0));}
+  captive.computeVertexNormals();mesh(cage,captive,'bone',0,-.34,.015,1.95,1.95,1.95);
+  for(const side of [-1,1]){orb(cage,'dark',side*.109,-.283,.271,.05,.024,.03);orb(cage,'glow',side*.109,-.283,.299,.018,.01,.008);}
+  rod(cage,'rust',[-.3,-.65,.3],[.3,-.65,.3],.045);for(let i=0;i<8;i++){const a=i*Math.PI/4;rod(cage,'bone',[Math.sin(a)*.58,.25,Math.cos(a)*.5],[Math.sin(a)*.58,-1.25,Math.cos(a)*.5],.055);}for(const y of [.25,-1.25])hoop(cage,'rust',0,y,0,.6,.08).rotation.x=Math.PI/2;
   for(const side of [-1,1]){const chain=joint(side*.75,5.45,.9);chains.push(chain);for(let i=0;i<10;i++){const h=hoop(chain,'rust',0,-i*.23,0,.13,.036);h.rotation.y=i%2*Math.PI/2;}mesh(chain,new T.TorusGeometry(.37,.1,6,18,Math.PI*1.65),'bone',0,-2.55,0);rod(chain,'bone',[.33,-2.58,0],[.19,-2.25,0],.07,.01);}
  }else if(kind==='bloom'){
   for(let i=0;i<6;i++){const a=i*Math.PI/3,leg=joint(0,1.55,0);legs.push(leg);leg.userData.a=a;const x=Math.sin(a),z=Math.cos(a);rod(leg,'bark',[0,0,0],[x*1.15,-.45,z*1.15],.3,.18);rod(leg,'bone',[x*1.15,-.45,z*1.15],[x*1.8,-1.5,z*1.8],.15,.025);}
   orb(body,'bark',0,2.8,0,.92,1.65,.8);for(let i=0;i<9;i++){const a=i*2.4;rod(body,'bone',[Math.sin(a)*.5,1.4,Math.cos(a)*.5],[Math.sin(a)*1,3.7,Math.cos(a)*.9],.09,.035);}
-  orb(body,'glow',0,4.35,0,.57,.75,.57);for(let i=0;i<8;i++){const a=i*Math.PI/4,g=joint(Math.sin(a)*.3,3.7,Math.cos(a)*.3);g.rotation.order='YXZ';g.rotation.y=a;petals.push(g);const petal=orb(g,'bark',0,.65,.35,.48,1.25,.22);petal.rotation.x=.18;rod(g,'bone',[0,-.1,.4],[0,1.75,.55],.07,.015);for(let k=0;k<3;k++)orb(g,'red',.12*Math.sin(k*3),.3+k*.35,.57,.12,.17,.055);}
+  const cathedral=profile.name==='THE ROOT CATHEDRAL',heart=new T.SphereGeometry(1,14,10),heartPoints=heart.attributes.position;
+  for(let i=0;i<heartPoints.count;i++){const x=heartPoints.getX(i),y=heartPoints.getY(i),z=heartPoints.getZ(i),a=Math.atan2(z,x),rib=1+.11*Math.cos(a*7)*(1-y*y);heartPoints.setXYZ(i,x*rib*(1-.14*y),y,z*rib);}
+  heart.computeVertexNormals();mesh(body,heart,'red',0,4.35,0,.57,.75,.57);
+  for(let i=0;i<7;i++){const a=i*Math.PI*2/7;rod(body,'glow',[Math.sin(a)*.39,3.96,Math.cos(a)*.39],[Math.sin(a)*.53,4.58,Math.cos(a)*.53],.027,.012);}
+  for(let i=0;i<8;i++){const a=i*Math.PI/4,g=joint(Math.sin(a)*.3,3.7,Math.cos(a)*.3);g.rotation.order='YXZ';g.rotation.y=a;petals.push(g);const petalGeometry=new T.SphereGeometry(1,10,8),petalPoints=petalGeometry.attributes.position;
+   // Cupped, tapered petals have a continuous folded surface. The earlier
+   // scaled icosahedra read as rounded pods even when the flower opened.
+   for(let vertex=0;vertex<petalPoints.count;vertex++){const x=petalPoints.getX(vertex),y=petalPoints.getY(vertex),z=petalPoints.getZ(vertex);petalPoints.setXYZ(vertex,x*(1+.3*y)*(cathedral?1-.32*Math.max(0,y):1),y,z*.62+.28*(1-Math.abs(x))*(1-y*y)+.2*Math.max(0,y)**2);}
+   petalGeometry.computeVertexNormals();const petal=mesh(g,petalGeometry,'bark',0,.65,.35,cathedral?.4:.48,cathedral?(i%2?1.18:1.62):1.25,.22);petal.rotation.x=.18;rod(g,'bone',[0,-.1,.4],[0,1.75,.55],.07,.015);
+   for(let k=0;k<3;k++)for(const side of [-1,1])rod(g,'red',[0,.18+k*.4,.57],[side*(.29-k*.035),.39+k*.4,.57],.025,.009);}
   for(const side of [-1,1]){rod(body,'bark',[side*.6,3.1,-.2],[side*1.2,4.9,-.4],.14,.08);rod(body,'bone',[side*1.2,4.9,-.4],[side*1.65,5.9,-.4],.08,.005);for(let i=0;i<3;i++)rod(body,'bone',[side*(1.12+i*.1),4.65+i*.3,-.4],[side*(1.8+i*.08),4.9+i*.36,-.5],.055,.005);}
  }else{
   for(const side of [-1,1]){const leg=joint(side*.8,1.9,0);legs.push(leg);box(leg,'dark',0,-.6,0,.68,1.25,.8);box(leg,'iron',side*.13,-1.3,.16,1,.75,1.3);for(let i=0;i<3;i++)box(leg,'rust',0,-.2-i*.4,.45,.73,.13,.13);}
@@ -57,7 +75,7 @@ export function buildBossModel(e,surfaces){
  if(profile.name==='THE FEN KING'){for(const side of [-1,1]){rod(body,'bark',[side*.9,4.1,0],[side*1.4,5.9,-.2],.15,.01);for(let i=0;i<3;i++)rod(body,'bone',[side*(1+i*.1),4.6+i*.3,-.1],[side*(1.7+i*.13),4.9+i*.3,-.2],.065,.01);}mats.iron.color.setHex(0x384e46);mats.rust.color.setHex(0x697d62);}
  root.scale.setScalar(profile.height/6);
  if(surfaces){for(const [key,material]of Object.entries(mats)){if(key==='glow')continue;const kind=key==='bark'?'bark':['iron','rust'].includes(key)?'metal':'plaster',maps=surfaces.textures(kind);material.map=maps.albedo;material.bumpMap=maps.relief;material.bumpScale=SURFACES[kind].bump;material.roughnessMap=maps.relief;}root.traverse(m=>{if(m.isMesh&&m.material!==mats.glow){const old=m.geometry;surfaceUV(m,1.8);old.dispose();}});}
- root.userData={boss:true,visualRevision:2,body,legs,arms,petals,doors,chains,mats,height:profile.height};batchBoss(body);return root;
+ root.userData={boss:true,visualRevision:3,body,legs,arms,petals,doors,chains,mats,height:profile.height};batchBoss(body);return root;
 }
 export function animateBossModel(root,e,time){
  const u=root.userData,phase=e.bossPhase===2,opening=phase?(e.bossState==='transition'?1-e.bossTimer/e.bossDuration:1):0,walk=e.bossState==='pursuit',wind=e.bossState==='telegraph'?1-e.bossTimer/e.bossDuration:0,strike=e.bossState==='strike',recover=e.bossState==='recovery';

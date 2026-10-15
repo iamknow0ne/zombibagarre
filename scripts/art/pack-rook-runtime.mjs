@@ -28,8 +28,10 @@ export function packRuntime(bytes){
  const result=Buffer.alloc(28+text.length+binary.length);result.writeUInt32LE(0x46546c67,0);result.writeUInt32LE(2,4);result.writeUInt32LE(result.length,8);result.writeUInt32LE(text.length,12);result.writeUInt32LE(0x4e4f534a,16);text.copy(result,20);result.writeUInt32LE(binary.length,20+text.length);result.writeUInt32LE(0x004e4942,24+text.length);binary.copy(result,28+text.length);return result;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
- const source=new URL('../../assets/characters/rook-prototype-v7.glb',import.meta.url),destination=new URL('../../assets/characters/rook-runtime-v7.glb',import.meta.url),bytes=await readFile(source),packed=packRuntime(bytes);
+ for(const [input,output]of [['rook-prototype-v7.glb','rook-runtime-v7.glb'],['rook-cast-v7.glb','rook-cast-runtime-v7.glb']]){
+ const source=new URL('../../assets/characters/'+input,import.meta.url),destination=new URL('../../assets/characters/'+output,import.meta.url),bytes=await readFile(source),packed=packRuntime(bytes);
  let existing;try{existing=await readFile(destination);}catch(error){if(error.code!=='ENOENT')throw error;}
  if(!existing?.equals(packed))await writeFile(destination,packed);
  console.log(`Rook lossless runtime: ${bytes.length} → ${packed.length} bytes; SHA-256 ${hash(packed)}`);
+ }
 }

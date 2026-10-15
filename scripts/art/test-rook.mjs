@@ -3,8 +3,8 @@
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../../',import.meta.url));
-const suites=['rook-motion-study','rook-motion-controller','rook-locomotion','rook-combat-motion','rook-v7','rook-aim-layer','rook-rifle-travel','rook-runtime','rook-runtime-pack'];
-const result=spawnSync(process.execPath,['--test',...suites.map(name=>`scripts/art/${name}.test.mjs`)],{
+const suites=['rook-motion-study','rook-motion-controller','rook-locomotion','rook-combat-motion','rook-v7','rook-aim-layer','rook-rifle-travel','rook-runtime','rook-runtime-pack','first-person-arms','cast-runtime','cast-poses','survivor-cast','detailed-appearance'];
+const result=spawnSync(process.execPath,['--test','--test-concurrency=2',...suites.map(name=>`scripts/art/${name}.test.mjs`)],{
  cwd:root,stdio:'inherit',env:{...process.env,ROOK_TEST_MODEL:fileURLToPath(new URL('../../assets/characters/rook-prototype-v7.glb',import.meta.url))}
 });
 if(result.error)console.error(result.error);

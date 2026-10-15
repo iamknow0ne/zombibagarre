@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {anatomicalSurvivorHead,survivorFaceProjector,survivorEyeFit} from './SurvivorHead.js';
 import {CUSTOMIZATION,PALETTES,resolveAppearance,appearanceSignature} from './Customization.js';
 // One articulated hero. Rigid pieces share materials and are merged per bone.
 // No gameplay collision or hand-anchor dimensions depend on cosmetic choices.
@@ -88,7 +89,7 @@ function mergeBone(parent){for(const child of [...parent.children])if(child.isGr
 export function buildSurvivor(skinId='scout',custom={}){
  const design=SURVIVOR_DESIGN[skinId]||SURVIVOR_DESIGN.scout;
  const a=resolveAppearance(skinId,custom),c=PALETTES[a.palette],color=key=>CUSTOMIZATION[key].options[a[key]].color;
- const M={cloth:mat(c.cloth),dark:mat(0x263538),leather:mat(c.leather,'leather'),trim:mat(new T.Color(c.trim).multiplyScalar(.83),'metal'),accent:mat(c.accent),skin:mat(color('skin'),'skin'),shadow:mat(new T.Color(color('skin')).multiplyScalar(.72),'skin'),hair:mat(color('hairColor')),eye:mat(color('eyes')),white:mat(0xc5c9b7,'skin'),black:mat(0x172321),scar:mat(0xa97564)};
+ const M={cloth:mat(c.cloth),dark:mat(0x263538),leather:mat(c.leather,'leather'),trim:mat(new T.Color(c.trim).multiplyScalar(.83),'metal'),accent:mat(c.accent),skin:mat(color('skin'),'skin'),hair:mat(color('hairColor')),eye:mat(color('eyes')),white:mat(0xc5c9b7,'skin'),black:mat(0x172321),scar:mat(0xa97564)};
  const root=new T.Group(),body=new T.Group();root.add(body);root.userData={body,skin:skinId,type:'player',appearanceKey:appearanceSignature(skinId,custom),custom:a};
  tailored(body,a.coat==='bomber'?M.leather:M.cloth,0,.77,0,[[0,0],[.21*design.waist,.02],[.245*design.waist,.2],[.29*design.shoulder,.48],[.26*design.shoulder,.6],[.15,.66],[0,.66]],.68);
  identityDetails(body,M,skinId);root.userData.designSignature=design.signature;
@@ -98,9 +99,8 @@ export function buildSurvivor(skinId='scout',custom={}){
  // Split hems are separate joints, with restrained secondary motion.
  const tails=[];if(['trench','split'].includes(a.coat))for(const side of [-1,1]){const tail=new T.Group();tail.position.set(side*.15,.87,-.11);body.add(tail);coatTail(tail,M.cloth,a.coat==='trench'?.3:.22,a.coat==='trench'?.56:.49,side,a.coat==='split');seam(tail,M.leather,[[side*.12,-.03,.015],[side*.12,-.43,.015]],.01);tails.push(tail);}if(a.coat==='bomber'){oval(body,M.leather,0,.91,0,.26,.07,.18);oval(body,M.leather,0,1.39,0,.2,.08,.15);}
  const neck=tube(body,M.skin,0,1.47,0,.095,.11,.15),head=new T.Group();head.position.set(0,1.68,.015);head.scale.setScalar(.87*design.head);body.add(head);root.userData.head=head;
- const width=a.face==='broad'?.185:a.face==='soft'?.159:.17,jaw=a.face==='angular'?.82:a.face==='soft'?.78:.97;
- // Shaped jaw, cheek planes and brow ridge, rather than a spherical toy head.
- const headGeo=new T.SphereGeometry(1,24,18),pos=headGeo.attributes.position;for(let i=0;i<pos.count;i++){const y=pos.getY(i),x=pos.getX(i),z=pos.getZ(i);pos.setXYZ(i,x*width*(1-(1-jaw)*Math.max(0,Math.min(1,(-y-.15)/.7))),y*.218,z*.162+(z>0&&y<-.3?.015:0)+(z>0?Math.exp(-((Math.abs(x)-.55)**2*18+(y+.05)**2*30))*.012:0));}headGeo.computeVertexNormals();
+ const {geometry:headGeo,eyes:eyeAnchors,width}=anatomicalSurvivorHead(skinId,a.face),pos=headGeo.attributes.position;
+ root.userData.anatomicalHead=true;
  // Stubble is a soft pigmentation transition on skin, not a jagged shell.
  const faceMat=M.skin.clone(),skinColor=new T.Color(color('skin')),beardColor=new T.Color(color('hairColor')),faceColors=[];
  faceMat.vertexColors=true;faceMat.color.set(0xffffff);
@@ -109,18 +109,17 @@ export function buildSurvivor(skinId='scout',custom={}){
   const c=skinColor.clone().lerp(beardColor,mouth?0:stubble*(a.facialHair==='beard'?.8:.38));faceColors.push(c.r,c.g,c.b);
  }
  headGeo.setAttribute('color',new T.Float32BufferAttribute(faceColors,3));attach(head,headGeo,faceMat,0,0,0);
- for(const side of [-1,1]){
-  seam(head,M.shadow,[[side*.038,.009,.153],[side*.069,.004,.158],[side*.1,.012,.147]],.002);
-  oval(head,M.skin,side*(width-.003),-.014,-.012,.028,.05,.028);oval(head,M.shadow,side*(width+.009),-.016,.005,.01,.023,.011);
-  oval(head,M.shadow,side*.068,.026,.146,.038,.015,.011);oval(head,M.white,side*.068,.027,.153,.03,.009,.007);oval(head,M.eye,side*.067,.027,.159,.011,.01,.004);oval(head,M.black,side*.067,.027,.162,.0045,.007,.002);oval(head,M.white,side*.063,.031,.164,.002,.002,.001);
-  const brow=oval(head,M.hair,side*.07,.058,.15,.037,.006,.008);brow.rotation.z=side*(a.face==='angular'?-.13:.04);
+ const projectFace=survivorFaceProjector(headGeo,faceMat);
+ for(const [x,y,z]of eyeAnchors){
+  const eye=survivorEyeFit(projectFace,[x,y,z]);
+  oval(head,M.white,x,y,eye.centre,eye.width,eye.height,eye.depth);oval(head,M.eye,x,y,eye.front,.010,.010,.0015);oval(head,M.black,x,y,eye.front+.0015,.004,.004,.001);oval(head,M.white,x-.003,y+.003,eye.front+.0023,.0013,.0013,.0005);
+  const side=Math.sign(x),browPoints=[[-.023,.033],[0,.041],[.023,.03]].map(([dx,dy])=>projectFace(x+side*dx,y+dy,.003));
+  seam(head,M.hair,browPoints,.004);
  }
- oval(head,M.skin,0,-.005,.156,.022,.047,.026);oval(head,M.skin,0,-.037,.175,.02,.014,.017);for(const side of [-1,1])oval(head,M.shadow,side*.016,-.046,.181,.008,.003,.005);
- seam(head,M.shadow,[[-.033,-.096,.164],[0,-.099,.172],[.033,-.096,.164]],.003);oval(head,M.skin,0,-.107,.163,.03,.005,.007);
- if(['beard','moustache'].includes(a.facialHair))for(const side of [-1,1]){const st=oval(head,M.hair,side*.022,-.073,.153,.023,.006,.004);st.rotation.z=side*.1;}
+ if(['beard','moustache'].includes(a.facialHair))for(const side of [-1,1])seam(head,M.hair,[[side*.006,-.075],[side*.022,-.076],[side*.038,-.081]].map(([x,y])=>projectFace(x,y,.0025)),.004);
  const hair=new T.Group();head.add(hair);if(a.hair!=='shaved'){const cap=new T.SphereGeometry(1,18,10,0,Math.PI*2,0,Math.PI*.43);const hp=cap.attributes.position;for(let i=0;i<hp.count;i++){const y=hp.getY(i),z=hp.getZ(i);hp.setY(i,y+.3*Math.max(0,z)**2*(1-y));}cap.computeVertexNormals();attach(hair,cap,M.hair,0,.035,-.015,width*1.04,.203,.169);if(a.hair==='crop')oval(hair,M.hair,0,.188,0,width*.9,.032,.13);if(a.hair==='swept')for(let i=0;i<5;i++){const lock=oval(hair,M.hair,-.12+i*.05,.16+i*.005,.079,.053,.057,.125);lock.rotation.z=-.36;}if(a.hair==='braids')for(let i=0;i<5;i++)seam(hair,M.hair,[[-.12+i*.06,.19,.075],[-.12+i*.06,.22,-.05],[-.12+i*.06,.08,-.17],[-.12+i*.06,-.2,-.19]],.022);if(a.hair==='knot'){oval(hair,M.hair,0,.245,-.07,.087,.074,.075);tube(hair,M.accent,0,.205,-.065,.07,.07,.025);}if(a.hair==='mohawk')for(let i=0;i<5;i++)oval(hair,M.hair,0,.225,-.11+i*.047,.043,.066,.038);}
  const hat=new T.Group();head.add(hat);if(a.headwear==='cap'){oval(hat,M.cloth,0,.186,-.025,.19,.065,.175);rounded(hat,M.leather,0,.166,.166,.32,.024,.17,.02);rounded(hat,M.trim,0,.21,.137,.057,.034,.018,.005);}if(a.headwear==='beret'){const b=oval(hat,M.accent,-.026,.206,-.015,.209,.066,.18);b.rotation.z=.16;rounded(hat,M.trim,.08,.212,.147,.04,.038,.012);}if(a.headwear==='band'){oval(hat,M.accent,0,.13,-.015,.177,.032,.165);for(const side of [-1,1]){const ribbon=rounded(hat,M.accent,side*.07,-.04,-.19,.05,.28,.027);ribbon.rotation.z=side*.3;}}if(a.headwear==='hood'){const hood=new T.SphereGeometry(1,16,12,Math.PI*.8,Math.PI*1.4);attach(hat,hood,M.cloth,0,.02,-.04,.225,.28,.205);}
- const marks=new T.Group();head.add(marks);if(a.scar==='brow'||a.scar==='eye')seam(marks,M.scar,[[.099,.106,.113],[.079,.054,.15],[.09,-.026,.145]],.0025);if(a.scar==='cheek')seam(marks,M.scar,[[-.132,-.02,.128],[-.095,-.067,.169],[-.065,-.12,.148]],.004);if(a.scar==='paint')for(const side of [-1,1]){const m=rounded(marks,M.accent,side*.088,-.012,.164,.082,.027,.012,.004);m.rotation.z=side*.15;}
+ const marks=new T.Group();head.add(marks);if(a.scar==='brow'||a.scar==='eye')seam(marks,M.scar,[[.099,.106],[.079,.054],[.09,-.026]].map(([x,y])=>projectFace(x,y,.003)),.0025);if(a.scar==='cheek')seam(marks,M.scar,[[-.132,-.02],[-.095,-.067],[-.065,-.12]].map(([x,y])=>projectFace(x,y,.002)),.0025);if(a.scar==='paint')for(const side of [-1,1])seam(marks,M.accent,[[side*.055,-.005],[side*.085,-.012],[side*.115,-.019]].map(([x,y])=>projectFace(x,y,.004)),.011);
  const accessory=new T.Group();body.add(accessory);if(a.accessory==='scarf'){tube(accessory,M.accent,0,1.44,0,.118,.145,.087);scarfPanel(accessory,M.accent);}if(a.accessory==='satchel'){rounded(accessory,M.leather,.3,.9,-.02,.22,.26,.22);seam(accessory,M.leather,[[-.22,1.4,.19],[0,1.15,.23],[.3,.94,.15]],.024);rounded(accessory,M.accent,.31,.95,.1,.11,.037,.018);}if(a.accessory==='goggles'){for(const side of [-1,1]){oval(head,M.leather,side*.079,.104,.166,.067,.043,.025);oval(head,M.trim,side*.079,.104,.19,.052,.031,.01);oval(head,M.dark,side*.079,.104,.201,.043,.025,.008);}}if(a.accessory==='radio'){rounded(accessory,M.dark,-.235,1.34,.12,.12,.16,.09);tube(accessory,M.dark,-.27,1.5,.12,.008,.008,.22);for(let i=0;i<3;i++)rounded(accessory,M.trim,-.235,1.36-i*.025,.17,.075,.005,.005);}
  const legs=[];for(const side of [-1,1]){
   const leg=new T.Group();leg.position.set(side*.145,.77,0);body.add(leg);

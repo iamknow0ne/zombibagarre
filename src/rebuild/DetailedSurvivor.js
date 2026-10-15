@@ -1,10 +1,18 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkeleton} from 'three/addons/utils/SkeletonUtils.js';
+import {createDetailedAppearance} from './DetailedAppearance.js';
+import {shareInstanceSkeletons} from './SkinnedResources.js';
 import {resolveAppearance} from './Customization.js';
 import {disposeObjectResources} from './ResourceDisposal.js';
+import {DETAILED_IDENTITIES,detailedIdentityCompatible,tintDetailedIdentity,characterDetailLevel} from './CharacterDetail.js';
 
-const modelURL=new URL('../../assets/characters/rook-runtime-v7.glb',import.meta.url).href;
+const modelURLs={
+ scout:new URL('../../assets/characters/rook-cast-runtime-v7.glb',import.meta.url).href,
+ medic:new URL('../../assets/characters/saint-v1.glb',import.meta.url).href,
+ biker:new URL('../../assets/characters/torque-v1.glb',import.meta.url).href,
+ ronin:new URL('../../assets/characters/vesper-v1.glb',import.meta.url).href
+};
 const DOWN=new T.Vector3(0,-1,0);
 // This mesh depicts a specific person and outfit. Never overwrite the other
 // identities or silently discard their selected face, hairstyle or costume.
@@ -31,15 +39,17 @@ export function prepareRookHelmetGeometry(content){
   if(!removed)return;const withoutCap=new T.BufferGeometry();for(const[name,attribute]of Object.entries(full.attributes))withoutCap.setAttribute(name,attribute);withoutCap.setIndex(new T.BufferAttribute(new index.array.constructor(kept),1));withoutCap.boundingBox=full.boundingBox?.clone()||null;withoutCap.boundingSphere=full.boundingSphere?.clone()||null;withoutCap.userData.shared=!!full.userData.shared;variants.set(full,withoutCap);
  });return variants;
 }
-export function attachDetailedRook(hero,content,cosmetics=cosmeticMeshes(hero),helmetGeometry=null){
- const d=hero.userData,bones=new Map(),rest=new Map(),hidden=[],headwear=[];
- const ownHelmetGeometry=!helmetGeometry;helmetGeometry??=prepareRookHelmetGeometry(content);
+export function attachDetailedRook(hero,content,cosmetics=cosmeticMeshes(hero),helmetGeometry=null,identity='scout'){
+ const d=hero.userData,bones=new Map(),rest=new Map(),hidden=[],headwear=[],lodMeshes=[];
+ content.traverse(mesh=>{if(mesh.isMesh){const level=mesh.userData.castLOD??(/^LOD1 /.test(mesh.name)?1:0);lodMeshes.push({mesh,level});}});
+ const hasLOD=lodMeshes.some(p=>p.level===1);let detailLevel=0;
+ const ownHelmetGeometry=!helmetGeometry;helmetGeometry??=identity==='scout'?prepareRookHelmetGeometry(content):new Map();
  content.updateMatrixWorld(true);
  content.traverse(o=>{if(o.isBone){bones.set(o.name,o);rest.set(o,{point:o.getWorldPosition(new T.Vector3()),q:o.getWorldQuaternion(new T.Quaternion())});}if(o.isMesh){o.castShadow=o.receiveShadow=true;o.frustumCulled=false;}});
  const bone=name=>{const b=bones.get(name);if(!b)throw new Error(`Detailed survivor missing ${name}`);return b;};
  for(const name of ['root','head',...['L','R'].flatMap(side=>['upperarm01','lowerarm01','wrist','finger3-1','upperleg01','lowerleg01','foot'].map(name=>name+side))])bone(name);
  const point=name=>rest.get(bone(name)).point.clone();
- content.traverse(mesh=>{if(!mesh.isMesh)return;const withoutCap=helmetGeometry.get(mesh.geometry);if(withoutCap)headwear.push({mesh,full:mesh.geometry,withoutCap});else if(mesh.material?.name.startsWith('Hair /'))headwear.push({mesh,hair:true});});
+ content.traverse(mesh=>{if(!mesh.isMesh)return;const withoutCap=helmetGeometry.get(mesh.geometry);if(withoutCap)headwear.push({mesh,full:mesh.geometry,withoutCap});else if(mesh.material?.name.startsWith('Hair /'))headwear.push({mesh,hair:true});else if(mesh.material?.name.startsWith('Headwear /'))headwear.push({mesh,hat:true});});
  const bindings=[],fingers=[];
  for(const side of ['L','R']){
   const first=bones.get('finger2-1'+side),last=bones.get('finger5-1'+side),middle=bones.get('finger3-1'+side);if(!first||!last||!middle)continue;
@@ -61,7 +71,7 @@ export function attachDetailedRook(hero,content,cosmetics=cosmeticMeshes(hero),h
   arm.position.copy(upper);arm.userData.upperLength=upper.distanceTo(elbow);arm.userData.lowerLength=elbow.distanceTo(wrist);
   arm.userData.elbow.position.set(0,-arm.userData.upperLength,0);arm.userData.wrist.position.set(0,-arm.userData.lowerLength,0);
   const hip=point('upperleg01'+side),knee=point('lowerleg01'+side),ankle=point('foot'+side);
-  leg.position.copy(hip);leg.userData.knee.position.set(0,-hip.distanceTo(knee),0);leg.userData.ankle.position.set(0,-knee.distanceTo(ankle),0);
+  leg.position.copy(hip);leg.userData.upperLength=hip.distanceTo(knee);leg.userData.lowerLength=knee.distanceTo(ankle);leg.userData.knee.position.set(0,-leg.userData.upperLength,0);leg.userData.ankle.position.set(0,-leg.userData.lowerLength,0);
   bind('upperarm01'+side,arm,'lowerarm01'+side);bind('lowerarm01'+side,arm.userData.elbow,'wrist'+side);
   // Rest hand points diagonally outwards in the exported A-pose. Align the
   // palm's long axis to the existing glove's down axis before applying its grip.
@@ -73,7 +83,7 @@ export function attachDetailedRook(hero,content,cosmetics=cosmeticMeshes(hero),h
  // stay visible. Layers hide the source skin without hiding its joint children;
  // FPS explicitly copies these meshes into its independent overlay scene.
  for(const mesh of cosmetics){hidden.push([mesh,mesh.layers.mask]);mesh.layers.set(2);}
- hero.add(content);d.detailedModel='rook-v7';d.weaponCarryOffset=new T.Vector3(0,.065,-.08);
+ hero.add(content);let appearanceAdapter=null;d.detailedContent=content;d.detailedModel=DETAILED_IDENTITIES[identity];d.weaponCarryOffset=new T.Vector3(0,.065,-.08);
  const root=bone('root'),r=rest.get(root),worldP=new T.Vector3(),worldQ=new T.Quaternion(),worldScale=new T.Vector3(),parentP=new T.Vector3(),parentScale=new T.Vector3(),inverseQ=new T.Quaternion(),inverseMatrix=new T.Matrix4();
  for(const finger of fingers){finger.armed=finger.rest.clone().multiply(new T.Quaternion().setFromAxisAngle(finger.axis,finger.amount));finger.relaxed=finger.rest.clone().multiply(new T.Quaternion().setFromAxisAngle(finger.axis,.12));}
  function worldTransform(b,p,q){
@@ -86,7 +96,9 @@ export function attachDetailedRook(hero,content,cosmetics=cosmeticMeshes(hero),h
   b.updateMatrix();b.matrixWorld.multiplyMatrices(b.parent.matrixWorld,b.matrix);
  }
  function update(){
-  for(const part of headwear){if(part.hair)part.mesh.visible=d.hair?.visible!==false;else part.mesh.geometry=d.hat?.visible===false?part.withoutCap:part.full;}
+  for(const part of lodMeshes)part.mesh.visible=part.level===detailLevel;
+  for(const part of headwear){if(part.hair)part.mesh.visible=part.mesh.visible&&d.hair?.visible!==false;else if(part.hat)part.mesh.visible=part.mesh.visible&&d.hat?.visible!==false;else part.mesh.geometry=d.hat?.visible===false||appearanceAdapter?.hideAuthoredHat?part.withoutCap:part.full;}
+  appearanceAdapter?.update();
   hero.updateWorldMatrix(true,false);d.body.updateWorldMatrix(false,true);
   d.body.matrixWorld.decompose(worldP,worldQ,worldScale);
   worldP.copy(r.point).applyMatrix4(d.body.matrixWorld);worldQ.multiply(r.q);
@@ -96,31 +108,37 @@ export function attachDetailedRook(hero,content,cosmetics=cosmeticMeshes(hero),h
   // One final propagation updates untouched twist, garment and finger bones.
   content.updateWorldMatrix(false,true);
  }
- update();
- return{content,update,dispose(){for(const [mesh,mask]of hidden)mesh.layers.mask=mask;delete d.detailedModel;for(const part of headwear)if(part.full)part.mesh.geometry=part.full;if(ownHelmetGeometry)for(const geometry of helmetGeometry.values())geometry.dispose();content.removeFromParent();disposeObjectResources(content);}};
+ update();appearanceAdapter=createDetailedAppearance(hero,content,identity);update();
+ return{content,update,setDetail(camera,height){const next=hasLOD?characterDetailLevel(camera,hero.position,height,detailLevel):0;if(next!==detailLevel){detailLevel=next;update();}d.detailedLOD=detailLevel;},dispose(){appearanceAdapter?.dispose();for(const [mesh,mask]of hidden)mesh.layers.mask=mask;delete d.detailedModel;delete d.detailedContent;delete d.detailedLOD;for(const part of headwear)if(part.full)part.mesh.geometry=part.full;if(ownHelmetGeometry)for(const geometry of helmetGeometry.values())geometry.dispose();content.removeFromParent();disposeObjectResources(content);}};
 }
 
 // One texture/geometry owner per world. Skinned instances own their skeletons
 // and material copies, so camera fading and teardown never affect another view.
 export class DetailedSurvivorLibrary{
- constructor({load=()=>new GLTFLoader().loadAsync(modelURL),onChange=()=>{}}={}){this.load=load;this.onChange=onChange;this.instances=new Map();this.pending=new Set();this.closed=false;}
+ constructor({load=skin=>new GLTFLoader().loadAsync(modelURLs[skin]),onChange=()=>{}}={}){this.load=load;this.onChange=onChange;this.instances=new Map();this.pending=new Set();this.assets=new Map();this.closed=false;}
  request(hero){
-  if(this.closed||!detailedRookCompatible(hero.userData.skin,hero.userData.custom))return;
-  const ticket={hero,cosmetics:cosmeticMeshes(hero)};this.pending.add(ticket);hero.userData.detailedStatus='loading';
+  const identity=hero.userData.skin;
+  if(this.closed||!detailedIdentityCompatible(identity,hero.userData.custom)||this.instances.has(hero)||[...this.pending].some(t=>t.hero===hero))return;
+  const ticket={hero,identity,cosmetics:cosmeticMeshes(hero)};this.pending.add(ticket);hero.userData.detailedStatus='loading';
+  let asset=this.assets.get(identity);
+  if(!asset){asset={};this.assets.set(identity,asset);asset.promise=Promise.resolve().then(()=>this.load(identity)).then(gltf=>{
+   if(this.closed){disposeObjectResources(gltf.scene);return;}
+   asset.template=gltf.scene;asset.template.traverse(o=>{if(o.geometry)o.geometry.userData.shared=true;for(const m of [].concat(o.material||[])){m.userData.shared=true;for(const value of Object.values(m))if(value?.isTexture)value.userData.shared=true;}});
+   asset.helmetGeometry=identity==='scout'?prepareRookHelmetGeometry(asset.template):new Map();
+   // Retain the original Rook inspection/test contract while caches are keyed.
+   if(identity==='scout'){this.template=asset.template;this.helmetGeometry=asset.helmetGeometry;}
+  });if(identity==='scout')this.promise=asset.promise;}
   const install=()=>{
    if(this.closed||!this.pending.delete(ticket))return;
-   const content=cloneSkeleton(this.template);content.traverse(o=>{if(o.material)o.material=Array.isArray(o.material)?o.material.map(m=>{const n=m.clone();n.userData.shared=false;return n;}):(()=>{const n=o.material.clone();n.userData.shared=false;return n;})();});
-   try{const adapter=attachDetailedRook(hero,content,ticket.cosmetics,this.helmetGeometry);this.instances.set(hero,adapter);hero.userData.detailedStatus='ready';this.onChange();}
+   const content=cloneSkeleton(asset.template),materials=new Map();shareInstanceSkeletons(content);content.traverse(o=>{if(o.material){const copy=m=>{if(!materials.has(m)){const n=m.clone();n.userData.shared=false;materials.set(m,n);}return materials.get(m);};o.material=Array.isArray(o.material)?o.material.map(copy):copy(o.material);}});
+   try{tintDetailedIdentity(content,identity,hero.userData.custom);const adapter=attachDetailedRook(hero,content,ticket.cosmetics,asset.helmetGeometry,identity);this.instances.set(hero,adapter);hero.userData.detailedStatus='ready';this.onChange();}
    catch(error){content.removeFromParent();disposeObjectResources(content);hero.userData.detailedStatus='fallback';}
   };
-  if(this.template){install();return;}
-  this.promise??=Promise.resolve().then(this.load).then(gltf=>{
-   if(this.closed){disposeObjectResources(gltf.scene);return;}
-   this.template=gltf.scene;this.template.traverse(o=>{if(o.geometry)o.geometry.userData.shared=true;for(const m of [].concat(o.material||[])){m.userData.shared=true;for(const value of Object.values(m))if(value?.isTexture)value.userData.shared=true;}});this.helmetGeometry=prepareRookHelmetGeometry(this.template);
-  });
-  this.promise.then(install,()=>{if(this.pending.delete(ticket))hero.userData.detailedStatus='fallback';});
+  if(asset.template){install();return;}
+  asset.promise.then(install,()=>{if(this.pending.delete(ticket))hero.userData.detailedStatus='fallback';});
  }
  update(hero){this.instances.get(hero)?.update();}
+ selectDetail(hero,camera,height){this.instances.get(hero)?.setDetail(camera,height);}
  release(hero){for(const ticket of this.pending)if(ticket.hero===hero)this.pending.delete(ticket);const adapter=this.instances.get(hero);if(adapter){adapter.dispose();this.instances.delete(hero);}}
- dispose(){if(this.closed)return;this.closed=true;this.pending.clear();for(const hero of [...this.instances.keys()])this.release(hero);if(this.template){this.template.traverse(o=>{if(o.geometry)o.geometry.userData.shared=false;for(const m of [].concat(o.material||[])){m.userData.shared=false;for(const value of Object.values(m))if(value?.isTexture)value.userData.shared=false;}});disposeObjectResources(this.template);for(const geometry of this.helmetGeometry?.values()||[])geometry.dispose();this.helmetGeometry?.clear();this.template=null;}}
+ dispose(){if(this.closed)return;this.closed=true;this.pending.clear();for(const hero of [...this.instances.keys()])this.release(hero);for(const asset of this.assets.values())if(asset.template){asset.template.traverse(o=>{if(o.geometry)o.geometry.userData.shared=false;for(const m of [].concat(o.material||[])){m.userData.shared=false;for(const value of Object.values(m))if(value?.isTexture)value.userData.shared=false;}});disposeObjectResources(asset.template);for(const geometry of asset.helmetGeometry?.values()||[])geometry.dispose();asset.helmetGeometry?.clear();asset.template=null;}this.assets.clear();this.template=null;}
 }

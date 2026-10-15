@@ -81,6 +81,6 @@ export function survivorPortrait(world,p,canvas,view='full'){
   for(const [c,intensity,x,y,z]of [[0xffdfb2,3.8,-3,5,4],[0xa3c6dc,3,3,3,-2],[0xe4eedb,.8,2,2,4]]){const light=new T.DirectionalLight(c,intensity);light.position.set(x,y,z);scene.add(light);}
   figure=world.character('player',null,p.skin,p.appearance);dressArmour(figure,p);figure.rotation.y=view==='back'?Math.PI+.35:view==='front'||view==='face'?0:-.3;
   figure.userData.arms.forEach((arm,i)=>{arm.rotation.z=i?-.06:.06;arm.rotation.x=-.05;arm.userData.elbow.rotation.x=-.12;});scene.add(figure);
-  const camera=new T.PerspectiveCamera(30,480/640,.05,20);if(view==='face'){camera.position.set(.06,1.73,1.1);camera.lookAt(0,1.65,0);}else{camera.position.set(0,1.4,4.3);camera.lookAt(0,1.01,0);}renderer.render(scene,camera);return canvas.toDataURL();
+  const camera=new T.PerspectiveCamera(30,480/640,.05,20);if(view==='face'){camera.position.set(.06,1.73,1.1);camera.lookAt(0,1.65,0);}else{camera.position.set(0,1.4,4.3);camera.lookAt(0,1.01,0);}world.detailedSurvivors?.update(figure);renderer.render(scene,camera);return canvas.toDataURL();
  }finally{if(figure)world.removeDynamic(figure);renderer?.dispose();renderer?.forceContextLoss();}
 }

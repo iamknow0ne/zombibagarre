@@ -39,3 +39,5 @@ __pycache__/
 
 # Reproducible lossless runtime derivative; generated before dev/build/art tests.
 assets/characters/rook-runtime-v7.glb
+
+/assets/characters/rook-cast-runtime-v7.glb

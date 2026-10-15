@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {createFirstPersonArms} from './FirstPersonArms.js';
 import {perspectiveTarget,boxHit3D,propHeight} from './Ballistics.js';
 import {perspectiveSettings} from './PerspectiveSettings.js';
 import {collisionCandidates} from './SpatialIndex.js';
@@ -44,10 +45,14 @@ export class ViewRig{
    for(const a of o.userData.cameraMaterials){a.material.opacity=a.opacity*alpha;a.material.transparent=true;a.material.depthWrite=a.depthWrite&&alpha>.98;}
   });
  }
- clearHands(){this.hands?.removeFromParent();this.hands=null;this.sources=null;this.pairs=[];}
+ clearHands(){this.detailedArms?.dispose();this.detailedArms=null;this.detailedArmsSource=null;this.hands?.removeFromParent();this.hands=null;this.sources=null;this.pairs=[];}
  syncHands(player,sim,scene){const visible=this.active&&this.mode==='first'&&!sim.player.vehicleId&&sim.state!=='dead';if(!visible){if(this.hands)this.hands.visible=false;return;}const sources=[...(player.userData.arms||[]),...(player.userData.weaponRigs||[]).filter(Boolean)];
   if(!this.sources||sources.some((m,i)=>m!==this.sources[i])||sources.length!==this.sources.length){this.clearHands();this.sources=sources;this.hands=new T.Group();this.pairs=[];const arms=new Set(player.userData.arms||[]);const copy=(o,parent)=>{const n=o.isMesh?new T.Mesh(o.geometry,o.material):new T.Group();parent.add(n);this.pairs.push([o,n]);for(const c of o.children)if(!arms.has(o)||c===o.userData.elbow)copy(c,n);};for(const source of sources)copy(source,this.hands);this.handsScene.add(this.hands);}
-  for(const [o,n]of this.pairs){n.position.copy(o.position);n.quaternion.copy(o.quaternion);n.scale.copy(o.scale);n.visible=o.visible&&!o.userData.hideFirstPerson;if(o.isMesh)n.material=o.material;}
+  const detailed=player.userData.detailedContent||null;
+  if(this.detailedArmsSource!==detailed){this.detailedArms?.dispose();this.detailedArms=createFirstPersonArms(player);this.detailedArmsSource=detailed;if(this.detailedArms)this.hands.add(this.detailedArms.root);}
+  const armSources=player.userData.arms||[];
+  for(const [o,n]of this.pairs){n.position.copy(o.position);n.quaternion.copy(o.quaternion);n.scale.copy(o.scale);n.visible=o.visible&&!o.userData.hideFirstPerson;if(this.detailedArms&&o.isMesh){for(let ancestor=o;ancestor;ancestor=ancestor.parent)if(armSources.includes(ancestor)){n.visible=false;break;}}if(o.isMesh)n.material=o.material;}
+  this.detailedArms?.update();
   const p=sim.player,motion=this.settings.reducedMotion?0:this.settings.cameraMotion/100,phase=player.userData.gait||0,walk=player.userData.walk||0,aim=this.aimBlend,wall=this.nearWall||0;
   this.handsScene.environment=scene.environment;this.handsScene.environmentIntensity=scene.environmentIntensity;
   this.hands.visible=true;this.hands.position.copy(this.camera.position);this.hands.quaternion.copy(this.camera.quaternion);

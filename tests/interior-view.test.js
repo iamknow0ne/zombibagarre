@@ -28,3 +28,11 @@ test('World indoor rendering bypasses every exterior tick in active and paused s
 test('apartment entrance belongs to a live host and manifest replacement never duplicates markers',()=>{
  const scene=new T.Scene(),doors=new InteriorDoors(scene),p={template:'apartment-v1',buildingId:'host',door:{x:10,z:8,nx:0,nz:1}},s={player:{x:10,z:8},props:[{id:'host',health:100}],interiorState:{manifest:[p]}};doors.update(s);assert.equal(doors.entries.length,1);assert.equal(doors.entries[0].group.visible,true);s.props[0].health=0;doors.update(s);assert.equal(doors.entries[0].group.visible,false);s.interiorState.manifest=[{...p}];doors.update(s);assert.equal(doors.root.children.length,1);doors.dispose();assert.equal(scene.children.length,0);
 });
+
+test('interior poses refresh detailed hero and merchant after animation with flat planted boots',()=>{
+ const {view,sim,world}=fixture(true),updates=[];world.detailedSurvivors={update(hero){updates.push(hero);},selectDetail(){},release(){}};
+ sim.interior.pose.moveX=3;for(let frame=0;frame<40;frame++)view.update(sim,1/60,16/9);
+ assert.ok(updates.includes(view.hero));assert.ok(updates.includes(view.mara));
+ for(const actor of [view.hero,view.mara])for(const leg of actor.userData.legs){const q=actor.userData.body.quaternion.clone().multiply(leg.quaternion).multiply(leg.userData.knee.quaternion).multiply(leg.userData.ankle.quaternion);assert.ok(q.angleTo(new T.Quaternion())<1e-6);}
+ view.dispose();
+});

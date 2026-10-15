@@ -19,17 +19,19 @@ test('settling production corpses releases replaced geometry and preserves hidde
   if(missingParts){d.head.visible=false;d.arms[0].visible=false;d.legs.forEach(leg=>leg.visible=false);}
   const originals=resources(root),counts=disposals(originals),visible=new Set();root.traverseVisible(node=>{if(node.geometry)visible.add(node.geometry);});
   const materials=new Set();root.traverse(node=>{if(node.material)materials.add(node.material);});const materialCounts=disposals([...materials]);
+  const textures=new Set([...materials].map(m=>m.map).filter(Boolean)),textureCounts=disposals([...textures]);
   const before=bounds(root);
   World.prototype.batchStatic.call({},root,root);
   const after=bounds(root);
   assert.ok(before.min.distanceTo(after.min)<1e-5&&before.max.distanceTo(after.max)<1e-5,`${type}: settled pose bounds`);
   for(const [geometry,state]of counts)assert.equal(state.count,visible.has(geometry)?1:0,`${type}: replaced source disposal`);
   const replacements=resources(root).filter(geometry=>!counts.has(geometry)),replacementCounts=disposals(replacements);
-  assert.ok(replacements.length>0&&replacements.length<=8,'settled pieces merge by material response and index layout');
+  assert.ok(replacements.length>0&&replacements.length<=9,'settled pieces merge by material response and index layout, including one shared anatomical skin atlas');
   disposeObjectResources(root);
   assert.ok([...counts.values()].every(state=>state.count===1),`${type}: all source geometry released exactly once`);
   assert.ok([...replacementCounts.values()].every(state=>state.count===1),`${type}: replacement geometry released exactly once`);
   assert.ok([...materialCounts.values()].every(state=>state.count===0),'shared horde materials survive corpse removal');
+  assert.ok([...textureCounts.values()].every(state=>state.count===0),'shared face atlas survives corpse removal');
  }
 });
 

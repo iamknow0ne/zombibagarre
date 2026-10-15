@@ -31,3 +31,11 @@ test('each live survivor owns two ankle joints while preserving weapon attachmen
   let released=0;const materials=new Set();model.traverse(o=>{if(o.material&&!o.material.userData.shared)materials.add(o.material);});materials.forEach(m=>m.addEventListener('dispose',()=>released++));disposeObjectResources(model);assert.equal(released,materials.size);
  }
 });
+
+test('authored limb lengths keep planted ankle height instead of inheriting the shorter fallback skeleton',()=>{
+ for(const [upper,lower]of [[.42,.40],[.39,.37],[.46,.43]])for(let i=0;i<60;i++)for(const forward of [-1,1]){
+  const pose=survivorLegPose(i/100*Math.PI*2,1,forward,0,SURVIVOR_MOTION.scout,upper,lower);
+  const height=-upper*Math.cos(pose.hip)-lower*Math.cos(pose.hip+pose.knee);
+  assert.ok(Math.abs(height+upper+lower-.03)<1e-8,`Imported ankle drift ${height}`);
+ }
+});

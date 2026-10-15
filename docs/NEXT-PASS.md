@@ -2,6 +2,20 @@
 
 14 October 2026. Apple signing/notarization, Steam Deck troubleshooting and other ports remain deferred, except the newly authorized SNES demake. Work is staged into tested releases, not an assertion that the whole game is finished.
 
+## Production cast — 4.51.0
+
+- [x] Integrate distinct authored Saint, Torque and Vesper alongside Rook, with detailed first-person hands and per-identity distance geometry.
+- [x] Preserve armour, custom dyes/hair/headwear and asynchronous portraits; add anatomical heads for customized survivors and traders.
+- [x] Refine all six infected with shared textured head anatomy, organic surfaces and projected wounds; refine exposed boss faces and plant-boss forms.
+- [x] Correct interior foot placement, overbright clothing dyes, eye seating and visible boss face occlusion.
+- [x] 622 gameplay regressions, 89 actual-model art checks, production build and rendered cast/equipment/FPS/interior/boss/crawler review.
+- [ ] Publish tested browser and ad-hoc macOS 4.51.0 and verify the exact downloadable archive.
+
+See [4.51.0 evidence](RELEASE-4.51.0.md). Default-cast integration is complete;
+custom garment variants remain stylized modular construction. Facial expression
+animation and photorealistic likeness to painted lore art are not implemented.
+Physical-device/endurance and broader gameplay gates below remain open.
+
 ## Character reliability follow-up — 4.50.1
 
 - [x] Fix authored cap/hair clipping through helmets and buried enemy cheek wounds.
@@ -19,7 +33,7 @@ See [4.50.1 evidence](RELEASE-4.50.1.md). Authored cast completion and target-de
 - [x] Refine six ordinary enemy archetypes and eight boss surfaces; retain instancing, gore and authored combat poses.
 - [x] 609 regression tests, 48 actual-model art checks, production build and browser cast/FPS/TPS/city/boss reviews.
 - [x] Publish browser and Mac 4.50.0: runtime 73f5477, Pages 38710308987 passed, public BUILD 4.50.0 verified, exact uploaded Mac ZIP matched the hardware-startup-tested archive.
-- [ ] Complete authored Saint/Torque/Vesper and enemy assets with lore-art likeness, dedicated detailed FPS hands and LODs. Current procedural refinements are not final art parity.
+- [x] Integrate authored Saint/Torque/Vesper, anatomical infected, detailed FPS hands and LODs in 4.51.0. Painted-art photorealism is not claimed; see the current art boundary above.
 - [ ] Sustain native and physical-device performance sessions; retain existing gameplay and traversal gates below.
 
 See [4.50.0 evidence](RELEASE-4.50.0.md). The older development-only Rook notes below describe historical checkpoints; default Rook is now integrated in production.
