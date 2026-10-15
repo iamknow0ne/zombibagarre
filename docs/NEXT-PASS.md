@@ -2,6 +2,16 @@
 
 14 October 2026. Apple signing/notarization, Steam Deck troubleshooting and other ports remain deferred, except the newly authorized SNES demake. Work is staged into tested releases, not an assertion that the whole game is finished.
 
+## Android test edition — newly authorized
+
+- [x] Add reproducible offline APK packaging, Android Back/lifecycle handling and native backup file pickers.
+- [x] Build and verify the debug APK, including byte-identical game assets and signature; install/update it on the connected OnePlus 7 Pro (Android 11).
+- [ ] Complete visible device gameplay, performance, save picker and background/resume checks. The phone is locked; user unlock is required.
+- [ ] Publish an Android test milestone after actual device QA, clearly separate from a Play Store release and production signing.
+
+See [Android build guide](ANDROID.md) and [device evidence](qa/android-4.51/README.md).
+This platform is now authorized; Steam Deck and other deferred ports stay deferred.
+
 ## Production cast — 4.51.0
 
 - [x] Integrate distinct authored Saint, Torque and Vesper alongside Rook, with detailed first-person hands and per-identity distance geometry.

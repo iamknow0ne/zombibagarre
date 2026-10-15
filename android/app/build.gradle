@@ -1,0 +1,28 @@
+plugins { id 'com.android.application' }
+def gamePackage = new groovy.json.JsonSlurper().parse(file('../../package.json'))
+def versionParts = gamePackage.version.tokenize('.').collect { it as int }
+android {
+    namespace 'games.zombibagarre.quarantine'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'games.zombibagarre.quarantine'
+        minSdk 26
+        targetSdk 34
+        versionCode versionParts[0] * 1000000 + versionParts[1] * 1000 + versionParts[2]
+        versionName gamePackage.version
+    }
+    buildFeatures { buildConfig true }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets.main.assets.srcDirs = ['build/generated/gameAssets']
+}
+dependencies { implementation 'androidx.webkit:webkit:1.10.0' }
+tasks.register('syncGameAssets', Sync) {
+    from('../../dist') {
+        exclude 'art/*.png'
+        // AAPT otherwise inflates .gz files and strips their extension.
+        rename { name -> name.endsWith('.gz') ? name + '.asset' : name }
+    }
+    into('build/generated/gameAssets/game')
+    doFirst { if (!file('../../dist/index.html').exists()) throw new GradleException('Run npm run build first.') }
+}
+tasks.named('preBuild').configure { dependsOn 'syncGameAssets' }

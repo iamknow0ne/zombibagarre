@@ -7,7 +7,7 @@ export class SaveUI {
   const panel=document.createElement('details');panel.id='save-panel';panel.className='save-panel';
   panel.innerHTML=`<summary>YOUR SAVE · BACKUP & RESTORE</summary><p>Keep your survivor between devices. Backups include character levels, equipment, base camp and settings. Current expeditions are not saved.</p><p id="save-status" role="status" aria-live="polite"></p><div class="save-actions"><button type="button" id="save-export">EXPORT BACKUP ↓</button><button type="button" id="save-choose">CHOOSE BACKUP ↑</button><button type="button" id="save-retry">RETRY SAVING</button><button type="button" id="save-original">EXPORT STORED ORIGINAL ↓</button><button type="button" id="save-recovery">EXPORT PRE-RESTORE COPY ↓</button></div><input id="save-file" type="file" accept=".json,application/json" hidden><section id="save-preview" hidden aria-label="Backup preview"><div class="label">REPLACE THIS CHARACTER?</div><p id="save-comparison"></p><p>Your previous save is kept as a recovery copy. This replaces progress and settings; it does not merge characters.</p><p id="save-restore-note"></p><div class="save-actions"><button type="button" id="save-restore">RESTORE & RELOAD</button><button type="button" id="save-cancel">CANCEL</button></div></section><p id="save-feedback" role="status" aria-live="polite"></p>`;
   host.append(panel);this.panel=panel;this.el=id=>panel.querySelector('#'+id);
-  this.el('save-export').onclick=()=>this.attempt(()=>{beforeExport();this.download(store.export(),'backup');this.feedback('Backup download started. Check your downloads and keep the file somewhere safe.');});
+  this.el('save-export').onclick=()=>this.attempt(()=>{beforeExport();this.download(store.export(),'backup');this.feedback(window.BagarreAndroid?'Choose where to save your backup in the Android file picker.':'Backup download started. Check your downloads and keep the file somewhere safe.');});
   this.el('save-original').onclick=()=>this.attempt(()=>this.download(store.original(),'stored-original'));
   this.el('save-recovery').onclick=()=>this.attempt(()=>this.download(store.recovery(),'before-restore'));
   this.el('save-retry').onclick=()=>{store.flush();this.update();};
@@ -23,6 +23,7 @@ export class SaveUI {
    if(!this.pending||!canRestore())throw new Error('Return to the title screen before replacing your character.');
    store.restore(this.pending);this.pending=null;this.feedback('Backup restored. Reloading your survivor…');onRestored();
   });
+  window.addEventListener('bagarre-android-export',event=>{if(typeof event.detail?.message==='string')this.feedback(event.detail.message,!!event.detail.error);});
   this.unsubscribe=store.subscribe(()=>this.update());
  }
  feedback(text,error=false){this.el('save-feedback').textContent=text;this.el('save-feedback').classList.toggle('save-error',error);}
@@ -38,5 +39,5 @@ export class SaveUI {
   this.el('save-restore-note').textContent=this.canRestore()?'Restoring reloads the game with this backup.':'Finish or leave your expedition, then return here from the title screen to restore.';
   let recovery=false;try{recovery=!!store.recovery();}catch{}this.el('save-recovery').hidden=!recovery;
  }
- download(text,kind){const url=URL.createObjectURL(new Blob([text],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download=`zombie-bagarre-${kind}-${new Date().toISOString().slice(0,10)}.json`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
+ download(text,kind){if(window.BagarreAndroid){window.BagarreAndroid.postMessage(JSON.stringify({type:'export',text}));return;}const url=URL.createObjectURL(new Blob([text],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download=`zombie-bagarre-${kind}-${new Date().toISOString().slice(0,10)}.json`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 }

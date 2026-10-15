@@ -41,3 +41,8 @@ __pycache__/
 assets/characters/rook-runtime-v7.glb
 
 /assets/characters/rook-cast-runtime-v7.glb
+
+# Android build outputs and machine-specific SDK path
+android/.gradle/
+android/**/build/
+android/local.properties

@@ -15,7 +15,8 @@
     "test:rook": "node scripts/art/test-rook.mjs",
     "predev": "node scripts/art/pack-rook-runtime.mjs",
     "prebuild": "node scripts/art/pack-rook-runtime.mjs",
-    "pretest:rook": "node scripts/art/pack-rook-runtime.mjs"
+    "pretest:rook": "node scripts/art/pack-rook-runtime.mjs",
+    "android:build": "node scripts/build-android.mjs"
   },
   "dependencies": {
     "three": "^0.169.0"

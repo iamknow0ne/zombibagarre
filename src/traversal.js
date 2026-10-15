@@ -1,4 +1,5 @@
 import {keyboardHint} from './rebuild/KeyboardBindings.js';
+import {installAndroidPlatform} from './rebuild/AndroidPlatform.js';
 import * as T from 'three';
 import {World} from './rebuild/World.js';
 import {readSavedSettings} from './rebuild/Persistence.js';
@@ -62,6 +63,7 @@ async function boot(){
  // Training uses the same configurable Jump / Grapple actions as the city.
  addEventListener('keydown',e=>{if(document.activeElement?.tagName==='BUTTON'&&['Space','Enter'].includes(e.code))e.stopPropagation();},{capture:true});
  const suspend=()=>{if(sim.state==='playing')togglePause();};addEventListener('blur',suspend);document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend();});window.bagarreDesktop?.onSuspend(suspend);
+ installAndroidPlatform({window,document,onBack:togglePause,onPause:()=>{suspend();input.clear();frameInput=null;accumulator=0;},onForeground:()=>{last=performance.now();accumulator=0;}});
  addEventListener('resize',()=>{world.portrait=innerWidth<600?28:25;world.resize();});
  function rumble(strength,duration){const actuator=input.rawPad?.vibrationActuator;if(!actuator?.playEffect||settings.vibration===0)return;try{actuator.playEffect('dual-rumble',{duration,startDelay:0,strongMagnitude:strength*(settings.vibration??70)/100,weakMagnitude:strength*.5*(settings.vibration??70)/100})?.catch?.(()=>{});}catch{}}
  function feedback(events){for(const e of events){if(e.type==='blocked')announce(e.message);if(e.type==='attach')rumble(.22,65);if(e.type==='jump')rumble(.12,30);if(e.type==='land'){
