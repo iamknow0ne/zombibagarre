@@ -60,3 +60,15 @@ enabled. This does not establish sustained gameplay performance.
 `Zombie-Bagarre-4.50.1-macOS-arm64.zip`
 
 SHA-256: `895911697cab75a1fcdc9f76e94e46e5cc2aecbf5bdd02a181e7dac1043afc85`
+
+## Publication
+
+Runtime commit: `326883bc1fe574fc709f085d73093f719b1b04d4`.
+GitHub Pages workflow **38712439117** passed. The public menu shows BUILD 4.50.1
+and emitted no console errors during the deployment check; screenshot is in
+`qa/cast-fixes-4.50.1/public-menu.png`.
+
+[macOS release v4.50.1](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.50.1)
+is published. GitHub's uploaded ZIP digest matches the exact locally tested archive
+above. This is an ad-hoc signed Apple Silicon build, without Developer ID
+notarization.

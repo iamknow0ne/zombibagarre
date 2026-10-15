@@ -8,6 +8,7 @@
 - [x] Correct live crawler direction, head orientation and ground-reaching arms while preserving gore and corpse behavior.
 - [x] Losslessly pack the runtime Rook asset: 9.4% fewer bytes and four fewer resident textures in the controlled browser scene.
 - [x] 611 gameplay regressions, 53 model/art checks, production build and browser helmet/wound/crawler review.
+- [x] Publish browser and ad-hoc macOS 4.50.1: runtime 326883b, Pages 38712439117 passed, public BUILD 4.50.1 checked, uploaded ZIP digest matches the hardware-startup-tested archive.
 
 See [4.50.1 evidence](RELEASE-4.50.1.md). Authored cast completion and target-device endurance remain open.
 
