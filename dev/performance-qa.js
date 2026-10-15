@@ -11,15 +11,17 @@ function resourceInventory(){
  // Pinned Three r169 diagnostic only: WebGLGeometries adds/removes this
  // listener on GPU registration/disposal. Shared caches can have listeners from
  // another renderer, so this is an ownership heuristic, not a portable API.
+ const listenerHeuristicAvailable=import.meta.env.DEV;
  const registered=g=>g._listeners?.dispose?.some(fn=>fn.name==='onGeometryDispose')||false;
- const stats=roots=>{const set=geometries(roots);return {objects:roots.length,geometries:set.size,shared:[...set].filter(g=>g.userData.shared).length,gpuListenerHeuristic:[...set].filter(registered).length};};
+ const stats=roots=>{const set=geometries(roots);return {objects:roots.length,geometries:set.size,shared:[...set].filter(g=>g.userData.shared).length,gpuListenerHeuristic:listenerHeuristicAvailable?[...set].filter(registered).length:null};};
  const scene=geometries([world.scene]),visible=new Set(),cameraLayer=new Set(),types={},registeredTypes={};
  world.scene.traverseVisible(o=>{if(!o.geometry||o.isSprite)return;visible.add(o.geometry);if(o.layers.test(world.camera.layers))cameraLayer.add(o.geometry);});
  for(const g of scene){types[g.type]=(types[g.type]||0)+1;if(registered(g))registeredTypes[g.type]=(registeredTypes[g.type]||0)+1;}
  const kinds={};for(const e of world.effects)(kinds[e.kind||'other']??=[]).push(e.mesh);
  return {
   gpu:{...world.renderer.info.memory},
-  scene:{geometries:scene.size,visibleHierarchy:visible.size,cameraLayer:cameraLayer.size,shared:[...scene].filter(g=>g.userData.shared).length,types,gpuListenerHeuristic:[...scene].filter(registered).length,registeredTypes},
+  listenerHeuristicAvailable,
+  scene:{geometries:scene.size,visibleHierarchy:visible.size,cameraLayer:cameraLayer.size,shared:[...scene].filter(g=>g.userData.shared).length,types,gpuListenerHeuristic:listenerHeuristicAvailable?[...scene].filter(registered).length:null,registeredTypes:listenerHeuristicAvailable?registeredTypes:null},
   // Categories can overlap scene ownership; none imply GPU residency.
   collections:{decals:stats(world.decals),impacts:stats(world.impacts),corpses:stats(world.corpses.map(c=>c.mesh)),wrecks:stats(world.wrecks),projectiles:stats([...world.projectiles.values()]),characters:stats([...world.characters.values()]),characterBatches:stats([...world.characterInstances.batches.values()]),structureBatches:stats([...world.structuralVisuals.batches.values()]),player:stats([world.player]),buildings:stats([...world.buildingMeshes.values()]),props:stats([...world.propMeshes.values()]),static:stats([world.static])},
   effects:Object.fromEntries(Object.entries(kinds).map(([kind,roots])=>[kind,stats(roots)])),
@@ -43,7 +45,7 @@ function start(total){
  if(run.scene==='storm')sim.weather.rain=sim.weather.wetness=1;if(run.scene==='snow')sim.weather.snow=sim.weather.snowCover=1;
  frame=0;samples=[];last=0;running=true;$('stop').disabled=false;for(const el of document.querySelectorAll('select,button[data-run]'))el.disabled=true;$('report').textContent='Warming shaders and running…';
 }
-$('run').onclick=()=>start(240);$('long').onclick=()=>start(6000);$('stop').onclick=()=>{if(running){running=false;run.cancelled=true;report();}};
+$('run').onclick=()=>start(240);$('long').onclick=()=>start(6000);$('soak').onclick=()=>start(18000);$('stop').onclick=()=>{if(running){running=false;run.cancelled=true;report();}};
 function loop(now){requestAnimationFrame(loop);if(!running)return;try{
  const frameMs=last?now-last:0;last=now;
  const a=performance.now();

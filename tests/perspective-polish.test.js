@@ -62,3 +62,34 @@ test('the first look delta survives camera initialization and a mode switch clea
  const sim=simple(),rig=new ViewRig();sim.player.angle=.7;rig.setMode('third');rig.look(40,0);rig.aim(sim.player,sim);assert.ok(Math.abs(rig.yaw-.6)<1e-12);rig.aim(sim.player,sim);assert.ok(Math.abs(rig.yaw-.6)<1e-12,'initial look is consumed only once');
  rig.setMode('first');rig.look(20,0);rig.setMode('third');rig.aim(sim.player,sim);assert.equal(rig.yaw,.7);
 });
+
+test('pitched chase cameras orbit at a consistent boom length on foot and in vehicles',()=>{
+ for(const driving of [false,true])for(const pitch of [0,.6,1.15])for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5]){
+  const sim=simple(),rig=new ViewRig();sim.player.angle=angle;rig.setMode('third');rig.pitch=pitch;
+  if(driving){sim.player.vehicleId='car';sim.props=[{id:'car',kind:'car',x:0,z:0,w:2,d:4,h:1.8,health:100}];sim.obstacles=sim.props;}
+  rig.update(sim,16/9,0);const offset=rig.camera.position.clone().sub(rig.origin);
+  offset.x+=Math.cos(angle)*.65;offset.z-=Math.sin(angle)*.65;offset.y-=.55;
+  assert.ok(Math.abs(offset.length()-(driving?8:4.5))<1e-9,'pitch must rotate the boom, not stretch it');
+ }
+});
+
+test('steep TPS ground aim and real shots stay ahead of the hero through yaw, shoulder and precision changes',()=>{
+ const sim=new Simulation({seed:21});sim.start('marksman');sim.props=[];sim.obstacles=[];sim.enemies=[];sim.random=()=>.5;sim.player.x=sim.player.z=sim.player.y=0;
+ for(const pitch of [.9,1,1.15])for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5])for(const shoulder of ['left','right'])for(const precision of [0,1]){
+  const rig=new ViewRig();rig.setMode('third');rig.configure({shoulder});rig.pitch=pitch;rig.aimBlend=precision;sim.player.angle=angle;sim.player.aiming=!!precision;
+  const aim=rig.aim(sim.player,sim),forward={x:Math.sin(angle),z:Math.cos(angle)};
+  assert.ok(aim.x*forward.x+aim.z*forward.z>.5,'downward crosshair must not target ground behind the hero');
+  assert.ok(Math.abs(aim.y-.08)<1e-9);sim.bullets=[];sim.fireWeapon('marksman',aim);
+  assert.ok(sim.bullets[0].vx*forward.x+sim.bullets[0].vz*forward.z>0,'the actual projectile must travel forward, not toward the chase camera');
+  assert.ok(sim.bullets[0].vy<0);
+ }
+});
+
+test('steep TPS aiming hits an elevated roof and keeps live cover between the camera and its boom endpoint',()=>{
+ const sim=simple(),rig=new ViewRig(),roof={id:'roof',kind:'building',x:0,z:0,w:12,d:12,h:6,health:100};
+ sim.player.y=6;sim.props=sim.obstacles=[roof];rig.setMode('third');rig.pitch=1.15;
+ const aim=rig.aim(sim.player,sim);assert.ok(Math.abs(aim.y-6)<1e-9,'aim hits the support surface, not the street beneath');assert.ok(aim.z>0,'roof contact stays ahead of the player');assert.ok(rig.camera.position.y>6);
+ const open=rig.camera.position.clone(),cover={id:'cover',kind:'building',x:-.4,y:6,z:-1,w:2,d:.3,h:7,health:100};sim.props=sim.obstacles=[roof,cover];rig.aim(sim.player,sim);
+ assert.ok(rig.camera.position.z>-.61,'camera retracts in front of cover, including its padding');assert.ok(rig.camera.position.distanceTo(rig.origin)<open.distanceTo(rig.origin));
+ cover.health=0;rig.update(sim,16/9,1);assert.ok(rig.camera.position.z<-.7,'camera eases back after the obstacle is destroyed');
+});

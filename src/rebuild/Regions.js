@@ -1,6 +1,7 @@
 import {distance,pointBlocked,lineBlocked,segmentCircle} from './config.js';
 import {insideMap,segmentInMap} from './Map.js';
 import {waterAt} from './City.js';
+import {bossContains} from './Bosses.js';
 
 // In-memory expedition state only. Nothing here is written into SaveStore.
 export const REGION_FIELDS=['layout','props','enemies','bullets','hazards','pickups','fires','structures','rubblePiles','wetGround','streetEvents','places','visited','interiorState','traversalRewardClaimed','geometryRevision','toSpawn','spawnTimer','waveKills','waveTotal','waveBaseCount','nightReinforced','extraction','countryEncounter'];
@@ -21,7 +22,9 @@ export function safeRegionPoint(view,p,radius=.65){
  !(view.enemies||[]).some(e=>e.health>0&&distance(e,p)<(e.radius||.5)+radius+1)&&
  !(view.fires||[]).some(f=>distance(f,p)<(f.radius||1)+radius)&&
  !(view.props||[]).some(o=>o.health>0&&o.burning>0&&distance(o,p)<Math.hypot(o.w||1,o.d||1)/2+radius)&&
- !(view.hazards||[]).some(h=>!h.done&&distance(h,p)<(h.radius||1)+radius)&&!projectileThreat(view,p,radius);
+ // Boss lane radius describes half its width, not its full 19m footprint.
+ // Use the combat predicate with the arrival body's ground height and margin.
+ !(view.hazards||[]).some(h=>!h.done&&(h.bossOwner&&h.shape==='lane'?bossContains(h,{x:p.x,y:0,z:p.z,radius}):distance(h,p)<(h.radius||1)+radius))&&!projectileThreat(view,p,radius);
 }
 // Reuse Simulation's real pedestrian flow field, rooted at the expedition spawn.
 // A safe point can still belong to a detached road/island: require a reachable

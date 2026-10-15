@@ -254,3 +254,15 @@ Next: production character art and animation integration remains a major visual 
 - [x] Rook v7 sling/waist-attachment candidate: 33 art/motion tests, 120 sampled poses and actual browser front/back/recoil/reload/blade review. Accepted only as a development construction candidate; v6 remains the default, production hero unchanged. See [art evidence](art-direction/ROOK-V7-SLING.md).
 
 Remaining major gates: character likeness/scarf, animation and production adapter (armour, LOD and FPS hands), wider perspective QA, ordinary full expedition and sustained native soak. Hangar/orbit/moon remain downstream.
+
+
+## 4.49.8 — downward TPS and boss-lane arrival safety
+
+- [x] Rotate the chase-camera boom with pitch so downward aim and actual bullets stay ahead of the hero; retain roof contact and cover retraction.
+- [x] Check the full boss attack lane when choosing shelter exits and regional arrivals, using the combat predicate and body margin.
+- [x] 605 tests, production build, actual browser street/roof shots and threatened-shelter exit with health preserved on queued attack resolution.
+- [x] Frozen browser fixture completed 300 seconds of simulated combat. Late geometry counts fluctuate within a bounded range, textures and static ownership remain steady; this is not a native soak or controlled FPS comparison.
+- [x] Exact Apple Silicon archive signature and offline GPU startup passed.
+- [ ] Publish and verify browser and Mac artifacts. See [4.49.8 evidence](RELEASE-4.49.8.md).
+
+Next: wider perspective/visibility checks and production character art remain the immediate gates, with ordinary expedition and sustained native gameplay still open. The first accurate service roof is complete; additional roofs/elevated enemy encounters and hangar/orbit/moon remain unfinished.

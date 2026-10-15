@@ -6,6 +6,7 @@ import {generateCity} from '../src/rebuild/City.js';
 import {makeRPGWorld} from '../src/rebuild/RPG.js';
 import {insideMap,segmentInMap} from '../src/rebuild/Map.js';
 import {pointBlocked,lineBlocked,distance} from '../src/rebuild/config.js';
+import {beginBossAttack,bossContains} from '../src/rebuild/Bosses.js';
 const game=()=>{const s=new Simulation({mode:'city',seed:73,profile:{}});s.start();s.events=[];return s;};
 const plan=(s,type='workshop-v1')=>s.interiorState.manifest.find(p=>p.template===type);
 const enter=(s,type)=>{const p=plan(s,type);Object.assign(s.player,{...p.door,y:0,grounded:true});assert.equal(beginInterior(s,p.id),true);return p;};
@@ -88,4 +89,12 @@ test('harmless outgoing rounds and spent hazards do not displace an interior exi
  s.bullets.push({x:d.x-3,y:1,z:d.z,vx:20,vz:0,life:1,enemy:false,weapon:'carbine'});
  s.hazards.push({x:d.x,z:d.z,radius:2,done:true});
  assert.deepEqual(resolveExteriorExit(s),{x:d.x,y:0,z:d.z});
+});
+test('shelter exit avoids the far end of a frozen boss harpoon lane',()=>{
+ const s=game(),room=enter(s),d=room.door,e=s.spawnEnemy('boss',d.x+d.nx*17,d.z+d.nz*17);
+ Object.assign(e,{x:d.x+d.nx*17,z:d.z+d.nz*17,bossPhase:1});beginBossAttack(s,e,'harpoon');
+ const lane=s.hazards.find(h=>h.bossOwner===e.id);assert.equal(bossContains(lane,{...d,y:0,radius:.65}),true);
+ assert.ok(distance(lane,d)>lane.radius+.65,'the old radius-only check missed this threat');
+ const exit=resolveExteriorExit(s);assert.ok(exit);assert.equal(bossContains(lane,{...exit,radius:.65}),false);
+ assert.equal(endInterior(s),true);assert.equal(bossContains(lane,s.player),false);
 });

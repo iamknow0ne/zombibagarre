@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {Simulation} from '../src/rebuild/Simulation.js';
 import {travelGate,requestRegionTravel,completeRegionTravel,regionView,captureRegion,resolveRegionArrival,safeRegionPoint,travelUnavailable,collectCountrySupply,initializeRegions} from '../src/rebuild/Regions.js';
 import {distance} from '../src/rebuild/config.js';
+import {beginBossAttack,bossContains} from '../src/rebuild/Bosses.js';
 const game=()=>{const sim=new Simulation({seed:31,mode:'city',profile:{}});sim.start();sim.events=[];return sim;};
 const gate=s=>Object.assign(s.player,{...travelGate(s),y:0,grounded:true});
 const cross=(s,prepare)=>{gate(s);assert.equal(requestRegionTravel(s),true);assert.equal(s.state,'travelling');const result=completeRegionTravel(s,prepare);assert.equal(result.ok,true,result.error?.message);return result;};
@@ -36,6 +37,33 @@ test('arrival candidates reject water, flame, imminent blasts, live enemies and 
  const s=game();cross(s);const p=travelGate(s),base={...s,props:[],enemies:[],fires:[],hazards:[],bullets:[]};assert.ok(safeRegionPoint(base,p));
  for(const patch of [{fires:[{...p,radius:20}]},{hazards:[{...p,radius:20,timer:.01}]},{enemies:[{...p,radius:20,health:1}]},{layout:{...s.layout,water:[{...p,w:40,d:40}]}}])assert.equal(resolveRegionArrival({...base,...patch},p),null);
  const bullet={x:p.x-5,y:1,z:p.z,vx:50,vz:0,life:1,enemy:true};assert.equal(safeRegionPoint({...base,bullets:[bullet]},p),false);assert.equal(safeRegionPoint({...base,bullets:[{...bullet,y:12}]},p),true);assert.equal(safeRegionPoint({...base,bullets:[{...bullet,life:0}]},p),true);assert.equal(safeRegionPoint({...base,bullets:[{...bullet,enemy:false,weapon:'carbine'}]},p),true);
+});
+
+test('regional arrival avoids the distant end of a real boss lane before its frozen attack resumes',()=>{
+ const s=game();cross(s);const g=travelGate(s),e=s.spawnEnemy('boss',g.x,g.z-17);
+ Object.assign(e,{x:g.x,z:g.z-17,bossPhase:1});Object.assign(s.player,g);beginBossAttack(s,e,'harpoon');
+ const lane=s.hazards.find(h=>h.bossOwner===e.id);assert.equal(lane.shape,'lane');
+ assert.ok(distance(g,lane)>lane.radius+.65,'arrival lies beyond the old circular safety check');
+ assert.equal(bossContains(lane,{...g,y:0,radius:.65}),true);
+ // Park the lane in the destination after leaving its footpath.
+ const hazards=s.hazards;s.hazards=[];cross(s);
+ s.regions.get('country-road').hazards=hazards;
+ const result=cross(s);assert.equal(result.ok,true);
+ assert.equal(bossContains(lane,s.player),false,'a safe side arrival replaces the threatened gate');
+ e.bossTimer=lane.timer=.05;s.player.invulnerable=0;s.player.health=83;const health=s.player.health;
+ s.update(.05,{auto:false});assert.equal(lane.done,true);assert.equal(s.player.health,health,'resuming the real attack cannot damage the selected arrival');
+});
+
+test('lane arrival clearance matches ground-body padding at every cardinal heading and both attack widths',()=>{
+ const s=game();cross(s);const g=travelGate(s),view={...s,props:[],enemies:[],fires:[],bullets:[]};
+ for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5])for(const width of [2,2.8]){
+  const lane={x:g.x-Math.sin(angle)*8,z:g.z-Math.cos(angle)*8,shape:'lane',angle,length:19,width,radius:width/2,bossOwner:123,attackHeight:4};view.hazards=[lane];
+  const point=side=>({x:g.x+Math.cos(angle)*side,z:g.z-Math.sin(angle)*side});
+  for(const side of [0,width/2+.6,-width/2-.6])assert.equal(safeRegionPoint(view,point(side),.65),false,`angle ${angle}, width ${width}, side ${side}`);
+  assert.equal(safeRegionPoint(view,point(width/2+.7),.65),true);
+  assert.equal(safeRegionPoint(view,point(-width/2-.7),.65),true);
+  view.hazards=[{...lane,done:true}];assert.equal(safeRegionPoint(view,g),true);
+ }
 });
 
 test('travel blocks invalid gameplay states and actions, and repeated requests emit only one transition',()=>{

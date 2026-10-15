@@ -1,0 +1,5028 @@
+[
+  {
+    "scene": "combat",
+    "quality": "balanced",
+    "totalFrames": 18000,
+    "checkpoints": [
+      {
+        "frame": 0,
+        "effects": 37,
+        "geometries": 617,
+        "textures": 30,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 617,
+            "textures": 30
+          },
+          "scene": {
+            "geometries": 7466,
+            "visibleHierarchy": 2938,
+            "cameraLayer": 1586,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3725,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 69,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 2,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 66,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 3,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 1,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 7,
+              "geometries": 7,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "spark": {
+              "objects": 24,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 2,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 0
+            },
+            {
+              "weapon": "arc",
+              "tier": 0
+            }
+          ]
+        }
+      },
+      {
+        "frame": 600,
+        "effects": 321,
+        "geometries": 651,
+        "textures": 30,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 651,
+            "textures": 30
+          },
+          "scene": {
+            "geometries": 7487,
+            "visibleHierarchy": 2959,
+            "cameraLayer": 1607,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3745,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 16,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 66,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "ember": {
+              "objects": 28,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 37,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "fire": {
+              "objects": 180,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 9,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 27,
+              "geometries": 27,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "spark": {
+              "objects": 30,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 2
+            }
+          ]
+        }
+      },
+      {
+        "frame": 1200,
+        "effects": 328,
+        "geometries": 652,
+        "textures": 30,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 652,
+            "textures": 30
+          },
+          "scene": {
+            "geometries": 7487,
+            "visibleHierarchy": 2956,
+            "cameraLayer": 1604,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3745,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 244,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 4,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 20,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 26,
+              "geometries": 26,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 24,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 1800,
+        "effects": 322,
+        "geometries": 635,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 635,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7465,
+            "visibleHierarchy": 2893,
+            "cameraLayer": 1565,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3723,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 251,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 22,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 36,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 3,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 2400,
+        "effects": 320,
+        "geometries": 659,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 659,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7483,
+            "visibleHierarchy": 2911,
+            "cameraLayer": 1583,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3741,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 245,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 22,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 23,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 18,
+              "geometries": 18,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 2,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 3000,
+        "effects": 325,
+        "geometries": 667,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 667,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7488,
+            "visibleHierarchy": 2919,
+            "cameraLayer": 1591,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3746,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "spark": {
+              "objects": 33,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 23,
+              "geometries": 23,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 7,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "fire": {
+              "objects": 222,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 13,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 17,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 3600,
+        "effects": 322,
+        "geometries": 671,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 671,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7481,
+            "visibleHierarchy": 2909,
+            "cameraLayer": 1581,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3739,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 252,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 16,
+              "geometries": 16,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 15,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 27,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 2,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 4200,
+        "effects": 327,
+        "geometries": 687,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 687,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7481,
+            "visibleHierarchy": 2912,
+            "cameraLayer": 1584,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3739,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 16,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 220,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 16,
+              "geometries": 16,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 18,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 14,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 7,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "spark": {
+              "objects": 42,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 4800,
+        "effects": 325,
+        "geometries": 696,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 696,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7488,
+            "visibleHierarchy": 2916,
+            "cameraLayer": 1588,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3746,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "lightning": {
+              "objects": 23,
+              "geometries": 23,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "fire": {
+              "objects": 240,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 31,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 19,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 2,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 5400,
+        "effects": 326,
+        "geometries": 694,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 694,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7477,
+            "visibleHierarchy": 2905,
+            "cameraLayer": 1577,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3735,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 14,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 247,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 23,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 18,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 12,
+              "geometries": 12,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 16,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 6000,
+        "effects": 327,
+        "geometries": 712,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 712,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7488,
+            "visibleHierarchy": 2916,
+            "cameraLayer": 1588,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3746,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 252,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 23,
+              "geometries": 23,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 22,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 2,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 6600,
+        "effects": 326,
+        "geometries": 697,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 697,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7472,
+            "visibleHierarchy": 2900,
+            "cameraLayer": 1572,
+            "shared": 2,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3731,
+              "CylinderGeometry": 107,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 8,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 259,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 8,
+              "geometries": 8,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 31,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 7200,
+        "effects": 330,
+        "geometries": 689,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 689,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7464,
+            "visibleHierarchy": 2892,
+            "cameraLayer": 1564,
+            "shared": 2,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3723,
+              "CylinderGeometry": 107,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 272,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 30,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 7800,
+        "effects": 324,
+        "geometries": 701,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 701,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7476,
+            "visibleHierarchy": 2904,
+            "cameraLayer": 1576,
+            "shared": 2,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3735,
+              "CylinderGeometry": 107,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 248,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 24,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 12,
+              "geometries": 12,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 30,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 8400,
+        "effects": 324,
+        "geometries": 716,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 716,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7491,
+            "visibleHierarchy": 2919,
+            "cameraLayer": 1591,
+            "shared": 2,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3750,
+              "CylinderGeometry": 107,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 243,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 27,
+              "geometries": 27,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 18,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 26,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 9000,
+        "effects": 324,
+        "geometries": 697,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 697,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7473,
+            "visibleHierarchy": 2901,
+            "cameraLayer": 1573,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3731,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 14,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 258,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 4,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 19,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 8,
+              "geometries": 8,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 25,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 9600,
+        "effects": 325,
+        "geometries": 715,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 715,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7487,
+            "visibleHierarchy": 2915,
+            "cameraLayer": 1587,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3745,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 237,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 22,
+              "geometries": 22,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 26,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 28,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 2,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 10200,
+        "effects": 326,
+        "geometries": 706,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 706,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7478,
+            "visibleHierarchy": 2906,
+            "cameraLayer": 1578,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3736,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 17,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 263,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 13,
+              "geometries": 13,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 24,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 14,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 2,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 10800,
+        "effects": 330,
+        "geometries": 717,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 717,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7489,
+            "visibleHierarchy": 2917,
+            "cameraLayer": 1589,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3747,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "spark": {
+              "objects": 7,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 24,
+              "geometries": 24,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 7,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "fire": {
+              "objects": 242,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 16,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 24,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 11400,
+        "effects": 323,
+        "geometries": 715,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 715,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7487,
+            "visibleHierarchy": 2915,
+            "cameraLayer": 1587,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3745,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 17,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 251,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 3,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 16,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 22,
+              "geometries": 22,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 21,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 12000,
+        "effects": 323,
+        "geometries": 719,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 719,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7491,
+            "visibleHierarchy": 2922,
+            "cameraLayer": 1594,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3749,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 4,
+              "geometries": 4,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 16,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 200,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 20,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 26,
+              "geometries": 26,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 18,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "spark": {
+              "objects": 42,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 7,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 12600,
+        "effects": 328,
+        "geometries": 689,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 689,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7461,
+            "visibleHierarchy": 2889,
+            "cameraLayer": 1561,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3719,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 263,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 23,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 30,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 2,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 13200,
+        "effects": 328,
+        "geometries": 702,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 702,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7474,
+            "visibleHierarchy": 2902,
+            "cameraLayer": 1574,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3732,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 248,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 21,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 33,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 3,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 13,
+              "geometries": 13,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 13800,
+        "effects": 324,
+        "geometries": 706,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 706,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7478,
+            "visibleHierarchy": 2906,
+            "cameraLayer": 1578,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3736,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 254,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 17,
+              "geometries": 17,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 25,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 16,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 2,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 14400,
+        "effects": 324,
+        "geometries": 712,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 712,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7484,
+            "visibleHierarchy": 2915,
+            "cameraLayer": 1587,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3742,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 209,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 14,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 23,
+              "geometries": 23,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 19,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "spark": {
+              "objects": 42,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 7,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 15000,
+        "effects": 329,
+        "geometries": 711,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 711,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7483,
+            "visibleHierarchy": 2911,
+            "cameraLayer": 1583,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3741,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 252,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 22,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 22,
+              "geometries": 22,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 21,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 2,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 15600,
+        "effects": 327,
+        "geometries": 707,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 707,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7479,
+            "visibleHierarchy": 2910,
+            "cameraLayer": 1582,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3737,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 212,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 15,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 18,
+              "geometries": 18,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 23,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 7,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "spark": {
+              "objects": 42,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 16200,
+        "effects": 328,
+        "geometries": 707,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 707,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7479,
+            "visibleHierarchy": 2907,
+            "cameraLayer": 1579,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3737,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 18,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "lightning": {
+              "objects": 18,
+              "geometries": 18,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "fire": {
+              "objects": 250,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 23,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 23,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 4,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 16800,
+        "effects": 364,
+        "geometries": 700,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 700,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7472,
+            "visibleHierarchy": 2900,
+            "cameraLayer": 1572,
+            "shared": 3,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3730,
+              "CylinderGeometry": 108,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 12,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "fire": {
+              "objects": 292,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 11,
+              "geometries": 11,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 16,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ember": {
+              "objects": 19,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "streak": {
+              "objects": 16,
+              "geometries": 1,
+              "shared": 1,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      },
+      {
+        "frame": 17400,
+        "effects": 323,
+        "geometries": 719,
+        "textures": 34,
+        "resourceInventory": {
+          "gpu": {
+            "geometries": 719,
+            "textures": 34
+          },
+          "scene": {
+            "geometries": 7490,
+            "visibleHierarchy": 2918,
+            "cameraLayer": 1590,
+            "shared": 2,
+            "types": {
+              "PlaneGeometry": 327,
+              "ShapeGeometry": 95,
+              "BoxGeometry": 2928,
+              "BufferGeometry": 3749,
+              "CylinderGeometry": 107,
+              "CircleGeometry": 3,
+              "TubeGeometry": 7,
+              "SphereGeometry": 53,
+              "LatheGeometry": 150,
+              "RingGeometry": 70,
+              "IcosahedronGeometry": 1
+            },
+            "gpuListenerHeuristic": 0,
+            "registeredTypes": {}
+          },
+          "collections": {
+            "decals": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "impacts": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "corpses": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "wrecks": {
+              "objects": 1,
+              "geometries": 2,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "projectiles": {
+              "objects": 4,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characters": {
+              "objects": 60,
+              "geometries": 1190,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "characterBatches": {
+              "objects": 214,
+              "geometries": 214,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "structureBatches": {
+              "objects": 0,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "player": {
+              "objects": 1,
+              "geometries": 67,
+              "shared": 2,
+              "gpuListenerHeuristic": 0
+            },
+            "buildings": {
+              "objects": 55,
+              "geometries": 4625,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "props": {
+              "objects": 131,
+              "geometries": 1058,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "static": {
+              "objects": 1,
+              "geometries": 4849,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "effects": {
+            "ember": {
+              "objects": 27,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "fire": {
+              "objects": 240,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "lightning": {
+              "objects": 30,
+              "geometries": 30,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "smoke": {
+              "objects": 16,
+              "geometries": 0,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "ripple": {
+              "objects": 1,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            },
+            "water": {
+              "objects": 9,
+              "geometries": 1,
+              "shared": 0,
+              "gpuListenerHeuristic": 0
+            }
+          },
+          "weaponTiers": [
+            {
+              "weapon": "flame",
+              "tier": 3
+            },
+            {
+              "weapon": "arc",
+              "tier": 3
+            }
+          ]
+        }
+      }
+    ],
+    "seed": 20261012,
+    "viewport": [
+      1280,
+      720
+    ],
+    "frames": 17940,
+    "fps": 66.8,
+    "frameMs": {
+      "mean": 14.97,
+      "p95": 25
+    },
+    "simMs": {
+      "mean": 3.22,
+      "p95": 4.8
+    },
+    "eventsMs": {
+      "mean": 0.18,
+      "p95": 0.3
+    },
+    "worldMs": {
+      "mean": 10.31,
+      "p95": 14.9
+    },
+    "drawCalls": {
+      "mean": 1132.55,
+      "p95": 1163
+    },
+    "triangles": {
+      "mean": 398888.86,
+      "p95": 405006
+    },
+    "meshes": 9692,
+    "resources": {
+      "geometries": 691,
+      "textures": 34
+    },
+    "peakEffects": 415,
+    "peakStructures": 0,
+    "resourceInventory": {
+      "gpu": {
+        "geometries": 691,
+        "textures": 34
+      },
+      "scene": {
+        "geometries": 7460,
+        "visibleHierarchy": 2888,
+        "cameraLayer": 1560,
+        "shared": 2,
+        "types": {
+          "PlaneGeometry": 327,
+          "ShapeGeometry": 95,
+          "BoxGeometry": 2928,
+          "BufferGeometry": 3719,
+          "CylinderGeometry": 107,
+          "CircleGeometry": 3,
+          "TubeGeometry": 7,
+          "SphereGeometry": 53,
+          "LatheGeometry": 150,
+          "RingGeometry": 70,
+          "IcosahedronGeometry": 1
+        },
+        "gpuListenerHeuristic": 0,
+        "registeredTypes": {}
+      },
+      "collections": {
+        "decals": {
+          "objects": 0,
+          "geometries": 0,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "impacts": {
+          "objects": 0,
+          "geometries": 0,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "corpses": {
+          "objects": 0,
+          "geometries": 0,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "wrecks": {
+          "objects": 1,
+          "geometries": 2,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "projectiles": {
+          "objects": 0,
+          "geometries": 0,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "characters": {
+          "objects": 60,
+          "geometries": 1190,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "characterBatches": {
+          "objects": 214,
+          "geometries": 214,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "structureBatches": {
+          "objects": 0,
+          "geometries": 0,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "player": {
+          "objects": 1,
+          "geometries": 67,
+          "shared": 2,
+          "gpuListenerHeuristic": 0
+        },
+        "buildings": {
+          "objects": 55,
+          "geometries": 4625,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "props": {
+          "objects": 131,
+          "geometries": 1058,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "static": {
+          "objects": 1,
+          "geometries": 4849,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        }
+      },
+      "effects": {
+        "fire": {
+          "objects": 264,
+          "geometries": 0,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "ember": {
+          "objects": 32,
+          "geometries": 1,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "smoke": {
+          "objects": 18,
+          "geometries": 0,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "ripple": {
+          "objects": 1,
+          "geometries": 1,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        },
+        "water": {
+          "objects": 9,
+          "geometries": 1,
+          "shared": 0,
+          "gpuListenerHeuristic": 0
+        }
+      },
+      "weaponTiers": [
+        {
+          "weapon": "flame",
+          "tier": 3
+        },
+        {
+          "weapon": "arc",
+          "tier": 3
+        }
+      ]
+    },
+    "stages": {
+      "actors": {
+        "mean": 0.92,
+        "p95": 1.5
+      },
+      "props": {
+        "mean": 0.11,
+        "p95": 0.2
+      },
+      "effects": {
+        "mean": 0.57,
+        "p95": 0.9
+      },
+      "overlay": {
+        "mean": 0.37,
+        "p95": 0.6
+      },
+      "instances": {
+        "mean": 0.5,
+        "p95": 0.8
+      },
+      "render": {
+        "mean": 7.83,
+        "p95": 11.6
+      }
+    }
+  }
+]

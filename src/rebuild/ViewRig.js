@@ -22,7 +22,11 @@ export class ViewRig{
   this.origin.set(p.x,(p.y||0)+(vehicle?2.4:1.55)+bob,p.z);const distance=first?0:vehicle?8:4.5-this.aimBlend*1.1;
   this.shoulder=damp(this.shoulder??(this.settings.shoulder==='left'?-1:1),this.settings.shoulder==='left'?-1:1,10,dt);
   const side=first?0:(.65-this.aimBlend*.15)*this.shoulder;
-  this.target.set(this.origin.x-Math.sin(this.yaw)*distance-Math.cos(this.yaw)*side,this.origin.y+Math.sin(this.pitch)*distance+(first?0:.55),this.origin.z-Math.cos(this.yaw)*distance+Math.sin(this.yaw)*side);
+  // Orbit the boom along the viewing direction. Keeping the full horizontal
+  // distance while raising it by sin(pitch) makes steep downward crosshairs
+  // land behind the hero, turning shots back toward the chase camera.
+  const horizontal=distance*Math.cos(this.pitch);
+  this.target.set(this.origin.x-Math.sin(this.yaw)*horizontal-Math.cos(this.yaw)*side,this.origin.y+Math.sin(this.pitch)*distance+(first?0:.55),this.origin.z-Math.cos(this.yaw)*horizontal+Math.sin(this.yaw)*side);
   // The street is not a prop collider. Upward free look otherwise sends the
   // chase boom below it, especially behind vehicles with their longer boom.
   if(!first)this.target.y=Math.max(.28,this.target.y);
