@@ -272,7 +272,7 @@ Next: wider perspective/visibility checks and production character art remain th
 - [x] Restore solid facades immediately when switching to FPS/TPS, including zero-delta paused frames; restore the current hero cutaway on returning to diorama.
 - [x] 606 gameplay tests, production build and actual rendered browser camera roundtrip with no simulation advance or browser errors.
 - [x] Rook v7 development-only rifle/recoil aim layer: 36 art/motion tests, 72 envelope samples, planted skin geometry and grip checks; actual front/profile browser inspection and compact keyboard-accessible viewer controls.
-- [ ] Finish exact Mac package and browser publication verification. See [4.49.9 evidence](RELEASE-4.49.9.md).
+- [x] Exact Apple Silicon package signature/offline GPU startup passed; published runtime `02caf2a`, Pages `38700639072` passed, public BUILD 4.49.9 confirmed without errors, and uploaded archive checksum matches. See [4.49.9 evidence](RELEASE-4.49.9.md).
 
 Next: detailed character likeness and production integration, including moving aim,
 turning, armour, LOD and FPS hands. Broader perspective/collision QA, ordinary full

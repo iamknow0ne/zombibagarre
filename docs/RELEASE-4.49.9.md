@@ -33,6 +33,10 @@ remain unchanged. Final likeness, moving aim, armour, LOD and FPS adapters remai
 The exact Apple Silicon archive passed ad-hoc signature verification and automated
 offline startup with GPU enabled. SHA-256:
 `a3da38ac19569c7f5373a3bedc23296c5a9e294fb792eaefd022e43d2ed5bdde`.
-Publication and public Pages verification are pending.
+Runtime commit `02caf2acb5e511f03e66d0547e31ae014eed0346` is published.
+Pages run `38700639072` passed, and the actual public menu reports BUILD 4.49.9
+with no browser errors. GitHub release `413539029` reports the same archive digest
+and size 141,689,958 bytes. Release: https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.49.9
+The automatic deferred Steam Deck job `38700793423` was cancelled.
 No physical phone/controller test, ordinary full expedition, native sustained soak,
 or overall FPS improvement is claimed. Hangar/orbit/moon remain downstream.
