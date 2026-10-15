@@ -5,7 +5,7 @@
 ## Release identity follow-up — 4.51.2
 
 - [x] Generate title/loading/diagnostic version from package metadata and reject stale built labels before packaging.
-- [ ] Verify and publish corrected browser/Mac artifacts; update the local Android test install.
+- [x] Publish and verify corrected browser/Mac artifacts; update the local Android test install. Source ff53c54, Pages 38728843853 passed, public BUILD 4.51.2 verified with no console errors, uploaded Mac hash matches the hardware-startup-tested ZIP. Android visible device QA is still pending.
 
 See [4.51.2 evidence](RELEASE-4.51.2.md). Gameplay/rendering is unchanged from the tested 4.51.1 patch.
 

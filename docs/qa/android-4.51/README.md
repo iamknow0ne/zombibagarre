@@ -44,3 +44,8 @@ same-key, data-preserving update on 15 October. It includes the audio retry fix
 and region/interior debris-arrival protection. All 635 regression tests pass.
 The phone remains locked, so the physical-device checks above remain pending.
 See [4.51.1 artifact hashes and evidence](../../RELEASE-4.51.1.md).
+
+The final installed version for this pass is **4.51.2**, which also fixes stale
+visible build labels. Its 48 assets and signature were verified before the
+same-key install returned `Success`. The final hash is in the
+[4.51.2 evidence](../../RELEASE-4.51.2.md); the original 4.51.0 hash above is historical.
