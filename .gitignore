@@ -36,3 +36,6 @@ release/
 # Blender incremental backups and asset-tool bytecode; keep the actual source.
 *.blend1
 __pycache__/
+
+# Reproducible lossless runtime derivative; generated before dev/build/art tests.
+assets/characters/rook-runtime-v7.glb

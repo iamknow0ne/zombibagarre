@@ -2,6 +2,15 @@
 
 14 October 2026. Apple signing/notarization, Steam Deck troubleshooting and other ports remain deferred, except the newly authorized SNES demake. Work is staged into tested releases, not an assertion that the whole game is finished.
 
+## Character reliability follow-up — 4.50.1
+
+- [x] Fix authored cap/hair clipping through helmets and buried enemy cheek wounds.
+- [x] Correct live crawler direction, head orientation and ground-reaching arms while preserving gore and corpse behavior.
+- [x] Losslessly pack the runtime Rook asset: 9.4% fewer bytes and four fewer resident textures in the controlled browser scene.
+- [x] 611 gameplay regressions, 53 model/art checks, production build and browser helmet/wound/crawler review.
+
+See [4.50.1 evidence](RELEASE-4.50.1.md). Authored cast completion and target-device endurance remain open.
+
 ## Current character checkpoint — 4.50.0
 
 - [x] Integrate authored default Rook v7 into the live world and interiors, preserving weapon grips, armour, fallback and resource ownership.

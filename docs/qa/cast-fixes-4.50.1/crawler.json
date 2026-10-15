@@ -1,0 +1,31 @@
+{
+ "skin": "scout",
+ "detailedStatus": "ready",
+ "detailedModel": "rook-v7",
+ "appearance": {
+  "hideHelmet": "no"
+ },
+ "weapon": [
+  "carbine"
+ ],
+ "armour": {},
+ "hands": {
+  "mode": "diorama",
+  "active": false,
+  "cameraMask": 1
+ },
+ "motion": "idle",
+ "time": 24.76,
+ "paused": true,
+ "skinnedMeshes": 10,
+ "meshes": 63,
+ "playerY": 0,
+ "drawCalls": 202,
+ "triangles": 171053,
+ "geometries": 134,
+ "textures": 33,
+ "gripError": 5.551115123125783e-17,
+ "enemies": 1,
+ "crawlers": 1,
+ "corpses": 0
+}

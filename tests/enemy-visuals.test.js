@@ -76,3 +76,21 @@ test('rebuilding and disposing real enemies releases all owned geometry once and
  assert.ok(survivorCounts.every(count=>count()===0));assert.ok([...shared.values()].every(count=>count()===0));
  disposeObjectResources(survivor);assert.ok(survivorCounts.every(count=>count()===1));
 });
+
+test('painted cheek lesions remain in front of the curved skull for every archetype and appearance',()=>{
+ const outer=new T.Color(0x765346),inner=new T.Color(0x8d8268),ratios=[outer.g/outer.r,inner.g/inner.r],ray=new T.Raycaster(),center=new T.Vector3(),point=new T.Vector3();
+ const isWound=(colors,index)=>ratios.some(ratio=>Math.abs(colors.getY(index)/colors.getX(index)-ratio)<.0001);
+ for(const type of types)for(let appearance=0;appearance<6;appearance++){
+  const root=buildEnemy(type,appearance),head=root.userData.head;root.updateMatrixWorld(true);let checked=0;
+  head.traverse(mesh=>{if(!mesh.isMesh)return;const p=mesh.geometry.attributes.position,colors=mesh.geometry.attributes.color;
+   // Bone merging produces a non-indexed surface; a colour ratio identifies
+   // each painted lesion despite its varying vertex-lighting multiplier.
+   for(let i=0;i<p.count;i+=3){if(!isWound(colors,i))continue;
+    center.fromBufferAttribute(p,i).add(point.fromBufferAttribute(p,i+1)).add(point.fromBufferAttribute(p,i+2)).multiplyScalar(1/3);mesh.localToWorld(center);
+    ray.set(center.clone().add(new T.Vector3(0,0,1)),new T.Vector3(0,0,-1));const first=ray.intersectObject(head,true)[0];
+    assert.ok(first&&isWound(first.object.geometry.attributes.color,first.face.a),`${type}/${appearance}: wound triangle ${i/3} disappears inside the cheek`);checked++;
+   }
+  });
+  assert.ok(checked>=100,'sample both lesion layers, not only their boundary vertices');disposeObjectResources(root);
+ }
+});

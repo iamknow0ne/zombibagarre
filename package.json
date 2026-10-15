@@ -1,6 +1,6 @@
 {
   "name": "zombie-bagarre",
-  "version": "4.50.0",
+  "version": "4.50.1",
   "description": "Zombie Bagarre: Quarantine \u2014 2.5D survival action",
   "type": "module",
   "scripts": {
@@ -12,7 +12,10 @@
     "desktop:dev": "npm run build && electron . --steam-deck --windowed",
     "desktop:linux": "npm run build && node scripts/build-desktop.mjs",
     "desktop:mac": "npm run build && node scripts/build-desktop.mjs --mac",
-    "test:rook": "node scripts/art/test-rook.mjs"
+    "test:rook": "node scripts/art/test-rook.mjs",
+    "predev": "node scripts/art/pack-rook-runtime.mjs",
+    "prebuild": "node scripts/art/pack-rook-runtime.mjs",
+    "pretest:rook": "node scripts/art/pack-rook-runtime.mjs"
   },
   "dependencies": {
     "three": "^0.169.0"

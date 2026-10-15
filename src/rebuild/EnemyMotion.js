@@ -10,6 +10,7 @@ const styles={
 };
 export function animateEnemyDetails(root,time,pose,state={}){
  const d=root.userData,s=styles[d.type]||styles.walker,variant=d.variant||0,phase=pose.phase||0,walk=pose.walk||0;
+ d.body.position.z=0;
  const asym=variant%2?1:-1,breath=Math.sin(time*s.breath+variant*.7),sway=Math.sin(phase);
  d.body.rotation.x+=s.lean+breath*.008;
  d.body.rotation.z+=sway*walk*s.roll+Math.sin(time*.8+variant)*.012;
@@ -38,4 +39,25 @@ export function animateEnemyDetails(root,time,pose,state={}){
   const charge=Math.min(1,Math.max(0,state.windup));
   d.head.rotation.x-=charge*.28;d.body.rotation.x-=charge*.11;
  }
+}
+
+// Live crawling is a prone gait around the pelvis, not a corpse rotation.
+// Keep the head ahead of travel and solve both arms toward the ground. The
+// collision actor and gore visibility remain owned by the simulation/World.
+export function animateEnemyCrawl(root,time,state={}){
+ const d=root.userData,height=.44,phase=(d.gait||0)*.72,timeOffset=(d.variant||0)*.4;
+ root.position.y=(state.y||0)+height*root.scale.y;
+ d.body.position.set(0,0,-.78);d.body.rotation.set(Math.PI/2,0,0);
+ if(d.head){d.head.rotation.set(-Math.PI/2+.12+Math.sin(time*.9+timeOffset)*.025,Math.sin(time*.6+timeOffset)*.035,0);}
+ d.arms.forEach((arm,i)=>{
+  const cycle=phase+i*Math.PI,swing=Math.sin(cycle),lift=Math.max(0,Math.cos(cycle))*.035;
+  // Rest bone lengths match buildEnemy, including the wrist's small offset.
+  const upper=.29,lower=.28,down=height-arm.position.z-.028-lift,forward=.26+swing*.08;
+  const distance2=down*down+forward*forward;
+  const elbow=-Math.acos(Math.max(-1,Math.min(1,(distance2-upper*upper-lower*lower)/(2*upper*lower))));
+  const shoulder=Math.atan2(-forward,down)-Math.atan2(lower*Math.sin(elbow),upper+lower*Math.cos(elbow));
+  arm.rotation.set(shoulder-Math.PI/2,0,0);arm.userData.elbow.rotation.set(elbow,0,0);
+  arm.userData.wrist.rotation.set(-Math.PI/2-shoulder-elbow,0,0);
+ });
+ d.legs.forEach((leg,i)=>{leg.rotation.set(-.32+Math.sin(phase+i*Math.PI)*.035,0,0);leg.userData.knee.rotation.set(-.37,0,0);});
 }

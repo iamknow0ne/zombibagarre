@@ -98,8 +98,21 @@ function face(head,p,variant,type){
  // floating flat decal. Ray intersections are resolved only at model creation.
  head.updateWorldMatrix(true,true);const ray=new T.Raycaster(),origin=new T.Vector3(),direction=head.localToWorld(new T.Vector3(0,0,-1)).sub(head.localToWorld(new T.Vector3())).normalize();
  const lesion=(color,rx,ry,phase)=>{
-  const points=[];for(let i=0;i<11;i++){const a=i/10*Math.PI*2,r=.9+.1*Math.sin(i*2.7+variant),x=side*.111+Math.cos(a)*rx*r,y=-.043+Math.sin(a)*ry*r;origin.copy(head.localToWorld(new T.Vector3(x,y,.5)));ray.set(origin,direction);const hit=ray.intersectObject(skull)[0];points.push([x,y,hit?head.worldToLocal(hit.point).z+.002+phase:.12]);}
-  patch(head,color,points,'skin');
+  // Project interior vertices too: a fan spanning only the outline cuts into
+  // a convex cheek, hiding most of the wound despite correct edge placement.
+  const vertices=[],indices=[],segments=16,rings=4,center=side*width*.665;rx*=width/.167;
+  const project=(x,y)=>{origin.copy(head.localToWorld(new T.Vector3(x,y,.5)));ray.set(origin,direction);const hit=ray.intersectObject(skull)[0];vertices.push(x,y,hit?head.worldToLocal(hit.point).z+.0035+phase:.12);};
+  project(center,-.043);
+  for(let ring=1;ring<=rings;ring++)for(let i=0;i<segments;i++){
+   const a=i/segments*Math.PI*2,r=ring/rings*(.94+.06*Math.sin(a*3+variant));
+   project(center+Math.cos(a)*rx*r,-.043+Math.sin(a)*ry*r);
+  }
+  for(let i=0;i<segments;i++)indices.push(0,1+i,1+(i+1)%segments);
+  for(let ring=1;ring<rings;ring++)for(let i=0;i<segments;i++){
+   const a=1+(ring-1)*segments+i,b=1+(ring-1)*segments+(i+1)%segments,c=a+segments,d=b+segments;
+   indices.push(a,c,d,a,d,b);
+  }
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setAttribute('uv',new T.Float32BufferAttribute(new Array(vertices.length/3*2).fill(0),2));g.setIndex(indices);g.computeVertexNormals();mesh(head,g,color,'skin');
  };
  lesion(0x765346,.027,.046,0);lesion(0x8d8268,.012,.023,.001);
  if(type==='armored'){
