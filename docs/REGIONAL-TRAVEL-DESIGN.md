@@ -80,3 +80,23 @@ bullet holes and individual broken-window choices are not retained. Transient
 smoke, gore decals and old particle trails are intentionally cleared with the old
 renderer; gameplay projectiles, fires, damage, loot and enemies persist. This does
 not claim continuous rendering or background simulation of inactive regions.
+
+## Reloadable expeditions — 4.52.0
+
+The session-only policy above describes the initial regional slice. Safe-point
+**Save expedition & exit** now stores the active region, parked regions, global
+ledger and explicit RNG state in a separate versioned 2 MB local record. Resume
+prepares the rendered world and paused UI before consuming the one-use record.
+Origin-wide Web Locks serialize save/resume/discard; unsupported environments
+keep fresh play available and explain why checkpoint actions are unavailable.
+
+Quests, supplies, damage and rewards are restored without replaying events.
+Permanent hero identity must match. Corrupt/incompatible records remain available
+until the player explicitly replaces them. Existing portable character backup
+format is unchanged and does not include this expedition. Closing without Save
+& exit still loses unsaved expedition changes. No cloud sync or crash autosave.
+
+The codec regressions exercise current and parked regional state and deterministic
+continuation. Browser QA exercised real storage across reload, wave-one combat,
+upgrade selection, wave-two save and paused resume. Physical controller and
+full expedition/endurance checks remain open.

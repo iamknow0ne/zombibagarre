@@ -12,7 +12,9 @@ export default defineConfig({
   }],
   server: {
     port: 3000,
-    open: true
+    open: true,
+    // Native packaging/toolchains are large generated trees, not browser inputs.
+    watch: { ignored: ['**/.cache/**', '**/release/**', '**/.desktop-build/**', '**/android/**', '**/assets/source/**'] }
   },
   build: {
     target: 'es2022',

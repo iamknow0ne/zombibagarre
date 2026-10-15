@@ -2,6 +2,17 @@
 
 15 October 2026. Apple signing/notarization and Steam Deck troubleshooting remain deferred. The SNES demake and Android test edition are authorized; other ports remain deferred. Work is staged into tested releases, not an assertion that the whole game is finished.
 
+## Resumable expeditions — 4.52.0
+
+- [x] Separate bounded/versioned device checkpoint with explicit RNG state, active/parked regions and permanent-hero compatibility checks.
+- [x] One-use paused restoration with pre-render validation and shared browser transaction locks.
+- [x] Actual browser save/reload/restore, wave-one combat and wave-two upgrade/state preservation; compact landscape pause and portrait review.
+- [x] Full 655 regressions plus final 21 checkpoint/UI checks (one additional edge case).
+- [ ] Publish verified browser/Mac artifacts and update the local Android test APK.
+- [ ] Finish clean physical-phone gameplay/performance/picker checks after the recurring Dolby system crash overlay is resolved.
+
+See [release scope](RELEASE-4.52.0.md) and [QA evidence](qa/4.52.0/README.md).
+
 ## Release identity follow-up — 4.51.2
 
 - [x] Generate title/loading/diagnostic version from package metadata and reject stale built labels before packaging.
@@ -22,7 +33,7 @@ See [4.51.1 evidence](RELEASE-4.51.1.md). The Android physical gameplay gate rem
 
 - [x] Add reproducible offline APK packaging, Android Back/lifecycle handling and native backup file pickers.
 - [x] Build and verify the debug APK, including byte-identical game assets and signature; install/update it on the connected OnePlus 7 Pro (Android 11).
-- [ ] Complete visible device gameplay, performance, save picker and background/resume checks. The phone is locked; user unlock is required.
+- [ ] Complete visible device gameplay, performance, save picker and background/resume checks. Phone unlocked and actual GPU/gameplay verified. Recurring Dolby Atmos system crash dialogs interrupt input and performance measurements; full touch, picker and endurance acceptance remain open.
 - [ ] Publish an Android test milestone after actual device QA, clearly separate from a Play Store release and production signing.
 
 See [Android build guide](ANDROID.md) and [device evidence](qa/android-4.51/README.md).
@@ -32,8 +43,8 @@ This platform is now authorized; Steam Deck and other deferred ports stay deferr
 
 These items supersede historical “next” notes further down this file.
 
-1. Finish the authorized Android physical-device checks after the user unlocks the connected phone. Do not treat an activity launch, browser viewport emulation or CI build as phone gameplay evidence.
-2. Add resumable expeditions before expanding travel: a separate versioned, bounded snapshot with explicit RNG state, region-qualified identities, corruption recovery and atomic restore. Permanent character saves must remain independently recoverable; current regions survive only during one running session.
+1. Finish the authorized Android physical-device checks once the recurring system crash dialog is resolved. Do not treat an activity launch, browser viewport emulation or CI build as phone gameplay evidence.
+2. Add resumable expeditions before expanding travel: a separate versioned, bounded snapshot with explicit RNG state, region-qualified identities, corruption recovery and atomic restore. Permanent character saves must remain independently recoverable; 4.52.0 implements explicit safe-point Save & exit and paused resume; no automatic crash recovery or portable expedition backup.
 3. Extend useful interiors and curated vertical encounters, with reliable return/collision/quest rewards and controller/touch interaction. The workshop/apartment and one service roof are implemented; indoor combat, indoor TPS/FPS and elevated enemy encounters are not complete.
 4. Expand regional destinations and a late-run hidden-hangar quest, then ship launch/orbit/return and the first moon as separate tested slices. None of the spacecraft/planet milestones is implemented yet.
 

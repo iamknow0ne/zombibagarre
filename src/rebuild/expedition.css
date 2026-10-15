@@ -1,0 +1,55 @@
+/* Continue the field console: bone copy, amber decisions, flat rules, no HUD addition. */
+#menu .checkpoint-resume{margin-top:16px;min-height:48px;background:var(--bone);color:var(--coal)}
+#menu .checkpoint-resume:hover{background:#fff}
+#menu .checkpoint-resume:not([hidden])~#start{margin-top:8px;min-height:44px;background:transparent;border:1px solid var(--line);color:var(--bone)}
+.checkpoint-note{margin:8px 0 12px;font:11px/1.5 var(--mono);letter-spacing:0;color:var(--muted);overflow-wrap:anywhere}
+.checkpoint-error{color:var(--orange)}
+#pause-dialog #save-expedition{min-height:44px;margin-top:10px;width:100%}
+#pause-dialog #save-expedition:disabled{cursor:default}
+#pause-dialog #checkpoint-pause-status{font:11px/1.5 var(--mono);margin:6px 0 12px}
+#expedition-confirm-dialog{width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow-y:auto}
+#expedition-confirm-dialog button{min-height:44px}
+#expedition-confirm-dialog .text-button{width:100%;margin-top:8px}
+@media(max-height:500px){
+ #menu .checkpoint-resume{margin-top:8px;min-height:44px}
+ #menu .checkpoint-note{margin:4px 0 8px;font-size:10px}
+ #pause-dialog #checkpoint-pause-status{font-size:10px;line-height:1.4}
+}
+/* Phone landscape: decisions stay in view; the optional run ledger scrolls on
+   its own instead of pushing Resume and Save below a screenful of headings. */
+@media (orientation:landscape) and (max-height:500px){
+ #pause-dialog[open]{
+  display:grid;
+  width:min(800px,calc(100vw - 24px));
+  max-height:calc(100dvh - 24px);
+  padding:12px;
+  grid-template-columns:minmax(0,1.15fr) minmax(220px,1fr);
+  grid-template-areas:'heading resume' 'copy save' 'readout status' 'readout settings' 'tools quit';
+  gap:6px 14px;
+  align-items:start;
+ }
+ #pause-dialog>.label{display:none}
+ #pause-dialog>h2{grid-area:heading;font-size:28px;line-height:1.1;margin:4px 0;align-self:center}
+ #pause-dialog>h2+p{grid-area:copy;font-size:11px;line-height:1.4;margin:0;align-self:center}
+ #pause-dialog #pause-readout{grid-area:readout;display:block;max-height:100px;overflow:auto;overscroll-behavior:contain;font:10px/1.5 var(--mono);padding:6px 0;margin:0;scrollbar-width:thin}
+ #pause-dialog #pause-readout p{margin:0 0 4px}
+ #pause-dialog #pause-readout summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+ #pause-dialog #resume{grid-area:resume;min-height:44px;font-size:11px;padding:8px 12px;margin:0}
+ #pause-dialog #save-expedition{grid-area:save;min-height:44px;font-size:10px;padding:6px 10px;margin:0}
+ #pause-dialog #checkpoint-pause-status{grid-area:status;font:10px/1.4 var(--mono);margin:0;min-height:28px}
+ #pause-dialog #pause-settings{grid-area:settings;min-height:44px;font-size:10px;margin:0}
+ #pause-dialog .pause-tools{grid-area:tools;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+ #pause-dialog .pause-tools button{min-height:44px;padding:5px 3px;font-size:9px;letter-spacing:0;overflow-wrap:anywhere}
+ #pause-dialog .pause-tools .menu-icon{display:none}
+ #pause-dialog #quit{grid-area:quit;min-height:44px;width:100%;margin:0;font-size:9px;padding:5px}
+}
+/* The landscape title uses explicit grid rows. Checkpoint controls belong to
+   its expedition column; never let them auto-place after the destination links. */
+@media(min-width:700px) and (max-height:600px){
+ #menu .menu-copy #resume-expedition{grid-column:2;grid-row:3;margin-top:6px}
+ #menu .menu-copy #checkpoint-summary{grid-column:2;grid-row:4;margin:6px 0}
+ #menu .menu-copy:has(#resume-expedition:not([hidden])) .loadout{grid-row:3/6}
+ #menu .menu-copy:has(#resume-expedition:not([hidden])) #start{grid-column:2;grid-row:5;margin-top:4px}
+ #menu .menu-copy:has(#resume-expedition:not([hidden])) .menu-links{grid-row:6}
+ #menu .menu-copy:has(#resume-expedition[hidden]):has(#checkpoint-summary:not([hidden])) .menu-links{grid-row:5}
+}

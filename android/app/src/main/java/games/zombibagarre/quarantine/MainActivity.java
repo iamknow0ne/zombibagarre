@@ -138,11 +138,19 @@ public class MainActivity extends Activity {
     @Override public void onBackPressed(){
         if(customView!=null){hideCustomView();return;}if(game==null){finish();return;}
         game.evaluateJavascript("(()=>{const menu=document.getElementById('menu');if(menu&&!menu.hidden&&!document.querySelector('dialog[open]'))return 'exit';window.dispatchEvent(new CustomEvent('bagarre-android-back'));return 'handled';})()",value->{
-            if("\"exit\"".equals(value))new AlertDialog.Builder(this).setTitle("Leave Zombie Bagarre?").setMessage("Your character is saved. Expeditions start fresh when you reopen the game.").setPositiveButton("Close game",(d,w)->finish()).setNegativeButton("Stay",null).show();
+            if("\"exit\"".equals(value))new AlertDialog.Builder(this).setTitle("Leave Zombie Bagarre?").setMessage("Your character is saved. Use Save expedition & exit in the pause menu to keep an expedition for next time.").setPositiveButton("Close game",(d,w)->finish()).setNegativeButton("Stay",null).show();
         });
     }
     @Override protected void onPause(){activityActive=false;if(game!=null){WebView current=game;game.evaluateJavascript("window.dispatchEvent(new CustomEvent('bagarre-android-pause'));window.dispatchEvent(new Event('blur'))",ignored->{if(!activityActive&&game==current)current.pauseTimers();});game.onPause();}super.onPause();}
     @Override protected void onResume(){super.onResume();activityActive=true;if(game!=null){game.onResume();game.resumeTimers();game.evaluateJavascript("window.dispatchEvent(new CustomEvent('bagarre-android-resume'))",null);}immersive();}
-    @Override public void onWindowFocusChanged(boolean focused){super.onWindowFocusChanged(focused);if(focused)immersive();}
+    @Override public void onWindowFocusChanged(boolean focused){
+        super.onWindowFocusChanged(focused);
+        if(focused)immersive();
+        // System overlays can take input focus without pausing this Activity.
+        // Pause combat/audio underneath them; regaining focus never resumes combat.
+        if(activityActive&&game!=null)game.evaluateJavascript(focused
+            ?"window.dispatchEvent(new CustomEvent('bagarre-android-resume'))"
+            :"window.dispatchEvent(new CustomEvent('bagarre-android-pause'));window.dispatchEvent(new Event('blur'))",null);
+    }
     @Override protected void onDestroy(){if(fileCallback!=null)fileCallback.onReceiveValue(null);hideCustomView();if(game!=null){root.removeView(game);game.destroy();game=null;}super.onDestroy();}
 }

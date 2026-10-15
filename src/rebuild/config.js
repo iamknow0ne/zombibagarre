@@ -76,7 +76,15 @@ COVER.push(
   {x:-15,z:-11,w:.9,d:.9,kind:'barrel'},
 );
 export const PROP_HEALTH={car:320,barrier:230,planter:190,crate:65,barrel:42,rock:420};
-export function seededRandom(seed = 127) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+export function seededRandom(seed = 127) {
+  let state=seed|0;
+  const random=()=>{state=state+0x6D2B79F5|0;let t=Math.imul(state^state>>>15,1|state);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};
+  // Keep the callable API and exact sequence; checkpoints save the current
+  // generator state, rather than incorrectly restarting the expedition seed.
+  random.getState=()=>state;
+  random.setState=value=>{if(!Number.isInteger(value)||value< -2147483648||value>2147483647)throw new Error('Invalid random state');state=value;};
+  return random;
+}
 export const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 export function segmentCircle(ax, az, bx, bz, x, z, radius) {

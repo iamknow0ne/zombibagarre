@@ -16,7 +16,7 @@ pinned. The wrapper verifies the distribution checksum.
 npm ci
 npm run android:build
 adb devices
-adb -s YOUR_DEVICE_SERIAL install -r release/4.51.2/Zombie-Bagarre-4.51.2-Android-test.apk
+adb -s YOUR_DEVICE_SERIAL install -r release/4.52.0/Zombie-Bagarre-4.52.0-Android-test.apk
 adb -s YOUR_DEVICE_SERIAL shell am start -n games.zombibagarre.quarantine/.MainActivity
 ```
 
@@ -42,6 +42,8 @@ are separate release work.
 - Android Back closes the current dismissible menu or pauses gameplay. Mandatory
   upgrade/result screens retain their existing rules. Back at the title offers
   an exit confirmation. Rooftop training has its own pause/return path.
+- Losing window focus to system overlays pauses combat and audio. Regaining focus
+  does not automatically resume combat.
 - Backgrounding pauses and saves character progress, clears held input, suspends
   audio/timers and closes any active cartridge session. Returning stays paused.
 - The app has no Internet permission. Assets use a local HTTPS origin through
@@ -52,8 +54,10 @@ are separate release work.
 
 Character saves are separate from mobile Chrome and desktop saves. Use **Settings
 → Your save** to export/import a character. Existing saves are retained on APK
-updates. Current expeditions still reset after the game process closes; this
-edition does not introduce expedition suspend/resume.
+updates. From 4.52.0, **Pause → Save expedition & exit** stores one local expedition.
+Resume it from the title screen; it returns paused and consumes that checkpoint.
+Save again before leaving. Saving requires a safe outdoor position on foot.
+This is separate from portable character backups and is not automatic crash recovery.
 
 ## QA and diagnostics
 

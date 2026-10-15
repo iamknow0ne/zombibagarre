@@ -17,4 +17,4 @@ export class RegionUI {
   if(!touch){const point=world.screenPoint(target.x,2.2,target.z),prompt=document.getElementById('vehicle-world-prompt');prompt.hidden=!point.visible;prompt.style.left=point.x+'px';prompt.style.top=point.y+'px';const binding=this.input.source==='gamepad'?glyph(this.input.settings.bindings.interact,this.input.family):`<kbd>${keyboardHint(this.input.settings.keyboardBindings,'interact')}</kbd>`;prompt.innerHTML=binding+' '+label;}
  }
 }
-export const REGION_SAVE_POLICY='Your character is saved. Cities, loot and regional progress last until this expedition ends or the game closes.';
+export const REGION_SAVE_POLICY='Your hero is saved automatically. Pause → Save expedition & exit keeps this route, quests and loot on this device. Resume once from the title screen; save again before closing. Expedition saves need secure browser storage and are separate from hero backups.';

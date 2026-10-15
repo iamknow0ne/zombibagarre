@@ -5,6 +5,9 @@ let androidPlatform;
 import {completeRegionTravel} from './rebuild/Regions.js';
 import './rebuild/regions.css';
 import {RegionUI,REGION_SAVE_POLICY} from './rebuild/RegionUI.js';
+import {ExpeditionStore,checkpointUnavailable} from './rebuild/ExpeditionCheckpoint.js';
+import {prepareCheckpointResume,checkpointSummary,withCheckpointLock,checkpointLocksAvailable,CHECKPOINT_LOCK_UNAVAILABLE} from './rebuild/ExpeditionUI.js';
+import './rebuild/expedition.css';
 let regionUI;
 import {SettingsUI} from './rebuild/SettingsUI.js';
 import {keyboardHint} from './rebuild/KeyboardBindings.js';
@@ -84,9 +87,11 @@ import { WEAPONS, weaponStats, WAVE_NAMES, distance, lineBlocked, magazineSize, 
 const $=id=>document.getElementById(id);
 const qaSession=import.meta.env.DEV&&['retroQA','regionQA','interiorQA','playQA','controllerQA','touchQA','upgradeQA','rpgQA','bossQA','perspectiveQA'].some(k=>new URLSearchParams(location.search).has(k));
 const saveStore=new SaveStore(()=>localStorage,{ephemeral:qaSession});
+const expeditionStore=new ExpeditionStore(()=>localStorage,{ephemeral:qaSession});
+let expeditionConfirmAction=null,checkpointBusy=false;
 let saveUI,settingsUI;
 function save(key,value){const field=Object.keys(LEGACY_KEYS).find(k=>LEGACY_KEYS[k]===key);saveStore.set(field,value);}
-function persistNow(){save('zb-rpg-profile',sim.profile);saveStore.flush();}
+function persistNow(){rpgProfile=sim.profile;save('zb-rpg-profile',rpgProfile);return saveStore.flush();}
 const defaults={bulletTime:true,focusCinematics:true,questGuidance:true,visualStyle:'classic',progression:'sandbox',progressionPopups:true,volume:45,quality:matchMedia('(pointer:coarse)').matches?'balanced':'high',difficulty:'standard',gore:true,damageNumbers:true,enemyHealthBars:true,criticalCallouts:true,damageColors:true,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
 const stored=saveStore.read('settings');const settings={...defaults,...desktopDefaults(desktop),...(stored&&typeof stored==='object'?stored:{})};
 if(!['sandbox','hero'].includes(settings.progression))settings.progression='sandbox';
@@ -111,13 +116,112 @@ let loreFromPause=false;
 let settingsFromPause=false,arsenalReturn=null,lastHud=0,frameCount=0,lastFps=performance.now(),fps=0;
 function recordUI(){$('scrap-total').textContent=`${record.scrap} SCRAP`; $('best-score').textContent=record.score?Math.round(record.score).toLocaleString('en-US'):'—';$('record-detail').textContent=record.wins?`${record.wins} SUCCESSFUL EXTRACTION${record.wins===1?'':'S'}`:record.score?'STILL LOOKING FOR A WAY OUT':'YOUR STORY STARTS HERE';}
 function closeDialogs(){document.querySelectorAll('dialog[open]').forEach(d=>d.close());}
-function showDialog(id){input?.clear();if(id==='pause-dialog')persistNow();if(id==='pause-dialog'){$('resume').textContent=sim.interior?'BACK TO THE SHELTER':'BACK TO THE FIGHT';$('pause-dialog').querySelector('h2 + p').textContent=sim.interior?'Outdoor time is frozen. Your hero is saved; reloading starts a fresh expedition outside.':REGION_SAVE_POLICY;const p=sim.player,job=sim.layout.country?{title:'OLD MILL ROAD',detail:'Regional footpath · city wave is frozen'}:streetStatus(sim),lines=[weatherLabel(sim.weather)+(sim.weather.night?' · NIGHT CONTRACTS OPEN':''),`${sim.layout.country?'COUNTRY ROUTE':`WAVE ${sim.wave} / ${TOTAL_WAVES}`} · ${sim.toSpawn+sim.enemies.filter(e=>e.health>0).length} HOSTILES`,`SCORE ${sim.score.toLocaleString('en-US')} · ${sim.kills} KILLS · ${formatTime(sim.time)}`,p.equipped.map(k=>{const m=masteryProgress(p,k);return `${WEAPONS[k].name} / ${TIER_NAMES[m.tier]}${m.next?` · ${Math.ceil(m.next-m.xp)} DAMAGE TO EVOLVE`:''}`;}).join(' / '),[p.shield>0?`ARMOUR ${Math.ceil(p.shield)}`:'',p.overdrive>0?`OVERDRIVE ${Math.ceil(p.overdrive)}s`:'',p.freeze>0?`COLD FRONT ${Math.ceil(p.freeze)}s`:'',p.doubleScore>0?`BOUNTY ×2 ${Math.ceil(p.doubleScore)}s`:''].filter(Boolean).join(' · '),job?`${job.title} · ${job.detail}`:''];$('pause-readout').replaceChildren(...lines.filter(Boolean).map(text=>{const p=document.createElement('p');p.textContent=text;return p;}));if(fieldMessages.items.length){const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent='RECENT FIELD MESSAGES';details.append(summary);for(const text of fieldMessages.items){const line=document.createElement('p');line.textContent=text;details.append(line);}$('pause-readout').append(details);}}$(id).showModal();if(id==='pause-dialog')$('resume').focus();}
+function showDialog(id,{persist=true}={}){input?.clear();if(id==='pause-dialog'&&persist)persistNow();if(id==='pause-dialog'){$('resume').textContent=sim.interior?'BACK TO THE SHELTER':'BACK TO THE FIGHT';$('pause-dialog').querySelector('h2 + p').textContent='Your hero is saved automatically. Save & exit keeps this expedition on this device.';const p=sim.player,job=sim.layout.country?{title:'OLD MILL ROAD',detail:'Regional footpath · city wave is frozen'}:streetStatus(sim),lines=[weatherLabel(sim.weather)+(sim.weather.night?' · NIGHT CONTRACTS OPEN':''),`${sim.layout.country?'COUNTRY ROUTE':`WAVE ${sim.wave} / ${TOTAL_WAVES}`} · ${sim.toSpawn+sim.enemies.filter(e=>e.health>0).length} HOSTILES`,`SCORE ${sim.score.toLocaleString('en-US')} · ${sim.kills} KILLS · ${formatTime(sim.time)}`,p.equipped.map(k=>{const m=masteryProgress(p,k);return `${WEAPONS[k].name} / ${TIER_NAMES[m.tier]}${m.next?` · ${Math.ceil(m.next-m.xp)} DAMAGE TO EVOLVE`:''}`;}).join(' / '),[p.shield>0?`ARMOUR ${Math.ceil(p.shield)}`:'',p.overdrive>0?`OVERDRIVE ${Math.ceil(p.overdrive)}s`:'',p.freeze>0?`COLD FRONT ${Math.ceil(p.freeze)}s`:'',p.doubleScore>0?`BOUNTY ×2 ${Math.ceil(p.doubleScore)}s`:''].filter(Boolean).join(' · '),job?`${job.title} · ${job.detail}`:''];$('pause-readout').replaceChildren(...lines.filter(Boolean).map(text=>{const p=document.createElement('p');p.textContent=text;return p;}));if(fieldMessages.items.length){const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent='RECENT FIELD MESSAGES';details.append(summary);for(const text of fieldMessages.items){const line=document.createElement('p');line.textContent=text;details.append(line);}$('pause-readout').append(details);}}if(id==='pause-dialog')updateCheckpointPause();$(id).showModal();if(id==='pause-dialog')$('resume').focus();}
 function announce(kicker,title,boss=false){$('announcement').classList.toggle('boss-announcement',boss);$('announcement-kicker').textContent=kicker;$('announcement-title').textContent=title;$('announcement').classList.add('show');noticeUntil=performance.now()+(boss?2000:3200);}
 function toast(text){fieldMessages.add(text);$('toast').dataset.fullText=text;$('toast').textContent=(document.body.classList.contains('touch-layout')||document.body.classList.contains('compact-hud'))?compactFieldMessage(text):text;$('toast').setAttribute('aria-label',text);toastUntil=performance.now()+3000;}
 function rebuildMap(){world?.destroy();world=new World($('game'),settings,sim.district,sim.layout);world.applySettings(settings);$('map-seed').textContent=`ROUTE ${sim.seed.toString(36).toUpperCase()} / ${sim.layout.shape.toUpperCase()} / ${Math.round(sim.layout.bounds.maxX-sim.layout.bounds.minX)}×${Math.round(sim.layout.bounds.maxZ-sim.layout.bounds.minZ)}`;}
 function reshuffle(){let seed=freshSeed();if(runMode==='city'&&sim.layout.city&&(seed&3)===(sim.seed&3))seed=(seed+1)>>>0;sim=new Simulation({seed,mode:runMode,skin,profile:rpgProfile,progression:settings.progression,environment:settings});rebuildMap();}
 function start(){fieldMessages.clear();closeDialogs();if(sim.state!=='menu'||world.district!==0||sim.mode!==runMode)reshuffle();else world.clearDynamic();sim=new Simulation({seed:sim.seed,difficulty:settings.difficulty,meta:record.meta,mode:runMode,skin,profile:rpgProfile,progression:settings.progression,environment:settings});sim.start(loadout);sim.player.throwable=throwableLock(sim,equippedThrowable)?'frag':equippedThrowable;sim.setLoadout(equipped);sim.setBuildings(world.buildingTargets);audio.start();audio.lastBeat=0;input.clear();resultSaved=false;accumulator=0;$('menu').hidden=true;$('hud').hidden=false;$('game').focus();toast(world.viewRig.mode!=='diorama'?`PRECISION AIM · RIGHT MOUSE / ${keyboardHint(input.keyboardBindings,'toggleAim')} · OR YOUR CONTROLLER AIM BUTTON / TOUCH TARGET`:(input.source==='touch'?'LEFT THUMB TO MOVE · RIGHT THUMB TO AIM':input.source==='gamepad'?'LEFT STICK TO MOVE':`${['moveUp','moveLeft','moveDown','moveRight'].map(k=>keyboardHint(input.keyboardBindings,k)).join(' / ')} TO MOVE`)+' · AUTO FIRE IS '+(auto?'ON':'OFF'));}
-function menu(){closeDialogs();reshuffle();input.clear();$('menu').hidden=false;$('hud').hidden=true;$('damage-flash').style.opacity=0;recordUI();$('start').focus();}
+function menu(){closeDialogs();reshuffle();input.clear();$('menu').hidden=false;$('hud').hidden=true;$('damage-flash').style.opacity=0;recordUI();updateCheckpointMenu();($('resume-expedition').hidden?$('start'):$('resume-expedition')).focus();}
+
+function updateCheckpointMenu(){
+  const summary=expeditionStore.summary();
+  $('resume-expedition').hidden=!summary;
+  $('resume-expedition').disabled=!checkpointLocksAvailable();
+  $('start').querySelector('span').textContent=summary?'START NEW EXPEDITION':'ENTER THE QUARANTINE';
+  $('checkpoint-summary').textContent=!checkpointLocksAvailable()?CHECKPOINT_LOCK_UNAVAILABLE:summary?checkpointSummary(summary):expeditionStore.issue||'';
+  $('checkpoint-summary').hidden=!$('checkpoint-summary').textContent;
+  $('checkpoint-summary').classList.toggle('checkpoint-error',!!expeditionStore.issue);
+}
+function updateCheckpointPause(){
+  const reason=!checkpointLocksAvailable()?CHECKPOINT_LOCK_UNAVAILABLE:checkpointUnavailable(sim);
+  $('save-expedition').disabled=!!reason;
+  $('checkpoint-pause-status').textContent=reason||'Keeps your route, quests, loot and damage. Resume once from the title screen.';
+  $('checkpoint-pause-status').classList.remove('checkpoint-error');
+}
+async function saveExpeditionAndExit(){
+  if(checkpointBusy)return;checkpointBusy=true;const saving=sim;
+  try{
+    await withCheckpointLock(()=>{
+      if(sim!==saving||sim.state!=='paused'||!$('pause-dialog').open)throw new Error('Saving cancelled because the expedition changed. Pause and try again.');
+      if(!persistNow())throw new Error(saveStore.issue||'Your hero could not be saved. Stay in this expedition and try again.');
+      expeditionStore.save(sim);menu();
+    });
+  }catch(error){
+    $('checkpoint-pause-status').textContent=error.message||'The expedition could not be saved. Your current run is still here.';
+    $('checkpoint-pause-status').classList.add('checkpoint-error');
+  }finally{checkpointBusy=false;}
+}
+async function resumeExpedition(){
+  if(checkpointBusy)return;checkpointBusy=true;
+  const before={sim,world,runMode,skin,rpgProfile,equipped,loadout,equippedThrowable,progression:settings.progression,difficulty:settings.difficulty,mapSeed:$('map-seed').textContent};
+  const rollback=()=>{
+    $('pause-dialog').close();sim=before.sim;world=before.world;runMode=before.runMode;skin=before.skin;rpgProfile=before.rpgProfile;equipped=before.equipped;loadout=before.loadout;equippedThrowable=before.equippedThrowable;
+    settings.progression=before.progression;settings.difficulty=before.difficulty;
+    $('run-mode').value=runMode;$('skin-select').value=skin;$('difficulty').value=settings.difficulty;
+    for(const id of ['progression-mode','progression-setting'])$(id).value=settings.progression;
+    $('map-seed').textContent=before.mapSeed;$('menu').hidden=false;$('hud').hidden=true;
+  };
+  try{
+    await withCheckpointLock(()=>{
+      if(sim!==before.sim||sim.state!=='menu'||document.querySelector('dialog[open]'))throw new Error('Resume cancelled because the menu changed. Return to the title screen and try again.');
+      saveStore.checkExternal();if(saveStore.locked)throw new Error(saveStore.issue);
+      prepareCheckpointResume(expeditionStore,saveStore.read('profile'),candidate=>{
+        let view;
+        try{view=new World($('game'),settings,candidate.district,candidate.layout);view.applySettings(settings);view.hydrateRegion(candidate);view.update(candidate,0);return view;}
+        catch(error){view?.destroy();throw error;}
+      },{rollback,activate:restored=>{
+        sim=restored.sim;world=restored.world;world.renderer.resetState();world.requestRender=true;
+        runMode=sim.mode;skin=sim.skin;rpgProfile=sim.profile;equipped=[...sim.player.equipped];loadout=equipped[0];equippedThrowable=sim.player.throwable;
+        $('run-mode').value=runMode;$('skin-select').value=skin;
+        settings.progression=sim.progression;settings.difficulty=sim.difficulty;
+        for(const id of ['progression-mode','progression-setting'])$(id).value=sim.progression;
+        $('difficulty').value=sim.difficulty;
+        $('map-seed').textContent=`ROUTE ${sim.seed.toString(36).toUpperCase()} / ${sim.layout.shape.toUpperCase()} / ${Math.round(sim.layout.bounds.maxX-sim.layout.bounds.minX)}×${Math.round(sim.layout.bounds.maxZ-sim.layout.bounds.minZ)}`;
+        input.clear();input.perspective=false;resultSaved=false;accumulator=0;last=lastFps=performance.now();frameCount=0;
+        $('menu').hidden=true;$('hud').hidden=false;$('damage-flash').style.opacity=0;
+        showDialog('pause-dialog',{persist:false});
+        $('checkpoint-pause-status').textContent='Expedition restored. Take your time; press Back to the fight when ready.';
+      }});
+    });
+  }catch(error){
+    world.renderer.resetState();world.requestRender=true;
+    $('checkpoint-summary').hidden=false;$('checkpoint-summary').textContent=error.message||'This expedition could not be resumed. Your saved hero is unchanged.';$('checkpoint-summary').classList.add('checkpoint-error');
+    checkpointBusy=false;return;
+  }
+  // The paused world is now committed. Cleanup/audio failures must never roll it
+  // back after its checkpoint has been consumed or hide a successfully loaded run.
+  try{before.world.destroy();world.renderer.resetState();}catch(error){console.warn('Previous expedition scene cleanup failed',error);}
+  fieldMessages.clear();try{audio.start();audio.lastBeat=sim.time;}catch(error){console.warn('Expedition audio could not start',error);}
+  checkpointBusy=false;
+}
+function confirmExpeditionAction(action){
+  expeditionConfirmAction=action;
+  $('expedition-confirm-title').textContent=action==='unavailable'?'Play without expedition storage?':action==='new'?'Start a new expedition?':'Leave this expedition?';
+  $('expedition-confirm-copy').textContent=action==='unavailable'?'Device storage cannot be read. You can play this session, but saving may be unavailable. Any unreadable expedition will be kept.':action==='new'?'Your saved expedition will be replaced. Your permanent hero, equipment and learned skills stay with you.':'Unsaved city damage, quests and loot from this expedition will be lost. Your permanent hero stays. Choose Save & exit in pause to keep this expedition.';
+  $('expedition-confirm-accept').textContent=action==='unavailable'?'PLAY THIS SESSION':action==='new'?'START NEW EXPEDITION':'END EXPEDITION';
+  $('expedition-confirm-cancel').textContent=action==='unavailable'?'BACK TO TITLE':action==='new'?'KEEP SAVED EXPEDITION':'KEEP PLAYING';
+  $('expedition-confirm-error').textContent='';
+  showDialog('expedition-confirm-dialog');$('expedition-confirm-cancel').focus();
+}
+function requestNewExpedition(){
+  if(checkpointBusy)return;
+  if(!checkpointLocksAvailable()){start();return;}
+  let checkpoint;
+  try{checkpoint=expeditionStore.hasCheckpoint();}
+  catch(error){confirmExpeditionAction('unavailable');$('expedition-confirm-error').textContent=error.message;return;}
+  if(checkpoint)confirmExpeditionAction('new');else start();
+}
+async function acceptExpeditionAction(){
+  if(checkpointBusy)return;checkpointBusy=true;const action=expeditionConfirmAction;
+  try{
+    if(expeditionConfirmAction==='unavailable'){$('expedition-confirm-dialog').close();start();}
+    else if(action==='new'){await withCheckpointLock(()=>{if(expeditionConfirmAction!==action||!$('expedition-confirm-dialog').open)throw new Error('Replacement cancelled.');expeditionStore.discard();$('expedition-confirm-dialog').close();start();});}
+    else{if(!persistNow())throw new Error(saveStore.issue||'Your hero could not be saved.');$('expedition-confirm-dialog').close();menu();}
+    expeditionConfirmAction=null;
+  }catch(error){$('expedition-confirm-error').textContent=error.message;}finally{checkpointBusy=false;}
+}
+
 function togglePause(){if(loreUI?.dialog.open){loreUI.dialog.close();return;}if(rpgUI?.dialog.open){rpgUI.dialog.close();return;}if($('map-dialog').open){$('map-dialog').close();return;}if($('arsenal-dialog').open){$('arsenal-dialog').close();return;}if(sim.state==='paused'){if($('settings-dialog').open){$('settings-dialog').close();showDialog('pause-dialog');}else resume();}else if(activeGameplay(sim.state)){sim.pause();showDialog('pause-dialog');}}
 function resume(){androidPlatform?.resumeAudioOnGesture();closeDialogs();sim.resume();input.clear();accumulator=0;$('game').focus();}
 function toggleAuto(value){if(world?.viewRig.active&&value===undefined){input.once.toggleAim=true;return;}auto=value??!auto;settings.autoFire=auto;save('zb-quarantine-settings',settings);$('auto-action').setAttribute('aria-pressed',String(auto));toast(auto?'AUTO FIRE ENABLED':input?.source==='touch'?'MANUAL FIRE · DRAG THE RIGHT STICK':input?.source==='gamepad'?'MANUAL FIRE · USE YOUR HAND BUTTONS':'MANUAL AIM · HOLD LEFT MOUSE TO FIRE');}
@@ -249,7 +353,7 @@ try{
   $('run-mode').value=runMode;$('run-mode').onchange=()=>{runMode=$('run-mode').value;reshuffle();};$('skin-select').value=skin;$('skin-select').onchange=()=>{skin=$('skin-select').value;settings.skin=skin;save('zb-quarantine-settings',settings);sim.skin=skin;sim.player.skin=skin;applyProfile(sim);};$('map-action').onclick=openMap;$('street-job').onclick=openMap;$('map-journal').onclick=()=>{const origin=mapReturn;mapReturn=null;$('map-dialog').close();rpgUI.open();rpgUI.returnState=origin;rpgUI.tab='journal';rpgUI.journalFilter=sim.rpg.tracked?'all':'available';rpgUI.questSelected=sim.rpg.tracked;rpgUI.render();};$('map-done').onclick=()=>$('map-dialog').close();$('map-dialog').addEventListener('close',()=>{if(mapReturn==='paused'&&sim.state==='paused')showDialog('pause-dialog');else if(mapReturn&&mapReturn!=='menu'&&sim.state==='paused')resume();mapReturn=null;});$('vehicle-action').onclick=()=>{input.once.interact=true;};
   $('open-camp').onclick=openCamp;$('camp-done').onclick=()=>$('camp-dialog').close();$('arsenal-done').onclick=()=>$('arsenal-dialog').close();
   $('open-arsenal').onclick=openArsenal;$('arsenal-action').onclick=openArsenal;$('arsenal-dialog').addEventListener('close',()=>{if(arsenalReturn==='paused'&&sim.state==='paused')showDialog('pause-dialog');else if(arsenalReturn&&arsenalReturn!=='menu'&&sim.state==='paused')resume();arsenalReturn=null;});
-  $('start').onclick=start;$('retry').onclick=start;$('result-menu').onclick=menu;$('quit').onclick=menu;$('resume').onclick=resume;$('pause').onclick=togglePause;$('auto-action').onclick=()=>toggleAuto();
+  $('start').onclick=requestNewExpedition;$('retry').onclick=requestNewExpedition;$('result-menu').onclick=menu;$('quit').onclick=()=>confirmExpeditionAction('quit');$('save-expedition').onclick=saveExpeditionAndExit;$('resume-expedition').onclick=resumeExpedition;$('expedition-confirm-accept').onclick=acceptExpeditionAction;$('expedition-confirm-cancel').onclick=()=>$('expedition-confirm-dialog').close();$('resume').onclick=resume;$('pause').onclick=togglePause;$('auto-action').onclick=()=>toggleAuto();
   $('open-guide').onclick=()=>showDialog('guide-dialog');$('guide-done').onclick=()=>$('guide-dialog').close();
   $('open-settings').onclick=()=>openSettings();$('pause-settings').onclick=()=>openSettings(true);$('settings-done').onclick=()=>$('settings-dialog').close();$('settings-dialog').addEventListener('close',settingsClosed);
   for(const id of ['pause-dialog','upgrade-dialog','result-dialog'])$(id).addEventListener('cancel',e=>{e.preventDefault();if(id==='pause-dialog')resume();});
@@ -274,7 +378,7 @@ try{
   // Compile once before controls can replace scene materials. The async helper
   // polls material handles on timers and can hang in occluded windows or after disposal.
   if(import.meta.env.VITE_ANDROID_QA==='1'){const gl=world.renderer.getContext(),debug=gl.getExtension('WEBGL_debug_renderer_info');console.info('ANDROID_QA_GPU '+JSON.stringify({renderer:gl.getParameter(debug?.UNMASKED_RENDERER_WEBGL||gl.RENDERER),vendor:gl.getParameter(debug?.UNMASKED_VENDOR_WEBGL||gl.VENDOR),version:gl.getParameter(gl.VERSION)}));}
-  recordUI();world.applySettings(settings);world.update(sim,0,true);await loadingStage(88,'Warming lights, materials and controls');world.renderer.compile(world.scene,world.camera);last=performance.now();requestAnimationFrame(loop);
+  recordUI();updateCheckpointMenu();world.applySettings(settings);world.update(sim,0,true);await loadingStage(88,'Warming lights, materials and controls');world.renderer.compile(world.scene,world.camera);last=performance.now();requestAnimationFrame(loop);
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('controllerQA')){const {installControllerQA}=await import('../dev/controller-qa.js');installControllerQA(input,()=>sim);}
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('touchQA')){const {installTouchQA}=await import('../dev/touch-qa.js');installTouchQA(input,()=>sim,()=>world);}
   if(import.meta.env.DEV&&new URLSearchParams(location.search).has('upgradeQA')){const {installUpgradeQA}=await import('../dev/upgrade-qa.js');installUpgradeQA(input,()=>sim);}
