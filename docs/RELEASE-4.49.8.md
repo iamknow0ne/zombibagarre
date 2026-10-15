@@ -27,3 +27,12 @@ The raw result's listener-name residency heuristic is **invalid in the minified 
 ## Remaining gates
 
 Wider perspective/visibility coverage, production character likeness/animation/armour/LOD integration, an ordinary full expedition and sustained native gameplay remain open. Hangar/orbit/moon are downstream. Developer ID signing/notarization, Steam Deck and other ports remain deferred. No physical phone/controller test is claimed.
+
+
+## Publication
+
+Runtime `7b6548ffd9997aa237b2140df97e244defb35af3`; Pages workflow `38693865678` passed. The actual public menu displays BUILD 4.49.8 with no captured startup errors. [Published menu](qa/4.49.8/public-menu.png).
+
+[Mac release](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.49.8) asset `642948916` is 141,689,918 bytes and its GitHub digest matches the tested archive above. A separate isolated-profile native session reached ready, but hands-on UI access was blocked by the locked Mac; that process was stopped cleanly. No new native gameplay result is claimed.
+
+Deferred Steam Deck workflow `38694020429` was cancelled.

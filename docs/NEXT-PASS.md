@@ -263,6 +263,6 @@ Remaining major gates: character likeness/scarf, animation and production adapte
 - [x] 605 tests, production build, actual browser street/roof shots and threatened-shelter exit with health preserved on queued attack resolution.
 - [x] Frozen browser fixture completed 300 seconds of simulated combat. Late geometry counts fluctuate within a bounded range, textures and static ownership remain steady; this is not a native soak or controlled FPS comparison.
 - [x] Exact Apple Silicon archive signature and offline GPU startup passed.
-- [ ] Publish and verify browser and Mac artifacts. See [4.49.8 evidence](RELEASE-4.49.8.md).
+- [x] Published runtime `7b6548f`; Pages `38693865678` passed and actual public BUILD 4.49.8 loaded without errors. GitHub Mac asset digest matches the exact tested ZIP. See [4.49.8 evidence](RELEASE-4.49.8.md).
 
 Next: wider perspective/visibility checks and production character art remain the immediate gates, with ordinary expedition and sustained native gameplay still open. The first accurate service roof is complete; additional roofs/elevated enemy encounters and hangar/orbit/moon remain unfinished.
