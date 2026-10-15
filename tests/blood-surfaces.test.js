@@ -33,3 +33,16 @@ test('pools project onto raised pavement instead of being hidden below it',()=>{
  const w=world(),pavement=new T.Mesh(new T.BoxGeometry(8,.2,8),new T.MeshStandardMaterial());pavement.position.y=.1;w.scene.add(pavement);w.scene.updateMatrixWorld(true);w.bloodGroundTargets=[pavement];
  const stain=bloodDecal(w,new T.Vector3(0,.06,0),.4);assert.equal(stain.parent,pavement);const positions=stain.geometry.attributes.position;for(let i=0;i<positions.count;i++)assert.ok(Math.abs(positions.getY(i)-.2)<1e-5);assert.equal(stain.userData.wall,false);
 });
+test('raised blood pools project onto roofs above water and never float after roof removal',()=>{
+ const w=world(),roof=new T.Mesh(new T.BoxGeometry(6,.3,6),new T.MeshStandardMaterial());roof.position.y=3.15;w.scene.add(roof);w.buildingMeshes.set('roof',roof);w.layout.water=[{x:0,z:0,w:8,d:8}];
+ const stain=bloodDecal(w,new T.Vector3(0,3.36,0),.4);assert.equal(stain.parent,roof);assert.equal(stain.userData.wall,false);
+ roof.visible=false;assert.equal(bloodDecal(w,new T.Vector3(1,3.36,0),.4),null);roof.removeFromParent();ageBlood(w,0);assert.equal(w.decals.length,0);
+});
+test('ballistic wounds originate above the victim floor',()=>{
+ const w=world();bloodSpray(w,{x:0,z:0,baseY:6,kind:'bullet'},10,6,1.15);assert.ok(w.effects.length>0);assert.ok(w.effects.every(e=>e.mesh.position.y>7.05&&e.mesh.position.y<7.25));
+});
+test('raised stains skip distant mesh descendants after the bounds cache warms',()=>{
+ const w=world(),near=wall(w),far=new T.Group(),child=new T.Mesh(new T.BoxGeometry(2,2,2),new T.MeshStandardMaterial());far.add(child);far.position.set(1000,2,1000);w.scene.add(far);w.buildingMeshes.set('near',near);w.buildingMeshes.set('far',far);
+ bloodDecal(w,new T.Vector3(0,4.06,-1));let visits=0;const update=child.updateWorldMatrix.bind(child);child.updateWorldMatrix=(...args)=>{visits++;return update(...args);};
+ bloodDecal(w,new T.Vector3(1,4.06,-1));assert.equal(visits,0,'remote descendants must not be traversed or raycast per stain');
+});

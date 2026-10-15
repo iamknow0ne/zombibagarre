@@ -27,7 +27,7 @@ export function detonateThrowable(sim,h){
  for(const e of sim.enemies){if(e.health<=0||blastDistance({x:h.x,y,z:h.z},e)>radius+e.radius||blocked(bodyPoint(e)))continue;
   const type=key==='molotov'?'fire':key==='frost'?'frost':'electric',damage=h.damage*(key==='shock'&&e.wet>0?1.5:1);
   sim.damageEnemy(e,damage,0,0,{kind:type});
-  if(key==='molotov'&&!(e.wet>0)){e.burning=Math.max(e.burning||0,5);e.burnWeapon=null;sim.emit('ignite',{x:e.x,z:e.z});}
+  if(key==='molotov'&&!(e.wet>0)){e.burning=Math.max(e.burning||0,5);e.burnWeapon=null;sim.emit('ignite',{x:e.x,baseY:feetHeight(e),z:e.z});}
   if(key==='frost'){e.burning=0;e.wet=Math.max(e.wet||0,4);e.slow=Math.max(e.slow||0,5);e.chilled=Math.max(e.chilled||0,5);}
   if(key==='shock'){e.electrified=Math.max(e.electrified||0,2.5);e.slow=Math.max(e.slow||0,2);sim.emit('arc',{x:h.x,y,z:h.z,toX:e.x,toY:bodyPoint(e).y,toZ:e.z,tier:2});}
  }

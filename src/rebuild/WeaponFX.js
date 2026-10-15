@@ -29,11 +29,11 @@ export function weaponShot(world,e){
 }
 export function weaponImpact(world,e){
  const r=world.random,kind=e.material||materialFor(e.kind),hard=['metal','concrete','brick'].includes(kind),normal=e.normal||{x:0,z:1},tier=e.tier||0,heavy=['shotgun','revolver','marksman'].includes(e.weapon),power=heavy?5:3,color=WEAPON_FINISHES[e.weapon]?.accent||0xffcf85;
- if(hard)for(let i=0;i<(e.weapon==='shotgun'?4:heavy?9:4)+tier;i++)streak(world,e.x,e.y||1.1,e.z,normal.x*power+(r()-.5)*power,1+r()*power*.6,normal.z*power+(r()-.5)*power,color,.15+r()*.22,.6+r());
- if(e.weapon!=='flame'&&e.kind!=='building')debris(world,{x:e.x,z:e.z,y:e.y||1,material:kind,count:e.weapon==='shotgun'?2:heavy?5:2,power,scale:heavy?.45:.25,direction:{x:normal.x*2,z:normal.z*2}});
- if(e.weapon==='flame')world.flame(e.x,e.z,2+tier,e.y||.6);
- else if(e.weapon==='arc')world.lightning({x:e.x-.15,z:e.z,toX:e.x+.15,toZ:e.z+.05,y:.7,toY:1.4,tier});
- else plume(world,e.x,(e.y||1)+.1,e.z,heavy?.8:.4,.55,kind==='wood'?0x9c8b6b:0x9a9c91);
+ if(hard)for(let i=0;i<(e.weapon==='shotgun'?4:heavy?9:4)+tier;i++)streak(world,e.x,e.y??1.1,e.z,normal.x*power+(r()-.5)*power,1+r()*power*.6,normal.z*power+(r()-.5)*power,color,.15+r()*.22,.6+r());
+ if(e.weapon!=='flame'&&e.kind!=='building')debris(world,{x:e.x,z:e.z,y:e.y??1,material:kind,count:e.weapon==='shotgun'?2:heavy?5:2,power,scale:heavy?.45:.25,direction:{x:normal.x*2,z:normal.z*2}});
+ if(e.weapon==='flame')world.flame(e.x,e.z,2+tier,e.y??.6);
+ else if(e.weapon==='arc')world.lightning({x:e.x-.15,z:e.z,toX:e.x+.15,toZ:e.z+.05,y:(e.y??1.05)-.35,toY:(e.y??1.05)+.35,tier});
+ else plume(world,e.x,(e.y??1)+.1,e.z,heavy?.8:.4,.55,kind==='wood'?0x9c8b6b:0x9a9c91);
 }
 export function projectileMesh(b){
  const color=b.enemy?0xa7cb6c:WEAPON_FINISHES[b.weapon]?.accent||0xffe3a3,g=new T.Group();
@@ -45,10 +45,10 @@ export function projectileMesh(b){
   for(let i=0;i<2;i++){const m=new T.Mesh(new T.CylinderGeometry(i?.018:.007,i?.009:.007,length*(1+(b.tier||0)*.15),5),new T.MeshBasicMaterial({color:i?color:0xfffae4,transparent:true,opacity:i?.28:.95,depthWrite:false,blending:T.AdditiveBlending}));m.rotation.x=Math.PI/2;m.scale.setScalar(b.enemy?3:1);g.add(m);}
  }return g;
 }
-export function evolutionFX(world,e){const color=WEAPON_FINISHES[e.weapon].accent;for(let i=0;i<18;i++){const a=i/18*Math.PI*2;streak(world,e.x,1,e.z,Math.sin(a)*2,2+world.random()*2,Math.cos(a)*2,color,.65,1);} }
+export function evolutionFX(world,e){const color=WEAPON_FINISHES[e.weapon].accent;for(let i=0;i<18;i++){const a=i/18*Math.PI*2;streak(world,e.x,(e.baseY??e.y??0)+1,e.z,Math.sin(a)*2,2+world.random()*2,Math.cos(a)*2,color,.65,1);} }
 export function cutWave(world,e){
- if(e.weapon==='hammer'){const m=world.ring(e.radius,0xd8bc90,.06);m.position.set(e.x,.12,e.z);world.scene.add(m);world.effects.push({mesh:m,life:.35,max:.35,ring:true});world.smoke(e.x,e.z,6,.1);return;}
+ if(e.weapon==='hammer'){const m=world.ring(e.radius,0xd8bc90,.06);m.position.set(e.x,(e.baseY||0)+.12,e.z);world.scene.add(m);world.effects.push({mesh:m,life:.35,max:.35,ring:true});world.smoke(e.x,e.z,6,(e.baseY||0)+.1);return;}
  const f=WEAPON_FINISHES[e.weapon],g=new T.Group(),count=e.weapon==='dual'?2:1;
  for(let i=0;i<count;i++){const m=new T.Mesh(new T.TorusGeometry(e.radius*.65,.022,4,32,Math.PI*.8),new T.MeshBasicMaterial({color:f.accent,transparent:true,opacity:.7,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide}));m.rotation.set(Math.PI/2,i?-.2:.2,e.angle-.4*Math.PI);g.add(m);}
- g.position.set(e.x,.9,e.z);world.scene.add(g);world.effects.push({mesh:g,kind:'cutwave',life:.24,max:.24,vx:Math.sin(e.angle)*8,vz:Math.cos(e.angle)*8});
+ g.position.set(e.x,(e.baseY||0)+.9,e.z);world.scene.add(g);world.effects.push({mesh:g,kind:'cutwave',life:.24,max:.24,vx:Math.sin(e.angle)*8,vz:Math.cos(e.angle)*8});
 }

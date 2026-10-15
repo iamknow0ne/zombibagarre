@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {prepareCheckpointResume,checkpointSummary,withCheckpointLock,checkpointLocksAvailable,EXPEDITION_LOCK} from '../src/rebuild/ExpeditionUI.js';
+import {prepareCheckpointResume,checkpointSummary,withCheckpointLock,checkpointLocksAvailable,EXPEDITION_LOCK,syncExpeditionWeather} from '../src/rebuild/ExpeditionUI.js';
+import {Simulation} from '../src/rebuild/Simulation.js';
+import {captureExpedition,restoreExpedition} from '../src/rebuild/ExpeditionCheckpoint.js';
+import {weatherSettings,updateWeather} from '../src/rebuild/Weather.js';
 
 test('resume consumes its one-use save only after the replacement world is prepared',()=>{
  const calls=[],profile={level:3},sim={state:'paused'},world={destroy(){calls.push('destroy');}};
@@ -70,4 +73,29 @@ test('unavailable Web Locks rejects checkpoint changes before touching storage',
  assert.equal(checkpointLocksAvailable(null),false);assert.equal(checkpointLocksAvailable({}),false);
  await assert.rejects(withCheckpointLock(()=>{touched=true;},null),/Fresh expeditions and your hero still work/);
  assert.equal(touched,false);
+});
+
+test('resumed weather controls preserve the saved night and rain when an unrelated setting changes',()=>{
+ const original=new Simulation({seed:31,mode:'city',profile:{},environment:{dayCycle:'night',weatherMode:'rain',weatherEffects:'full'}});original.start();original.pause();
+ const sim=restoreExpedition(captureExpedition(original)),settings={dayCycle:'day',weatherMode:'clear',weatherEffects:'off',volume:45};
+ const controls={'day-cycle':{value:'day'},'weather-mode':{value:'clear'},'weather-effects':{value:'off'}};
+ syncExpeditionWeather(settings,sim.weather.options,id=>controls[id]);
+ assert.equal(controls['day-cycle'].value,'night');assert.equal(controls['weather-mode'].value,'rain');
+ assert.equal(settings.weatherEffects,'off');assert.equal(controls['weather-effects'].value,'off');
+ // Mirror the settings screen's shared input handler after moving only volume.
+ settings.volume=20;settings.dayCycle=controls['day-cycle'].value;settings.weatherMode=controls['weather-mode'].value;
+ sim.weather.options=weatherSettings(settings);updateWeather(sim,0);
+ assert.equal(sim.weather.hour,23);assert.equal(sim.weather.night,true);assert.equal(sim.weather.kind,'rain');
+});
+
+test('failed checkpoint consumption restores title weather settings and controls',()=>{
+ const settings={dayCycle:'day',weatherMode:'clear',weatherEffects:'subtle'},before=weatherSettings(settings);
+ const controls={'day-cycle':{value:'day'},'weather-mode':{value:'clear'},'weather-effects':{value:'subtle'}},control=id=>controls[id];
+ let disposed=false;
+ const sim={weather:{options:{dayCycle:'night',weatherMode:'snow',weatherEffects:'full'}}};
+ assert.throws(()=>prepareCheckpointResume({read:()=>sim,consume(){throw new Error('Storage denied');}}, {},()=>({destroy(){disposed=true;}}),{
+  activate:({sim})=>syncExpeditionWeather(settings,sim.weather.options,control),
+  rollback:()=>syncExpeditionWeather(settings,before,control)
+ }),/Storage denied/);
+ assert.deepEqual(settings,before);assert.equal(controls['day-cycle'].value,'day');assert.equal(controls['weather-mode'].value,'clear');assert.equal(controls['weather-effects'].value,'subtle');assert.equal(disposed,true);
 });

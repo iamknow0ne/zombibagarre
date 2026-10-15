@@ -1,3 +1,4 @@
+import {fragmentFloor,stepRemainsElevation} from './EffectElevation.js';
 import {nearestVisiblePieces} from './RenderCandidates.js';
 import {RegionVisuals} from './RegionVisuals.js';
 import {disposeObjectResources} from './ResourceDisposal.js';
@@ -33,7 +34,7 @@ import {CombatOverlay} from './CombatOverlay.js';
 import {bloodDecal,bloodSpray,stepBlood,ageBlood} from './BloodFX.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {weaponShot,weaponImpact,projectileMesh,evolutionFX,cutWave,ejectCasing,plume} from './WeaponFX.js';
-import {stepFragment,boxNormal,reflectVelocity} from './Ballistics.js';
+import {stepFragment,boxNormal,reflectVelocity,propSpan} from './Ballistics.js';
 import {buildVehicle,animateVehicle} from './VehicleVisuals.js';
 import {animateWeapons,updateBladeTrails} from './WeaponRig.js';
 import {buildEnemy} from './EnemyVisuals.js';
@@ -427,30 +428,30 @@ export class World {
     if(!this.wallTex)this.wallTex=texture(256,256,(c,W,H)=>{const r=seededRandom(621);c.fillStyle='#c4c0ae';c.fillRect(0,0,W,H);for(let i=0;i<9500;i++){c.fillStyle=`rgba(61,68,59,${r()*.15})`;c.fillRect(r()*W,r()*H,1+r()*5,1+r()*3);}for(let i=0;i<40;i++){const x=r()*W,y=r()*H;c.fillStyle='rgba(75,81,70,.08)';c.fillRect(x,y,r()*30,r()*55);}});
     const m=mat(color).clone();m.map=this.wallTex;m.bumpMap=this.wallTex;m.bumpScale=.035;return m;
   }
-  decal(x,z,radius=.4){return bloodDecal(this,new T.Vector3(x,.06,z),radius);}
+  decal(x,z,radius=.4,baseY=0){return bloodDecal(this,new T.Vector3(x,baseY+.06,z),radius);}
   detachParts(e){
     const gore=goreProfile(this.settings);if(!gore.dismember)return;
     const baseCount=e.part==='legs'?2:e.part==='head'?8:e.part==='all'?7:1;const count=Math.min(Math.ceil(baseCount*(['head','all'].includes(e.part)?gore.tissue:1)),Math.max(0,gore.gibs-this.effects.filter(e=>e.kind==='gib').length));
     for(let i=0;i<count;i++){
       const head=e.part==='head',mesh=new T.Mesh(head?fragmentGeometry('flesh',i):new T.CapsuleGeometry(.65,1.6,3,6),mat(head?0x7d2921:i%2?0x3e5148:0x7e3428));
-      const size=head?.05+this.random()*.12:.11+this.random()*.1;mesh.scale.set(size,size,head?size:.28+this.random()*.25);mesh.position.set(e.x,e.part==='legs'?.45:1.4,e.z);mesh.castShadow=true;this.scene.add(mesh);
+      const size=head?.05+this.random()*.12:.11+this.random()*.1;mesh.scale.set(size,size,head?size:.28+this.random()*.25);mesh.position.set(e.x,(e.baseY||0)+(e.part==='legs'?.45:1.4),e.z);mesh.castShadow=true;this.scene.add(mesh);
       const angle=this.random()*Math.PI*2,power=head?3+this.random()*5:4+this.random()*8,life=6+this.random()*4;
       this.effects.push({mesh,kind:'gib',vx:Math.sin(angle)*power,vy:2+this.random()*6,vz:Math.cos(angle)*power,life,max:life,bounce:.25,spin:(this.random()-.5)*15});
     }
-    bloodSpray(this,e,e.part==='head'?24:14,8,e.part==='head'?1.7:.6);this.decal(e.x,e.z,.5);
+    bloodSpray(this,e,e.part==='head'?24:14,8,e.part==='head'?1.7:.6);this.decal(e.x,e.z,.5,e.baseY||0);
   }
   leaveRemains(e){
-    if(e.bossProfile){const mesh=buildBossModel(e,this.surfaces);mesh.position.set(e.x,0,e.z);mesh.rotation.y=e.angle;this.scene.add(mesh);this.effects.push({mesh,kind:'boss-remains',life:8,max:8});return;}
-    const mesh=this.character(e.enemyType||'walker',e.bossKind,'scout',e.enemyId);mesh.position.set(e.x,0,e.z);mesh.rotation.y=e.angle||0;mesh.userData.frost.visible=false;
+    if(e.bossProfile){const mesh=buildBossModel(e,this.surfaces);mesh.position.set(e.x,e.baseY||0,e.z);mesh.rotation.y=e.angle;this.scene.add(mesh);this.effects.push({mesh,baseY:e.baseY||0,kind:'boss-remains',life:8,max:8});return;}
+    const mesh=this.character(e.enemyType||'walker',e.bossKind,'scout',e.enemyId);mesh.position.set(e.x,e.baseY||0,e.z);mesh.rotation.y=e.angle||0;mesh.userData.frost.visible=false;
     const gore=goreProfile(this.settings),gory=gore.dismember,death=e.death||'shot',slicePart=e.slicePart||'arm';
     if(gory&&(death==='headshot'||death==='exploded'||(death==='sliced'&&slicePart==='head'))){mesh.userData.body.children.filter(o=>o.position.y>1.48).forEach(o=>o.visible=false);this.detachParts({...e,part:death==='headshot'?'head':death==='sliced'?slicePart:'all'});}
     if(gory&&(e.crawling||death==='exploded'||(death==='sliced'&&slicePart==='legs')))mesh.userData.legs.forEach(m=>m.visible=false);
     if(gory&&(e.missingArm||death==='exploded'||(death==='sliced'&&slicePart==='arm')))mesh.userData.arms[0].visible=false;
     if(gory&&death==='sliced'&&slicePart!=='head')this.detachParts({...e,part:slicePart});
     if(death==='burned')mesh.traverse(m=>{if(m.isMesh&&m.material?.isMeshStandardMaterial){m.material=mat(0x30372e);}});
-    this.scene.add(mesh);this.corpses.push({mesh,age:0,death,variant:e.variant??Math.floor(this.random()*6),fallSpeed:e.fallSpeed||1,pose:deathMotion(e.variant??Math.floor(this.random()*6),e.twist||0),dx:(e.dx||0)*.12,dz:(e.dz||0)*.12,crawling:e.crawling,settled:false});
+    this.scene.add(mesh);this.corpses.push({mesh,baseY:e.baseY||0,age:0,death,variant:e.variant??Math.floor(this.random()*6),fallSpeed:e.fallSpeed||1,pose:deathMotion(e.variant??Math.floor(this.random()*6),e.twist||0),dx:(e.dx||0)*.12,dz:(e.dz||0)*.12,crawling:e.crawling,settled:false});
     if(this.corpses.length>28)this.removeDynamic(this.corpses.shift().mesh);
-    if(gore.enabled){this.decal(e.x,e.z,death==='exploded'?1.25:.8);if(death!=='burned')bloodSpray(this,{...e,kind:death==='sliced'?'slice':'ballistic'},death==='headshot'?22:14,death==='exploded'?12:6,e.crawling?.35:death==='headshot'?1.65:1.1);}
+    if(gore.enabled){this.decal(e.x,e.z,death==='exploded'?1.25:.8,e.baseY||0);if(death!=='burned')bloodSpray(this,{...e,kind:death==='sliced'?'slice':'ballistic'},death==='headshot'?22:14,death==='exploded'?12:6,e.crawling?.35:death==='headshot'?1.65:1.1);}
   }
   destroyProp(e){
     if(e.kind==='building'){const building=this.buildingMeshes.get(e.id);if(building){building.visible=false;building.userData.collapsed=true;this.shake=.35;}return;}if(e.kind==='rubble'){debris(this,{x:e.x,z:e.z,material:e.material||'concrete',count:12,power:3});return;}const group=this.propMeshes.get(e.id);if(group)group.visible=false;if(e.sunk){this.splash(e.x,e.z,6);return;}
@@ -596,26 +597,26 @@ export class World {
     if(e.type==='structural-impact'){const before=this.effects.length;this.smoke(e.x,e.z,1,Math.max(.15,e.y-.2),0xa59d87);for(const dust of this.effects.slice(before)){dust.mesh.scale.multiplyScalar(1+e.power*.25);dust.vy*=.5;dust.vx*=1.5;}debris(this,{x:e.x,z:e.z,y:e.y,material:e.material,count:Math.ceil(e.power*2),power:e.power+1,scale:.65+e.size*.15});this.shake=Math.max(this.shake,Math.min(.35,e.power*.055));}
     if(e.type==='vehicle-hit'){debris(this,{x:e.x,z:e.z,material:'metal',count:12,power:4});this.shake=Math.max(this.shake,Math.min(.3,e.power*.012));}
     if(e.type==='vehicle-skid')this.smoke(e.x,e.z,1,.1,0x7c8075);
-    if(e.type==='slice'){if(e.weapon==='hammer'&&e.hits){const x=e.x+Math.sin(e.angle)*1.7,z=e.z+Math.cos(e.angle)*1.7;debris(this,{x,z,y:.1,material:'earth',count:e.combo===2?12:5,power:4,scale:.45});this.smoke(x,z,3,.1);}if(e.hits)this.shake=Math.max(this.shake,e.combo===2?.12:.045);}
+    if(e.type==='slice'){if(e.weapon==='hammer'&&e.hits){const x=e.x+Math.sin(e.angle)*1.7,z=e.z+Math.cos(e.angle)*1.7;debris(this,{x,z,y:(e.baseY||0)+.1,material:e.baseY>0?'concrete':'earth',count:e.combo===2?12:5,power:4,scale:.45});this.smoke(x,z,3,(e.baseY||0)+.1);}if(e.hits)this.shake=Math.max(this.shake,e.combo===2?.12:.045);}
     if(e.type==='shoot')weaponShot(this,e);
     if(e.type==='impact')weaponImpact(this,e);
     if(e.type==='evolution')evolutionFX(this,e);
     if(e.type==='cut-wave')cutWave(this,e);
     if(e.type==='ricochet')weaponImpact(this,{...e,kind:'car',normal:{x:e.dx/20,z:e.dz/20}});
     if(e.type==='reload'&&['revolver','launcher'].includes(e.weapon)){const p=this.player.position;for(let i=0;i<(e.weapon==='revolver'?6:4);i++)ejectCasing(this,{...e,x:p.x,y:p.y+1.1,z:p.z,angle:this.player.rotation.y},.3+i*.04);}
-    if(e.type==='hit'){const target=this.characters.get(e.enemyId);if(target&&!target.userData.boss)target.userData.impact={age:0,amount:e.amount,angle:Math.atan2(e.dx??0,e.dz??1)-target.rotation.y};if(this.settings.gore){bloodSpray(this,e,Math.min(12,4+Math.ceil(Math.sqrt(e.amount))),4+Math.min(6,Math.sqrt(e.amount)*.5),e.crawling?.35:e.headshot?1.65:1.05);}else this.effect(e.x,e.z,0xb4ad87,3,2);}
+    if(e.type==='hit'){const target=this.characters.get(e.enemyId);if(target&&!target.userData.boss)target.userData.impact={age:0,amount:e.amount,angle:Math.atan2(e.dx??0,e.dz??1)-target.rotation.y};if(this.settings.gore){bloodSpray(this,e,Math.min(12,4+Math.ceil(Math.sqrt(e.amount))),4+Math.min(6,Math.sqrt(e.amount)*.5),e.crawling?.35:e.headshot?1.65:1.05);}else this.effect(e.x,e.z,0xb4ad87,3,2,'spark',(e.baseY||0)+1.05);}
     if(e.type==='kill')this.leaveRemains(e);if(e.type==='dismember')this.detachParts(e);
     if(e.type==='destroy')this.destroyProp(e);if(e.type==='building-stage')this.damageBuildingStage(e);
     if(e.type==='prop-hit'&&e.kind==='building'&&e.health>0&&!e.thermal)this.buildingImpact(e);
     if(e.type==='prop-hit'&&e.kind!=='building'&&!e.weapon)debris(this,{x:e.x,z:e.z,material:materialFor(e.kind),count:5,power:2,scale:.4});
-    if(e.type==='arc')this.lightning(e);if(e.type==='ignite')this.flame(e.x,e.z,6);if(e.type==='electrify')this.effect(e.x,e.z,0xa6e9ed,6,3);
+    if(e.type==='arc')this.lightning(e);if(e.type==='ignite')this.flame(e.x,e.z,6,(e.baseY||0)+.6);if(e.type==='electrify')this.effect(e.x,e.z,0xa6e9ed,6,3,'spark',(e.baseY||0)+1.05);
     if(e.type==='boss-phase'||e.type==='boss-defeated'||(e.type==='slam'&&e.bossOwner)||e.type==='boss-charge-impact')bossImpactFX(this,e);
     if(e.type==='explosion'||(e.type==='slam'&&!e.bossOwner)){
       const force=Math.max(.35,Math.min(1.7,(e.radius||3)/3)),tier=e.tier||0,height=Math.max(0,e.y||0);
       if(!e.water)this.flame(e.x,e.z,e.source==='car'?14:Math.ceil(5*force+tier),height+.4,null,true);const lamp=this.blastLights.reduce((a,b)=>a.userData.life<b.userData.life?a:b);lamp.position.set(e.x,height+2,e.z);lamp.userData.life=.55;lamp.userData.power=e.water?40:160;lamp.color.set(e.water?0xb1d9e0:0xff9d42);lamp.intensity=lamp.userData.power;if(!e.water)this.effect(e.x,e.z,0xf2ae5e,Math.ceil(20*force+tier*3),8+force*3,'spark',height+.8);if(!e.water)debris(this,{x:e.x,z:e.z,y:height+.7,material:height>1?'metal':e.source==='car'||e.source==='barrel'?'metal':'earth',count:Math.ceil(24*force+tier*3),power:6+force*3,scale:.7+force*.3});this.smoke(e.x,e.z,e.water?6:Math.ceil(9*force),e.water?0:height+.4,e.water?0xb8cbca:0x69665c);this.shake=Math.min(.5,.22*force);
       const mesh=this.ring(e.radius,e.water?0x83aaac:0xf4ba77,.025);mesh.position.set(e.x,e.water?this.waterLevel()+.08:height+.1,e.z);if(height>1)mesh.quaternion.copy(this.camera.quaternion);mesh.userData.disposable=true;this.scene.add(mesh);this.effects.push({mesh,life:.22,max:.22,ring:true,opacity:.24});
     }
-    if(e.type==='melee'){const mesh=this.ring(e.radius,0xf0dfb7,.08);mesh.position.set(e.x,.1,e.z);mesh.userData.disposable=true;this.scene.add(mesh);this.effects.push({mesh,life:.25,max:.25,ring:true});}
+    if(e.type==='melee'){const mesh=this.ring(e.radius,0xf0dfb7,.08);mesh.position.set(e.x,(e.baseY||0)+.1,e.z);mesh.userData.disposable=true;this.scene.add(mesh);this.effects.push({mesh,life:.25,max:.25,ring:true});}
     if(e.type==='hurt')this.shake=.2;
     if(e.type==='spark')this.effect(e.x,e.z,0xddbe84,5,3);
   }
@@ -648,7 +649,7 @@ export class World {
     this.playerRing.position.set(p.x,(p.supportY||0)+.045,p.z);this.playerRing.material.opacity=p.invulnerable>0?.4+.3*Math.sin(t*30):.8;
     this.bossTell.visible=false;
     this.extractionRing.visible=sim.state==='extracting'||sim.state==='victory';this.extractionRing.rotation.z=t*.4;
-    this.syncMap(this.characters,sim.enemies,e=>{const m=e.type==='boss'?buildBossModel(e,this.surfaces):this.character(e.type,e.bossKind,'scout',e.id);m.position.set(e.x,0,e.z);m.rotation.y=e.angle;this.scene.add(m);return m;},(m,e)=>{m.position.lerp(new T.Vector3(e.x,e.y||0,e.z),1-Math.exp(-dt*24));m.rotation.y+=Math.atan2(Math.sin(e.angle-m.rotation.y),Math.cos(e.angle-m.rotation.y))*(1-Math.exp(-dt*12));if(e.type==='boss'){animateBossModel(m,e,t);if(e.bossPhase===2&&motionDt>0&&this.random()<motionDt*3){if(e.bossKind==='cinder')plume(this,e.x,e.bossHeight*.91,e.z,.7,1.8,0x6e6e61);else this.effect(e.x,e.z,e.bossProfile.color,1,1,'ember',e.bossHeight*.7);}return;}this.animateCharacter(m,t+e.phase,e.windup<=0,false,motionDt,e);m.scale.setScalar((e.type==='brute'?1.5:e.type==='runner'?.85:1)*(e.flash>0?1.035:1)*(e.elite?1.15:1));if(e.crawling)animateEnemyCrawl(m,t,e);m.userData.legs.forEach(leg=>leg.visible=!e.crawling||!goreProfile(this.settings).dismember);m.userData.arms[0].visible=!e.missingArm||!goreProfile(this.settings).dismember;if(e.burning>0){if(this.random()<dt*15)this.flame(e.x,e.z,2,.6);if(this.random()<dt*2)this.smoke(e.x,e.z,1);}if(e.electrified>0&&this.random()<dt*14)this.lightning({x:e.x-.35,z:e.z,y:.4,toX:e.x+.35,toZ:e.z+.1,toY:1.7});m.userData.frost.visible=e.chilled>0||sim.player.freeze>0||(sim.player.frost>0&&e.slow>0);if(m.userData.frost.visible&&this.random()<dt*4)this.effect(e.x,e.z,0xa2d8e3,1,1,'glass');});
+    this.syncMap(this.characters,sim.enemies,e=>{const m=e.type==='boss'?buildBossModel(e,this.surfaces):this.character(e.type,e.bossKind,'scout',e.id);m.position.set(e.x,e.y||0,e.z);m.rotation.y=e.angle;this.scene.add(m);return m;},(m,e)=>{m.position.lerp(new T.Vector3(e.x,e.y||0,e.z),1-Math.exp(-dt*24));m.rotation.y+=Math.atan2(Math.sin(e.angle-m.rotation.y),Math.cos(e.angle-m.rotation.y))*(1-Math.exp(-dt*12));if(e.type==='boss'){animateBossModel(m,e,t);if(e.bossPhase===2&&motionDt>0&&this.random()<motionDt*3){if(e.bossKind==='cinder')plume(this,e.x,e.bossHeight*.91,e.z,.7,1.8,0x6e6e61);else this.effect(e.x,e.z,e.bossProfile.color,1,1,'ember',e.bossHeight*.7);}return;}this.animateCharacter(m,t+e.phase,e.windup<=0,false,motionDt,e);m.scale.setScalar((e.type==='brute'?1.5:e.type==='runner'?.85:1)*(e.flash>0?1.035:1)*(e.elite?1.15:1));if(e.crawling)animateEnemyCrawl(m,t,e);m.userData.legs.forEach(leg=>leg.visible=!e.crawling||!goreProfile(this.settings).dismember);m.userData.arms[0].visible=!e.missingArm||!goreProfile(this.settings).dismember;if(e.burning>0){if(this.random()<motionDt*15)this.flame(e.x,e.z,2,(e.y||0)+.6);if(this.random()<motionDt*2)this.smoke(e.x,e.z,1,(e.y||0)+.6);}if(e.electrified>0&&this.random()<motionDt*14)this.lightning({x:e.x-.35,z:e.z,y:(e.y||0)+.4,toX:e.x+.35,toZ:e.z+.1,toY:(e.y||0)+1.7});m.userData.frost.visible=e.chilled>0||sim.player.freeze>0||(sim.player.frost>0&&e.slow>0);if(m.userData.frost.visible&&this.random()<motionDt*4)this.effect(e.x,e.z,0xa2d8e3,1,1,'glass',(e.y||0)+1);});
     lap('actors');
     this.syncMap(this.projectiles,sim.bullets,b=>{const m=projectileMesh(b);this.scene.add(m);return m;},(m,b)=>{m.scale.set(1+focusBlend*.2,1+focusBlend*.2,b.weapon==='launcher'?1:1+focusBlend*1.5);m.position.set(b.x,b.y??(b.enemy?.9:1.1),b.z);m.rotation.y=Math.atan2(b.vx,b.vz);m.rotation.x=-Math.atan2(b.vy||0,Math.hypot(b.vx,b.vz));if(b.weapon==='launcher'&&motionDt>0){m.userData.trail=(m.userData.trail||0)+motionDt;if(m.userData.trail>.055){m.userData.trail=0;plume(this,b.x,b.y,b.z,.12,.35,0xada58c);}}});
     this.syncMap(this.items,sim.pickups,item=>{
@@ -657,7 +658,7 @@ export class World {
       const tex=texture(256,64,(c)=>{c.fillStyle='#162b2b';c.fillRect(0,0,256,64);c.fillStyle=`#${color.toString(16)}`;c.font='bold 25px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(POWERUPS[item.type].name,128,32);});
       const label=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));label.position.y=.75;label.scale.set(1.9,.48,1);label.userData.disposableMaterial=true;g.add(label);g.userData.label=label;
       const r=this.ring(.5,color,.07);r.position.y=-.18;r.userData.disposable=true;g.add(r);this.scene.add(g);return g;
-    },(m,i)=>{m.position.set(i.x,.3+Math.sin(t*3+i.id)*.045,i.z);m.userData.label.visible=Math.hypot(p.x-i.x,p.z-i.z)<8;});
+    },(m,i)=>{m.position.set(i.x,(i.y||0)+.3+Math.sin(t*3+i.id)*.045,i.z);m.userData.label.visible=Math.hypot(p.x-i.x,p.z-i.z)<8;});
     this.syncMap(this.grenades,sim.hazards.filter(h=>h.thrown),h=>{const g=throwableMesh(h.throwable);this.scene.add(g);return g;},(g,h)=>{const age=h.duration-h.timer,pos=grenadePosition(h);g.position.set(pos.x,pos.y,pos.z);g.rotation.set(age*13,age*5,age*9);});
     this.rpgPlaces??=new Map();this.syncMap(this.rpgPlaces,(sim.places||[]).filter(q=>q.revealed&&!q.used),q=>{const g=rpgPlaceMesh(q);sign(q.kind==='shop'?(g.userData.facade||g):g,q.kind==='shop'?({smith:'ATELIER / MARA',medic:'CLINIQUE / LENOIR',broker:'ARCHIVES / NOCTURNE'}[q.id]):q.name,0,q.kind==='shop'?3.65:1.4,q.kind==='shop'?-3.02:.5,q.kind==='shop'?Math.min(q.frontWidth||6,8):3.6,.55);freezeLocalTransforms(g);this.scene.add(g);return g;},(g,q)=>{g.visible=Math.hypot(p.x-q.x,p.z-q.z)<55;if(g.userData.facade&&q.buildingId)g.userData.facade.visible=(sim.props.find(b=>b.id===q.buildingId)?.health??1)>0;});
     this.syncMap(this.streetJobs,sim.streetEvents||[],job=>{
@@ -673,20 +674,20 @@ export class World {
     for(const v of sim.props)if(v.driveable&&v.health>0){this.syncVehicle(v,p,motionDt,t);if(v.speed>5&&this.random()<dt*2)this.smoke(v.x-Math.sin(v.angle)*2,v.z-Math.cos(v.angle)*2,1,.1);}
     ageBlood(this,motionDt);
     for(const corpse of this.corpses){
-      corpse.age+=dt;if(corpse.settled)continue;const m=corpse.mesh,t=corpse.age,duration=(corpse.death==='electrocuted'?1.1:.7)*corpse.fallSpeed,progress=clamp(t/duration,0,1),ease=progress*progress*(3-2*progress);
-      m.position.x+=corpse.dx*dt*(1-progress);m.position.z+=corpse.dz*dt*(1-progress);m.position.y=.22*ease+(corpse.death==='exploded'?Math.sin(progress*Math.PI)*.9:0);
-      m.userData.body.rotation.x=corpse.crawling?-Math.PI/2:corpse.pose.x*ease;m.userData.body.rotation.z=corpse.pose.z*ease;m.rotation.y+=corpse.pose.twist*dt*(1-progress);
+      stepRemainsElevation(corpse,sim,motionDt);corpse.age+=motionDt;if(corpse.settled){if(!(corpse.baseY>.1)&&waterAt(this.layout,corpse.mesh.position.x,corpse.mesh.position.z)){if(!corpse.splashed)this.splash(corpse.mesh.position.x,corpse.mesh.position.z,2);corpse.splashed=true;corpse.mesh.position.y=this.waterLevel()-.5;}continue;}const m=corpse.mesh,t=corpse.age,duration=(corpse.death==='electrocuted'?1.1:.7)*corpse.fallSpeed,progress=clamp(t/duration,0,1),ease=progress*progress*(3-2*progress);
+      m.position.x+=corpse.dx*motionDt*(1-progress);m.position.z+=corpse.dz*motionDt*(1-progress);m.position.y=(corpse.baseY||0)+.22*ease+(corpse.death==='exploded'?Math.sin(progress*Math.PI)*.9:0);
+      m.userData.body.rotation.x=corpse.crawling?-Math.PI/2:corpse.pose.x*ease;m.userData.body.rotation.z=corpse.pose.z*ease;m.rotation.y+=corpse.pose.twist*motionDt*(1-progress);
       m.userData.legs.forEach((leg,i)=>{leg.rotation.x=corpse.pose.knee*(i?-.5:1)*ease;leg.userData.knee.rotation.x=corpse.pose.knee*ease;});m.userData.arms.forEach((arm,i)=>{arm.rotation.z=(i?1:-1)*(.35+corpse.variant*.16)*ease;arm.rotation.x=-.5*ease;});
-      if(corpse.death==='electrocuted'){m.userData.body.rotation.z=Math.sin(t*55)*.12*(1-progress);if(this.random()<dt*15)this.lightning({x:m.position.x-.3,z:m.position.z,toX:m.position.x+.3,toZ:m.position.z,y:.6,toY:1.5});}
-      if(corpse.death==='burned'&&this.random()<dt*9)this.smoke(m.position.x,m.position.z,1,.4);
-      if(waterAt(this.layout,m.position.x,m.position.z)&&!corpse.splashed){this.splash(m.position.x,m.position.z,2);corpse.splashed=true;}if(corpse.splashed)m.position.y=this.waterLevel()-.5*progress;
+      if(corpse.death==='electrocuted'){m.userData.body.rotation.z=Math.sin(t*55)*.12*(1-progress);if(this.random()<motionDt*15)this.lightning({x:m.position.x-.3,z:m.position.z,toX:m.position.x+.3,toZ:m.position.z,y:(corpse.baseY||0)+.6,toY:(corpse.baseY||0)+1.5});}
+      if(corpse.death==='burned'&&this.random()<motionDt*9)this.smoke(m.position.x,m.position.z,1,(corpse.baseY||0)+.4);
+      if(!(corpse.baseY>.1)&&waterAt(this.layout,m.position.x,m.position.z)&&!corpse.splashed){this.splash(m.position.x,m.position.z,2);corpse.splashed=true;}if(corpse.splashed)m.position.y=this.waterLevel()-.5*progress;
       if(progress>=1){corpse.settled=true;this.batchStatic(m,m);}
     }
     lap('props');
     for(const e of this.effects){
       if(e.delay>0){e.delay-=motionDt;if(e.delay>0)continue;e.mesh.visible=true;}
       e.life-=motionDt;
-      if(e.kind==='boss-remains'){const age=e.max-e.life,fall=Math.min(1,age/2.8);e.mesh.userData.body.rotation.x=fall*1.32;e.mesh.position.y=-Math.max(0,age-4)*.6;e.mesh.userData.mats.glow.emissiveIntensity=Math.max(0,1-fall);if(age<2.8&&this.random()<motionDt*9)this.smoke(e.mesh.position.x,e.mesh.position.z,1,.3);}
+      if(e.kind==='boss-remains'){const age=e.max-e.life,fall=Math.min(1,age/2.8);e.mesh.userData.body.rotation.x=fall*1.32;e.mesh.position.y=(e.baseY||0)-Math.max(0,age-4)*.6;e.mesh.userData.mats.glow.emissiveIntensity=Math.max(0,1-fall);if(age<2.8&&this.random()<motionDt*9)this.smoke(e.mesh.position.x,e.mesh.position.z,1,.3);}
       else if(e.kind==='boss-ground'||e.kind==='boss-wave')stepBossEffect(e,motionDt);
       else if(e.ring){e.mesh.scale.addScalar(motionDt*2);e.mesh.material.opacity=Math.max(0,e.life/e.max)*(e.ripple?.4:e.opacity??1);}
       else if(e.kind==='cutwave'){e.mesh.position.x+=e.vx*motionDt;e.mesh.position.z+=e.vz*motionDt;e.mesh.scale.addScalar(motionDt*2);e.mesh.traverse(o=>{if(o.material)o.material.opacity=Math.max(0,e.life/e.max)*.7;});}
@@ -696,12 +697,12 @@ export class World {
       else if(e.kind==='blood')stepBlood(this,e,motionDt);
       else{
         const old={x:e.mesh.position.x,z:e.mesh.position.z};
-        if(e.kind==='ember')e.gravity=-1.2;const inWater=waterAt(this.layout,e.mesh.position.x,e.mesh.position.z),ground=inWater?-5:.065,landed=stepFragment(e,motionDt,ground);
+        if(e.kind==='ember')e.gravity=-1.2;const inWater=waterAt(this.layout,e.mesh.position.x,e.mesh.position.z),floor=['material','casing','gib'].includes(e.kind)?fragmentFloor(sim,e,motionDt):0,ground=floor>0?floor+.065:inWater?-5:.065,landed=stepFragment(e,motionDt,ground);
         if(e.mesh.position.y<this.waterLevel()+.03&&e.vy<0&&waterAt(this.layout,e.mesh.position.x,e.mesh.position.z)){if(e.kind!=='water')this.splash(e.mesh.position.x,e.mesh.position.z,e.kind==='material'?Math.min(1.5,e.mesh.scale.x*4):.35);e.life=0;}
-        else if(landed&&e.kind==='gib'&&!e.bled){this.decal(e.mesh.position.x,e.mesh.position.z,.12+this.random()*.14);e.bled=true;}
+        else if(landed&&e.kind==='gib'&&!e.bled){this.decal(e.mesh.position.x,e.mesh.position.z,.12+this.random()*.14,Math.max(0,ground-.065));e.bled=true;}
         else if(landed&&e.kind==='blood'){if(this.random()<.25)this.decal(e.mesh.position.x,e.mesh.position.z,.06+this.random()*.08);e.life=0;}
         if(['material','casing'].includes(e.kind)&&Math.hypot(e.vx,e.vz)>1){
-          const hit=collisionCandidates(sim,old,e.mesh.position).find(o=>e.mesh.position.y<(o.kind==='building'?o.h||5:1.5)&&segmentBoxTime(old,e.mesh.position,o)!==null);
+          const hit=collisionCandidates(sim,old,e.mesh.position).find(o=>e.mesh.position.y>propSpan(o).min&&e.mesh.position.y<propSpan(o).max-.001&&segmentBoxTime(old,e.mesh.position,o)!==null);
           if(hit){const normal=boxNormal(old,hit);Object.assign(e,reflectVelocity(e,normal,.3));e.mesh.position.x=old.x+normal.x*.025;e.mesh.position.z=old.z+normal.z*.025;}
         }
         if(e.kind==='streak'){e.mesh.material.opacity=Math.max(0,e.life/e.max);e.mesh.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),new T.Vector3(e.vx,e.vy,e.vz).normalize());}

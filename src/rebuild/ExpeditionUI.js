@@ -1,3 +1,5 @@
+import {weatherSettings} from './Weather.js';
+
 export const EXPEDITION_LOCK='zombie-bagarre-expedition-transaction-v1';
 export const CHECKPOINT_LOCK_UNAVAILABLE='Expedition saving needs a browser with secure Web Locks support. Fresh expeditions and your hero still work.';
 export function checkpointLocksAvailable(locks=globalThis.navigator?.locks){return typeof locks?.request==='function';}
@@ -23,4 +25,12 @@ export function checkpointSummary(summary){
   const place=summary.regionId==='country-road'?'OLD MILL ROAD':summary.regionId==='city'?'SAINT-ROCH':'EXPEDITION';
   const date=new Date(summary.savedAt),saved=Number.isFinite(date.getTime())?` · ${date.toLocaleDateString(undefined,{month:'short',day:'numeric'})}`:'';
   return `${place} · WAVE ${String(summary.wave).padStart(2,'0')}${saved} · Saved on this device`;
+}
+// These options affect the expedition itself. Particle density remains the
+// current device preference, even when resuming an older checkpoint.
+export function syncExpeditionWeather(settings,options,control){
+  const restored=weatherSettings(options);
+  for(const [key,id]of [['dayCycle','day-cycle'],['weatherMode','weather-mode']]){
+    settings[key]=restored[key];control(id).value=restored[key];
+  }
 }

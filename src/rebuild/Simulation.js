@@ -42,6 +42,7 @@ export class Simulation {
       fire: 0, invulnerable: 0, dash: 0, focusDive:false, diveDuration:FOCUS.diveDuration, dashCooldown: 0, dashMax: 2.7, dashX: 0, dashZ: -1,
       melee: 0, throwable: 'frag', grenades: 3, blast: 1, pickupRange: 1.35, lifeSteal: 0, reloadMultiplier: 1, fireMultiplier: 1, moving: false, resistance:0, regen:0, pierce:0, crit:0, magazineBonus:0, burn:0, frost:0, blastRadius:1, shield:0, overdrive:0, doubleScore:0, freeze:0,equipped:[weapon],weaponTimers:{},reloads:{},reloadDurations:{},shots:{},equippedAt:-99,moveX:0,moveZ:0,meleeAttack:null,meleeBuffer:null,attackHeld:false,throwAnimation:0,offhandRecoil:0,swapBoost:0,lastWeapon:null,lastWeaponTime:-100 };
   }
+  // Actor FX carry feet-relative baseY; projectile/contact y remains absolute world height.
   emit(type, data = {}) { this.events.push({ ...data, type }); }
   start(weapon = 'carbine') { this.interior=null;this.interiorState={manifest:[],visited:[],collected:[]};this.traversalRewardClaimed=false;this.traversalTarget=null;this.focus=createFocus();this.timeScale=1; this.upgrades=[];this.upgradeOffers=[];this.rerolls=2;this.choices=[];this.player=this.makePlayer(weaponLock(this,weapon)?'carbine':weapon);const p=this.player;p.maxHealth+=10*(this.meta.vitality||0);p.health=p.maxHealth;p.damage+=.05*(this.meta.firepower||0);p.speed*=1+.04*(this.meta.mobility||0);p.grenades+=this.meta.supply||0;if(this.profile){initRPG(this,this.profile);p.health=p.maxHealth;}this.state = 'playing';updateWeather(this,0);this.nextWave();initializeRegions(this); }
   createCountryRegion(){
@@ -136,27 +137,27 @@ export class Simulation {
   }
   damageEnemy(e, amount, dx = 0, dz = 0, impact = {}) {
     if (e.health <= 0 || !Number.isFinite(amount) || amount <= 0) return;
-    impact={...impact,tier:impact.tier??weaponTier(this.player,impact.weapon)};const relic=this.player.rpgRelic;if(relic&&relic.base===impact.weapon&&relic.burn&&!impact.periodic&&!(e.wet>0)){e.burning=Math.max(e.burning||0,relic.burn);e.burnWeapon=impact.weapon;this.emit('ignite',{x:e.x,z:e.z});}
+    impact={...impact,tier:impact.tier??weaponTier(this.player,impact.weapon)};const relic=this.player.rpgRelic;if(relic&&relic.base===impact.weapon&&relic.burn&&!impact.periodic&&!(e.wet>0)){e.burning=Math.max(e.burning||0,relic.burn);e.burnWeapon=impact.weapon;this.emit('ignite',{x:e.x,baseY:feetHeight(e),z:e.z});}
     amount*=perkDamage(this.player,e,impact);const crit=resolveCritical(this.player,impact,impact.weapon&&!impact.periodic&&!impact.execution?this.random():1);amount*=crit.multiplier;
     amount=bossDamage(this,e,amount);if(amount<=0)return;
     const dealt=Math.min(e.health,Math.max(0,amount));e.health -= amount; e.flash = .1;const mass=e.type==='boss'?5:e.type==='brute'?2.5:e.type==='armored'?1.8:1;e.knockX=clamp(e.knockX+dx/mass,-12,12);e.knockZ=clamp(e.knockZ+dz/mass,-12,12);if(impact.weapon)this.earnMastery(impact.weapon,dealt*(1+(this.player.masteryBonus||0)));
     if(e.health>0&&e.type!=='boss'&&amount>=18&&['ballistic','explosion','slice'].includes(impact.kind)){
       const cripple=impact.part==='legs'||(impact.kind==='slice'&&this.random()<.3)||(impact.kind==='explosion'&&amount>55&&this.random()<.65)||(e.health<e.maxHealth*.45&&this.random()<.16);
-      if(cripple&&!e.crawling){e.crawling=true;e.speed*=.38;e.damage*=.7;e.radius=Math.min(e.radius,.4);this.emit('dismember',{id:e.id,x:e.x,z:e.z,part:'legs',angle:e.angle});}
-      else if(!e.missingArm&&(impact.part==='arm'||(e.health<e.maxHealth*.6&&this.random()<.13))){e.missingArm=true;e.damage*=.7;this.emit('dismember',{id:e.id,x:e.x,z:e.z,part:'arm',angle:e.angle});}
+      if(cripple&&!e.crawling){e.crawling=true;e.speed*=.38;e.damage*=.7;e.radius=Math.min(e.radius,.4);this.emit('dismember',{id:e.id,x:e.x,baseY:feetHeight(e),z:e.z,part:'legs',angle:e.angle});}
+      else if(!e.missingArm&&(impact.part==='arm'||(e.health<e.maxHealth*.6&&this.random()<.13))){e.missingArm=true;e.damage*=.7;this.emit('dismember',{id:e.id,x:e.x,baseY:feetHeight(e),z:e.z,part:'arm',angle:e.angle});}
     }
     this.emit('damage',{enemyId:e.id,x:e.x,y:feetHeight(e),z:e.z,enemyType:e.type,bossHeight:e.bossHeight,crawling:!!e.crawling,amount,dealt,health:Math.max(0,e.health),maxHealth:e.maxHealth,weapon:impact.weapon,kind:impact.kind,tier:impact.tier,critical:crit.critical,headshot:!!impact.headshot,finisher:!!impact.finisher,execution:!!impact.execution,periodic:!!impact.periodic,killed:e.health<=0});
-    if(amount>=1)this.emit('hit' , { x:e.x,z:e.z,enemyId:e.id,amount,enemyType:e.type,weapon:impact.weapon,tier:impact.tier||0,dx,dz,kind:impact.kind,crawling:!!e.crawling,headshot:!!impact.headshot });
+    if(amount>=1)this.emit('hit' , { x:e.x,baseY:feetHeight(e),z:e.z,enemyId:e.id,amount,enemyType:e.type,weapon:impact.weapon,tier:impact.tier||0,dx,dz,kind:impact.kind,crawling:!!e.crawling,headshot:!!impact.headshot });
     if (e.health <= 0) {
       bossDefeated(this,e);rpgKill(this,e);rewardFocus(this,{...impact,critical:crit.critical});this.kills++; this.waveKills++; this.combo++; this.comboTimer = 3.5;
       this.score += Math.round(e.score * (1 + Math.min(4, Math.floor(this.combo / 5)) * .25) * (this.player.doubleScore>0?2:1));
       this.player.health = Math.min(this.player.maxHealth, this.player.health+this.player.lifeSteal*(this.player.regen>0?2:1));
       if(e.type==='volatile')this.hazards.push({id:this.nextId++,x:e.x,y:feetHeight(e),z:e.z,radius:2.4,timer:.7,duration:.7,friendly:false,damage:24});
-      this.emit('kill', { x:e.x,z:e.z,enemyType:e.type,enemyId:e.id,bossKind:e.bossKind,bossProfile:e.bossProfile,bossHeight:e.bossHeight,angle:e.angle,slicePart:impact.part||['head','arm','legs'][Math.floor(this.random()*3)],variant:Math.floor(this.random()*6),fallSpeed:.65+this.random()*.8,twist:(this.random()-.5)*1.5,violent:amount>70,death:impact.kind==='slice'?'sliced':impact.headshot?'headshot':impact.kind==='explosion'?'exploded':impact.kind==='fire'||e.burning>0?'burned':impact.kind==='electric'?'electrocuted':'shot',crawling:!!e.crawling,missingArm:!!e.missingArm,dx,dz });
-      if (this.kills % 4 === 0 || e.type === 'brute') { const types=Object.keys(POWERUPS); const type=this.player.health<45?'health':types[Math.floor(this.random()*types.length)];this.pickups.push({ id: this.nextId++, x:e.x,z:e.z,life:40,type }); }
+      this.emit('kill', { x:e.x,baseY:feetHeight(e),z:e.z,enemyType:e.type,enemyId:e.id,bossKind:e.bossKind,bossProfile:e.bossProfile,bossHeight:e.bossHeight,angle:e.angle,slicePart:impact.part||['head','arm','legs'][Math.floor(this.random()*3)],variant:Math.floor(this.random()*6),fallSpeed:.65+this.random()*.8,twist:(this.random()-.5)*1.5,violent:amount>70,death:impact.kind==='slice'?'sliced':impact.headshot?'headshot':impact.kind==='explosion'?'exploded':impact.kind==='fire'||e.burning>0?'burned':impact.kind==='electric'?'electrocuted':'shot',crawling:!!e.crawling,missingArm:!!e.missingArm,dx,dz });
+      if (this.kills % 4 === 0 || e.type === 'brute') { const types=Object.keys(POWERUPS); const type=this.player.health<45?'health':types[Math.floor(this.random()*types.length)];this.pickups.push({ id: this.nextId++, x:e.x,y:feetHeight(e),z:e.z,life:40,type }); }
     }
   }
-  earnMastery(key,amount){for(const tier of addMastery(this.player,key,amount))this.emit('evolution',{weapon:key,tier,name:WEAPON_FINISHES[key].signature,x:this.player.x,y:feetHeight(this.player),z:this.player.z});}
+  earnMastery(key,amount){for(const tier of addMastery(this.player,key,amount))this.emit('evolution',{weapon:key,tier,name:WEAPON_FINISHES[key].signature,x:this.player.x,y:feetHeight(this.player),baseY:feetHeight(this.player),z:this.player.z});}
   blast(x, z, radius, damage, kind = 'explosion', source = 'grenade', weapon=null, tier=0, y=0) {
     if(this.player.blast>1&&this.player.blastRadius>1&&kind==='explosion')damage*=1.25;
     const water=y<.3&&waterAt(this.layout,x,z);this.emit(kind, { x, y, z, radius,source,water,weapon,tier });if(water)this.splashWater(x,z,radius*2);
@@ -306,7 +307,7 @@ export class Simulation {
     p.swingVariant=(p.swingCount++)%4;const timing=meleeTiming(key,p.swingCombo,p.fireMultiplier*(1-weaponTier(p,key)*.04));
     p.swingDuration=timing.duration;p.swing=timing.duration;p.swingWeapon=key;p.weaponTimers[key]=timing.duration;
     p.meleeAttack={weapon:key,combo:p.swingCombo,variant:p.swingVariant,tier:weaponTier(p,key),angle:p.angle,started:this.time,timing,hit:false};
-    this.emit('swing',{weapon:key,combo:p.swingCombo,variant:p.swingVariant,tier:weaponTier(p,key)});return true;
+    this.emit('swing',{x:p.x,baseY:feetHeight(p),z:p.z,weapon:key,combo:p.swingCombo,variant:p.swingVariant,tier:weaponTier(p,key)});return true;
   }
   resolveSlice(attack){
     const p=this.player,key=attack.weapon,w=weaponStats(p,key),finisher=attack.combo===2,profile=MELEE_PROFILES[key];
@@ -317,8 +318,8 @@ export class Simulation {
     if(finisher&&hits>0)p.health=Math.min(p.maxHealth,p.health+(p.finisherHeal||0));
     const struckProps=new Set();for(const o of this.props)if(o.health>0&&verticalGap(meleeSpan(p),propSpan(o))===0){const x=clamp(p.x,o.x-o.w/2,o.x+o.w/2),z=clamp(p.z,o.z-o.d/2,o.z+o.d/2);if(Math.hypot(x-p.x,z-p.z)<range&&inArc(x,z)){const structuralId=o.roofPart?o.ownerId:(o.id??o);if(struckProps.has(structuralId))continue;struckProps.add(structuralId);this.damageProp(o,damage*(key==='hammer'?1.2:['crate','planter'].includes(o.kind)?2:.3),{x,y:Math.max(propSpan(o).min,Math.min(propSpan(o).max,feetHeight(p)+1)),z,slicing:profile.kind==='slice'});hits++;}}
     if(finisher){p.dashCooldown=Math.max(0,p.dashCooldown-.45);p.invulnerable=Math.max(p.invulnerable,.12);}
-    if(finisher&&w.tier===3){for(const e of this.enemies)if(e.health>0&&distance(e,p)>=range+e.radius&&distance(e,p)<range+2.6&&inArc(e.x,e.z)&&meleeReaches(p,e)&&!combatBlocked(this,muzzlePoint(p),bodyPoint(e))){this.damageEnemy(e,damage*.55,Math.sin(angle)*profile.force,Math.cos(angle)*profile.force,{kind:profile.kind,weapon:key,tier:3,finisher:true});if(key==='hammer'&&e.type!=='boss')e.slow=Math.max(e.slow||0,1.2);}this.emit('cut-wave',{x:p.x,z:p.z,angle,weapon:key,radius:range+2.6});}
-    this.emit('slice',{x:p.x,z:p.z,angle,weapon:key,combo:attack.combo,variant:attack.variant,tier:w.tier,radius:range,hits});
+    if(finisher&&w.tier===3){for(const e of this.enemies)if(e.health>0&&distance(e,p)>=range+e.radius&&distance(e,p)<range+2.6&&inArc(e.x,e.z)&&meleeReaches(p,e)&&!combatBlocked(this,muzzlePoint(p),bodyPoint(e))){this.damageEnemy(e,damage*.55,Math.sin(angle)*profile.force,Math.cos(angle)*profile.force,{kind:profile.kind,weapon:key,tier:3,finisher:true});if(key==='hammer'&&e.type!=='boss')e.slow=Math.max(e.slow||0,1.2);}this.emit('cut-wave',{x:p.x,baseY:feetHeight(p),z:p.z,angle,weapon:key,radius:range+2.6});}
+    this.emit('slice',{x:p.x,baseY:feetHeight(p),z:p.z,angle,weapon:key,combo:attack.combo,variant:attack.variant,tier:w.tier,radius:range,hits});
   }
   interactVehicle(){
     const p=this.player;if(!nearGround(p))return false;
@@ -341,7 +342,7 @@ export class Simulation {
     if(type==='double')p.doubleScore=15;
     if(type==='grenade')p.grenades+=2;
     if(type==='ammo'){for(const key of Object.keys(WEAPONS))p.magazines[key]=magazineSize(p,key);if(p.equipped[0]===p.equipped[1])p.magazines.offhand=magazineSize(p,p.equipped[0]);for(const [key,reserve]of Object.entries(p.twinReserves||{}))Object.assign(reserve,{ammo:magazineSize(p,key),reload:0,duration:0});p.reload=0;p.reloads={};p.reloadDurations={};}
-    if(type==='nova')this.blast(p.x,p.z,10,300,'explosion');
+    if(type==='nova')this.blast(p.x,p.z,10,300,'explosion','grenade',null,0,feetHeight(p));
     this.emit('powerup',{powerup:type,...POWERUPS[type]});
   }
   arcAttack(aim,w,origin=this.player) {
@@ -355,7 +356,7 @@ export class Simulation {
       const start=i?bodyPoint(from):from,end=i?bodyPoint(target):firstContact(target);
       visited.add(target.id);this.emit('arc',{x:start.x,z:start.z,y:start.y,toX:end.x,toZ:end.z,toY:end.y,weapon:'arc',tier:w.tier});
       if(target.burning>0)this.emit('combo',{name:'PLASMA ARC',description:'Fire + electricity: +40% arc damage'});
-      this.damageEnemy(target,w.damage*p.damage*Math.pow(.83,i)*(target.burning>0?1.4:target.wet>0?1.25:1)*(p.swapBoost>0?1.25:1),0,0,{kind:'electric',weapon:'arc',tier:w.tier});target.slow=Math.max(target.slow||0,.6);target.electrified=.8;this.emit('electrify',{x:target.x,z:target.z});if(p.burn&&!(target.wet>0)){target.burning=p.burn;target.burnWeapon='arc';}
+      this.damageEnemy(target,w.damage*p.damage*Math.pow(.83,i)*(target.burning>0?1.4:target.wet>0?1.25:1)*(p.swapBoost>0?1.25:1),0,0,{kind:'electric',weapon:'arc',tier:w.tier});target.slow=Math.max(target.slow||0,.6);target.electrified=.8;this.emit('electrify',{x:target.x,baseY:feetHeight(target),z:target.z});if(p.burn&&!(target.wet>0)){target.burning=p.burn;target.burnWeapon='arc';}
       from=target;target=this.enemies.filter(e=>e.health>0&&!visited.has(e.id)&&bodyDistance(from,e)<4.5&&!combatBlocked(this,bodyPoint(from),bodyPoint(e))).sort((a,b)=>distance(from,a)-distance(from,b))[0];
     }
   }
@@ -377,7 +378,7 @@ export class Simulation {
         e.burning-=dt;this.damageEnemy(e,18*dt,0,0,{kind:'fire',weapon:e.burnWeapon,periodic:true});if(e.health<=0)continue;
         e.spreadTimer=(e.spreadTimer||0)-dt;
         if(e.spreadTimer<=0){e.spreadTimer=.4;
-          for(const other of this.enemies)if(other!==e&&other.health>0&&!(other.wet>0)&&bodyDistance(e,other)<e.radius+other.radius+.5&&!(other.burning>1.5)){other.burning=2.8;other.burnWeapon=e.burnWeapon;this.emit('ignite',{x:other.x,z:other.z});}
+          for(const other of this.enemies)if(other!==e&&other.health>0&&!(other.wet>0)&&bodyDistance(e,other)<e.radius+other.radius+.5&&!(other.burning>1.5)){other.burning=2.8;other.burnWeapon=e.burnWeapon;this.emit('ignite',{x:other.x,baseY:feetHeight(other),z:other.z});}
           for(const prop of this.obstacles)if(!['rock','barrier'].includes(prop.kind)&&heightGap(feetHeight(e)+.9,propSpan(prop))<.5&&distance(e,prop)<e.radius+Math.max(prop.w,prop.d)/2+.4){this.igniteProp(prop,e.x,e.z,feetHeight(e)+.9,4);}
         }
       }
@@ -417,7 +418,7 @@ export class Simulation {
   addFire(x,z,radius=1.6){
     if((this.weather?.rain>.5&&this.weather.wetness>.8)||waterAt(this.layout,x,z)||(this.wetGround||[]).some(w=>distance(w,{x,z})<w.radius))return;
     if(this.fires.some(f=>distance(f,{x,z})<radius))return;
-    const fire={id:this.nextId++,x,z,radius,life:7};this.fires.push(fire);if(this.fires.length>24)this.fires.shift();this.emit('ignite',{x,z,radius});
+    const fire={id:this.nextId++,x,z,radius,life:7};this.fires.push(fire);if(this.fires.length>24)this.fires.shift();this.emit('ignite',{x,z,baseY:0,radius});
   }
   igniteProp(p,x=p.x,z=p.z,y=.9,seconds=4){return igniteProp(this,p,x,z,y,seconds);}
   splashWater(x,z,power=1){return splashWater(this,x,z,power);}
@@ -476,7 +477,7 @@ export class Simulation {
           if(b.burn)this.igniteProp(o,b.x,b.z,b.y||.9,b.burn+2);
           this.emit('impact',{x:b.x,z:b.z,y:Math.max(.2,b.y),normal:n,weapon:b.weapon,tier:b.tier||0,kind:o.kind,material:o.material,dx:b.vx,dz:b.vz});
           if(b.explosive||b.terminal)this.detonateBullet(b);
-          else if(b.ricochets>0&&['barrier','car','rock','building'].includes(o.kind)&&Math.abs((b.vx*n.x+b.vz*n.z)/(Math.hypot(b.vx,b.vz)||1))<.7){Object.assign(b,reflectVelocity(b,n));b.damage*=.65;b.ricochets--;b.x+=n.x*.06;b.z+=n.z*.06;this.emit('ricochet',{x:b.x,z:b.z,weapon:b.weapon,tier:b.tier,dx:b.vx,dz:b.vz});stopped=true;break;}
+          else if(b.ricochets>0&&['barrier','car','rock','building'].includes(o.kind)&&Math.abs((b.vx*n.x+b.vz*n.z)/(Math.hypot(b.vx,b.vz)||1))<.7){Object.assign(b,reflectVelocity(b,n));b.damage*=.65;b.ricochets--;b.x+=n.x*.06;b.z+=n.z*.06;this.emit('ricochet',{x:b.x,y:b.y,z:b.z,weapon:b.weapon,tier:b.tier,dx:b.vx,dz:b.vz});stopped=true;break;}
           else b.life=0;stopped=true;break;
         }
         const e=c.o;b.hitIds.push(e.id);
@@ -492,8 +493,8 @@ export class Simulation {
         const impulse=b.weapon==='shotgun'?.055:b.weapon==='revolver'?.075:b.weapon==='marksman'?.05:.025;
         this.damageEnemy(e,damage,b.vx*impulse,b.vz*impulse,{kind:b.weapon==='flame'?'fire':'ballistic',weapon:b.weapon,tier:b.tier,headshot,execution});
         if(b.burn&&!(e.wet>0)){e.burning=b.burn;e.burnWeapon=b.weapon;}if(b.frost)e.slow=b.frost;
-        if(b.weapon==='flame'&&b.tier===3&&this.time>(p.poolAfter||0)){p.poolAfter=this.time+.6;this.addFire(e.x,e.z,1.2);}
-        if(p.frost>0&&e.burning>0&&e.slow>0&&!e.shockCooldown){e.shockCooldown=2;this.blast(e.x,e.z,2.2,45*p.damage,'explosion','thermal',b.weapon,b.tier);this.emit('combo',{name:'THERMAL SHOCK',description:'Fire + frost detonation'});}
+        if(b.weapon==='flame'&&b.tier===3&&nearGround(e)&&this.time>(p.poolAfter||0)){p.poolAfter=this.time+.6;this.addFire(e.x,e.z,1.2);}
+        if(p.frost>0&&e.burning>0&&e.slow>0&&!e.shockCooldown){e.shockCooldown=2;this.blast(e.x,e.z,2.2,45*p.damage,'explosion','thermal',b.weapon,b.tier,feetHeight(e));this.emit('combo',{name:'THERMAL SHOCK',description:'Fire + frost detonation'});}
         if(b.pierce>0){b.pierce--;b.damage*=.86;}
         else{if(b.terminal)this.detonateBullet(b);b.life=0;stopped=true;break;}
       }

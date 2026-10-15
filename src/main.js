@@ -6,7 +6,7 @@ import {completeRegionTravel} from './rebuild/Regions.js';
 import './rebuild/regions.css';
 import {RegionUI,REGION_SAVE_POLICY} from './rebuild/RegionUI.js';
 import {ExpeditionStore,checkpointUnavailable} from './rebuild/ExpeditionCheckpoint.js';
-import {prepareCheckpointResume,checkpointSummary,withCheckpointLock,checkpointLocksAvailable,CHECKPOINT_LOCK_UNAVAILABLE} from './rebuild/ExpeditionUI.js';
+import {prepareCheckpointResume,checkpointSummary,withCheckpointLock,checkpointLocksAvailable,CHECKPOINT_LOCK_UNAVAILABLE,syncExpeditionWeather} from './rebuild/ExpeditionUI.js';
 import './rebuild/expedition.css';
 let regionUI;
 import {SettingsUI} from './rebuild/SettingsUI.js';
@@ -154,10 +154,11 @@ async function saveExpeditionAndExit(){
 }
 async function resumeExpedition(){
   if(checkpointBusy)return;checkpointBusy=true;
-  const before={sim,world,runMode,skin,rpgProfile,equipped,loadout,equippedThrowable,progression:settings.progression,difficulty:settings.difficulty,mapSeed:$('map-seed').textContent};
+  const before={sim,world,runMode,skin,rpgProfile,equipped,loadout,equippedThrowable,progression:settings.progression,difficulty:settings.difficulty,weather:weatherSettings(settings),mapSeed:$('map-seed').textContent};
   const rollback=()=>{
     $('pause-dialog').close();sim=before.sim;world=before.world;runMode=before.runMode;skin=before.skin;rpgProfile=before.rpgProfile;equipped=before.equipped;loadout=before.loadout;equippedThrowable=before.equippedThrowable;
     settings.progression=before.progression;settings.difficulty=before.difficulty;
+    syncExpeditionWeather(settings,before.weather,$);
     $('run-mode').value=runMode;$('skin-select').value=skin;$('difficulty').value=settings.difficulty;
     for(const id of ['progression-mode','progression-setting'])$(id).value=settings.progression;
     $('map-seed').textContent=before.mapSeed;$('menu').hidden=false;$('hud').hidden=true;
@@ -175,6 +176,7 @@ async function resumeExpedition(){
         runMode=sim.mode;skin=sim.skin;rpgProfile=sim.profile;equipped=[...sim.player.equipped];loadout=equipped[0];equippedThrowable=sim.player.throwable;
         $('run-mode').value=runMode;$('skin-select').value=skin;
         settings.progression=sim.progression;settings.difficulty=sim.difficulty;
+        syncExpeditionWeather(settings,sim.weather.options,$);
         for(const id of ['progression-mode','progression-setting'])$(id).value=sim.progression;
         $('difficulty').value=sim.difficulty;
         $('map-seed').textContent=`ROUTE ${sim.seed.toString(36).toUpperCase()} / ${sim.layout.shape.toUpperCase()} / ${Math.round(sim.layout.bounds.maxX-sim.layout.bounds.minX)}×${Math.round(sim.layout.bounds.maxZ-sim.layout.bounds.minZ)}`;

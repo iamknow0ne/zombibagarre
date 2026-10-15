@@ -12,6 +12,18 @@ const up=new T.Vector3(0,1,0),dryColor=new T.Color(0x351715),freshColor=new T.Co
 export const BLOOD_LIMIT=150;
 const surfaceBounds=new WeakMap();
 
+// Cache conservative local bounds; only nearby roots update descendants and
+// enter the triangle raycast. A raised stain must not traverse the whole city.
+function nearbySurfaces(world,origin,radius){
+ const roots=[...(world.propMeshes?.values()||[]),...(world.buildingMeshes?.values()||[]),...(world.wrecks||[])].filter(g=>{
+  if(!g.visible||g.userData.collapsed)return false;
+  g.updateWorldMatrix(true,false);let bounds=surfaceBounds.get(g);
+  if(!bounds){bounds=new T.Box3().setFromObject(g).getBoundingSphere(new T.Sphere());bounds.applyMatrix4(g.matrixWorld.clone().invert());surfaceBounds.set(g,bounds);}
+  return bounds.clone().applyMatrix4(g.matrixWorld).distanceToPoint(origin)<radius;
+ });
+ for(const root of roots)root.updateWorldMatrix(true,true);return roots;
+}
+
 // Resolve actual visible triangles, not a building's rectangular collision envelope.
 // Missing facade panels and broken windows therefore cannot catch airborne blood.
 export function bloodContact(from,to,roots){
@@ -36,8 +48,8 @@ function bloodTexture(world,wall,index){
  const tex=new T.CanvasTexture(canvas);tex.colorSpace=T.SRGBColorSpace;tex.userData.shared=true;world.bloodTextures.set(key,tex);return tex;
 }
 export function bloodDecal(world,point,radius=.4,hit=null){
- const gore=goreProfile(world.settings);if(!gore.enabled||(!hit&&waterAt(world.layout,point.x,point.z)))return null;radius*=gore.stain;
- if(!hit&&world.bloodGroundTargets?.length){hit=bloodContact(new T.Vector3(point.x,.65,point.z),new T.Vector3(point.x,-.3,point.z),world.bloodGroundTargets);if(hit)point=hit.point;}
+ const gore=goreProfile(world.settings);if(!gore.enabled)return null;radius*=gore.stain;
+ if(!hit){const raised=point.y>.7,targets=raised?nearbySurfaces(world,point,1):world.bloodGroundTargets||[];if(!raised)for(const target of targets)target.updateWorldMatrix(true,true);hit=bloodContact(new T.Vector3(point.x,point.y+.6,point.z),new T.Vector3(point.x,point.y-.36,point.z),targets);if(hit)point=hit.point;else if(raised||waterAt(world.layout,point.x,point.z))return null;}
  const localPoint=hit?hit.object.worldToLocal(point.clone()):point;
  if(world.decals.some(m=>m.userData.surface===(hit?.object||null)&&m.userData.hitLocal?.distanceTo(localPoint)<.18))return null;
  const normal=hit?.normal||up,wall=Math.abs(normal.y)<.65,rotation=new T.Euler();
@@ -55,10 +67,9 @@ export function bloodDecal(world,point,radius=.4,hit=null){
 export function bloodSpray(world,e,count=10,power=6,height=1.15){
  const gore=goreProfile(world.settings);if(!gore.enabled)return;count=Math.ceil(count*gore.spray);
  if(e.kind==='fire'||e.kind==='electric'||e.kind==='frost')return; // Elemental damage does not punch ballistic wounds.
- const r=world.random,origin=new T.Vector3(e.x,height,e.z),direction=Math.atan2(e.dx||0,e.dz||0),directed=Math.hypot(e.dx||0,e.dz||0)>.001;
+ const r=world.random,origin=new T.Vector3(e.x,(e.baseY||0)+height,e.z),direction=Math.atan2(e.dx||0,e.dz||0),directed=Math.hypot(e.dx||0,e.dz||0)>.001;
  const available=Math.max(0,gore.droplets-world.effects.filter(f=>f.kind==='blood').length);if(!available)return;
- const roots=[...world.propMeshes.values(),...world.buildingMeshes.values(),...world.wrecks].filter(g=>{if(!g.visible||g.userData.collapsed)return false;g.updateWorldMatrix(true,false);let bounds=surfaceBounds.get(g);if(!bounds){bounds=new T.Box3().setFromObject(g).getBoundingSphere(new T.Sphere());bounds.applyMatrix4(g.matrixWorld.clone().invert());surfaceBounds.set(g,bounds);}return bounds.clone().applyMatrix4(g.matrixWorld).distanceToPoint(origin)<9;});
- for(const root of roots)root.updateWorldMatrix(true,true);
+ const roots=nearbySurfaces(world,origin,9);
  for(let i=0;i<Math.min(count,available);i++){
   const speed=power*(.45+r()*.8),angle=directed&&i%5?direction+(r()-.5)*(e.kind==='slice'?2.5:1.1):r()*Math.PI*2,size=.015+Math.pow(r(),2)*.055;
   const mesh=new T.Mesh(dropGeometry,dropMaterial);mesh.position.copy(origin);mesh.position.y+=(r()-.5)*.18;mesh.scale.set(size,size*(1.2+r()),size);world.scene.add(mesh);

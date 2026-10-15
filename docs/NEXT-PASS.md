@@ -2,6 +2,17 @@
 
 15 October 2026. Apple signing/notarization and Steam Deck troubleshooting remain deferred. The SNES demake and Android test edition are authorized; other ports remain deferred. Work is staged into tested releases, not an assertion that the whole game is finished.
 
+## Vertical combat prerequisites — 4.52.1
+
+- [x] Preserve actor-floor heights through wounds, remains, elemental reactions, melee/evolution effects and dropped loot; correct elevated nova/thermal origins.
+- [x] Let hard cosmetic fragments land on roofs and remains fall after support loss; project raised blood onto nearby actual surfaces.
+- [x] Stop paused corpse drift/particle accumulation; restore checkpoint weather controls consistently.
+- [x] 679 regressions, 64 checkpoint continuations, production build and real browser effect/pause/weather-resume review.
+- [ ] Publish tested browser and ad-hoc Mac 4.52.1 patch; packaging in progress.
+- [ ] Before a roof encounter: floor-aware enemy movement/crowding, support-loss gravity, optional encounter isolation from wave completion, regional checkpoint ledger and height-aware reward support loss. Proposed first slice: one optional service-roof spitter guarding a cache, activated only on arrival.
+
+See [release scope](RELEASE-4.52.1.md) and [QA evidence](qa/4.52.1/README.md). The developer elevated victim is staged; no rooftop enemy encounter is shipped yet.
+
 ## Resumable expeditions — 4.52.0
 
 - [x] Separate bounded/versioned device checkpoint with explicit RNG state, active/parked regions and permanent-hero compatibility checks.
