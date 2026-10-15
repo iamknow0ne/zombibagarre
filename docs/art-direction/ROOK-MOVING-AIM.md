@@ -60,3 +60,9 @@ weapon-specific animation, armour deformation, LOD, FPS hands and a production
 adapter remain open. Grip accuracy assertions apply to settled target poses;
 intermediate hand crossfades are not certified by these tests. Reference likeness
 and garment refinement still require separate art work and rendered review.
+
+Publication: commit `7fb35ffb04ac9569e01588ac58b5da51dac7fc9b` is pushed.
+GitHub workflow `38706854337` passed gameplay tests, the new 40-test candidate
+suite, build and Pages deployment. No new Mac archive was necessary because
+production runtime/assets are unchanged. v7 SHA-256 remains
+`18526face762ce7f5b534ecca39291cbfad76a4f06d4f98faed222707e5181e5`.
