@@ -1,6 +1,6 @@
 {
   "name": "zombie-bagarre",
-  "version": "4.51.1",
+  "version": "4.51.2",
   "description": "Zombie Bagarre: Quarantine \u2014 2.5D survival action",
   "type": "module",
   "scripts": {
@@ -16,7 +16,8 @@
     "predev": "node scripts/art/pack-rook-runtime.mjs",
     "prebuild": "node scripts/art/pack-rook-runtime.mjs",
     "pretest:rook": "node scripts/art/pack-rook-runtime.mjs",
-    "android:build": "node scripts/build-android.mjs"
+    "android:build": "node scripts/build-android.mjs",
+    "postbuild": "node scripts/verify-build-version.mjs"
   },
   "dependencies": {
     "three": "^0.169.0"

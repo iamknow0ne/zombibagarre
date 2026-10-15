@@ -2,12 +2,19 @@
 
 15 October 2026. Apple signing/notarization and Steam Deck troubleshooting remain deferred. The SNES demake and Android test edition are authorized; other ports remain deferred. Work is staged into tested releases, not an assertion that the whole game is finished.
 
+## Release identity follow-up — 4.51.2
+
+- [x] Generate title/loading/diagnostic version from package metadata and reject stale built labels before packaging.
+- [ ] Verify and publish corrected browser/Mac artifacts; update the local Android test install.
+
+See [4.51.2 evidence](RELEASE-4.51.2.md). Gameplay/rendering is unchanged from the tested 4.51.1 patch.
+
 ## Reliability follow-up — 4.51.1
 
 - [x] Prevent immediate falling-debris damage on region return and interior exit; cover both with actual collapse physics regressions.
 - [x] Retry Android audio recovery after a rejected resume, without stale failures overriding later recovery.
 - [x] Pass 635 regressions and a 6,000-frame browser combat resource check. Concurrent builds mean this is not an isolated FPS benchmark.
-- [ ] Publish and verify browser/macOS patch and update the Android test install.
+- [x] Publish 4.51.1 browser/macOS patch and update the Android test install. Public QA caught stale hard-coded labels; the 4.51.2 follow-up below corrects release identity.
 
 See [4.51.1 evidence](RELEASE-4.51.1.md). The Android physical gameplay gate remains pending below.
 
@@ -20,6 +27,19 @@ See [4.51.1 evidence](RELEASE-4.51.1.md). The Android physical gameplay gate rem
 
 See [Android build guide](ANDROID.md) and [device evidence](qa/android-4.51/README.md).
 This platform is now authorized; Steam Deck and other deferred ports stay deferred.
+
+## Active next work — world expansion
+
+These items supersede historical “next” notes further down this file.
+
+1. Finish the authorized Android physical-device checks after the user unlocks the connected phone. Do not treat an activity launch, browser viewport emulation or CI build as phone gameplay evidence.
+2. Add resumable expeditions before expanding travel: a separate versioned, bounded snapshot with explicit RNG state, region-qualified identities, corruption recovery and atomic restore. Permanent character saves must remain independently recoverable; current regions survive only during one running session.
+3. Extend useful interiors and curated vertical encounters, with reliable return/collision/quest rewards and controller/touch interaction. The workshop/apartment and one service roof are implemented; indoor combat, indoor TPS/FPS and elevated enemy encounters are not complete.
+4. Expand regional destinations and a late-run hidden-hangar quest, then ship launch/orbit/return and the first moon as separate tested slices. None of the spacecraft/planet milestones is implemented yet.
+
+Continue ordinary full-expedition playthrough, native endurance and perspective
+QA alongside those slices. Do not describe the entire game as complete based on
+startup checks, short fixed-seed scenes or automated campaign simulations.
 
 ## Production cast — 4.51.0
 

@@ -5,6 +5,7 @@ on:
     paths:
       - 'android/**'
       - 'scripts/*android*'
+      - 'scripts/verify-build-version.mjs'
       - 'scripts/art/**'
       - 'src/**'
       - 'assets/**'
