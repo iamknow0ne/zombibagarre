@@ -60,3 +60,13 @@ GPU enabled. This is startup evidence, not a sustained gameplay benchmark.
 `Zombie-Bagarre-4.50.0-macOS-arm64.zip`
 
 SHA-256: `5eba8379422f097ae050f087360bfdd4d8b7b67bf90111979ba9c1c4026b96aa`
+
+## Publication evidence
+
+Runtime commit `73f547731401857a536bc496ba214de85a322ad7`.
+[Pages run 38710308987](https://github.com/iamknow0ne/zombibagarre/actions/runs/38710308987)
+passed gameplay tests, model-art tests, build and deployment. Public menu verified
+BUILD 4.50.0 with no browser console errors; screenshot in the cast evidence folder.
+[macOS release](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.50.0)
+is published and its uploaded ZIP digest matches the tested package above.
+The automatic Steam Deck workflow remains deferred.

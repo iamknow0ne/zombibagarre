@@ -8,6 +8,7 @@
 - [x] Refine all four survivor identities and three static traders; preserve customization and shop draw budgets.
 - [x] Refine six ordinary enemy archetypes and eight boss surfaces; retain instancing, gore and authored combat poses.
 - [x] 609 regression tests, 48 actual-model art checks, production build and browser cast/FPS/TPS/city/boss reviews.
+- [x] Publish browser and Mac 4.50.0: runtime 73f5477, Pages 38710308987 passed, public BUILD 4.50.0 verified, exact uploaded Mac ZIP matched the hardware-startup-tested archive.
 - [ ] Complete authored Saint/Torque/Vesper and enemy assets with lore-art likeness, dedicated detailed FPS hands and LODs. Current procedural refinements are not final art parity.
 - [ ] Sustain native and physical-device performance sessions; retain existing gameplay and traversal gates below.
 
