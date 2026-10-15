@@ -5,6 +5,7 @@ change character saves. These are actual browser captures, not concept art.
 
 | Capture | What was reviewed |
 | --- | --- |
+| public-menu.png | Published BUILD 4.51.0, no console errors |
 | hero-lineup.png | All four detailed default identities loaded |
 | saint-armour-walk.png / saint-hidden-helmet.png | Walking, armour, helmet visibility |
 | torque-custom-dual.png | Custom mohawk, corrected arctic dye, paired weapons |

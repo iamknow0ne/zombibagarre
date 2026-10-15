@@ -60,8 +60,9 @@ inputs, hashes and CC0 attribution accompany the assets in `assets/source/cast`.
 ## Validation
 
 **622 gameplay regressions and 89 actual-model art checks pass.** The production
-build passes with the existing JavaScript chunk-size warning. macOS package and
-publication evidence are recorded below once complete.
+build passes with the existing JavaScript chunk-size warning. The exact Mac package also passed ad-hoc signature validation and hardware
+startup: offline world, shaders, menu and desktop bridge initialized. This is
+startup evidence, not a sustained native gameplay benchmark.
 
 Live-browser review includes all four loaded identities; rifle, paired SMG/flame
 and katana first-person poses; armoured Saint walking and helmet hiding; Torque's
@@ -79,3 +80,26 @@ modular construction; faces do not yet have expression or dialogue animation.
 Physical phone/controller validation, sustained target-device performance and a
 normal full expedition remain separate QA gates. Apple notarization and Steam Deck
 work are still deferred.
+
+## macOS package
+
+`Zombie-Bagarre-4.51.0-macOS-arm64.zip`
+
+SHA-256: `cfc4aab0b19e91b5ca89f6cc8c73c0d85b9fb71993e2015112330aa25f774fbb`
+
+Apple Silicon, ad-hoc signed, not Developer ID notarized. The locally built app
+is available in `release/4.51.0/Zombie Bagarre-darwin-arm64/`. Downloaded copies
+may be blocked by Gatekeeper; see [the Mac guide](MACOS.md).
+
+Runtime commit: `5af6fef10ad59937c0e02ac89fe89afea1e66137`.
+
+## Publication
+
+GitHub Pages workflow **38723532216** passed, including both test suites and the
+production build. The public title screen reports BUILD 4.51.0 and emitted no
+console errors during the check; [capture](qa/cast-revamp/public-menu.png).
+
+[macOS release v4.51.0](https://github.com/iamknow0ne/zombibagarre/releases/tag/v4.51.0)
+is published. GitHub reports the exact ZIP digest above, matching the locally
+hardware-startup-tested artifact. The tag-triggered Steam Deck job was cancelled
+because that platform remains deferred.

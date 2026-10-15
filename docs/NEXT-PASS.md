@@ -9,7 +9,7 @@
 - [x] Refine all six infected with shared textured head anatomy, organic surfaces and projected wounds; refine exposed boss faces and plant-boss forms.
 - [x] Correct interior foot placement, overbright clothing dyes, eye seating and visible boss face occlusion.
 - [x] 622 gameplay regressions, 89 actual-model art checks, production build and rendered cast/equipment/FPS/interior/boss/crawler review.
-- [ ] Publish tested browser and ad-hoc macOS 4.51.0 and verify the exact downloadable archive.
+- [x] Publish browser and ad-hoc macOS 4.51.0: runtime 5af6fef, Pages 38723532216 passed, public BUILD 4.51.0 checked, uploaded ZIP digest matches the hardware-startup-tested archive.
 
 See [4.51.0 evidence](RELEASE-4.51.0.md). Default-cast integration is complete;
 custom garment variants remain stylized modular construction. Facial expression

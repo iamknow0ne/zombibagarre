@@ -25,7 +25,7 @@ travel with the assets.
 - [x] Boss silhouettes and surface construction reviewed during actual attacks.
 - [x] Custom appearances, armour and traders retain their identities; unsupported
       customization must remain explicitly documented rather than silently lost.
-- [ ] Runtime regressions, actual browser review, production build and packaged
+- [x] Runtime regressions, actual browser review, production build and packaged
       Mac startup pass; publication checked against exact tested artifact.
 
 Physical phone/controller feel and sustained target-device benchmarks remain
